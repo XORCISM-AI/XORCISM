@@ -1,0 +1,15 @@
+[Unit]
+Description=XOR endpoint agent (XORCISM EDR)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Ajustez le chemin et lancez d'abord --enroll une fois.
+ExecStart=/usr/bin/python3 /opt/xor/xor_agent.py --run --interval 300 --conf /opt/xor/xor_agent.conf
+Restart=on-failure
+RestartSec=15
+User=root
+
+[Install]
+WantedBy=multi-user.target

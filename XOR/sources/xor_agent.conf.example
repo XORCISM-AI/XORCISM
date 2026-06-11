@@ -1,0 +1,5 @@
+{
+  "server": "https://xorcism.example:9292",
+  "token": "",
+  "insecure": false
+}
