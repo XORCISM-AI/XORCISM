@@ -18,3 +18,5 @@ Cyber Threat Intelligence (CTI)
 	Threat Management and exposure (CTEM)
 EDR agent
 Risk scoring (assets and company)
+
+Learn more: https://xorcism.ai
