@@ -1,2 +1,0 @@
-{"template-id":"CVE-2021-44228","info":{"name":"Apache Log4j RCE","severity":"critical","classification":{"cve-id":["CVE-2021-44228"]}},"type":"http","host":"https://10.0.0.7","ip":"10.0.0.7","matched-at":"https://10.0.0.7/"}
-{"template-id":"exposed-admin-panel","info":{"name":"Exposed Admin Panel","severity":"high"},"type":"http","host":"https://app.lab","matched-at":"https://app.lab/admin"}

@@ -3,48 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Threat Feeds</title>
+<title>XORCISM — Threat Feeds (CTI)</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .tf-layout{display:flex;gap:16px;padding:16px;align-items:flex-start}
-  .tf-side{flex:0 0 330px;display:flex;flex-direction:column;gap:14px;min-width:0}
-  .tf-main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:calc(100vh - 130px)}
-  .tf-card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px}
-  .tf-card h3{font-size:13px;margin:0 0 10px;color:#cbd5e1}
-  .tf-list{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow:auto}
-  .tf-item{display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid #2d3250;border-radius:8px;cursor:pointer}
-  .tf-item:hover{border-color:#fb923c}
-  .tf-item.sel{border-color:#fb923c;background:#1a1d2e}
-  .tf-item.off{opacity:.45}
-  .tf-item .nm{font-size:13px;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tf-item .host{font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tf-item .ctl{display:flex;gap:2px;flex:0 0 auto;align-items:center}
-  .tf-item button.ic{background:none;border:0;color:#64748b;font-size:12px;cursor:pointer;padding:2px 4px;border-radius:4px}
-  .tf-item button.ic:hover{color:#e2e8f0;background:#2d3250}
-  .tf-item button.ic.del:hover{color:#f87171}
-  .tf-item input[type=checkbox]{width:auto;margin:0;cursor:pointer}
-  .pill{font-size:9px;border-radius:10px;padding:1px 6px;flex:0 0 auto}
-  .pill.def{background:#3b2f12;color:#fcd34d}
-  label{display:block;font-size:11px;color:#94a3b8;margin:8px 0 3px}
-  input,select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:7px 9px;color:#e2e8f0;font-size:13px}
-  .hint{font-size:10px;color:#64748b;margin-top:4px}
-  .saved{font-size:10px;color:#86efac;margin-left:8px;opacity:0;transition:opacity .3s}
-  .saved.show{opacity:1}
-  .tf-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .tf-head .ttl{font-size:14px;color:#e2e8f0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tf-frame-wrap{flex:1;position:relative;border:1px solid #2d3250;border-radius:10px;overflow:hidden;background:#0b0d18;min-height:420px}
-  iframe.tf-frame{width:100%;height:100%;border:0;background:#fff}
-  .tf-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;color:#64748b;font-size:13px;text-align:center;padding:20px}
-  .note{background:#1a1d2e;border:1px solid #2d3250;color:#94a3b8;border-radius:8px;padding:8px 10px;font-size:11px;margin-bottom:8px}
-  .note b{color:#fcd34d}
-  .tf-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
-  .tf-tile{display:flex;flex-direction:column;border:1px solid #2d3250;border-radius:10px;overflow:hidden;background:#0b0d18}
-  .tf-tile .th{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#13162a;border-bottom:1px solid #2d3250}
-  .tf-tile .th .nm{font-size:12px;color:#e2e8f0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tf-tile .th a{font-size:11px;color:#7c83fd;text-decoration:none;flex:0 0 auto;margin-left:auto}
-  .tf-tile iframe{width:100%;border:0;background:#fff}
-  .row2{display:flex;gap:8px}
-  .row2>div{flex:1}
+  .tf-side{flex:0 0 300px;display:flex;flex-direction:column;gap:8px;min-width:0;max-height:calc(100vh - 110px);overflow:auto}
+  .tf-main{flex:1;min-width:0}
+  .tf-feed{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid #2d3250;border-radius:9px;cursor:pointer;background:#13162a}
+  .tf-feed:hover{border-color:#fb923c}
+  .tf-feed.sel{border-color:#fb923c;background:#1a1d2e}
+  .tf-feed .nm{font-size:13px;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tf-feed .meta{font-size:10px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tf-feed .dot{width:8px;height:8px;border-radius:50%;background:#fb923c;flex:0 0 auto}
+  .tf-feed.all{background:linear-gradient(120deg,#1a1d2e,#13162a);border-color:#3b4060}
+  .tf-feed.all .dot{background:#22d3ee}
+  .tf-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .tf-head h2{margin:0;font-size:17px;color:#e2e8f0}
+  .tf-head .src{font-size:12px;color:#64748b}
+  .tf-news{display:flex;flex-direction:column;gap:10px}
+  .tf-art{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:13px 15px;transition:border-color .15s}
+  .tf-art:hover{border-color:#3b4060}
+  .tf-art a.ttl{font-size:15px;color:#e2e8f0;font-weight:600;text-decoration:none;line-height:1.35}
+  .tf-art a.ttl:hover{color:#fb923c}
+  .tf-art .sub{font-size:11px;color:#64748b;margin:5px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tf-art .sub .so{color:#7c83fd;font-weight:600}
+  .tf-art .sum{font-size:13px;color:#94a3b8;margin:7px 0 0;line-height:1.5}
+  .tf-status{color:#64748b;font-size:13px;padding:30px 0;text-align:center}
+  .badge{font-size:9px;border-radius:10px;padding:1px 7px;background:#1e2440;color:#94a3b8;flex:0 0 auto}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:5px 11px;cursor:pointer}
+  .btn-sm2:hover{border-color:#fb923c}
+  .tf-sidehead{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:6px 2px 2px}
 </style>
 </head>
 <body>
@@ -53,80 +41,23 @@
   <a href="/" data-i18n="nav.explorer">&#8592; Explorateur</a>
   <a href="/threat-feeds" data-i18n="nav.feeds" style="color:#fb923c">&#128225; Threat Feeds</a>
   <a href="/stix-graph" data-i18n="nav.stix">&#128376; STIX Graph</a>
+  <a href="/?db=XTHREAT&amp;table=THREATFEED">&#9881;&#65039; Manage feeds</a>
   <span class="spacer"></span>
   <span class="title">Threat Feeds (CTI)</span>
 </div>
 
 <div class="tf-layout">
-  <div class="tf-side">
-    <div class="tf-card">
-      <h3>📡 Mes flux <span class="saved" id="tf-saved">✓ enregistré</span></h3>
-      <div class="tf-list" id="tf-list"></div>
-      <button class="btn btn-ghost btn-sm" id="tf-restore" style="margin-top:8px">↺ Restaurer les flux par défaut</button>
-      <div class="hint">Cochez pour activer ; ↑↓ pour réordonner ; ✕ pour retirer. Vos flux et réglages sont enregistrés sur votre compte.</div>
-    </div>
-
-    <div class="tf-card">
-      <h3>+ Ajouter un flux</h3>
-      <label for="tf-name">Nom</label>
-      <input id="tf-name" placeholder="ex. AlienVault OTX">
-      <label for="tf-url">URL (https://…)</label>
-      <input id="tf-url" placeholder="https://exemple.com/feed">
-      <button class="btn btn-ghost btn-sm" id="tf-add" style="margin-top:10px">+ Ajouter</button>
-    </div>
-
-    <div class="tf-card">
-      <h3>🖥️ Affichage</h3>
-      <label for="tf-mode">Mode</label>
-      <select id="tf-mode">
-        <option value="single">Un seul flux (sélection à gauche)</option>
-        <option value="grid">Mosaïque (tous les flux actifs)</option>
-      </select>
-      <div class="row2">
-        <div>
-          <label for="tf-tileh">Hauteur des tuiles</label>
-          <select id="tf-tileh">
-            <option value="300">Compacte (300 px)</option>
-            <option value="420" selected>Moyenne (420 px)</option>
-            <option value="600">Grande (600 px)</option>
-            <option value="800">Très grande (800 px)</option>
-          </select>
-        </div>
-        <div>
-          <label for="tf-refresh">Rafraîchissement</label>
-          <select id="tf-refresh">
-            <option value="0" selected>Manuel</option>
-            <option value="5">Toutes les 5 min</option>
-            <option value="15">Toutes les 15 min</option>
-            <option value="30">Toutes les 30 min</option>
-            <option value="60">Toutes les heures</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-ghost btn-sm" id="tf-reload" style="margin-top:10px">⟳ Recharger maintenant</button>
-    </div>
+  <div class="tf-side" id="tf-side">
+    <div class="tf-status">Chargement des flux…</div>
   </div>
-
   <div class="tf-main">
-    <div class="note">
-      ℹ️ Certains sites bloquent l'intégration en iframe (X-Frame-Options / CSP). Si un flux ne s'affiche pas, utilisez <b>« Ouvrir ↗ »</b> pour l'afficher dans un nouvel onglet.
+    <div class="tf-head">
+      <h2 id="tf-title">Dernières actus CTI</h2>
+      <span class="src" id="tf-src"></span>
+      <span class="spacer"></span>
+      <button class="btn-sm2" id="tf-refresh">⟳ Rafraîchir</button>
     </div>
-
-    <!-- "single feed" mode -->
-    <div id="tf-single" style="display:none;flex:1;display:flex;flex-direction:column">
-      <div class="tf-head">
-        <span class="ttl" id="tf-cur-name">—</span>
-        <span class="spacer"></span>
-        <a class="btn btn-primary btn-sm" id="tf-open" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Ouvrir ↗</a>
-      </div>
-      <div class="tf-frame-wrap">
-        <div class="tf-empty" id="tf-empty">Sélectionnez un flux à gauche pour l'afficher.</div>
-        <iframe class="tf-frame" id="tf-frame" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox" style="display:none"></iframe>
-      </div>
-    </div>
-
-    <!-- "mosaic" mode -->
-    <div id="tf-mosaic" class="tf-grid" style="display:none"></div>
+    <div class="tf-news" id="tf-news"><div class="tf-status">…</div></div>
   </div>
 </div>
 
@@ -134,250 +65,91 @@
 <script src="/js/session-ui.js"></script>
 <script>
 (function () {
-  var PREF_KEY = "threat-feeds";
-  var LS_KEY = "xorcism.threatfeeds.prefs"; // offline fallback
-  var DEFAULTS = [
-    { id: "detections-ai", name: "detections.ai — Intel Exchange", url: "https://detections.ai/intel-exchange", enabled: true, builtin: true },
-    { id: "ransomware-live", name: "ransomware.live", url: "https://ransomware.live/", enabled: true, builtin: true }
-  ];
-  var state = {
-    feeds: [],
-    display: { mode: "single", tileH: 420, refreshMin: 0 }
-  };
-  var selectedId = null;
-  var refreshTimer = null;
-  var saveTimer = null;
+  var feeds = [];
+  var current = "latest"; // "latest" | feed id
+  var newsEl = document.getElementById("tf-news");
+  var sideEl = document.getElementById("tf-side");
 
-  // ── Persistence (server, localStorage fallback) ──────────────────────────────
-  function normalize(p) {
-    if (!p || typeof p !== "object") return null;
-    var feeds = Array.isArray(p.feeds) ? p.feeds.filter(function (f) {
-      return f && typeof f.url === "string" && /^https?:\/\//i.test(f.url);
-    }).map(function (f) {
-      return { id: String(f.id || "c" + Math.random().toString(36).slice(2)),
-               name: String(f.name || f.url), url: f.url,
-               enabled: f.enabled !== false, builtin: !!f.builtin };
-    }) : null;
-    if (!feeds) return null;
-    var d = p.display || {};
-    return {
-      feeds: feeds,
-      display: {
-        mode: d.mode === "grid" ? "grid" : "single",
-        tileH: [300, 420, 600, 800].indexOf(Number(d.tileH)) >= 0 ? Number(d.tileH) : 420,
-        refreshMin: [0, 5, 15, 30, 60].indexOf(Number(d.refreshMin)) >= 0 ? Number(d.refreshMin) : 0
-      }
-    };
-  }
-  function load(cb) {
-    fetch("/api/prefs/" + PREF_KEY).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) {
-        var p = normalize(j && j.value);
-        if (!p) { try { p = normalize(JSON.parse(localStorage.getItem(LS_KEY) || "")); } catch (e) { p = null; } }
-        if (p) state = p; else state.feeds = DEFAULTS.map(function (f) { return Object.assign({}, f); });
-        cb();
-      })
-      .catch(function () {
-        try { var p = normalize(JSON.parse(localStorage.getItem(LS_KEY) || "")); if (p) state = p; } catch (e) {}
-        if (!state.feeds.length) state.feeds = DEFAULTS.map(function (f) { return Object.assign({}, f); });
-        cb();
-      });
-  }
-  function save() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      fetch("/api/prefs/" + PREF_KEY, {
-        method: "PUT", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value: state })
-      }).then(function (r) {
-        if (!r.ok) return;
-        var s = document.getElementById("tf-saved");
-        s.classList.add("show");
-        setTimeout(function () { s.classList.remove("show"); }, 1500);
-      }).catch(function () {});
-    }, 400);
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  function host(u) { try { return new URL(u).host.replace(/^www\./, ""); } catch (e) { return ""; } }
+  function rel(iso) {
+    if (!iso) return "";
+    var t = Date.parse(iso); if (isNaN(t)) return esc(iso);
+    var s = Math.floor((Date.now() - t) / 1000);
+    if (s < 60) return "à l'instant";
+    if (s < 3600) return Math.floor(s / 60) + " min";
+    if (s < 86400) return Math.floor(s / 3600) + " h";
+    if (s < 2592000) return Math.floor(s / 86400) + " j";
+    return new Date(t).toLocaleDateString();
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  function hostOf(u) { try { return new URL(u).host; } catch (e) { return u; } }
-  function enabledFeeds() { return state.feeds.filter(function (f) { return f.enabled; }); }
-  function feedById(id) { return state.feeds.filter(function (f) { return f.id === id; })[0] || null; }
-
-  // ── Side list ─────────────────────────────────────────────────────────
-  function renderList() {
-    var listEl = document.getElementById("tf-list");
-    listEl.innerHTML = "";
-    state.feeds.forEach(function (f, idx) {
-      var item = document.createElement("div");
-      item.className = "tf-item" + (f.id === selectedId ? " sel" : "") + (f.enabled ? "" : " off");
-      item.onclick = function () { select(f.id); };
-
-      var cb = document.createElement("input");
-      cb.type = "checkbox"; cb.checked = f.enabled; cb.title = "Activer / désactiver";
-      cb.onclick = function (ev) { ev.stopPropagation(); };
-      cb.onchange = function () { f.enabled = cb.checked; save(); render(); };
-      item.appendChild(cb);
-
-      var info = document.createElement("div");
-      info.style.cssText = "min-width:0;flex:1";
-      var nm = document.createElement("div"); nm.className = "nm"; nm.textContent = f.name;
-      var host = document.createElement("div"); host.className = "host"; host.textContent = hostOf(f.url);
-      info.appendChild(nm); info.appendChild(host);
-      item.appendChild(info);
-
-      if (f.builtin) {
-        var pill = document.createElement("span");
-        pill.className = "pill def"; pill.textContent = "défaut";
-        item.appendChild(pill);
-      }
-
-      var ctl = document.createElement("span"); ctl.className = "ctl";
-      function icBtn(txt, title, fn, cls) {
-        var b = document.createElement("button");
-        b.className = "ic" + (cls ? " " + cls : ""); b.textContent = txt; b.title = title;
-        b.onclick = function (ev) { ev.stopPropagation(); fn(); };
-        return b;
-      }
-      if (idx > 0) ctl.appendChild(icBtn("↑", "Monter", function () {
-        state.feeds.splice(idx, 1); state.feeds.splice(idx - 1, 0, f); save(); render();
-      }));
-      if (idx < state.feeds.length - 1) ctl.appendChild(icBtn("↓", "Descendre", function () {
-        state.feeds.splice(idx, 1); state.feeds.splice(idx + 1, 0, f); save(); render();
-      }));
-      ctl.appendChild(icBtn("✕", "Retirer ce flux", function () {
-        if (!confirm("Retirer le flux « " + f.name + " » ?")) return;
-        state.feeds = state.feeds.filter(function (x) { return x.id !== f.id; });
-        if (selectedId === f.id) selectedId = null;
-        save(); render();
-      }, "del"));
-      item.appendChild(ctl);
-
-      listEl.appendChild(item);
+  function renderSidebar() {
+    var html = '<div class="tf-feed all' + (current === "latest" ? " sel" : "") + '" data-id="latest">'
+      + '<span class="dot"></span><div style="min-width:0;flex:1"><div class="nm">🔥 Dernières actus (tous les flux)</div>'
+      + '<div class="meta">' + feeds.length + ' flux CTI de confiance</div></div></div>';
+    html += '<div class="tf-sidehead">Flux</div>';
+    feeds.forEach(function (f) {
+      html += '<div class="tf-feed' + (String(current) === String(f.id) ? " sel" : "") + '" data-id="' + f.id + '">'
+        + '<span class="dot"></span><div style="min-width:0;flex:1">'
+        + '<div class="nm">' + esc(f.name) + '</div>'
+        + '<div class="meta">' + esc(f.vendor || host(f.url)) + (f.category ? ' · ' + esc(f.category) : '') + '</div></div></div>';
+    });
+    sideEl.innerHTML = html;
+    Array.prototype.forEach.call(sideEl.querySelectorAll(".tf-feed"), function (el) {
+      el.onclick = function () { select(el.getAttribute("data-id")); };
     });
   }
 
-  // ── Main area ────────────────────────────────────────────────────────
+  function renderItems(items, withSource) {
+    if (!items || !items.length) { newsEl.innerHTML = '<div class="tf-status">Aucun article.</div>'; return; }
+    newsEl.innerHTML = items.map(function (it) {
+      var sub = [];
+      if (withSource && it.source) sub.push('<span class="so">' + esc(it.source) + '</span>');
+      if (it.date) sub.push(esc(rel(it.date)));
+      if (it.link) sub.push(esc(host(it.link)));
+      var titleHtml = it.link
+        ? '<a class="ttl" href="' + esc(it.link) + '" target="_blank" rel="noopener noreferrer">' + esc(it.title) + '</a>'
+        : '<span class="ttl">' + esc(it.title) + '</span>';
+      return '<div class="tf-art">' + titleHtml
+        + '<div class="sub">' + sub.join('<span>·</span>') + '</div>'
+        + (it.summary ? '<div class="sum">' + esc(it.summary) + '</div>' : '') + '</div>';
+    }).join("");
+  }
+
   function select(id) {
-    var f = feedById(id);
-    if (!f) return;
-    selectedId = id;
-    if (state.display.mode === "single") {
-      var frame = document.getElementById("tf-frame");
-      document.getElementById("tf-cur-name").textContent = f.name;
-      var open = document.getElementById("tf-open");
-      open.href = f.url; open.style.display = "";
-      document.getElementById("tf-empty").style.display = "none";
-      frame.style.display = "";
-      if (frame.src !== f.url) frame.src = f.url;
-    }
-    renderList();
-  }
-
-  function renderMain() {
-    var single = document.getElementById("tf-single");
-    var mosaic = document.getElementById("tf-mosaic");
-    if (state.display.mode === "grid") {
-      single.style.display = "none";
-      mosaic.style.display = "grid";
-      mosaic.innerHTML = "";
-      var feeds = enabledFeeds();
-      if (!feeds.length) {
-        var e = document.createElement("div");
-        e.className = "tf-empty"; e.textContent = "Aucun flux actif. Cochez des flux à gauche.";
-        mosaic.appendChild(e);
-        return;
-      }
-      feeds.forEach(function (f) {
-        var tile = document.createElement("div"); tile.className = "tf-tile";
-        var th = document.createElement("div"); th.className = "th";
-        var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = f.name;
-        var a = document.createElement("a");
-        a.href = f.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = "Ouvrir ↗";
-        th.appendChild(nm); th.appendChild(a); tile.appendChild(th);
-        var fr = document.createElement("iframe");
-        fr.src = f.url; fr.style.height = state.display.tileH + "px";
-        fr.setAttribute("referrerpolicy", "no-referrer");
-        fr.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-forms allow-popups-to-escape-sandbox");
-        tile.appendChild(fr);
-        mosaic.appendChild(tile);
-      });
+    current = id;
+    renderSidebar();
+    var titleEl = document.getElementById("tf-title");
+    var srcEl = document.getElementById("tf-src");
+    newsEl.innerHTML = '<div class="tf-status">Récupération des articles…</div>';
+    if (id === "latest") {
+      titleEl.textContent = "Dernières actus CTI";
+      fetch("/api/threatfeeds/latest?limit=50").then(function (r) { return r.json(); }).then(function (d) {
+        srcEl.textContent = (d.fetched || 0) + "/" + (d.feeds || 0) + " flux";
+        renderItems(d.items, true);
+      }).catch(function (e) { newsEl.innerHTML = '<div class="tf-status">⚠️ ' + esc(e) + '</div>'; });
     } else {
-      mosaic.style.display = "none";
-      single.style.display = "flex";
-      var frame = document.getElementById("tf-frame");
-      var sel = selectedId ? feedById(selectedId) : null;
-      if (!sel || !sel.enabled) {
-        var first = enabledFeeds()[0];
-        if (first) { select(first.id); return; }
-        document.getElementById("tf-cur-name").textContent = "—";
-        document.getElementById("tf-open").style.display = "none";
-        frame.style.display = "none"; frame.src = "about:blank";
-        document.getElementById("tf-empty").style.display = "";
-      } else {
-        select(sel.id); return;
-      }
+      var f = feeds.filter(function (x) { return String(x.id) === String(id); })[0];
+      titleEl.textContent = f ? f.name : "Flux";
+      srcEl.innerHTML = f && f.site ? '<a href="' + esc(f.site) + '" target="_blank" rel="noopener noreferrer" style="color:#7c83fd">' + esc(host(f.site)) + ' ↗</a>' : "";
+      fetch("/api/threatfeeds/items?id=" + encodeURIComponent(id) + "&limit=25").then(function (r) {
+        return r.ok ? r.json() : r.json().then(function (j) { throw new Error(j.error || ("Erreur " + r.status)); });
+      }).then(function (d) {
+        renderItems(d.items, false);
+        if (d.stale) srcEl.textContent += " (cache)";
+      }).catch(function (e) { newsEl.innerHTML = '<div class="tf-status">⚠️ ' + esc(e.message || e) + '</div>'; });
     }
   }
 
-  function render() { renderList(); renderMain(); }
+  document.getElementById("tf-refresh").onclick = function () { select(current); };
 
-  // ── Auto refresh ──────────────────────────────────────────────────
-  function reloadFrames() {
-    var frames = document.querySelectorAll("iframe.tf-frame, .tf-tile iframe");
-    frames.forEach(function (fr) {
-      var u = fr.src;
-      if (u && u !== "about:blank") fr.src = u;
-    });
-  }
-  function applyRefresh() {
-    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-    var m = state.display.refreshMin;
-    if (m > 0) refreshTimer = setInterval(reloadFrames, m * 60 * 1000);
-  }
-
-  // ── Controls ──────────────────────────────────────────────────────────────
-  document.getElementById("tf-add").onclick = function () {
-    var nameEl = document.getElementById("tf-name");
-    var urlEl = document.getElementById("tf-url");
-    var name = (nameEl.value || "").trim();
-    var url = (urlEl.value || "").trim();
-    if (!url) { alert("Indiquez une URL."); return; }
-    if (!/^https?:\/\//i.test(url)) { alert("L'URL doit commencer par http:// ou https://"); return; }
-    if (!name) name = hostOf(url);
-    state.feeds.push({ id: "c" + Date.now(), name: name, url: url, enabled: true, builtin: false });
-    nameEl.value = ""; urlEl.value = "";
-    save(); render();
-  };
-  document.getElementById("tf-restore").onclick = function () {
-    DEFAULTS.forEach(function (d) {
-      if (!feedById(d.id)) state.feeds.push(Object.assign({}, d));
-      else feedById(d.id).enabled = true;
-    });
-    save(); render();
-  };
-  document.getElementById("tf-mode").onchange = function () {
-    state.display.mode = this.value === "grid" ? "grid" : "single";
-    save(); renderMain();
-  };
-  document.getElementById("tf-tileh").onchange = function () {
-    state.display.tileH = Number(this.value) || 420;
-    save();
-    if (state.display.mode === "grid") renderMain();
-  };
-  document.getElementById("tf-refresh").onchange = function () {
-    state.display.refreshMin = Number(this.value) || 0;
-    save(); applyRefresh();
-  };
-  document.getElementById("tf-reload").onclick = reloadFrames;
-
-  // ── Startup ──────────────────────────────────────────────────────────────
-  load(function () {
-    document.getElementById("tf-mode").value = state.display.mode;
-    document.getElementById("tf-tileh").value = String(state.display.tileH);
-    document.getElementById("tf-refresh").value = String(state.display.refreshMin);
-    render();
-    applyRefresh();
+  fetch("/api/threatfeeds").then(function (r) { return r.json(); }).then(function (list) {
+    feeds = Array.isArray(list) ? list : [];
+    renderSidebar();
+    select("latest");
+  }).catch(function (e) {
+    sideEl.innerHTML = '<div class="tf-status">⚠️ Impossible de charger les flux.</div>';
+    newsEl.innerHTML = '<div class="tf-status">' + esc(e) + '</div>';
   });
 })();
 </script>

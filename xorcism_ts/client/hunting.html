@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat Hunting</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .hunt-wrap{padding:0 16px 32px}
+  .hunt-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0}
+  .hunt-head h2{margin:0;font-size:18px;color:#e2e8f0}
+  .ai-badge{font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid #2d3250}
+  .ai-up{color:#4ade80;border-color:#2f5d3a}.ai-down{color:#f87171;border-color:#5d2f2f}
+  .stat-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{flex:1 1 140px;background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:10px 12px}
+  .stat .n{font-size:22px;font-weight:700;color:#e2e8f0}
+  .stat .l{font-size:11px;color:#94a3b8;margin-top:2px}
+  .hunt-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media(max-width:980px){.hunt-grid{grid-template-columns:1fr}}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:14px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:14px;color:#cbd5e1}
+  .panel h3 .sub{font-weight:400;color:#64748b;font-size:11px;margin-left:6px}
+  textarea#focus{width:100%;box-sizing:border-box;min-height:70px;background:#0f1117;border:1px solid #2d3250;
+    border-radius:6px;color:#e2e8f0;font-size:13px;padding:9px;resize:vertical}
+  .examples{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+  .examples button{background:#171b30;border:1px solid #2d3250;color:#94a3b8;border-radius:14px;font-size:11px;
+    padding:4px 10px;cursor:pointer}
+  .examples button:hover{border-color:#a78bfa;color:#cbd5e1}
+  .btn{background:#7c3aed;border:none;color:#fff;border-radius:6px;font-size:13px;padding:8px 16px;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.sec{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1}
+  #plan{white-space:pre-wrap;background:#0f1117;border:1px solid #232843;border-radius:6px;padding:12px;
+    font-size:13px;line-height:1.5;color:#e2e8f0;margin-top:10px;min-height:40px}
+  #plan-meta{font-size:11px;color:#64748b;margin-top:6px}
+  .save-box{margin-top:12px;border-top:1px solid #232843;padding-top:12px;display:none}
+  .save-box input{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:6px;
+    color:#e2e8f0;font-size:13px;padding:7px;margin-bottom:8px}
+  table.t{width:100%;border-collapse:collapse;font-size:12px}
+  table.t th{text-align:left;color:#64748b;font-weight:600;padding:4px 6px;border-bottom:1px solid #2d3250}
+  table.t td{padding:5px 6px;border-bottom:1px solid #1b2036;color:#cbd5e1;vertical-align:top}
+  .chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;background:#1e2440;color:#a5b4fc;margin:1px}
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;border:1px solid #2d3250;color:#94a3b8}
+  .mono{font-family:ui-monospace,Consolas,monospace;color:#7dd3fc}
+  .muted{color:#64748b;font-size:12px}
+  .barlist .row{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px}
+  .barlist .lab{width:130px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .barlist .bar{height:8px;border-radius:4px;background:#7c3aed;min-width:3px}
+  .barlist .cnt{color:#94a3b8;width:28px;text-align:right}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/?db=XTHREAT&amp;table=THREAT">&#127919; CTI</a>
+  <a href="/?db=XTHREAT&amp;table=HUNT">&#128270; Hunts</a>
+  <a href="/?db=XTHREAT&amp;table=IOC">&#9888;&#65039; IOCs</a>
+  <a href="/attack">&#127919; ATT&amp;CK</a>
+  <a href="/hunting" style="color:#a78bfa">&#128373;&#65039; Hunting</a>
+  <a href="/ask">&#129302; Ask AI</a>
+</div>
+
+<div class="hunt-wrap">
+  <div class="hunt-head">
+    <h2>&#128373;&#65039; Threat Hunting</h2>
+    <span class="ai-badge" id="ai-status">…</span>
+    <span class="muted" id="head-sub">Capacités de chasse aux menaces — HUNT · IOC · ATT&amp;CK, assistées par l'agent IA local.</span>
+  </div>
+
+  <div class="stat-row" id="stats"></div>
+
+  <div class="hunt-grid">
+    <!-- Left: AI hunt assistant -->
+    <div>
+      <div class="panel">
+        <h3>&#129302; Assistant de chasse (agent IA)<span class="sub">RAG sur HUNT / IOC / ATT&amp;CK + LLM local</span></h3>
+        <textarea id="focus" placeholder="Focus de la chasse : un acteur (ex. APT29), une technique ATT&CK (ex. T1059.001), un comportement (ex. persistance via tâche planifiée)…"></textarea>
+        <div class="examples" id="examples"></div>
+        <button class="btn" id="gen-btn">Générer un plan de chasse</button>
+        <div id="plan" class="muted">Décrivez un focus puis cliquez sur « Générer ». L'agent local propose une hypothèse, des techniques ATT&amp;CK, les sources de logs à interroger, une logique de détection et des IOCs à pivoter.</div>
+        <div id="plan-meta"></div>
+
+        <div class="save-box" id="save-box">
+          <input id="save-name" type="text" placeholder="Nom de la chasse à enregistrer">
+          <input id="save-tech" type="text" placeholder="Techniques ATT&CK (ex. T1059, T1071.001) — séparées par des virgules">
+          <button class="btn sec" id="save-btn">&#128190; Enregistrer dans HUNT</button>
+          <span id="save-msg" class="muted"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: overview -->
+    <div>
+      <div class="panel">
+        <h3>Chasses par statut</h3>
+        <div class="barlist" id="by-status"></div>
+      </div>
+      <div class="panel">
+        <h3>Techniques ATT&amp;CK les plus chassées</h3>
+        <div id="top-tech"><span class="muted">—</span></div>
+      </div>
+      <div class="panel">
+        <h3>IOC par type</h3>
+        <div class="barlist" id="by-ioc"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Chasses récentes <span class="sub">XTHREAT · HUNT</span></h3>
+    <table class="t"><thead><tr>
+      <th>Nom</th><th>Statut</th><th>Date</th><th>Outil</th><th>ATT&amp;CK</th><th>IOC</th><th>Constats</th>
+    </tr></thead><tbody id="hunts-body"></tbody></table>
+  </div>
+
+  <div class="hunt-grid">
+    <div class="panel">
+      <h3>IOC récents <span class="sub">XTHREAT · IOC</span></h3>
+      <table class="t"><thead><tr><th>Nom</th><th>Type</th><th>Pattern</th><th>Conf.</th></tr></thead>
+        <tbody id="iocs-body"></tbody></table>
+    </div>
+    <div class="panel">
+      <h3>Hypothèses de chasse <span class="sub">XTHREAT · HYPOTHESIS</span></h3>
+      <table class="t"><thead><tr><th>Hypothèse</th><th>Confiance</th></tr></thead>
+        <tbody id="hyp-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/hunting.js"></script>
+</body>
+</html>

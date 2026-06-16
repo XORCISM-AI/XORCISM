@@ -28,9 +28,12 @@ import uploadRouter, { UPLOAD_DIR } from "./routes/upload";
 import threatReportRouter from "./routes/threatreport";
 import sigmaRouter from "./routes/sigma";
 import epssRouter from "./routes/epss";
+import huntingRouter from "./routes/hunting";
+import threatFeedsRouter from "./routes/threatfeeds";
 import { antibot } from "./antibot";
 import { getJobDb } from "./jobs";
 import { startScheduler } from "./scheduler";
+import { startThreatFeedPoller } from "./feeds";
 import { startRiskScoreLoop } from "./riskscore";
 import {
   loadUser,
@@ -41,7 +44,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureVulnerabilityColumns } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureVulnerabilityColumns } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -130,6 +133,8 @@ app.use("/api", uploadRouter); // file upload (evidence, etc.)
 app.use("/api", threatReportRouter); // THREATREPORT PDF ingestion → IOC / THREATACTOR
 app.use("/api", sigmaRouter); // Sigma rule → SPL / KQL / EQL conversion
 app.use("/api", epssRouter); // FIRST.org EPSS lookup (VULNERABILITY form)
+app.use("/api", huntingRouter); // Threat Hunting domain (HUNT/IOC/XTHREAT + AI hunt assistant)
+app.use("/api", threatFeedsRouter); // curated CTI RSS feeds (THREATFEED) + server-side fetch/parse
 app.use("/api", connectorsRouter);
 app.use("/api", explorerRouter);
 
@@ -195,6 +200,9 @@ app.get("/ask", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/a3m", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "a3m.html"));
 });
+app.get("/hunting", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "hunting.html"));
+});
 app.get("/tprm", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "tprm.html"));
 });
@@ -231,6 +239,7 @@ ensureTicketDb(); // creates the XTICKET.db database (TICKET, TICKETCOMMENT, TIC
 getAgentDb(); // creates the XAGENT.db database (XOR agents, events, IOC) if needed
 ensureThreatModelTables(); // creates the THREATMODEL* tables (XORCISM.db) if needed
 ensureThreatTables(); // creates the XTHREAT tables (IOC…) if needed
+ensureIncidentTables(); // creates the XINCIDENT.ALERT table if needed
 ensureOpenctiColumns(); // adapts the XTHREAT tables to OpenCTI properties (Confidence/TLP/Sighting…)
 ensureEmulationTables(); // adversary emulation / validation (BAS) module: EMULATION*/ATOMICTEST
 ensureAssetColumns(); // adds ASSET.BusinessValue (and future core ASSET fields) if missing
@@ -242,6 +251,7 @@ ensureTenantColumns(); // adds TenantID to the operational tables (best-effort)
 getJobDb(); // creates the job-queue schema (XJOB.db) if needed
 seedData(); // pre-inserts reference data (e.g. VOCABULARY "XORCISM") — idempotent
 startScheduler(); // fires the connectors' scheduled tasks (XSCHEDULE)
+startThreatFeedPoller(); // periodically turns CTI RSS feed items into THREATREPORT entries
 startRiskScoreLoop(); // recomputes ASSET.RiskScore every 30 s
 purgeExpiredSessions();
 setInterval(purgeExpiredSessions, 60 * 60 * 1000).unref();

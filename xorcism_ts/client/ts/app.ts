@@ -2124,6 +2124,50 @@ FK_COLUMNS["POLICY.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "P
 FK_COLUMNS["POLICY.ApprovedByPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["AUDITFINDING.RemediationOwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 
+// ── Defender XDR-aligned incident & alert metadata (XINCIDENT.ALERT / INCIDENT) ──
+const DEFENDER_SEVERITY = ["High", "Medium", "Low", "Informational"];
+const DEFENDER_SEVERITY_COLORS: Record<string, string> = {
+  High: "var(--danger)", Medium: "#f59e0b", Low: "#eab308", Informational: "#64748b",
+};
+const ALERT_STATUS = ["New", "In progress", "Resolved"];
+const ALERT_STATUS_COLORS: Record<string, string> = { New: "#3b82f6", "In progress": "#f59e0b", Resolved: "#22c55e" };
+const DEFENDER_CLASSIFICATION = ["True positive", "Informational, expected activity", "False positive", "Not set"];
+const DEFENDER_CLASSIFICATION_COLORS: Record<string, string> = {
+  "True positive": "var(--danger)", "Informational, expected activity": "#64748b",
+  "False positive": "#22c55e", "Not set": "#64748b",
+};
+const DEFENDER_DETERMINATION = ["Multistage attack", "Malicious user activity", "Compromised account", "Malware",
+  "Phishing", "Unwanted software", "Security testing", "Line-of-business application", "Confirmed activity",
+  "Not malicious", "Not enough data to validate", "Other"];
+const DEFENDER_DETECTION_SOURCE = ["Manual", "Antivirus", "EDR", "Automated investigation", "Custom detection",
+  "SIEM", "Threat intelligence", "Cloud apps", "Other"];
+const DEFENDER_CATEGORY = ["Reconnaissance", "Resource development", "Initial access", "Execution", "Persistence",
+  "Privilege escalation", "Defense evasion", "Credential access", "Discovery", "Lateral movement", "Collection",
+  "Command and control", "Exfiltration", "Impact", "Malware", "Ransomware", "Unwanted software", "Suspicious activity", "Other"];
+for (const tbl of ["ALERT", "INCIDENT"]) {
+  STATIC_DATALIST_COLUMNS[`${tbl}.Severity`] = DEFENDER_SEVERITY;
+  GRID_VALUE_COLORS[`${tbl}.Severity`] = DEFENDER_SEVERITY_COLORS;
+  STATIC_DATALIST_COLUMNS[`${tbl}.Classification`] = DEFENDER_CLASSIFICATION;
+  GRID_VALUE_COLORS[`${tbl}.Classification`] = DEFENDER_CLASSIFICATION_COLORS;
+  STATIC_DATALIST_COLUMNS[`${tbl}.Determination`] = DEFENDER_DETERMINATION;
+}
+STATIC_DATALIST_COLUMNS["ALERT.Status"] = ALERT_STATUS;
+STATIC_DATALIST_DEFAULTS["ALERT.Status"] = "New";
+GRID_VALUE_COLORS["ALERT.Status"] = ALERT_STATUS_COLORS;
+STATIC_DATALIST_COLUMNS["ALERT.Category"] = DEFENDER_CATEGORY;
+STATIC_DATALIST_COLUMNS["ALERT.DetectionSource"] = DEFENDER_DETECTION_SOURCE;
+STATIC_DATALIST_DEFAULTS["ALERT.DetectionSource"] = "Manual";
+STATIC_DATALIST_COLUMNS["ALERT.ServiceSource"] = ["XORCISM", "Microsoft Defender XDR", "Microsoft Sentinel", "Other"];
+STATIC_DATALIST_DEFAULTS["ALERT.ServiceSource"] = "XORCISM";
+// "Assigned to" (owner) suggestions from PERSON for both tables.
+FK_COLUMNS["ALERT.PersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
+// Defender "Select entities": impacted-assets junction + related evidence (browsable, FK-linked).
+FK_COLUMNS["ALERTFORASSET.AlertID"] = { db: "XINCIDENT", table: "ALERT", idCol: "AlertID", labelCol: "AlertName", distinct: true };
+FK_COLUMNS["ALERTFORASSET.AssetID"] = { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true };
+FK_COLUMNS["ALERTEVIDENCE.AlertID"] = { db: "XINCIDENT", table: "ALERT", idCol: "AlertID", labelCol: "AlertName", distinct: true };
+STATIC_DATALIST_COLUMNS["ALERTEVIDENCE.EvidenceType"] = ["File", "File hash", "Process", "URL", "IP address",
+  "Domain", "Email", "Mailbox", "User account", "Registry key", "Command line", "Other"];
+
 // ── Bug bounty (XVULNERABILITY): platforms, statuses, scope, rewards ────
 STATIC_DATALIST_COLUMNS["BUGBOUNTYPROGRAM.Platform"] = ["HackerOne", "Bugcrowd", "Intigriti", "YesWeHack", "Synack", "Open Bug Bounty", "Self-hosted", "Other"];
 STATIC_DATALIST_COLUMNS["BUGBOUNTYRESEARCHER.Platform"] = ["HackerOne", "Bugcrowd", "Intigriti", "YesWeHack", "Synack", "Open Bug Bounty", "Self-hosted", "Other"];
@@ -3686,6 +3730,23 @@ async function openEvidenceForPatch(vulnerabilityId: string): Promise<void> {
   if (nameInput) nameInput.value = `${ref} patched`.trim();
 }
 
+// INCIDENT: after creation, offers to create an ALERT/NOTIFICATION → opens the
+// ALERT creation form with IncidentID pre-filled. Returns true if we navigated.
+function offerAlertForIncident(incidentId: number): boolean {
+  if (!incidentId) return false;
+  if (window.confirm(t("incident.offerAlert"))) {
+    void openAlertForIncident(incidentId);
+    return true;
+  }
+  return false;
+}
+
+// Opens XINCIDENT.ALERT in creation and pre-fills IncidentID with the new incident.
+async function openAlertForIncident(incidentId: number): Promise<void> {
+  await navigateAndCreate("XINCIDENT", "ALERT");
+  setFormField("f_", "IncidentID", String(incidentId));
+}
+
 // ── Rows ──────────────────────────────────────────────────────────────────────
 
 // Populates the "filter by vocabulary" dropdown (VocabularyName from
@@ -4171,6 +4232,7 @@ async function deleteRow(rowid: number): Promise<void> {
 
 let editRowId = 0;
 let editIncidentId = 0;
+let editAlertId = 0;
 let editThreatAgentId = 0;
 let editAuditId = 0;
 
@@ -4402,6 +4464,7 @@ async function appendThreatAgentCategory(prefix: string, currentCategoryId: numb
 async function openEditModal(row: Record<string, unknown>): Promise<void> {
   editRowId = Number(row["rowid"]);
   editIncidentId = Number(row["IncidentID"]) || 0;
+  editAlertId = currentTable === "ALERT" ? Number(row["AlertID"]) || 0 : 0;
   const body = $("edit-modal-body");
   body.innerHTML = "";
   appendFormJsonImport(body, "ef_"); // "pre-fill from JSON" button at the top of the form
@@ -4598,6 +4661,13 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   // AI answer suggestion (QUESTION / OCIL form)
   if (currentTable === "QUESTION") appendOcilSuggestPanel(body, "ef_");
 
+  // Impacted assets (ALERTFORASSET) for the ALERT table (pre-checked) — Defender "Select entities"
+  if (currentTable === "ALERT" && editAlertId) {
+    let linked: number[] = [];
+    try { linked = await api.getAlertAssets(editAlertId); } catch { /* rights / unavailable */ }
+    await appendAssetSelector(body, "ef", new Set(linked), "ALERTFORASSET");
+  }
+
   // Many-to-many ASSET relation for the INCIDENT table (pre-checked)
   if (currentTable === "INCIDENT" && editIncidentId) {
     let linked: number[] = [];
@@ -4703,6 +4773,11 @@ async function submitEdit(): Promise<void> {
     await api.updateRow(currentDb, currentTable, editRowId, row);
     // ASSET: on submit, detects the uncorrected KEV ASSETVULNERABILITY rows and notifies.
     if (currentTable === "ASSET") void api.checkAssetKevNotify().catch(() => {});
+    // Impacted assets (ALERTFORASSET) for the ALERT table
+    if (currentTable === "ALERT" && editAlertId) {
+      try { await api.setAlertAssets(editAlertId, collectCheckedAssets("ef")); }
+      catch (e) { toast(t("toast.assetLinksErr") + " " + e, "err"); }
+    }
     // ASSET links (INCIDENTFORASSET)
     if (currentTable === "INCIDENT" && editIncidentId) {
       try {
@@ -4761,6 +4836,10 @@ async function submitEdit(): Promise<void> {
     ) {
       return; // we navigated to the EVIDENCE form
     }
+    // INCIDENT: offer to create an ALERT/NOTIFICATION linked to this incident.
+    if (currentTable === "INCIDENT" && offerAlertForIncident(editIncidentId)) {
+      return; // we navigated to the ALERT creation form
+    }
     loadRows();
   } catch (e) {
     toast(t("toast.errUpdate") + " " + e, "err");
@@ -4773,12 +4852,13 @@ async function submitEdit(): Promise<void> {
 async function appendAssetSelector(
   body: HTMLElement,
   prefix: string,
-  selected: Set<number>
+  selected: Set<number>,
+  relLabel = "INCIDENTFORASSET"
 ): Promise<void> {
   const div = document.createElement("div");
   div.style.marginBottom = "10px";
   const label = document.createElement("label");
-  label.textContent = `${t("asset.linked")} (INCIDENTFORASSET)`;
+  label.textContent = `${t("asset.linked")} (${relLabel})`;
   label.style.cssText = "display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px";
   div.appendChild(label);
 
@@ -7576,6 +7656,8 @@ async function openInsertModal(): Promise<void> {
     await appendAssetSelector(body, "f", new Set());
     await appendIncidentThreatActor(body, "f_", "");
   }
+  // Impacted assets (ALERTFORASSET) for the ALERT table — Defender "Select entities"
+  if (currentTable === "ALERT") await appendAssetSelector(body, "f", new Set(), "ALERTFORASSET");
 
   // CATEGORY dropdown (vocabulary-dependent) for the THREATAGENT table
   if (currentTable === "THREATAGENT") await appendThreatAgentCategory("f_", null);
@@ -7788,6 +7870,24 @@ async function submitInsert(): Promise<void> {
       }
       pendingThreatTtps = null;
     }
+    // ALERT (XINCIDENT): on creation, save impacted assets then offer to notify all
+    // tenant users with read access to XINCIDENT. Best-effort (does not block creation).
+    if (currentDb === "XINCIDENT" && currentTable === "ALERT") {
+      const alertId = Number((document.getElementById("f_AlertID") as HTMLInputElement)?.value);
+      const alertName = (document.getElementById("f_AlertName") as HTMLInputElement)?.value?.trim() || "";
+      const impacted = collectCheckedAssets("f");
+      if (alertId && impacted.length) {
+        try { await api.setAlertAssets(alertId, impacted); } catch (e) { toast(t("toast.assetLinksErr") + " " + e, "err"); }
+      }
+      if (window.confirm(t("alert.notifyConfirm"))) {
+        try {
+          const r = await api.notifyAlert(alertId, alertName);
+          toast(t("alert.notifySent").replace("{n}", String(r.count ?? 0)), "ok");
+        } catch (e) {
+          toast(t("alert.notifyErr") + " " + e, "err");
+        }
+      }
+    }
     ($("insert-modal") as HTMLElement).style.display = "none";
     toast(t("toast.rowInserted"), "ok");
     // "Foreign" creation (e.g. new VULNERABILITY or ASSETVULNERABILITYREMEDIATION):
@@ -7810,6 +7910,10 @@ async function submitInsert(): Promise<void> {
       )
     ) {
       return; // we navigated to the EVIDENCE form
+    }
+    // INCIDENT: offer to create an ALERT/NOTIFICATION linked to the new incident.
+    if (currentTable === "INCIDENT" && offerAlertForIncident(Number(row["IncidentID"]))) {
+      return; // we navigated to the ALERT creation form
     }
     loadRows();
   } catch (e) {

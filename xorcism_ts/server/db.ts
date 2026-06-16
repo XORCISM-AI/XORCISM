@@ -703,6 +703,9 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XORCISM.TRAININGFORPERSON",
   "XINCIDENT.INCIDENT",
   "XINCIDENT.INCIDENTFORASSET",
+  "XINCIDENT.ALERT",
+  "XINCIDENT.ALERTFORASSET",
+  "XINCIDENT.ALERTEVIDENCE",
   "XCOMPLIANCE.AUDIT",
   // ── GRC (full multi-tenant isolation) ──
   "XCOMPLIANCE.FOLDER",
@@ -739,6 +742,8 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XCOMPLIANCE.QUESTIONFORQUESTIONNAIRE",
   "XCOMPLIANCE.ANSWER",
   "XCOMPLIANCE.ANSWERFORQUESTION",
+  // ── Tooling catalogue (multi-tenant isolation) ──
+  "XORCISM.TOOL",
 ]);
 
 export const TENANT_COL = "TenantID";
@@ -1846,6 +1851,34 @@ export function getIncidentAssets(incidentId: number): number[] {
   ).map((r) => r.AssetID);
 }
 
+// ── ALERT ↔ ASSET impacted-assets links (ALERTFORASSET, Defender "Select entities") ──
+export function getAlertAssets(alertId: number): number[] {
+  const db = getDb("XINCIDENT");
+  return (
+    db.prepare('SELECT AssetID FROM ALERTFORASSET WHERE AlertID = ? AND AssetID IS NOT NULL')
+      .all(alertId) as { AssetID: number }[]
+  ).map((r) => r.AssetID);
+}
+
+/** Replaces the whole set of impacted assets of an alert (DELETE then INSERT); stamps TenantID. */
+export function setAlertAssets(alertId: number, assetIds: number[], tenant: number | null = null): void {
+  const db = getDb("XINCIDENT");
+  const ts = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM ALERTFORASSET WHERE AlertID = ?").run(alertId);
+    let maxId = (db.prepare("SELECT COALESCE(MAX(AssetAlertID), 0) AS m FROM ALERTFORASSET").get() as { m: number }).m;
+    const ins = db.prepare(
+      `INSERT OR IGNORE INTO ALERTFORASSET (AssetAlertID, AlertID, AssetID, CreatedDate, "${TENANT_COL}") VALUES (?,?,?,?,?)`
+    );
+    for (const aid of assetIds) {
+      if (aid == null) continue;
+      maxId++;
+      ins.run(maxId, alertId, aid, ts, tenant);
+    }
+  });
+  tx();
+}
+
 /**
  * Replaces the whole set of assets linked to an incident (DELETE then INSERT).
  * Multi-tenant: populates the TenantID of the junction rows (inherited from
@@ -2626,6 +2659,56 @@ export function ensureThreatModelTables(): void {
  * STIX 2.1-compatible ("indicator" SDO by default): business fields + STIX fields
  * (StixID, Pattern, SpecVersion, modified, revoked, JSON lists…).
  */
+// ── XINCIDENT.ALERT (security alerts, optionally linked to an INCIDENT) ──
+// Created at boot (idempotent). Tenant-scoped (see TENANT_SCOPED_TABLES):
+// ensureTenantColumns() adds the ix_ALERT_tenant index; the TenantID column is
+// declared here so brand-new databases already have it.
+// The metadata mirrors Microsoft Defender XDR's "manually create an incident/alert"
+// fields (severity, status, category, ATT&CK techniques, recommended actions,
+// service/detection source, classification, determination, assignee, tags).
+export function ensureIncidentTables(): void {
+  const db = getDb("XINCIDENT");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ALERT (
+      AlertID INTEGER PRIMARY KEY,
+      AlertGUID TEXT, AlertName TEXT, AlertDescription TEXT,
+      Severity TEXT, Status TEXT, Category TEXT, AttackTechniques TEXT, RecommendedActions TEXT,
+      ServiceSource TEXT DEFAULT 'XORCISM', DetectionSource TEXT DEFAULT 'Manual',
+      Classification TEXT, Determination TEXT, AssignedTo TEXT, Tags TEXT,
+      PersonID INTEGER, CreatedDate DATE, IncidentID INTEGER, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_alert_incident ON ALERT(IncidentID);
+    -- Defender "Select entities": impacted assets + related evidence on an alert.
+    CREATE TABLE IF NOT EXISTS ALERTFORASSET (
+      AssetAlertID INTEGER PRIMARY KEY, AlertID INTEGER, AssetID INTEGER,
+      Relationship TEXT, CreatedDate TEXT, TenantID INTEGER, UNIQUE(AlertID, AssetID));
+    CREATE INDEX IF NOT EXISTS ix_alertforasset_alert ON ALERTFORASSET(AlertID);
+    CREATE TABLE IF NOT EXISTS ALERTEVIDENCE (
+      AlertEvidenceID INTEGER PRIMARY KEY, AlertID INTEGER, EvidenceType TEXT, EvidenceValue TEXT,
+      EvidenceDescription TEXT, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_alertevidence_alert ON ALERTEVIDENCE(AlertID);
+  `);
+  // Idempotent column add (extends pre-existing tables; legacy INCIDENT is ALTERed,
+  // never recreated — cf. the XORCISM legacy-tables convention).
+  const addCol = (table: string, col: string, type: string): void => {
+    const have = new Set(
+      (db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)
+    );
+    if (!have.has(col)) db.exec(`ALTER TABLE "${table}" ADD COLUMN ${col} ${type}`);
+  };
+  // ALERT: Defender XDR alert metadata on databases created before these columns.
+  for (const [c, t] of [
+    ["Severity", "TEXT"], ["Status", "TEXT"], ["Category", "TEXT"], ["AttackTechniques", "TEXT"],
+    ["RecommendedActions", "TEXT"], ["ServiceSource", "TEXT DEFAULT 'XORCISM'"],
+    ["DetectionSource", "TEXT DEFAULT 'Manual'"], ["Classification", "TEXT"], ["Determination", "TEXT"],
+    ["AssignedTo", "TEXT"], ["Tags", "TEXT"],
+  ] as [string, string][]) addCol("ALERT", c, t);
+  // INCIDENT (legacy): Defender-aligned metadata added by ALTER.
+  for (const [c, t] of [
+    ["Severity", "TEXT"], ["AttackTechniques", "TEXT"], ["Classification", "TEXT"],
+    ["Determination", "TEXT"], ["AssignedTo", "TEXT"], ["Tags", "TEXT"], ["RecommendedActions", "TEXT"],
+  ] as [string, string][]) addCol("INCIDENT", c, t);
+}
+
 export function ensureThreatTables(): void {
   const db = getDb("XTHREAT");
   db.exec(`
@@ -2702,6 +2785,18 @@ export function ensureThreatTables(): void {
       A3MTechniqueID INTEGER PRIMARY KEY, AATID TEXT UNIQUE, Name TEXT, Description TEXT,
       TacticName TEXT, MatrixOrder INTEGER, URL TEXT);
     CREATE INDEX IF NOT EXISTS ix_a3mtech_tactic ON A3MTECHNIQUE(TacticName);
+    -- SAIF — Google Secure AI Framework risk map (saif.google), populated by import_saif.py.
+    CREATE TABLE IF NOT EXISTS SAIFCOMPONENT (
+      SaifComponentID INTEGER PRIMARY KEY, Name TEXT UNIQUE, Description TEXT,
+      MatrixOrder INTEGER, CreatedDate TEXT);
+    CREATE TABLE IF NOT EXISTS SAIFCONTROL (
+      SaifControlID INTEGER PRIMARY KEY, Name TEXT UNIQUE, Category TEXT, Description TEXT,
+      CreatedDate TEXT);
+    CREATE TABLE IF NOT EXISTS SAIFRISK (
+      SaifRiskID INTEGER PRIMARY KEY, SaifID TEXT, Name TEXT UNIQUE, Description TEXT,
+      Component TEXT, ResponsibleParty TEXT, Controls TEXT, MatrixOrder INTEGER, URL TEXT,
+      CreatedDate TEXT);
+    CREATE INDEX IF NOT EXISTS ix_saifrisk_component ON SAIFRISK(Component);
     -- Community threat-intel reports (detections.ai Intel Exchange), imported by
     -- the detections-ai connector. Idempotent by IntelReference (source URL).
     CREATE TABLE IF NOT EXISTS INTELEXCHANGE (
@@ -2717,12 +2812,65 @@ export function ensureThreatTables(): void {
       AttackTechniqueID INTEGER, CreatedDate DATE, UNIQUE(IntelID, AttackID));
     CREATE INDEX IF NOT EXISTS ix_intelattack_intel ON INTELEXCHANGEATTACK(IntelID);
     CREATE INDEX IF NOT EXISTS ix_intelattack_aid ON INTELEXCHANGEATTACK(AttackID);
+    -- Curated CTI RSS feeds shown on /threat-feeds (server fetches & parses them).
+    CREATE TABLE IF NOT EXISTS THREATFEED (
+      ThreatFeedID INTEGER PRIMARY KEY,
+      ThreatFeedGUID TEXT, ThreatFeedName TEXT, FeedURL TEXT UNIQUE, SiteURL TEXT,
+      ThreatFeedDescription TEXT, Category TEXT, Vendor TEXT,
+      Enabled INTEGER DEFAULT 1, CreatedDate TEXT);
+    CREATE INDEX IF NOT EXISTS ix_threatfeed_enabled ON THREATFEED(Enabled);
   `);
-  // THREATREPORT PDF-ingestion columns on existing DBs (CREATE above covers fresh ones).
+  seedThreatFeeds(db);
+  // THREATREPORT PDF-ingestion + feed-ingestion columns on existing DBs (CREATE above covers fresh ones).
   const trCols = new Set((db.prepare(`PRAGMA table_info("THREATREPORT")`).all() as { name: string }[]).map((c) => c.name));
-  for (const [n, ty] of [["ThreatReportFileName", "TEXT"], ["ThreatReportSource", "TEXT"]] as const) {
+  for (const [n, ty] of [["ThreatReportFileName", "TEXT"], ["ThreatReportSource", "TEXT"], ["ThreatReportReference", "TEXT"]] as const) {
     if (!trCols.has(n)) db.exec(`ALTER TABLE "THREATREPORT" ADD COLUMN "${n}" ${ty}`);
   }
+  db.exec("CREATE INDEX IF NOT EXISTS ix_threatreport_ref ON THREATREPORT(ThreatReportReference)");
+}
+
+// ── Curated trusted CTI RSS feeds (seeded once into THREATFEED) ──────────────
+const TRUSTED_CTI_FEEDS: [string, string, string, string, string][] = [
+  // [Name, FeedURL, SiteURL, Category, Vendor]
+  ["The Hacker News", "https://feeds.feedburner.com/TheHackersNews", "https://thehackernews.com", "News", "The Hacker News"],
+  ["BleepingComputer", "https://www.bleepingcomputer.com/feed/", "https://www.bleepingcomputer.com", "News", "BleepingComputer"],
+  ["Krebs on Security", "https://krebsonsecurity.com/feed/", "https://krebsonsecurity.com", "News", "Brian Krebs"],
+  ["Google Threat Intelligence (GTIG/Mandiant)", "https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/", "https://cloud.google.com/blog/topics/threat-intelligence", "Vendor research", "Google / Mandiant"],
+  ["Cisco Talos", "https://blog.talosintelligence.com/rss/", "https://blog.talosintelligence.com", "Vendor research", "Cisco Talos"],
+  ["Palo Alto Unit 42", "https://unit42.paloaltonetworks.com/feed/", "https://unit42.paloaltonetworks.com", "Vendor research", "Palo Alto Networks"],
+  ["Microsoft Security Blog", "https://www.microsoft.com/en-us/security/blog/feed/", "https://www.microsoft.com/security/blog", "Vendor research", "Microsoft"],
+  ["CISA Advisories", "https://www.cisa.gov/cybersecurity-advisories/all.xml", "https://www.cisa.gov/news-events/cybersecurity-advisories", "Government", "CISA"],
+  ["SANS Internet Storm Center", "https://isc.sans.edu/rssfeed_full.xml", "https://isc.sans.edu", "Community", "SANS ISC"],
+  ["Securelist (Kaspersky)", "https://securelist.com/feed/", "https://securelist.com", "Vendor research", "Kaspersky"],
+  ["ESET WeLiveSecurity", "https://www.welivesecurity.com/en/rss/feed/", "https://www.welivesecurity.com", "Vendor research", "ESET"],
+  ["Check Point Research", "https://research.checkpoint.com/feed/", "https://research.checkpoint.com", "Vendor research", "Check Point"],
+  ["Sophos News", "https://news.sophos.com/en-us/feed/", "https://news.sophos.com", "Vendor research", "Sophos"],
+  ["Recorded Future", "https://www.recordedfuture.com/feed", "https://www.recordedfuture.com/blog", "Vendor research", "Recorded Future"],
+  ["Dark Reading", "https://www.darkreading.com/rss.xml", "https://www.darkreading.com", "News", "Dark Reading"],
+  ["Schneier on Security", "https://www.schneier.com/feed/atom/", "https://www.schneier.com", "Community", "Bruce Schneier"],
+  ["Malwarebytes Labs", "https://www.malwarebytes.com/blog/feed/index.xml", "https://www.malwarebytes.com/blog", "Vendor research", "Malwarebytes"],
+  ["Rapid7 Blog", "https://www.rapid7.com/blog/rss/", "https://www.rapid7.com/blog", "Vendor research", "Rapid7"],
+  ["Security Affairs", "https://securityaffairs.com/feed", "https://securityaffairs.com", "News", "Pierluigi Paganini"],
+  ["The DFIR Report", "https://thedfirreport.com/feed/", "https://thedfirreport.com", "Community", "The DFIR Report"],
+  ["NCSC UK", "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml", "https://www.ncsc.gov.uk", "Government", "NCSC UK"],
+];
+
+/** Seeds THREATFEED with the trusted CTI RSS feeds once (idempotent by FeedURL). */
+function seedThreatFeeds(db: Database.Database): void {
+  if ((db.prepare("SELECT COUNT(*) AS n FROM THREATFEED").get() as { n: number }).n > 0) return;
+  let id = (db.prepare("SELECT COALESCE(MAX(ThreatFeedID),0) AS m FROM THREATFEED").get() as { m: number }).m;
+  const ins = db.prepare(
+    `INSERT OR IGNORE INTO THREATFEED
+       (ThreatFeedID, ThreatFeedGUID, ThreatFeedName, FeedURL, SiteURL, Category, Vendor, Enabled, CreatedDate)
+     VALUES (?,?,?,?,?,?,?,1,?)`
+  );
+  const tx = db.transaction(() => {
+    for (const [name, url, site, cat, vendor] of TRUSTED_CTI_FEEDS) {
+      id += 1;
+      ins.run(id, randomUUID(), name, url, site, cat, vendor, nowTs());
+    }
+  });
+  tx();
 }
 
 export interface A3mTech { aatId: string; name: string; description: string | null }

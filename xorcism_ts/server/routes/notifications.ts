@@ -14,11 +14,28 @@ import {
   markAllNotificationsRead, createNotification, notifyUsers,
 } from "../db";
 import * as xid from "../xid";
-import { clientIp } from "../auth";
+import { clientIp, userCan } from "../auth";
 
 const router = Router();
 
 const LEVELS = new Set(["info", "success", "warning", "error"]);
+
+/** UserIDs in the tenant that have at least read access to a database (admins included). */
+function usersWithDbReadAccess(dbName: string, tenantId: number | null): number[] {
+  const out: number[] = [];
+  for (const u of xid.listUsers(tenantId)) {
+    if (u.IsLockedOut) continue;
+    const uid = Number(u.UserID);
+    if (!Number.isInteger(uid) || uid <= 0) continue;
+    if (xid.isAdmin(uid)) { out.push(uid); continue; }
+    const perms = xid.getEffectivePermissions(uid);
+    if (perms.get(`database:${dbName}`)?.CanRead) { out.push(uid); continue; }
+    for (const [k, p] of perms) {
+      if (k.startsWith(`table:${dbName}.`) && p.CanRead) { out.push(uid); break; }
+    }
+  }
+  return out;
+}
 
 // GET /api/notifications — list + unread counter of the current user
 router.get("/notifications", (req: Request, res: Response) => {
@@ -84,6 +101,35 @@ router.post("/notifications", (req: Request, res: Response) => {
   xid.addAudit({ userId: req.user.UserID, action: "notify_user", resourceType: "notification",
     resourceKey: String(uid), ip: clientIp(req) });
   res.json({ ok: true, created: 1, id });
+});
+
+// POST /api/alert/notify { alertId, alertName } — broadcast a "new alert" notification
+// to all users in the CURRENT tenant who have at least read access to XINCIDENT.
+// Triggered from the ALERT creation form (the creator needs read on XINCIDENT.ALERT).
+router.post("/alert/notify", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XINCIDENT", "ALERT"))
+    return void res.status(403).json({ error: "Accès refusé" });
+  const b = req.body as { alertId?: unknown; alertName?: unknown };
+  const alertId = Number(b.alertId);
+  const alertName = String(b.alertName ?? "").trim().slice(0, 200);
+  const tenant = req.user.tenantId ?? null;
+
+  const recipients = usersWithDbReadAccess("XINCIDENT", tenant);
+  const base = {
+    title: (alertName ? `New alert: ${alertName}` : "New incident alert").slice(0, 300),
+    message: alertName ? `A new alert "${alertName}" was created.` : "A new alert was created.",
+    level: "warning",
+    link: Number.isInteger(alertId) && alertId > 0
+      ? `/?db=XINCIDENT&table=ALERT&filterCol=AlertID&filterVal=${alertId}`
+      : "/?db=XINCIDENT&table=ALERT",
+    source: "ALERT",
+    tenantId: tenant,
+  };
+  const created = notifyUsers(recipients, base);
+  xid.addAudit({ userId: req.user.UserID, action: "alert_notify", resourceType: "table",
+    resourceKey: "XINCIDENT.ALERT", detail: `alertId=${alertId} recipients=${created}`, ip: clientIp(req) });
+  res.json({ ok: true, count: created });
 });
 
 export default router;

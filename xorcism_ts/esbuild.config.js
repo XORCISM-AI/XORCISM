@@ -23,6 +23,7 @@ const entryPoints = [
   "client/ts/a3m.ts",
   "client/ts/tprm.ts",
   "client/ts/ebios.ts",
+  "client/ts/hunting.ts",
 ];
 
 const ctx = esbuild.context({

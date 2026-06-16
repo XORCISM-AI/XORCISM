@@ -211,6 +211,9 @@ export const api = {
     request<{ ok: boolean; changed: number; unread: number }>("/api/notifications/read-all", "POST"),
   createNotification: (payload: { title: string; message?: string; level?: string; link?: string; target?: string | number }) =>
     request<{ ok: boolean; created: number; id?: number }>("/api/notifications", "POST", payload),
+  // Broadcast a "new alert" notification to all tenant users with XINCIDENT read access.
+  notifyAlert: (alertId: number, alertName: string) =>
+    request<{ ok: boolean; count: number }>("/api/alert/notify", "POST", { alertId, alertName }),
   // Duplicate check "*Name" (creation): does this value already exist?
   nameCheck: (db: string, table: string, col: string, value: string) =>
     request<{ exists: boolean; count: number }>(
@@ -311,6 +314,10 @@ export const api = {
     request<number[]>(`/api/incident-assets?incidentId=${incidentId}`),
   setIncidentAssets: (incidentId: number, assetIds: number[]) =>
     request<{ ok: boolean }>("/api/incident-assets", "PUT", { incidentId, assetIds }),
+  getAlertAssets: (alertId: number) =>
+    request<number[]>(`/api/alert-assets?alertId=${alertId}`),
+  setAlertAssets: (alertId: number, assetIds: number[]) =>
+    request<{ ok: boolean }>("/api/alert-assets", "PUT", { alertId, assetIds }),
   getIncidentThreatActor: (incidentId: number) =>
     request<{ name: string }>(`/api/incident-threatactor?incidentId=${incidentId}`),
   setIncidentThreatActor: (incidentId: number, actorName: string) =>

@@ -53,6 +53,8 @@ import {
   incidentsByAsset,
   getIncidentAssets,
   setIncidentAssets,
+  getAlertAssets,
+  setAlertAssets,
   getIncidentThreatActor,
   setIncidentThreatActor,
   getAuditAssets,
@@ -1082,6 +1084,41 @@ router.put("/incident-assets", (req: Request, res: Response) => {
     resourceType: "table",
     resourceKey: "XINCIDENT.INCIDENTFORASSET",
     detail: `incident=${incidentId} assets=[${assetIds.join(",")}]`,
+    ip: clientIp(req),
+  });
+  res.json({ ok: true });
+});
+
+// ── ALERT ↔ ASSET impacted-assets links (ALERTFORASSET) ────────────────────────
+// GET /api/alert-assets?alertId=N — linked AssetIDs
+router.get("/alert-assets", (req: Request, res: Response) => {
+  const alertId = Number(req.query.alertId);
+  if (!alertId) return void res.status(400).json({ error: "alertId requis" });
+  if (!userCan(req.user, "read", "XINCIDENT", "ALERT")) return deny(req, res, "read", "XINCIDENT", "ALERT");
+  if (!parentTenantOr403(req, res, "XINCIDENT", "ALERT", "AlertID", alertId, "read")) return;
+  res.json(getAlertAssets(alertId));
+});
+
+// PUT /api/alert-assets { alertId, assetIds:[...] } — replaces the impacted-asset links
+router.put("/alert-assets", (req: Request, res: Response) => {
+  const { alertId, assetIds } = req.body as { alertId: number; assetIds: number[] };
+  if (!alertId || !Array.isArray(assetIds))
+    return void res.status(400).json({ error: "alertId et assetIds[] requis" });
+  if (
+    !userCan(req.user, "update", "XINCIDENT", "ALERT") &&
+    !userCan(req.user, "create", "XINCIDENT", "ALERT")
+  ) {
+    return deny(req, res, "update", "XINCIDENT", "ALERT");
+  }
+  const ia = parentTenantOr403(req, res, "XINCIDENT", "ALERT", "AlertID", Number(alertId), "update");
+  if (!ia) return;
+  setAlertAssets(Number(alertId), assetIds.map(Number), ia.tenant);
+  xid.addAudit({
+    userId: req.user!.UserID,
+    action: "link_alert_assets",
+    resourceType: "table",
+    resourceKey: "XINCIDENT.ALERTFORASSET",
+    detail: `alert=${alertId} assets=[${assetIds.join(",")}]`,
     ip: clientIp(req),
   });
   res.json({ ok: true });
