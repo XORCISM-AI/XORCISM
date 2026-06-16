@@ -1,0 +1,25 @@
+{
+  "id": "grype",
+  "name": "Grype",
+  "type": "import",
+  "category": "Container Security",
+  "description": "Vulnerability scanner for container images and filesystems. Tool: https://github.com/anchore/grype. [SCAFFOLD generated from XORCISM.TOOL #168 by tool_to_connector.py — implement run() in run.py to map Grype output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:grype",
+  "run": "run.py",
+  "mapping": "grype",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Grype output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "autopsy",
+  "name": "Autopsy",
+  "type": "import",
+  "category": "Digital Forensics",
+  "description": "Graphical digital-forensics platform built on The Sleuth Kit. Tool: https://www.autopsy.com. [SCAFFOLD generated from XORCISM.TOOL #94 by tool_to_connector.py — implement run() in run.py to map Autopsy output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:autopsy",
+  "run": "run.py",
+  "mapping": "autopsy",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Autopsy output file to parse instead of running it live."
+    }
+  ]
+}

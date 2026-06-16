@@ -1,0 +1,25 @@
+{
+  "id": "grr-rapid-response",
+  "name": "GRR Rapid Response",
+  "type": "import",
+  "category": "DFIR",
+  "description": "Remote live-forensics framework for incident response. Tool: https://github.com/google/grr. [SCAFFOLD generated from XORCISM.TOOL #98 by tool_to_connector.py — implement run() in run.py to map GRR Rapid Response output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:grr-rapid-response",
+  "run": "run.py",
+  "mapping": "grr-rapid-response",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved GRR Rapid Response output file to parse instead of running it live."
+    }
+  ]
+}

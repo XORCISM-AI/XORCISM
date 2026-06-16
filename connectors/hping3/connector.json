@@ -1,0 +1,25 @@
+{
+  "id": "hping3",
+  "name": "hping3",
+  "type": "import",
+  "category": "Network Scanning",
+  "description": "Command-line packet crafter and ping/traceroute tool for TCP/IP testing. Tool: https://github.com/antirez/hping. [SCAFFOLD generated from XORCISM.TOOL #7 by tool_to_connector.py — implement run() in run.py to map hping3 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:hping3",
+  "run": "run.py",
+  "mapping": "hping3",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved hping3 output file to parse instead of running it live."
+    }
+  ]
+}

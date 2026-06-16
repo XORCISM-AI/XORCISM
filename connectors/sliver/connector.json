@@ -1,0 +1,25 @@
+{
+  "id": "sliver",
+  "name": "Sliver",
+  "type": "import",
+  "category": "C2",
+  "description": "Open-source cross-platform adversary-emulation and C2 framework by Bishop Fox. Tool: https://github.com/BishopFox/sliver. [SCAFFOLD generated from XORCISM.TOOL #57 by tool_to_connector.py — implement run() in run.py to map Sliver output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:sliver",
+  "run": "run.py",
+  "mapping": "sliver",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Sliver output file to parse instead of running it live."
+    }
+  ]
+}

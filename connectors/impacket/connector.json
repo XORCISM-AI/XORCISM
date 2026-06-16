@@ -1,0 +1,25 @@
+{
+  "id": "impacket",
+  "name": "Impacket",
+  "type": "import",
+  "category": "Credential Access",
+  "description": "Python classes for working with network protocols such as SMB and Kerberos. Tool: https://github.com/fortra/impacket. [SCAFFOLD generated from XORCISM.TOOL #76 by tool_to_connector.py — implement run() in run.py to map Impacket output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:impacket",
+  "run": "run.py",
+  "mapping": "impacket",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Impacket output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "amass",
+  "name": "Amass",
+  "type": "import",
+  "category": "Recon",
+  "description": "Imports attack-surface / subdomain enumeration results from OWASP Amass (https://github.com/owasp-amass/amass). Each discovered name becomes an ASSET (hostname + resolved IP). Offline mode: parse an `amass enum -json` output file (JSON lines or array). Live mode: if `domain` is set and the `amass` binary is on the worker PATH, runs `amass enum -d <domain> -json`. No DB access in run.py (worker-safe). Run live only within an authorised engagement scope.",
+  "intrusive": true,
+  "permission": "connector:amass",
+  "run": "run.py",
+  "mapping": "amass",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to an `amass enum -json` output file (JSON lines or a JSON array) to import." },
+    { "name": "domain", "type": "string", "required": false, "pattern": "^[A-Za-z0-9._-]+$", "help": "Live mode: domain to enumerate with the local `amass` binary (amass enum -d <domain> -json)." }
+  ]
+}

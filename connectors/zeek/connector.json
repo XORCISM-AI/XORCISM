@@ -1,0 +1,25 @@
+{
+  "id": "zeek",
+  "name": "Zeek",
+  "type": "import",
+  "category": "Network Security Monitoring",
+  "description": "Powerful network analysis framework, formerly known as Bro. Tool: https://zeek.org. [SCAFFOLD generated from XORCISM.TOOL #145 by tool_to_connector.py — implement run() in run.py to map Zeek output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:zeek",
+  "run": "run.py",
+  "mapping": "zeek",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Zeek output file to parse instead of running it live."
+    }
+  ]
+}

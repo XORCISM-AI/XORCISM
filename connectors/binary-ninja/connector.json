@@ -1,0 +1,25 @@
+{
+  "id": "binary-ninja",
+  "name": "Binary Ninja",
+  "type": "import",
+  "category": "Reverse Engineering",
+  "description": "Modern reverse-engineering platform with a powerful decompiler and API. Tool: https://binary.ninja. [SCAFFOLD generated from XORCISM.TOOL #112 by tool_to_connector.py — implement run() in run.py to map Binary Ninja output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:binary-ninja",
+  "run": "run.py",
+  "mapping": "binary-ninja",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Binary Ninja output file to parse instead of running it live."
+    }
+  ]
+}

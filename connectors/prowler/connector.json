@@ -1,0 +1,25 @@
+{
+  "id": "prowler",
+  "name": "Prowler",
+  "type": "import",
+  "category": "Cloud Security",
+  "description": "AWS, Azure and GCP security assessment and hardening tool. Tool: https://github.com/prowler-cloud/prowler. [SCAFFOLD generated from XORCISM.TOOL #176 by tool_to_connector.py — implement run() in run.py to map Prowler output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:prowler",
+  "run": "run.py",
+  "mapping": "prowler",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Prowler output file to parse instead of running it live."
+    }
+  ]
+}

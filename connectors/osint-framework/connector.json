@@ -1,0 +1,25 @@
+{
+  "id": "osint-framework",
+  "name": "OSINT Framework",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Curated directory of OSINT tools and resources. Tool: https://osintframework.com. [SCAFFOLD generated from XORCISM.TOOL #136 by tool_to_connector.py — implement run() in run.py to map OSINT Framework output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:osint-framework",
+  "run": "run.py",
+  "mapping": "osint-framework",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OSINT Framework output file to parse instead of running it live."
+    }
+  ]
+}

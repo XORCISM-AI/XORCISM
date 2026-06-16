@@ -1,0 +1,4 @@
+{"name":"www.example.com","domain":"example.com","addresses":[{"ip":"93.184.216.34","cidr":"93.184.216.0/24"}],"tag":"dns","sources":["DNS"]}
+{"name":"mail.example.com","domain":"example.com","addresses":[{"ip":"93.184.216.35"}]}
+{"name":"dev.example.com","domain":"example.com","addresses":[]}
+{"name":"api.example.com","domain":"example.com","addresses":[{"ip":"93.184.216.36"}]}

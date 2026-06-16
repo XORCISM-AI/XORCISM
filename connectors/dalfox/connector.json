@@ -1,0 +1,25 @@
+{
+  "id": "dalfox",
+  "name": "dalfox",
+  "type": "import",
+  "category": "Web Application",
+  "description": "Fast, powerful parameter-analysis-based XSS scanner written in Go. Tool: https://github.com/hahwul/dalfox. [SCAFFOLD generated from XORCISM.TOOL #44 by tool_to_connector.py — implement run() in run.py to map dalfox output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:dalfox",
+  "run": "run.py",
+  "mapping": "dalfox",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved dalfox output file to parse instead of running it live."
+    }
+  ]
+}

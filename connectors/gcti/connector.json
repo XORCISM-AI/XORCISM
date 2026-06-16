@@ -1,0 +1,15 @@
+{
+  "id": "gcti",
+  "name": "Google Threat Intelligence (GTIG/Mandiant) blog",
+  "type": "import",
+  "category": "threat-intel",
+  "description": "Imports the latest posts from Google's Threat Intelligence blog (Google Threat Intelligence Group / Mandiant, https://cloud.google.com/blog/topics/threat-intelligence) via its RSS feed (https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/). Each post (title, summary, author, date) becomes an XTHREAT.INTELEXCHANGE item, idempotent by post URL; MITRE ATT&CK technique IDs, CVEs and adversary group codes (APT##, UNC####, FIN##, TEMP.*, UTA-###) found in the text are extracted as tags, and ATT&CK techniques are cross-linked into INTELEXCHANGEATTACK so they count toward the ATT&CK coverage. Read-only, non-intrusive, no authentication, Python stdlib only (no extra worker packages). Override the feed with the GCTI_FEED_URL worker env var. Offline import via the 'file' parameter (a saved RSS XML).",
+  "intrusive": false,
+  "permission": "connector:gcti",
+  "run": "run.py",
+  "mapping": "gcti",
+  "parameters": [
+    { "name": "max_items", "type": "int", "required": false, "default": 40, "min": 1, "max": 200, "help": "Maximum number of blog posts to import (most recent first)." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: parse a saved RSS XML file instead of fetching the live feed." }
+  ]
+}

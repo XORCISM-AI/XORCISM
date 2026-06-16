@@ -1,0 +1,25 @@
+{
+  "id": "x64dbg",
+  "name": "x64dbg",
+  "type": "import",
+  "category": "Reverse Engineering",
+  "description": "Open-source x64/x32 debugger for Windows. Tool: https://x64dbg.com. [SCAFFOLD generated from XORCISM.TOOL #111 by tool_to_connector.py — implement run() in run.py to map x64dbg output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:x64dbg",
+  "run": "run.py",
+  "mapping": "x64dbg",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved x64dbg output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "microsoft-threat-modeling-tool",
+  "name": "Microsoft Threat Modeling Tool",
+  "type": "import",
+  "category": "Threat Modeling",
+  "description": "STRIDE-based threat-modeling tool from Microsoft. Tool: https://learn.microsoft.com/azure/security/develop/threat-modeling-tool. [SCAFFOLD generated from XORCISM.TOOL #186 by tool_to_connector.py — implement run() in run.py to map Microsoft Threat Modeling Tool output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:microsoft-threat-modeling-tool",
+  "run": "run.py",
+  "mapping": "microsoft-threat-modeling-tool",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Microsoft Threat Modeling Tool output file to parse instead of running it live."
+    }
+  ]
+}

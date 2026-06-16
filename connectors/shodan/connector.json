@@ -1,0 +1,16 @@
+{
+  "id": "shodan",
+  "name": "Shodan",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports internet-exposure data from Shodan (https://www.shodan.io). Each host becomes an ASSET (IP, OS), each banner an exposed SERVICE (host:port + product/version), and detected CPEs are linked to the asset. Offline mode: parse a `shodan host <ip>` / `shodan download`+`shodan parse` JSON (a single host object, a JSON-lines banner stream, or `{matches:[...]}`). Live mode: if `query` is set and SHODAN_API_KEY is in the worker env, calls the Shodan search API (needs `pip install requests`). Read-only OSINT (non-intrusive). No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:shodan",
+  "run": "run.py",
+  "mapping": "shodan",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Shodan JSON (host object, JSON-lines banners, or {matches:[...]}) to import." },
+    { "name": "query", "type": "string", "required": false, "help": "Live mode: Shodan search query (needs SHODAN_API_KEY in the worker env)." },
+    { "name": "limit", "type": "int", "required": false, "default": 100, "min": 1, "max": 1000, "help": "Live mode: maximum number of results to import." }
+  ]
+}

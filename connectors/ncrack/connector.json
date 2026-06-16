@@ -1,0 +1,25 @@
+{
+  "id": "ncrack",
+  "name": "Ncrack",
+  "type": "import",
+  "category": "Password Cracking",
+  "description": "High-speed network authentication cracking tool from the Nmap project. Tool: https://nmap.org/ncrack/. [SCAFFOLD generated from XORCISM.TOOL #71 by tool_to_connector.py — implement run() in run.py to map Ncrack output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:ncrack",
+  "run": "run.py",
+  "mapping": "ncrack",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Ncrack output file to parse instead of running it live."
+    }
+  ]
+}

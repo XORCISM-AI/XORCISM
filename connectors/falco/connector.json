@@ -1,0 +1,25 @@
+{
+  "id": "falco",
+  "name": "Falco",
+  "type": "import",
+  "category": "Container Security",
+  "description": "Cloud-native runtime threat detection for containers and Kubernetes. Tool: https://falco.org. [SCAFFOLD generated from XORCISM.TOOL #170 by tool_to_connector.py — implement run() in run.py to map Falco output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:falco",
+  "run": "run.py",
+  "mapping": "falco",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Falco output file to parse instead of running it live."
+    }
+  ]
+}

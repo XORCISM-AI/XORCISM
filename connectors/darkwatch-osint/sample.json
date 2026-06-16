@@ -1,0 +1,39 @@
+{
+  "alerts": [
+    {
+      "id": "a-1001",
+      "title": "Credential dump referencing example.com",
+      "category": "data-leak",
+      "severity": "high",
+      "source": "http://abcdef 1234567 leaksiteexample23.onion/threads/42",
+      "description": "Combo list with 12,403 example.com accounts posted. Sample: jdoe@example.com, admin@example.com. Mirror at corp-example.com.",
+      "entities": [
+        {"type": "email", "value": "jdoe@example.com"},
+        {"type": "email", "value": "admin@example.com"},
+        {"type": "domain", "value": "example.com"}
+      ]
+    },
+    {
+      "id": "a-1002",
+      "title": "LockBit affiliate lists example.com as a victim",
+      "category": "ransomware",
+      "source": "lockbitapt2yfbt7lchxejug47kmqvqqxvvjpqkmevv4l3azl3gy6pyd.onion",
+      "description": "Countdown started. Threatens to publish 200GB. Contact: support@mail.example.com"
+    },
+    {
+      "id": "a-1003",
+      "title": "Exploit for sale affecting 203.0.113.7",
+      "category": "exploit",
+      "severity": "high",
+      "source": "http://exploitmarket9zzz.onion/listing/991",
+      "description": "Unauthenticated RCE, CVE-2024-12345, target 203.0.113.7. PoC hash 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08."
+    },
+    {
+      "id": "a-1004",
+      "category": "mention",
+      "title": "Brand mention in carding forum",
+      "source": "http://forumxyz.onion/t/55",
+      "description": "Users discussing example.com gift card resale."
+    }
+  ]
+}

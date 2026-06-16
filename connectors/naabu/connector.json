@@ -1,0 +1,15 @@
+{
+  "id": "naabu",
+  "name": "Naabu",
+  "type": "import",
+  "category": "Network Scanning",
+  "description": "Imports open-port results from ProjectDiscovery naabu (https://github.com/projectdiscovery/naabu). Each scanned host becomes an ASSET (host + IP) and each open port a SERVICE (host:port). Offline mode: parse a naabu JSON-lines output (`naabu -json`) or a plain `host:port` list. Live mode: if `target` is set and the `naabu` binary is on the worker PATH, runs `naabu -json` against it. Intrusive (active port scan) — run live only within an authorised engagement scope. No DB access in run.py (worker-safe).",
+  "intrusive": true,
+  "permission": "connector:naabu",
+  "run": "run.py",
+  "mapping": "naabu",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a naabu `-json` output file (or a plain host:port list) to import." },
+    { "name": "target", "type": "string", "required": false, "help": "Live mode: a host/CIDR (or path to a hosts file) to scan with the local `naabu` binary." }
+  ]
+}

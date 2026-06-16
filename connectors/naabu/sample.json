@@ -1,0 +1,4 @@
+{"host":"www.example.com","ip":"93.184.216.34","port":443,"protocol":"tcp"}
+{"host":"www.example.com","ip":"93.184.216.34","port":80,"protocol":"tcp"}
+{"ip":"203.0.113.10","port":22,"protocol":"tcp"}
+{"host":"db.example.com","ip":"10.0.0.20","port":5432,"protocol":"tcp"}

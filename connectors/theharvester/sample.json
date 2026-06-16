@@ -1,0 +1,7 @@
+{
+  "hosts": ["www.example.com:93.184.216.34", "mail.example.com:93.184.216.35", "vpn.example.com", "intranet.example.com:10.0.0.5"],
+  "ips": ["93.184.216.34", "203.0.113.10"],
+  "emails": ["jdoe@example.com", "admin@example.com"],
+  "asns": ["AS15133"],
+  "interesting_urls": ["https://www.example.com/login"]
+}

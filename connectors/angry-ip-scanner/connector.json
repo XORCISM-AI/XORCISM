@@ -1,0 +1,25 @@
+{
+  "id": "angry-ip-scanner",
+  "name": "Angry IP Scanner",
+  "type": "import",
+  "category": "Network Scanning",
+  "description": "Cross-platform, lightweight network IP and port scanner. Tool: https://angryip.org. [SCAFFOLD generated from XORCISM.TOOL #5 by tool_to_connector.py — implement run() in run.py to map Angry IP Scanner output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:angry-ip-scanner",
+  "run": "run.py",
+  "mapping": "angry-ip-scanner",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Angry IP Scanner output file to parse instead of running it live."
+    }
+  ]
+}

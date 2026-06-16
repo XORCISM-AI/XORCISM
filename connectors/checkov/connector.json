@@ -1,0 +1,25 @@
+{
+  "id": "checkov",
+  "name": "Checkov",
+  "type": "import",
+  "category": "IaC Security",
+  "description": "Static analysis for infrastructure-as-code such as Terraform and Kubernetes. Tool: https://www.checkov.io. [SCAFFOLD generated from XORCISM.TOOL #173 by tool_to_connector.py — implement run() in run.py to map Checkov output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:checkov",
+  "run": "run.py",
+  "mapping": "checkov",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Checkov output file to parse instead of running it live."
+    }
+  ]
+}

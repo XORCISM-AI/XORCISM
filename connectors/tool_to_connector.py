@@ -1,0 +1,243 @@
+"""
+tool_to_connector.py — Scaffold a XORCISM connector from a row of the TOOL table.
+
+Reads XORCISM.db (the TOOL catalogue) and generates, for a tool, a connector under
+connectors/<slug>/ : a `connector.json` manifest (schema-valid, see
+connectors/manifest.schema.json) + a `run.py` SCAFFOLD whose run() raises
+NotImplementedError until you wire the tool's real output to the normalized XORCISM
+result {assets, services, cpes, vulns}.
+
+Idempotent: never overwrites an existing connector. A tool is considered already
+covered if a connector's id OR name matches it (normalised). Use --all-missing to
+scaffold every tool that still lacks a connector.
+
+Usage:
+    python connectors/tool_to_connector.py --list                 # coverage report
+    python connectors/tool_to_connector.py --name "Amass"         # one tool by name
+    python connectors/tool_to_connector.py --id 50                # one tool by ToolID
+    python connectors/tool_to_connector.py --all-missing [--dry-run]
+    python connectors/tool_to_connector.py --category OSINT --all-missing
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import re
+import sqlite3
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, ROOT)
+from xorcism_python import config  # noqa: E402
+
+DB_PATH = os.path.join(config.DB_DIR, "XORCISM.db")
+
+# Offensive / live-impacting tool categories → intrusive=true on the manifest.
+INTRUSIVE_CATS = {
+    "exploitation", "c2", "post-exploitation", "privilege escalation", "credential access",
+    "active directory", "web scanner", "web application", "vulnerability scanner",
+    "network scanning", "fuzzing", "password cracking", "wireless", "mitm", "phishing",
+    "social engineering", "pivoting", "packet crafting", "network attacks", "recon",
+    "adversary emulation",
+}
+
+
+def norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (s or "").lower())
+
+
+def slugify(s: str) -> str:
+    out = re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-")
+    return out or "tool"
+
+
+def load_tools() -> list[dict]:
+    db = sqlite3.connect(DB_PATH)
+    rows = db.execute(
+        "SELECT ToolID, ToolName, COALESCE(Category,''), COALESCE(ToolURL,''), COALESCE(ToolDescription,'') "
+        "FROM TOOL WHERE ToolName IS NOT NULL AND TRIM(ToolName)<>'' ORDER BY ToolName"
+    ).fetchall()
+    db.close()
+    return [{"id": r[0], "name": r[1].strip(), "category": r[2].strip(), "url": r[3].strip(), "desc": r[4].strip()}
+            for r in rows]
+
+
+def existing_connectors() -> dict:
+    """{slug: {norm_id, norm_name}} for every connectors/*/connector.json."""
+    out = {}
+    for cj in glob.glob(os.path.join(HERE, "*", "connector.json")):
+        try:
+            m = json.load(open(cj, encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            continue
+        cid = str(m.get("id", "")) or os.path.basename(os.path.dirname(cj))
+        out[cid] = {"norm_id": norm(cid), "norm_name": norm(str(m.get("name", "")))}
+    return out
+
+
+def is_covered(name: str, conns: dict) -> str | None:
+    """Returns the covering connector id, or None."""
+    n = norm(name)
+    if not n:
+        return None
+    for cid, c in conns.items():
+        if c["norm_id"] == n or c["norm_name"] == n:
+            return cid
+        # connector id is a distinctive token contained in the tool name (e.g. sentinel→Microsoft Sentinel)
+        if len(c["norm_id"]) >= 4 and (c["norm_id"] in n or n in c["norm_name"]):
+            return cid
+    return None
+
+
+def build_manifest(tool: dict, slug: str) -> dict:
+    intrusive = tool["category"].lower() in INTRUSIVE_CATS
+    base_desc = tool["desc"] or f"{tool['name']} ({tool['category'] or 'security tool'})."
+    desc = (
+        f"{base_desc} Tool: {tool['url'] or 'n/a'}. "
+        f"[SCAFFOLD generated from XORCISM.TOOL #{tool['id']} by tool_to_connector.py — "
+        f"implement run() in run.py to map {tool['name']} output to the XORCISM findings "
+        f"model {{assets, services, cpes, vulns}}.]"
+    )
+    return {
+        "id": slug,
+        "name": tool["name"],
+        "type": "import",
+        "category": tool["category"] or "tool",
+        "description": desc,
+        "intrusive": intrusive,
+        "permission": f"connector:{slug}",
+        "run": "run.py",
+        "mapping": slug,
+        "parameters": [
+            {"name": "target", "type": "string", "required": False,
+             "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."},
+            {"name": "file", "type": "file", "required": False,
+             "help": f"Offline mode: a saved {tool['name']} output file to parse instead of running it live."},
+        ],
+    }
+
+
+RUN_TEMPLATE = '''"""run.py — XORCISM connector SCAFFOLD for {name}.
+
+{desc}
+Tool: {url}
+Category: {category}   (XORCISM.TOOL #{id})
+
+Generated by connectors/tool_to_connector.py. Implement run() to map {name} output to
+the normalized XORCISM result:
+    {{"assets": [{{"hostname": str, "key": str, "ip": str?, "os": str?}}],
+     "services": [], "cpes": [], "vulns": [{{"asset": str, "ref": str, "name": str, "severity": str}}]}}
+The runner (connectors/runner.py) imports that result. NO database access here (so the
+connector also runs on a remote worker).
+"""
+from __future__ import annotations
+
+from typing import Any, Dict
+
+TOOL_NAME = {name!r}
+TOOL_URL = {url!r}
+
+
+def run(params: Dict[str, Any], workdir: str) -> Dict[str, Any]:  # noqa: ARG001
+    target = str(params.get("target") or "").strip()
+    path = params.get("file")
+    # TODO: implement the {name} integration:
+    #   • live mode  -> invoke {name} against `target` (respect the engagement scope), or
+    #   • offline    -> parse the saved output at `path`,
+    # then return the normalized result (example shape below).
+    raise NotImplementedError(
+        f"Connector {slug!r} ({{TOOL_NAME}}) is a scaffold - implement run() in "
+        f"connectors/{slug}/run.py (tool: {{TOOL_URL}})."
+    )
+    # return {{"assets": [], "services": [], "cpes": [], "vulns": []}}
+
+
+if __name__ == "__main__":
+    import json as _json
+    import tempfile
+    print(_json.dumps(run({{"target": "", "file": None}}, tempfile.mkdtemp())))
+'''
+
+
+def write_connector(tool: dict, slug: str, dry_run: bool) -> bool:
+    folder = os.path.join(HERE, slug)
+    if os.path.isdir(folder):
+        return False
+    if dry_run:
+        print(f"  [dry-run] would create connectors/{slug}/ for '{tool['name']}' [{tool['category']}]")
+        return True
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, "connector.json"), "w", encoding="utf-8") as f:
+        json.dump(build_manifest(tool, slug), f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    safe_desc = (tool["desc"] or tool["name"]).replace('"""', "'''").strip()
+    run_py = RUN_TEMPLATE.format(name=tool["name"], desc=safe_desc, url=tool["url"] or "n/a",
+                                 category=tool["category"] or "tool", id=tool["id"], slug=slug)
+    with open(os.path.join(folder, "run.py"), "w", encoding="utf-8") as f:
+        f.write(run_py)
+    print(f"  + connectors/{slug}/  ({tool['name']} [{tool['category']}], intrusive={build_manifest(tool, slug)['intrusive']})")
+    return True
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Scaffold a XORCISM connector from a TOOL row")
+    ap.add_argument("--list", action="store_true", help="Print the coverage report and exit")
+    ap.add_argument("--name", help="Scaffold the tool with this ToolName")
+    ap.add_argument("--id", type=int, help="Scaffold the tool with this ToolID")
+    ap.add_argument("--category", help="Restrict --all-missing to this TOOL.Category")
+    ap.add_argument("--all-missing", action="store_true", help="Scaffold every tool that lacks a connector")
+    ap.add_argument("--dry-run", action="store_true", help="Show what would be created, write nothing")
+    args = ap.parse_args()
+
+    tools = load_tools()
+    conns = existing_connectors()
+    covered, missing = [], []
+    for t in tools:
+        c = is_covered(t["name"], conns)
+        (covered if c else missing).append((t, c))
+
+    if args.list or not (args.name or args.id or args.all_missing):
+        print(f"TOOL rows: {len(tools)} | connectors: {len(conns)} | covered: {len(covered)} | missing: {len(missing)}")
+        print("\nMissing a connector:")
+        for t, _ in missing:
+            print(f"  {t['id']:4}  {t['name'][:34]:34}  [{t['category']}]")
+        if not args.list:
+            print("\nRun with --all-missing to scaffold them (or --name/--id for one). --dry-run to preview.")
+        return
+
+    # Resolve the target set.
+    if args.all_missing:
+        targets = [t for t, _ in missing]
+        if args.category:
+            targets = [t for t in targets if t["category"].lower() == args.category.lower()]
+    else:
+        key = (lambda t: t["id"] == args.id) if args.id else (lambda t: norm(t["name"]) == norm(args.name))
+        targets = [t for t in tools if key(t)]
+        if not targets:
+            print(f"No TOOL matches {args.name or args.id!r}."); return
+        for t in targets:
+            c = is_covered(t["name"], conns)
+            if c:
+                print(f"'{t['name']}' is already covered by connector '{c}'.")
+                return
+
+    used = set(conns.keys())
+    created = 0
+    for t in targets:
+        slug = slugify(t["name"])
+        base, i = slug, 1
+        while slug in used:
+            i += 1
+            slug = f"{base}-{i}"
+        used.add(slug)
+        if write_connector(t, slug, args.dry_run):
+            created += 1
+    verb = "would be created" if args.dry_run else "created"
+    print(f"\n{created} connector scaffold(s) {verb}.")
+
+
+if __name__ == "__main__":
+    main()

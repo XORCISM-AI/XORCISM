@@ -1,0 +1,16 @@
+{
+  "id": "darkwatch-osint",
+  "name": "DARKWATCH-OSINT — dark-web asset monitoring",
+  "type": "import",
+  "category": "monitoring",
+  "description": "Imports dark-web monitoring alerts from DARKWATCH-OSINT (defensive .onion crawling / digital-risk-protection platform by K3lgy, https://github.com/K3lgy/DARKWATCH-OSINT). Monitored assets that surface in data leaks, ransomware posts or exploit sales become ASSETs, and each alert becomes a finding (data-leak / ransomware / exploit exposure). Extracted entities (domains, IPs, emails, file hashes) are mapped to assets where possible. Read-only import (non-intrusive): DARKWATCH-OSINT itself runs on YOUR infrastructure (Tor + crawler + Elasticsearch); this connector only ingests its output. Config via worker environment variables (NEVER in the UI): DARKWATCH_API_URL (optional, e.g. http://127.0.0.1:8080), DARKWATCH_API_KEY (optional), DARKWATCH_VERIFY_TLS (0 to skip TLS verification). Offline mode: supply a saved alerts/entities JSON export through the 'file' parameter. The API mode needs `pip install requests` on the worker.",
+  "intrusive": false,
+  "permission": "connector:darkwatch-osint",
+  "run": "run.py",
+  "mapping": "darkwatch-osint",
+  "parameters": [
+    { "name": "brand", "type": "string", "required": true, "pattern": "^[A-Za-z0-9 ._@/:-]+$", "help": "Organisation / brand / asset under monitoring (e.g. example.com). Labels the findings and is the fallback asset for alerts with no extractable host." },
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a DARKWATCH-OSINT export (JSON: alerts and/or monitored entities). If omitted, DARKWATCH_API_URL is queried." },
+    { "name": "limit", "type": "int", "required": false, "default": 2000, "min": 1, "max": 50000, "help": "Maximum number of alerts/entities to import." }
+  ]
+}

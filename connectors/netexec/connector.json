@@ -1,0 +1,25 @@
+{
+  "id": "netexec",
+  "name": "NetExec",
+  "type": "import",
+  "category": "Credential Access",
+  "description": "Maintained successor to CrackMapExec for network exploitation. Tool: https://github.com/Pennyw0rth/NetExec. [SCAFFOLD generated from XORCISM.TOOL #75 by tool_to_connector.py — implement run() in run.py to map NetExec output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:netexec",
+  "run": "run.py",
+  "mapping": "netexec",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved NetExec output file to parse instead of running it live."
+    }
+  ]
+}

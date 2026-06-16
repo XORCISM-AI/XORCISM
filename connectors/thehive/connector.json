@@ -1,0 +1,25 @@
+{
+  "id": "thehive",
+  "name": "TheHive",
+  "type": "import",
+  "category": "DFIR",
+  "description": "Scalable, collaborative security incident-response platform. Tool: https://thehive-project.org. [SCAFFOLD generated from XORCISM.TOOL #149 by tool_to_connector.py — implement run() in run.py to map TheHive output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:thehive",
+  "run": "run.py",
+  "mapping": "thehive",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved TheHive output file to parse instead of running it live."
+    }
+  ]
+}

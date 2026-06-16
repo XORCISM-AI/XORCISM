@@ -1,0 +1,25 @@
+{
+  "id": "cyberchef",
+  "name": "CyberChef",
+  "type": "import",
+  "category": "Utility",
+  "description": "GCHQ's web app for encryption, encoding, compression and data analysis. Tool: https://github.com/gchq/CyberChef. [SCAFFOLD generated from XORCISM.TOOL #102 by tool_to_connector.py — implement run() in run.py to map CyberChef output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:cyberchef",
+  "run": "run.py",
+  "mapping": "cyberchef",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved CyberChef output file to parse instead of running it live."
+    }
+  ]
+}

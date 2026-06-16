@@ -1,0 +1,25 @@
+{
+  "id": "wireshark",
+  "name": "Wireshark",
+  "type": "import",
+  "category": "Network Analysis",
+  "description": "The world's foremost network protocol analyzer for deep packet inspection. Tool: https://www.wireshark.org. [SCAFFOLD generated from XORCISM.TOOL #13 by tool_to_connector.py — implement run() in run.py to map Wireshark output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:wireshark",
+  "run": "run.py",
+  "mapping": "wireshark",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Wireshark output file to parse instead of running it live."
+    }
+  ]
+}

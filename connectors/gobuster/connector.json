@@ -1,0 +1,25 @@
+{
+  "id": "gobuster",
+  "name": "Gobuster",
+  "type": "import",
+  "category": "Web Application",
+  "description": "Directory, DNS and vhost brute-forcer written in Go. Tool: https://github.com/OJ/gobuster. [SCAFFOLD generated from XORCISM.TOOL #40 by tool_to_connector.py — implement run() in run.py to map Gobuster output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:gobuster",
+  "run": "run.py",
+  "mapping": "gobuster",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Gobuster output file to parse instead of running it live."
+    }
+  ]
+}

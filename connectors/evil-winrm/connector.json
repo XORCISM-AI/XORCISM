@@ -1,0 +1,25 @@
+{
+  "id": "evil-winrm",
+  "name": "Evil-WinRM",
+  "type": "import",
+  "category": "Post-Exploitation",
+  "description": "The ultimate WinRM shell for hacking and pentesting. Tool: https://github.com/Hackplayers/evil-winrm. [SCAFFOLD generated from XORCISM.TOOL #79 by tool_to_connector.py — implement run() in run.py to map Evil-WinRM output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:evil-winrm",
+  "run": "run.py",
+  "mapping": "evil-winrm",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Evil-WinRM output file to parse instead of running it live."
+    }
+  ]
+}

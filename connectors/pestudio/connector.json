@@ -1,0 +1,25 @@
+{
+  "id": "pestudio",
+  "name": "PEStudio",
+  "type": "import",
+  "category": "Malware Analysis",
+  "description": "Static analysis of Windows PE files for malware triage. Tool: https://www.winitor.com. [SCAFFOLD generated from XORCISM.TOOL #121 by tool_to_connector.py — implement run() in run.py to map PEStudio output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:pestudio",
+  "run": "run.py",
+  "mapping": "pestudio",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved PEStudio output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Threat Intelligence</title>
+    <link>https://cloud.google.com/blog/topics/threat-intelligence</link>
+    <description>Google Threat Intelligence Group</description>
+    <item>
+      <title>China-Nexus Actor UNC6508 Targets Medical Research</title>
+      <link>https://cloud.google.com/blog/topics/threat-intelligence/prc-targets-us-medical-research/</link>
+      <guid>https://cloud.google.com/blog/topics/threat-intelligence/prc-targets-us-medical-research/</guid>
+      <pubDate>Mon, 15 Jun 2026 14:00:00 +0000</pubDate>
+      <dc:creator>Google Threat Intelligence Group</dc:creator>
+      <description>&lt;p&gt;GTIG identified &lt;b&gt;UNC6508&lt;/b&gt; using spearphishing (T1566.001) and exploiting CVE-2025-12345 for initial access. Persistence via T1053.005.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>ShinyHunters and UNC6240 Exploit Oracle PeopleSoft</title>
+      <link>https://cloud.google.com/blog/topics/threat-intelligence/shinyhunters-targets-education-sector-oracle-exploit/</link>
+      <guid>gtig-0002</guid>
+      <pubDate>Thu, 11 Jun 2026 13:00:00 +0000</pubDate>
+      <dc:creator>Mandiant and Google Threat Intelligence Group (GTIG)</dc:creator>
+      <description>Active extortion attributed to UNC6240 exploiting CVE-2024-9999. Credential access mapped to T1003.</description>
+    </item>
+    <item>
+      <title>APT 41 Tooling Update</title>
+      <link>https://cloud.google.com/blog/topics/threat-intelligence/apt41-tooling/</link>
+      <guid>gtig-0003</guid>
+      <pubDate>Tue, 02 Jun 2026 09:30:00 +0000</pubDate>
+      <dc:creator>Mandiant</dc:creator>
+      <description>FIN7 and APT 41 overlap. No new CVEs.</description>
+    </item>
+  </channel>
+</rss>

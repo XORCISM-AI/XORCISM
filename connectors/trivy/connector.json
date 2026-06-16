@@ -1,0 +1,16 @@
+{
+  "id": "trivy",
+  "name": "Trivy",
+  "type": "import",
+  "category": "Container Security",
+  "description": "Imports vulnerability scan results from Aqua Trivy (https://github.com/aquasecurity/trivy). The scanned artifact (container image, filesystem or repo) becomes an ASSET, each package a component (CPE), and each finding a vulnerability (VULNERABILITY / ASSETVULNERABILITY) mapped by CVE with severity. Offline mode: parse a Trivy JSON report (`trivy ... -f json`). Live mode: if `source` is set and the `trivy` binary is on the worker PATH, runs `trivy image|fs --format json <source>`. Non-intrusive local scan. No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:trivy",
+  "run": "run.py",
+  "mapping": "trivy",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Trivy JSON report (`trivy ... -f json -o report.json`) to import." },
+    { "name": "source", "type": "string", "required": false, "help": "Live mode: an image ref or path to scan with the local `trivy` binary." },
+    { "name": "project", "type": "string", "required": false, "help": "Asset name to attach the findings to (default: the report's ArtifactName)." }
+  ]
+}

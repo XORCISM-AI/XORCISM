@@ -1,0 +1,25 @@
+{
+  "id": "owasp-dependency-check",
+  "name": "OWASP Dependency-Check",
+  "type": "import",
+  "category": "SCA",
+  "description": "Detects publicly known vulnerabilities in project dependencies. Tool: https://owasp.org/www-project-dependency-check/. [SCAFFOLD generated from XORCISM.TOOL #163 by tool_to_connector.py — implement run() in run.py to map OWASP Dependency-Check output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:owasp-dependency-check",
+  "run": "run.py",
+  "mapping": "owasp-dependency-check",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OWASP Dependency-Check output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "censys",
+  "name": "Censys",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports internet/attack-surface data from Censys (https://search.censys.io). Each host becomes an ASSET (IP, OS), each exposed service a SERVICE (host:port), and detected software CPEs are linked to the asset. Offline mode: parse a Censys hosts export / API JSON (a list of hosts, or a v2 hosts-search `{result:{hits:[...]}}` response). Live mode: if `query` is set and CENSYS_API_ID / CENSYS_API_SECRET are in the worker env, calls the v2 hosts search API (needs `pip install requests`). Read-only OSINT (non-intrusive). No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:censys",
+  "run": "run.py",
+  "mapping": "censys",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Censys hosts JSON (export or v2 hosts-search response) to import." },
+    { "name": "query", "type": "string", "required": false, "help": "Live mode: Censys hosts search query (e.g. `services.service_name: HTTP and location.country: FR`). Needs CENSYS_API_ID/SECRET in the worker env." },
+    { "name": "limit", "type": "int", "required": false, "default": 200, "min": 1, "max": 1000, "help": "Live mode: maximum number of hosts to import." }
+  ]
+}

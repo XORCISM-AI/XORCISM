@@ -1,0 +1,15 @@
+{
+  "id": "httpx",
+  "name": "httpx",
+  "type": "import",
+  "category": "Recon",
+  "description": "Imports HTTP probe results from ProjectDiscovery httpx (https://github.com/projectdiscovery/httpx). Each probed host becomes an ASSET (hostname + resolved IP), each live URL a SERVICE, and detected technologies are recorded as CPE-like components. Offline mode: parse an httpx JSON-lines output (`httpx -json`). Live mode: if `target` is set and the `httpx` binary is on the worker PATH, runs `httpx -json -silent` against it. Run live only within an authorised engagement scope. No DB access in run.py (worker-safe).",
+  "intrusive": true,
+  "permission": "connector:httpx",
+  "run": "run.py",
+  "mapping": "httpx",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to an httpx JSON-lines output file (`httpx -json`) to import." },
+    { "name": "target", "type": "string", "required": false, "help": "Live mode: a host/URL (or path to a hosts file) to probe with the local `httpx` binary." }
+  ]
+}

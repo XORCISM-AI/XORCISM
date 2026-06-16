@@ -1,0 +1,25 @@
+{
+  "id": "misp",
+  "name": "MISP",
+  "type": "import",
+  "category": "Threat Intelligence",
+  "description": "Open-source threat-intelligence sharing platform. Tool: https://www.misp-project.org. [SCAFFOLD generated from XORCISM.TOOL #150 by tool_to_connector.py — implement run() in run.py to map MISP output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:misp",
+  "run": "run.py",
+  "mapping": "misp",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved MISP output file to parse instead of running it live."
+    }
+  ]
+}

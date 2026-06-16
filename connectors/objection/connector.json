@@ -1,0 +1,25 @@
+{
+  "id": "objection",
+  "name": "Objection",
+  "type": "import",
+  "category": "Mobile Security",
+  "description": "Runtime mobile exploration toolkit powered by Frida. Tool: https://github.com/sensepost/objection. [SCAFFOLD generated from XORCISM.TOOL #179 by tool_to_connector.py — implement run() in run.py to map Objection output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:objection",
+  "run": "run.py",
+  "mapping": "objection",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Objection output file to parse instead of running it live."
+    }
+  ]
+}

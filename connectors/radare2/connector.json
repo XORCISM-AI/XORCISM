@@ -1,0 +1,25 @@
+{
+  "id": "radare2",
+  "name": "Radare2",
+  "type": "import",
+  "category": "Reverse Engineering",
+  "description": "Open-source reverse-engineering and binary-analysis framework. Tool: https://rada.re/n/. [SCAFFOLD generated from XORCISM.TOOL #109 by tool_to_connector.py — implement run() in run.py to map Radare2 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:radare2",
+  "run": "run.py",
+  "mapping": "radare2",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Radare2 output file to parse instead of running it live."
+    }
+  ]
+}

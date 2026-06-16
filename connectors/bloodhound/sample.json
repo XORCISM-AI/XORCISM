@@ -1,0 +1,8 @@
+{
+  "data": [
+    { "Properties": { "name": "DC01.CORP.LOCAL", "operatingsystem": "Windows Server 2019 Standard", "enabled": true }, "ObjectIdentifier": "S-1-5-21-1-1-1-1000" },
+    { "Properties": { "name": "WS-FINANCE-07.CORP.LOCAL", "operatingsystem": "Windows 10 Pro", "enabled": true }, "ObjectIdentifier": "S-1-5-21-1-1-1-1107" },
+    { "Properties": { "name": "SQL01.CORP.LOCAL", "operatingsystem": "Windows Server 2016 Standard", "enabled": false }, "ObjectIdentifier": "S-1-5-21-1-1-1-1201" }
+  ],
+  "meta": { "type": "computers", "count": 3, "version": 5 }
+}

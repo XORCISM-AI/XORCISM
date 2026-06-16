@@ -1,0 +1,23 @@
+{
+  "ArtifactName": "myorg/web-app:1.4.2",
+  "ArtifactType": "container_image",
+  "Results": [
+    {
+      "Target": "myorg/web-app:1.4.2 (debian 12.4)",
+      "Class": "os-pkgs",
+      "Type": "debian",
+      "Vulnerabilities": [
+        { "VulnerabilityID": "CVE-2024-0001", "PkgName": "openssl", "InstalledVersion": "3.0.11-1", "Severity": "CRITICAL", "Title": "OpenSSL buffer overflow in X.509", "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2024-0001" },
+        { "VulnerabilityID": "CVE-2024-0002", "PkgName": "libcurl", "InstalledVersion": "8.4.0", "Severity": "HIGH", "Title": "curl heap overflow" }
+      ]
+    },
+    {
+      "Target": "Node.js",
+      "Class": "lang-pkgs",
+      "Type": "npm",
+      "Vulnerabilities": [
+        { "VulnerabilityID": "CVE-2024-0003", "PkgName": "lodash", "InstalledVersion": "4.17.20", "Severity": "MEDIUM", "Title": "Prototype pollution in lodash" }
+      ]
+    }
+  ]
+}

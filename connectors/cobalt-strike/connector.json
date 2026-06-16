@@ -1,0 +1,25 @@
+{
+  "id": "cobalt-strike",
+  "name": "Cobalt Strike",
+  "type": "import",
+  "category": "C2",
+  "description": "Commercial adversary-simulation and red-team command-and-control platform. Tool: https://www.cobaltstrike.com. [SCAFFOLD generated from XORCISM.TOOL #56 by tool_to_connector.py — implement run() in run.py to map Cobalt Strike output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:cobalt-strike",
+  "run": "run.py",
+  "mapping": "cobalt-strike",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Cobalt Strike output file to parse instead of running it live."
+    }
+  ]
+}

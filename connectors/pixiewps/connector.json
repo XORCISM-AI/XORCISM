@@ -1,0 +1,25 @@
+{
+  "id": "pixiewps",
+  "name": "Pixiewps",
+  "type": "import",
+  "category": "Wireless",
+  "description": "Offline WPS PIN recovery using the pixie-dust attack. Tool: https://github.com/wiire-a/pixiewps. [SCAFFOLD generated from XORCISM.TOOL #93 by tool_to_connector.py — implement run() in run.py to map Pixiewps output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:pixiewps",
+  "run": "run.py",
+  "mapping": "pixiewps",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Pixiewps output file to parse instead of running it live."
+    }
+  ]
+}

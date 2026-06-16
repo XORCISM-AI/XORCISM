@@ -1,0 +1,25 @@
+{
+  "id": "boofuzz",
+  "name": "boofuzz",
+  "type": "import",
+  "category": "Fuzzing",
+  "description": "Network protocol fuzzing framework and successor to Sulley. Tool: https://github.com/jtpereyda/boofuzz. [SCAFFOLD generated from XORCISM.TOOL #184 by tool_to_connector.py — implement run() in run.py to map boofuzz output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:boofuzz",
+  "run": "run.py",
+  "mapping": "boofuzz",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved boofuzz output file to parse instead of running it live."
+    }
+  ]
+}

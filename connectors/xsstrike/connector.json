@@ -1,0 +1,25 @@
+{
+  "id": "xsstrike",
+  "name": "XSStrike",
+  "type": "import",
+  "category": "Web Application",
+  "description": "Advanced cross-site scripting detection and exploitation suite. Tool: https://github.com/s0md3v/XSStrike. [SCAFFOLD generated from XORCISM.TOOL #43 by tool_to_connector.py — implement run() in run.py to map XSStrike output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:xsstrike",
+  "run": "run.py",
+  "mapping": "xsstrike",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved XSStrike output file to parse instead of running it live."
+    }
+  ]
+}

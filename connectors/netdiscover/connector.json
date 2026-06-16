@@ -1,0 +1,25 @@
+{
+  "id": "netdiscover",
+  "name": "Netdiscover",
+  "type": "import",
+  "category": "Network Scanning",
+  "description": "Active/passive ARP reconnaissance tool to find live hosts on a LAN. Tool: https://github.com/netdiscover-scanner/netdiscover. [SCAFFOLD generated from XORCISM.TOOL #8 by tool_to_connector.py — implement run() in run.py to map Netdiscover output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:netdiscover",
+  "run": "run.py",
+  "mapping": "netdiscover",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Netdiscover output file to parse instead of running it live."
+    }
+  ]
+}

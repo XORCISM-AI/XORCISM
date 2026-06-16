@@ -1,0 +1,25 @@
+{
+  "id": "ghidra",
+  "name": "Ghidra",
+  "type": "import",
+  "category": "Reverse Engineering",
+  "description": "NSA's open-source software reverse-engineering suite with a decompiler. Tool: https://ghidra-sre.org. [SCAFFOLD generated from XORCISM.TOOL #107 by tool_to_connector.py — implement run() in run.py to map Ghidra output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ghidra",
+  "run": "run.py",
+  "mapping": "ghidra",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Ghidra output file to parse instead of running it live."
+    }
+  ]
+}

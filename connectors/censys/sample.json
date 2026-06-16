@@ -1,0 +1,22 @@
+{
+  "result": {
+    "hits": [
+      {
+        "ip": "93.184.216.34",
+        "operating_system": { "product": "Ubuntu", "vendor": "Canonical" },
+        "services": [
+          { "port": 443, "service_name": "HTTP", "extended_service_name": "HTTPS",
+            "software": [ { "uniform_resource_identifier": "cpe:2.3:a:nginx:nginx:1.25.3:*:*:*:*:*:*:*" } ] },
+          { "port": 22, "service_name": "SSH",
+            "software": [ { "uniform_resource_identifier": "cpe:2.3:a:openbsd:openssh:9.6:*:*:*:*:*:*:*" } ] }
+        ],
+        "location": { "country": "United States" },
+        "autonomous_system": { "name": "EDGECAST" }
+      },
+      {
+        "ip": "203.0.113.10",
+        "services": [ { "port": 80, "service_name": "HTTP" } ]
+      }
+    ]
+  }
+}

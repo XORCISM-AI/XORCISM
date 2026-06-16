@@ -1,0 +1,14 @@
+{
+  "id": "bloodhound",
+  "name": "BloodHound",
+  "type": "import",
+  "category": "Active Directory",
+  "description": "Imports Active Directory computer objects collected for BloodHound (https://github.com/SpecterOps/BloodHound) into XORCISM as ASSETs. Parse a SharpHound / BloodHound `computers.json` (or any export with `data[].Properties.name`): each computer becomes an ASSET (FQDN hostname + operating system). Offline import of already-collected data — non-intrusive, no DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:bloodhound",
+  "run": "run.py",
+  "mapping": "bloodhound",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a SharpHound/BloodHound computers JSON file (computers.json) to import." }
+  ]
+}

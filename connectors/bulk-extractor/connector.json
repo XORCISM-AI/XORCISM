@@ -1,0 +1,25 @@
+{
+  "id": "bulk-extractor",
+  "name": "Bulk Extractor",
+  "type": "import",
+  "category": "Forensics",
+  "description": "Scans disk images for emails, URLs, card numbers and other artifacts. Tool: https://github.com/simsong/bulk_extractor. [SCAFFOLD generated from XORCISM.TOOL #100 by tool_to_connector.py — implement run() in run.py to map Bulk Extractor output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:bulk-extractor",
+  "run": "run.py",
+  "mapping": "bulk-extractor",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Bulk Extractor output file to parse instead of running it live."
+    }
+  ]
+}

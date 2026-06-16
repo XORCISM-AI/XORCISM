@@ -1,0 +1,16 @@
+{
+  "id": "theharvester",
+  "name": "theHarvester",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports OSINT recon results from theHarvester (https://github.com/laramies/theHarvester). Discovered hosts and IP addresses become ASSETs (hostname + IP). Offline mode: parse a theHarvester JSON output file (`theHarvester -f <name>` → <name>.json). Live mode: if `domain` is set and the `theHarvester` binary is on the worker PATH, runs `theHarvester -d <domain> -b <sources> -f`. Read-only OSINT (non-intrusive). No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:theharvester",
+  "run": "run.py",
+  "mapping": "theharvester",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a theHarvester JSON output file to import." },
+    { "name": "domain", "type": "string", "required": false, "pattern": "^[A-Za-z0-9._-]+$", "help": "Live mode: domain to harvest with the local `theHarvester` binary." },
+    { "name": "sources", "type": "string", "required": false, "default": "all", "pattern": "^[A-Za-z0-9,_-]+$", "help": "Live mode: theHarvester sources passed to -b (default: all)." }
+  ]
+}

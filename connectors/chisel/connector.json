@@ -1,0 +1,25 @@
+{
+  "id": "chisel",
+  "name": "Chisel",
+  "type": "import",
+  "category": "Pivoting",
+  "description": "Fast TCP/UDP tunnel over HTTP, used for pivoting and port forwarding. Tool: https://github.com/jpillora/chisel. [SCAFFOLD generated from XORCISM.TOOL #197 by tool_to_connector.py — implement run() in run.py to map Chisel output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:chisel",
+  "run": "run.py",
+  "mapping": "chisel",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Chisel output file to parse instead of running it live."
+    }
+  ]
+}

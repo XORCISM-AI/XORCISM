@@ -1,0 +1,25 @@
+{
+  "id": "gnupg",
+  "name": "GnuPG",
+  "type": "import",
+  "category": "Cryptography",
+  "description": "Complete and free implementation of the OpenPGP standard. Tool: https://gnupg.org. [SCAFFOLD generated from XORCISM.TOOL #191 by tool_to_connector.py — implement run() in run.py to map GnuPG output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:gnupg",
+  "run": "run.py",
+  "mapping": "gnupg",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved GnuPG output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "owasp-threat-dragon",
+  "name": "OWASP Threat Dragon",
+  "type": "import",
+  "category": "Threat Modeling",
+  "description": "Open-source threat-modeling diagram tool. Tool: https://owasp.org/www-project-threat-dragon/. [SCAFFOLD generated from XORCISM.TOOL #185 by tool_to_connector.py — implement run() in run.py to map OWASP Threat Dragon output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:owasp-threat-dragon",
+  "run": "run.py",
+  "mapping": "owasp-threat-dragon",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OWASP Threat Dragon output file to parse instead of running it live."
+    }
+  ]
+}

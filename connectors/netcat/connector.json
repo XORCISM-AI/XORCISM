@@ -1,0 +1,25 @@
+{
+  "id": "netcat",
+  "name": "Netcat",
+  "type": "import",
+  "category": "Networking",
+  "description": "The TCP/IP Swiss-army knife for reading and writing data across network connections. Tool: http://netcat.sourceforge.net. [SCAFFOLD generated from XORCISM.TOOL #9 by tool_to_connector.py — implement run() in run.py to map Netcat output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:netcat",
+  "run": "run.py",
+  "mapping": "netcat",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Netcat output file to parse instead of running it live."
+    }
+  ]
+}

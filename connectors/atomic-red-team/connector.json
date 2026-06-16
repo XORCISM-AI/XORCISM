@@ -1,0 +1,25 @@
+{
+  "id": "atomic-red-team",
+  "name": "Atomic Red Team",
+  "type": "import",
+  "category": "Adversary Emulation",
+  "description": "Library of small, portable detection tests mapped to ATT&CK. Tool: https://github.com/redcanaryco/atomic-red-team. [SCAFFOLD generated from XORCISM.TOOL #155 by tool_to_connector.py — implement run() in run.py to map Atomic Red Team output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:atomic-red-team",
+  "run": "run.py",
+  "mapping": "atomic-red-team",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Atomic Red Team output file to parse instead of running it live."
+    }
+  ]
+}

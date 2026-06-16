@@ -1,0 +1,25 @@
+{
+  "id": "afl",
+  "name": "AFL++",
+  "type": "import",
+  "category": "Fuzzing",
+  "description": "State-of-the-art coverage-guided fuzzer. Tool: https://github.com/AFLplusplus/AFLplusplus. [SCAFFOLD generated from XORCISM.TOOL #182 by tool_to_connector.py — implement run() in run.py to map AFL++ output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:afl",
+  "run": "run.py",
+  "mapping": "afl",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved AFL++ output file to parse instead of running it live."
+    }
+  ]
+}

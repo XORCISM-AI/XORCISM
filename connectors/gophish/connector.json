@@ -1,0 +1,25 @@
+{
+  "id": "gophish",
+  "name": "Gophish",
+  "type": "import",
+  "category": "Phishing",
+  "description": "Open-source phishing toolkit for security-awareness testing. Tool: https://getgophish.com. [SCAFFOLD generated from XORCISM.TOOL #156 by tool_to_connector.py — implement run() in run.py to map Gophish output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:gophish",
+  "run": "run.py",
+  "mapping": "gophish",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Gophish output file to parse instead of running it live."
+    }
+  ]
+}

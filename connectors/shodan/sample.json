@@ -1,0 +1,11 @@
+{
+  "ip_str": "93.184.216.34",
+  "os": "Linux",
+  "hostnames": ["www.example.com"],
+  "ports": [80, 443],
+  "data": [
+    { "port": 443, "transport": "tcp", "product": "nginx", "version": "1.25.3", "cpe": ["cpe:/a:nginx:nginx:1.25.3"] },
+    { "port": 22, "transport": "tcp", "product": "OpenSSH", "version": "9.6", "cpe": ["cpe:/a:openbsd:openssh:9.6"] },
+    { "port": 80, "transport": "tcp", "product": "nginx", "version": "1.25.3" }
+  ]
+}

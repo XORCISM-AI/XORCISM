@@ -1,0 +1,3 @@
+{"timestamp":"2026-06-16T10:00:00Z","input":"www.example.com","url":"https://www.example.com","port":"443","scheme":"https","status_code":200,"title":"Example Domain","webserver":"nginx","tech":["Nginx","PHP:8.1"],"a":["93.184.216.34"]}
+{"timestamp":"2026-06-16T10:00:01Z","input":"api.example.com","url":"https://api.example.com","port":"443","scheme":"https","status_code":403,"tech":["Cloudflare"],"a":["104.18.0.1"]}
+{"timestamp":"2026-06-16T10:00:02Z","input":"10.0.0.5","url":"http://10.0.0.5","port":"80","scheme":"http","status_code":200,"tech":["Apache"],"a":["10.0.0.5"]}

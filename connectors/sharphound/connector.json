@@ -1,0 +1,25 @@
+{
+  "id": "sharphound",
+  "name": "SharpHound",
+  "type": "import",
+  "category": "Active Directory",
+  "description": "C# data collector for BloodHound. Tool: https://github.com/BloodHoundAD/SharpHound. [SCAFFOLD generated from XORCISM.TOOL #81 by tool_to_connector.py — implement run() in run.py to map SharpHound output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:sharphound",
+  "run": "run.py",
+  "mapping": "sharphound",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SharpHound output file to parse instead of running it live."
+    }
+  ]
+}

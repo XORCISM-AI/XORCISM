@@ -1,0 +1,25 @@
+{
+  "id": "rubeus",
+  "name": "Rubeus",
+  "type": "import",
+  "category": "Credential Access",
+  "description": "C# toolset for raw Kerberos interaction and abuse. Tool: https://github.com/GhostPack/Rubeus. [SCAFFOLD generated from XORCISM.TOOL #78 by tool_to_connector.py — implement run() in run.py to map Rubeus output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": true,
+  "permission": "connector:rubeus",
+  "run": "run.py",
+  "mapping": "rubeus",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Rubeus output file to parse instead of running it live."
+    }
+  ]
+}

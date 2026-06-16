@@ -1,0 +1,25 @@
+{
+  "id": "sslyze",
+  "name": "SSLyze",
+  "type": "import",
+  "category": "Cryptography",
+  "description": "Fast and powerful TLS/SSL configuration scanner. Tool: https://github.com/nabla-c0d3/sslyze. [SCAFFOLD generated from XORCISM.TOOL #190 by tool_to_connector.py — implement run() in run.py to map SSLyze output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:sslyze",
+  "run": "run.py",
+  "mapping": "sslyze",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SSLyze output file to parse instead of running it live."
+    }
+  ]
+}
