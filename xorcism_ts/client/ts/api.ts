@@ -306,6 +306,37 @@ export const api = {
     request<string[]>(`/api/vuln-tags?vulnerabilityId=${vulnerabilityId}`),
   setVulnerabilityTags: (vulnerabilityId: number, tags: string[]) =>
     request<{ ok: boolean }>("/api/vuln-tags", "PUT", { vulnerabilityId, tags }),
+  getCpeTags: (cpeId: number) =>
+    request<string[]>(`/api/cpe-tags?cpeId=${cpeId}`),
+  setCpeTags: (cpeId: number, tags: string[]) =>
+    request<{ ok: boolean }>("/api/cpe-tags", "PUT", { cpeId, tags }),
+  getCweTags: (cweId: number) =>
+    request<string[]>(`/api/cwe-tags?cweId=${cweId}`),
+  setCweTags: (cweId: number, tags: string[]) =>
+    request<{ ok: boolean }>("/api/cwe-tags", "PUT", { cweId, tags }),
+  harvestAssetEmail: (email: string) =>
+    request<{ ok: boolean; email: string; organisationId: number | null; emailInserted: boolean; addressInserted: boolean; orgLinkInserted: boolean }>(
+      "/api/asset-email-harvest", "POST", { email }),
+  lookupOrganisations: (q: string) =>
+    request<{ OrganisationID: number; OrganisationName: string }[]>(`/api/lookup/organisations?q=${encodeURIComponent(q)}`),
+  lookupPersons: (q: string) =>
+    request<{ PersonID: number; PersonName: string }[]>(`/api/lookup/persons?q=${encodeURIComponent(q)}`),
+  defaultOrganisation: () =>
+    request<{ OrganisationID?: number; OrganisationName?: string }>("/api/default-organisation"),
+  getAssetOrganisations: (assetId: number) =>
+    request<{ OrganisationID: number; OrganisationName: string }[]>(`/api/asset-organisations?assetId=${assetId}`),
+  setAssetOrganisations: (assetId: number, organisationIds: number[]) =>
+    request<{ ok: boolean }>("/api/asset-organisations", "PUT", { assetId, organisationIds }),
+  getAssetPersons: (assetId: number) =>
+    request<{ PersonID: number; PersonName: string; relationshiptype: string }[]>(`/api/asset-persons?assetId=${assetId}`),
+  setAssetPersons: (assetId: number, links: { personId: number; relationshiptype: string }[]) =>
+    request<{ ok: boolean }>("/api/asset-persons", "PUT", { assetId, links }),
+  setupStatus: () =>
+    request<{ needed: boolean }>("/api/setup/status"),
+  setupAdminAsset: (organisationId: number) =>
+    request<{ ok: boolean; adminAssetId: number; xorcismAssetId: number; applicationId: number;
+      created: { adminAsset: boolean; xorcismAsset: boolean; application: boolean } }>(
+      "/api/setup/admin-asset", "POST", { organisationId }),
   getOvalDefinitionTags: (ovalDefinitionId: number) =>
     request<string[]>(`/api/ovaldef-tags?ovalDefinitionId=${ovalDefinitionId}`),
   setOvalDefinitionTags: (ovalDefinitionId: number, tags: string[]) =>
@@ -318,6 +349,20 @@ export const api = {
     request<number[]>(`/api/alert-assets?alertId=${alertId}`),
   setAlertAssets: (alertId: number, assetIds: number[]) =>
     request<{ ok: boolean }>("/api/alert-assets", "PUT", { alertId, assetIds }),
+  triageVuln: (p: { cve?: string; vulnerabilityId?: number }) =>
+    request<{ assessment: string; context: string; model: string }>("/api/ai/triage-vuln", "POST", p),
+  enrichReport: (reportId: number) =>
+    request<{ summary: string; cves: string[]; model: string }>("/api/ai/enrich-report", "POST", { reportId }),
+  buildBrief: (reportIds: number[], focus?: string) =>
+    request<{ brief: string; sources: string[]; model: string }>("/api/ai/brief", "POST", { reportIds, focus }),
+  assetsWithTags: () =>
+    request<{ AssetID: number; AssetName: string; Tags: string }[]>("/api/assets-with-tags"),
+  bulkThreatForAsset: (p: { threatId: number; assetIds: number[]; relationship?: string; validFrom?: string; validUntil?: string }) =>
+    request<{ ok: boolean; created: number; skipped: number }>("/api/threat-for-asset/bulk", "POST", p),
+  getThreatAssets: (threatId: number) =>
+    request<number[]>(`/api/threat-assets?threatId=${threatId}`),
+  setThreatAssets: (threatId: number, assetIds: number[]) =>
+    request<{ ok: boolean }>("/api/threat-assets", "PUT", { threatId, assetIds }),
   getIncidentThreatActor: (incidentId: number) =>
     request<{ name: string }>(`/api/incident-threatactor?incidentId=${incidentId}`),
   setIncidentThreatActor: (incidentId: number, actorName: string) =>

@@ -1647,7 +1647,7 @@ CREATE TABLE "APPLICATIONNETWORKZONE"(
 
 ;
 CREATE TABLE "APPLICATIONPERSON"(
-	"ApplicationPersonID" INTEGER NOT NULL,
+	"AppPersonID" INTEGER NOT NULL,
 	"ApplicationID" INTEGER NOT NULL,
 	"ApplicationGUID" TEXT NULL,
 	"PersonID" INTEGER NOT NULL,
@@ -2812,7 +2812,8 @@ CREATE TABLE "ASSETFORORGANISATION"(
 	"ConfidenceLevelID" INTEGER NULL,
 	"TrustLevelID" INTEGER NULL,
 	"isEncrypted" INTEGER NULL,
-	"VocabularyID" INTEGER NULL
+	"VocabularyID" INTEGER NULL,
+	"Relationship" TEXT NULL
 )
 
 ;
@@ -26250,7 +26251,7 @@ CREATE TABLE IF NOT EXISTS "ASSETVULNERABILITY"(
     "ValidFromDate" TEXT NULL,
     "ValidUntilDate" TEXT NULL,
     "ToolID" INTEGER NULL
-, "TenantID" INTEGER, "AssetVulnerabilityStatusID" INTEGER, "Status" INTEGER, "TotalControl" INTEGER);
+, "TenantID" INTEGER, "AssetVulnerabilityStatusID" INTEGER, "Status" INTEGER, "TotalControl" INTEGER, "FalsePositive" INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS THREATMODEL (
       ThreatModelID INTEGER PRIMARY KEY,
       ThreatModelGUID TEXT, ThreatModelName TEXT, Description TEXT,

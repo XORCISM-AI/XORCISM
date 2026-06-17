@@ -1,0 +1,25 @@
+{
+  "id": "arkham-intelligence",
+  "name": "Arkham Intelligence",
+  "type": "import",
+  "category": "Blockchain/Cryptocurrency OSINT",
+  "description": "Blockchain/Cryptocurrency OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/arkham. [SCAFFOLD generated from XORCISM.TOOL #296 by tool_to_connector.py — implement run() in run.py to map Arkham Intelligence output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:arkham-intelligence",
+  "run": "run.py",
+  "mapping": "arkham-intelligence",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Arkham Intelligence output file to parse instead of running it live."
+    }
+  ]
+}

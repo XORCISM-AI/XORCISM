@@ -1,0 +1,16 @@
+{
+  "id": "wpprobe",
+  "name": "WPProbe",
+  "type": "import",
+  "category": "Web",
+  "description": "Imports WordPress plugin/theme & vulnerability findings from WPProbe (https://github.com/Chocapikk/wpprobe). The scanned site becomes an ASSET (host); each detected plugin/theme + version becomes a component/CPE on it; each correlated CVE becomes a VULNERABILITY (CVE ref + severity). Offline mode: parse a WPProbe JSON export (`wpprobe scan -u <url> -o out.json`). Live mode: if `target` is set and the `wpprobe` binary is on the worker PATH, runs a scan and parses its JSON. Active web scanning (intrusive). No DB access in run.py (worker-safe).",
+  "intrusive": true,
+  "permission": "connector:wpprobe",
+  "run": "run.py",
+  "mapping": "wpprobe",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a WPProbe JSON export to import (offline mode)." },
+    { "name": "target", "type": "target", "required": false, "help": "Live mode: WordPress site URL to scan with the local `wpprobe` binary (must be in the engagement scope)." },
+    { "name": "mode", "type": "string", "required": false, "default": "stealthy", "pattern": "^[a-z-]+$", "help": "Live mode: scan mode passed to wpprobe (stealthy | bruteforce | hybrid)." }
+  ]
+}

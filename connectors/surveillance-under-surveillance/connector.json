@@ -1,0 +1,25 @@
+{
+  "id": "surveillance-under-surveillance",
+  "name": "Surveillance under Surveillance",
+  "type": "import",
+  "category": "Geolocation & Maps OSINT",
+  "description": "Geolocation & Maps OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/surveillance-under-surveillance. [SCAFFOLD generated from XORCISM.TOOL #284 by tool_to_connector.py — implement run() in run.py to map Surveillance under Surveillance output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:surveillance-under-surveillance",
+  "run": "run.py",
+  "mapping": "surveillance-under-surveillance",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Surveillance under Surveillance output file to parse instead of running it live."
+    }
+  ]
+}

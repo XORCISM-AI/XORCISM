@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -46,6 +46,10 @@
   .barlist .lab{width:130px;color:#cbd5e1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .barlist .bar{height:8px;border-radius:4px;background:#7c3aed;min-width:3px}
   .barlist .cnt{color:#94a3b8;width:28px;text-align:right}
+  .view-all{font-size:11px;color:#a78bfa;text-decoration:none;margin-left:10px;font-weight:400}
+  .view-all:hover{text-decoration:underline}
+  table.t td a{color:#a78bfa;text-decoration:none}
+  table.t td a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -64,7 +68,7 @@
   <div class="hunt-head">
     <h2>&#128373;&#65039; Threat Hunting</h2>
     <span class="ai-badge" id="ai-status">…</span>
-    <span class="muted" id="head-sub">Capacités de chasse aux menaces — HUNT · IOC · ATT&amp;CK, assistées par l'agent IA local.</span>
+    <span class="muted" id="head-sub" data-i18n="hunt.subtitle">Threat hunting capabilities — HUNT · IOC · ATT&amp;CK, assisted by the local AI agent.</span>
   </div>
 
   <div class="stat-row" id="stats"></div>
@@ -73,17 +77,17 @@
     <!-- Left: AI hunt assistant -->
     <div>
       <div class="panel">
-        <h3>&#129302; Assistant de chasse (agent IA)<span class="sub">RAG sur HUNT / IOC / ATT&amp;CK + LLM local</span></h3>
-        <textarea id="focus" placeholder="Focus de la chasse : un acteur (ex. APT29), une technique ATT&CK (ex. T1059.001), un comportement (ex. persistance via tâche planifiée)…"></textarea>
+        <h3><span data-i18n="hunt.assistant">&#129302; Hunt assistant (AI agent)</span><span class="sub" data-i18n="hunt.assistantSub">RAG over HUNT / IOC / ATT&amp;CK + local LLM</span></h3>
+        <textarea id="focus" data-i18n-placeholder="hunt.focusPlaceholder" placeholder="Hunt focus: an actor (e.g. APT29), an ATT&CK technique (e.g. T1059.001), a behaviour (e.g. persistence via scheduled task)…"></textarea>
         <div class="examples" id="examples"></div>
-        <button class="btn" id="gen-btn">Générer un plan de chasse</button>
-        <div id="plan" class="muted">Décrivez un focus puis cliquez sur « Générer ». L'agent local propose une hypothèse, des techniques ATT&amp;CK, les sources de logs à interroger, une logique de détection et des IOCs à pivoter.</div>
+        <button class="btn" id="gen-btn" data-i18n="hunt.generate">Generate a hunt plan</button>
+        <div id="plan" class="muted" data-i18n="hunt.planHint">Describe a focus then click &laquo;&nbsp;Generate&nbsp;&raquo;. The local agent proposes a hypothesis, ATT&amp;CK techniques, the log sources to query, a detection logic and IOCs to pivot on.</div>
         <div id="plan-meta"></div>
 
         <div class="save-box" id="save-box">
-          <input id="save-name" type="text" placeholder="Nom de la chasse à enregistrer">
-          <input id="save-tech" type="text" placeholder="Techniques ATT&CK (ex. T1059, T1071.001) — séparées par des virgules">
-          <button class="btn sec" id="save-btn">&#128190; Enregistrer dans HUNT</button>
+          <input id="save-name" type="text" data-i18n-placeholder="hunt.savePlaceholder" placeholder="Name of the hunt to save">
+          <input id="save-tech" type="text" data-i18n-placeholder="hunt.saveTechPlaceholder" placeholder="ATT&CK techniques (e.g. T1059, T1071.001) — comma-separated">
+          <button class="btn sec" id="save-btn" data-i18n="hunt.saveBtn">&#128190; Save to HUNT</button>
           <span id="save-msg" class="muted"></span>
         </div>
       </div>
@@ -92,36 +96,40 @@
     <!-- Right: overview -->
     <div>
       <div class="panel">
-        <h3>Chasses par statut</h3>
+        <h3 data-i18n="hunt.byStatus">Hunts by status</h3>
         <div class="barlist" id="by-status"></div>
       </div>
       <div class="panel">
-        <h3>Techniques ATT&amp;CK les plus chassées</h3>
+        <h3 data-i18n="hunt.topTech">Most-hunted ATT&amp;CK techniques</h3>
         <div id="top-tech"><span class="muted">—</span></div>
       </div>
       <div class="panel">
-        <h3>IOC par type</h3>
+        <h3 data-i18n="hunt.byIoc">IOC by type</h3>
         <div class="barlist" id="by-ioc"></div>
       </div>
     </div>
   </div>
 
   <div class="panel">
-    <h3>Chasses récentes <span class="sub">XTHREAT · HUNT</span></h3>
+    <h3><span data-i18n="hunt.recentHunts">Recent hunts</span> <span class="sub">XTHREAT · HUNT</span>
+      <a class="view-all" href="/?db=XTHREAT&amp;table=HUNT" data-i18n="hunt.viewAll">View all →</a>
+      <a class="view-all" href="/?db=XTHREAT&amp;table=SIGMARULE" data-i18n="hunt.viewSigma">📜 Sigma rules</a></h3>
     <table class="t"><thead><tr>
-      <th>Nom</th><th>Statut</th><th>Date</th><th>Outil</th><th>ATT&amp;CK</th><th>IOC</th><th>Constats</th>
+      <th data-i18n="hunt.col.name">Name</th><th data-i18n="hunt.col.status">Status</th><th data-i18n="hunt.col.date">Date</th><th data-i18n="hunt.col.tool">Tool</th><th data-i18n="hunt.col.attack">ATT&amp;CK</th><th data-i18n="hunt.col.ioc">IOC</th><th data-i18n="hunt.col.findings">Findings</th>
     </tr></thead><tbody id="hunts-body"></tbody></table>
   </div>
 
   <div class="hunt-grid">
     <div class="panel">
-      <h3>IOC récents <span class="sub">XTHREAT · IOC</span></h3>
-      <table class="t"><thead><tr><th>Nom</th><th>Type</th><th>Pattern</th><th>Conf.</th></tr></thead>
+      <h3><span data-i18n="hunt.recentIocs">Recent IOC</span> <span class="sub">XTHREAT · IOC</span>
+        <a class="view-all" href="/?db=XTHREAT&amp;table=IOC" data-i18n="hunt.viewAll">View all →</a></h3>
+      <table class="t"><thead><tr><th data-i18n="hunt.col.name">Name</th><th data-i18n="hunt.col.type">Type</th><th data-i18n="hunt.col.pattern">Pattern</th><th data-i18n="hunt.col.conf">Conf.</th></tr></thead>
         <tbody id="iocs-body"></tbody></table>
     </div>
     <div class="panel">
-      <h3>Hypothèses de chasse <span class="sub">XTHREAT · HYPOTHESIS</span></h3>
-      <table class="t"><thead><tr><th>Hypothèse</th><th>Confiance</th></tr></thead>
+      <h3><span data-i18n="hunt.hypotheses">Hunt hypotheses</span> <span class="sub">XTHREAT · HYPOTHESIS</span>
+        <a class="view-all" href="/?db=XTHREAT&amp;table=HYPOTHESIS" data-i18n="hunt.viewAll">View all →</a></h3>
+      <table class="t"><thead><tr><th data-i18n="hunt.col.hypothesis">Hypothesis</th><th data-i18n="hunt.col.confidence">Confidence</th></tr></thead>
         <tbody id="hyp-body"></tbody></table>
     </div>
   </div>

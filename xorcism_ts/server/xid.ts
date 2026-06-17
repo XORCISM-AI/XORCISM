@@ -245,40 +245,97 @@ export function createUser(opts: {
       now(),
       opts.tenantId ?? null
     );
-  createPersonForUser(opts.displayName ?? null, opts.email.trim());
+  createPersonForUser(opts.displayName ?? null, opts.email.trim(), opts.tenantId ?? null);
   return Number(info.lastInsertRowid);
 }
 
 /**
  * Creates the PERSON record (XORCISM database) associated with a new user:
- * display name → FirstName + FullName, e-mail → email. Best-effort: must
- * never make account creation fail (database locked by an import…).
+ * display name → FirstName + FullName, e-mail → email. Then links that person to
+ * the user's organisation (PERSONFORORGANISATION). Best-effort: must never make
+ * account creation fail (database locked by an import…). Idempotent on both the
+ * PERSON (by e-mail) and the PERSONFORORGANISATION link (by person+organisation).
  */
-function createPersonForUser(displayName: string | null, email: string): void {
+function createPersonForUser(displayName: string | null, email: string, tenantId: number | null): void {
   try {
     const xdb = new Database(path.join(DB_DIR, "XORCISM.db"));
     try {
       xdb.pragma("busy_timeout = 5000");
-      // already a record for this e-mail? (idempotent: re-seed, OIDC…)
-      const existing = xdb
-        .prepare(`SELECT PersonID FROM "PERSON" WHERE email = ? COLLATE NOCASE`)
-        .get(email);
-      if (existing) return;
-      const nextId = (
-        xdb.prepare(`SELECT COALESCE(MAX(PersonID),0)+1 AS n FROM "PERSON"`).get() as { n: number }
-      ).n;
-      xdb
-        .prepare(
-          `INSERT INTO "PERSON" (PersonID, FirstName, FullName, email, CreatedDate)
-           VALUES (?,?,?,?,?)`
-        )
-        .run(nextId, displayName, displayName, email, now());
+      // PERSON: idempotent by e-mail (re-seed, OIDC…). Resolve the id either way.
+      let personId = (
+        xdb.prepare(`SELECT PersonID FROM "PERSON" WHERE email = ? COLLATE NOCASE`).get(email) as
+          { PersonID: number } | undefined
+      )?.PersonID;
+      if (!personId) {
+        personId = (
+          xdb.prepare(`SELECT COALESCE(MAX(PersonID),0)+1 AS n FROM "PERSON"`).get() as { n: number }
+        ).n;
+        xdb
+          .prepare(
+            `INSERT INTO "PERSON" (PersonID, FirstName, FullName, email, CreatedDate)
+             VALUES (?,?,?,?,?)`
+          )
+          .run(personId, displayName, displayName, email, now());
+      }
+      linkPersonToOrganisation(xdb, personId, tenantId);
     } finally {
       xdb.close();
     }
   } catch (e) {
-    console.warn("[xid] création PERSON impossible :", (e as Error).message);
+    console.warn("[xid] création PERSON/PERSONFORORGANISATION impossible :", (e as Error).message);
   }
+}
+
+/**
+ * Links a PERSON to the user's organisation via PERSONFORORGANISATION. The XID
+ * model has no direct organisation, so we resolve it from the user's tenant name
+ * (matching ORGANISATION name / known-as), falling back to the lowest
+ * OrganisationID. Idempotent: skips if the (person, organisation) link exists.
+ * Fixed attributes per spec: relationshiptype="User", ConfidenceLevelID=3,
+ * TrustLevelID=2, CreatedDate=now, ValidFromDate=today.
+ */
+function linkPersonToOrganisation(
+  xdb: InstanceType<typeof Database>,
+  personId: number,
+  tenantId: number | null
+): void {
+  if (!xdb.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ORGANISATION'").get()) return;
+  if (!xdb.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='PERSONFORORGANISATION'").get()) return;
+  let orgId: number | null = null;
+  // 1. tenant name ↔ organisation name / known-as
+  if (tenantId) {
+    const ten = getXidDb()
+      .prepare("SELECT TenantName FROM XTENANT WHERE TenantID = ?")
+      .get(tenantId) as { TenantName?: string } | undefined;
+    const tn = (ten?.TenantName || "").trim().toLowerCase();
+    if (tn) {
+      const org = xdb
+        .prepare("SELECT OrganisationID FROM ORGANISATION WHERE LOWER(OrganisationName)=? OR LOWER(OrganisationKnownAs)=?")
+        .get(tn, tn) as { OrganisationID: number } | undefined;
+      if (org) orgId = org.OrganisationID;
+    }
+  }
+  // 2. fallback: lowest organisation id (never null when an organisation exists)
+  if (orgId == null) {
+    const first = xdb.prepare("SELECT MIN(OrganisationID) AS m FROM ORGANISATION").get() as { m: number | null };
+    orgId = first && first.m != null ? first.m : null;
+  }
+  if (orgId == null) return;
+  // idempotent: do not duplicate the (person, organisation) link
+  if (xdb.prepare("SELECT 1 FROM PERSONFORORGANISATION WHERE PersonID=? AND OrganisationID=? LIMIT 1").get(personId, orgId))
+    return;
+  const nextId = (
+    xdb.prepare("SELECT COALESCE(MAX(PersonOrganisationID),0)+1 AS n FROM PERSONFORORGANISATION").get() as { n: number }
+  ).n;
+  const today = new Date().toISOString().slice(0, 10);
+  xdb
+    .prepare(
+      `INSERT INTO PERSONFORORGANISATION
+         (PersonOrganisationID, PersonID, OrganisationID, relationshiptype,
+          CreatedDate, ValidFromDate, ConfidenceLevelID, TrustLevelID)
+       VALUES (?,?,?,?,?,?,?,?)`
+    )
+    .run(nextId, personId, orgId, "User", now(), today, 3, 2);
 }
 
 export function setPassword(userId: number, passwordHash: string, mustChange = 0): void {

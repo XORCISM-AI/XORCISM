@@ -1,0 +1,25 @@
+{
+  "id": "192-com",
+  "name": "192.com",
+  "type": "import",
+  "category": "People OSINT",
+  "description": "People OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/192.com. [SCAFFOLD generated from XORCISM.TOOL #218 by tool_to_connector.py — implement run() in run.py to map 192.com output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:192-com",
+  "run": "run.py",
+  "mapping": "192-com",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved 192.com output file to parse instead of running it live."
+    }
+  ]
+}

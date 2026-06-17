@@ -6,7 +6,7 @@
  * (never the client) → no SSRF. Parsed items are cached in memory (10 min).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { getDb, extractCves, getActiveWatchlist, watchTermMatches, createNotification } from "./db";
 
 export interface FeedRow {
   id: number; name: string; url: string; site: string;
@@ -91,7 +91,7 @@ export async function fetchFeedItems(feed: FeedRow): Promise<FeedItem[]> {
 export function cachedItems(id: number): FeedItem[] | undefined { return cache.get(id)?.items; }
 
 // ── Feed → THREATREPORT poller ───────────────────────────────────────────────
-export interface PollResult { feeds: number; fetched: number; checked: number; created: number }
+export interface PollResult { feeds: number; fetched: number; checked: number; created: number; alerts?: number }
 
 /**
  * Fetches the enabled feeds and creates a THREATREPORT for each new item (idempotent
@@ -108,10 +108,17 @@ export async function pollFeedsToThreatReports(opts?: { maxAgeDays?: number; per
 
   const xt = getDb("XTHREAT");
   const exists = xt.prepare("SELECT 1 FROM THREATREPORT WHERE ThreatReportReference = ? LIMIT 1");
+  const trCols = new Set((xt.prepare(`PRAGMA table_info("THREATREPORT")`).all() as { name: string }[]).map((c) => c.name));
+  const hasCve = trCols.has("CveTags");
   const ins = xt.prepare(
-    `INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName, ThreatReportDescription,
-       CreatedDate, ThreatReportSource, ThreatReportReference) VALUES (?,?,?,?,?,?,?)`
+    hasCve
+      ? `INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName, ThreatReportDescription,
+           CreatedDate, ThreatReportSource, ThreatReportReference, CveTags) VALUES (?,?,?,?,?,?,?,?)`
+      : `INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName, ThreatReportDescription,
+           CreatedDate, ThreatReportSource, ThreatReportReference) VALUES (?,?,?,?,?,?,?)`
   );
+  // Reports created this sweep — used for watchlist alerting after the transaction.
+  const createdReports: { id: number; title: string; text: string; ref: string; cves: string[] }[] = [];
 
   const candidates: { ref: string; item: FeedItem; feed: FeedRow }[] = [];
   let fetched = 0, checked = 0;
@@ -139,14 +146,44 @@ export async function pollFeedsToThreatReports(opts?: { maxAgeDays?: number; per
       maxId++;
       const t = c.item.date ? Date.parse(c.item.date) : NaN;
       const created_at = isNaN(t) ? nowTs() : new Date(t).toISOString().slice(0, 19).replace("T", " ");
-      const desc = `${c.item.summary || ""}\n\nSource: ${c.feed.name}${c.item.link ? ` — ${c.item.link}` : ""}`.trim();
-      ins.run(maxId, randomUUID(), (c.item.title || "(untitled)").slice(0, 250), desc.slice(0, 8000),
-        created_at, c.feed.name.slice(0, 200), c.ref);
+      const title = (c.item.title || "(untitled)").slice(0, 250);
+      const desc = `${c.item.summary || ""}\n\nSource: ${c.feed.name}${c.item.link ? ` — ${c.item.link}` : ""}`.trim().slice(0, 8000);
+      const cves = extractCves(`${title}\n${desc}`);
+      if (hasCve) ins.run(maxId, randomUUID(), title, desc, created_at, c.feed.name.slice(0, 200), c.ref, cves.join(",") || null);
+      else ins.run(maxId, randomUUID(), title, desc, created_at, c.feed.name.slice(0, 200), c.ref);
+      createdReports.push({ id: maxId, title, text: `${title}\n${desc}`, ref: c.ref, cves });
       created++;
     }
   });
   tx();
-  return { feeds: feeds.length, fetched, checked, created };
+
+  // Watchlist alerting: notify each term's owner when a new report matches (best-effort).
+  let alerts = 0;
+  try {
+    const watch = getActiveWatchlist();
+    if (watch.length && createdReports.length) {
+      for (const rep of createdReports) {
+        for (const term of watch) {
+          if (!term.UserID) continue;
+          if (watchTermMatches(term, rep.text, rep.cves)) {
+            createNotification({
+              userId: term.UserID,
+              title: `Watchlist hit: ${term.Term}`.slice(0, 200),
+              message: rep.title,
+              level: "warning",
+              link: rep.ref,
+              source: "watchlist",
+              tenantId: term.TenantID ?? null,
+            });
+            alerts++;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(`[feeds] watchlist alerting error: ${(e as Error)?.message || e}`);
+  }
+  return { feeds: feeds.length, fetched, checked, created, alerts };
 }
 
 let pollTimer: NodeJS.Timeout | null = null;

@@ -58,8 +58,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 /* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.toolbar{padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.toolbar .current{font-size:13px;color:var(--text-muted);flex:1}
+.toolbar{padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.toolbar .current{font-size:13px;color:var(--text-muted);flex:1 1 100%}
+.toolbar .btn{flex:0 0 auto;white-space:nowrap}
 .content{flex:1;overflow:auto;padding:0}
 
 /* Buttons */
@@ -87,7 +88,7 @@ td{border-bottom:1px solid var(--border-subtle);padding:5px 10px;max-width:320px
 tr:hover td{background:var(--row-hover)}
 
 /* Search box */
-.search-box{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:0 8px;gap:5px;transition:border-color .15s;flex:1;max-width:380px}
+.search-box{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:0 8px;gap:5px;transition:border-color .15s;flex:1 1 260px;min-width:220px;max-width:460px}
 .search-box:focus-within{border-color:var(--accent)}
 .search-icon{font-size:13px;color:var(--text-dim);flex-shrink:0}
 .search-box input{background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:5px 0;width:100%;min-width:0}

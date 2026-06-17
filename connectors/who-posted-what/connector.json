@@ -1,0 +1,25 @@
+{
+  "id": "who-posted-what",
+  "name": "Who posted what?",
+  "type": "import",
+  "category": "Social Media OSINT",
+  "description": "Social Media OSINT — Facebook. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/who-posted-what-facebook-tool. [SCAFFOLD generated from XORCISM.TOOL #301 by tool_to_connector.py — implement run() in run.py to map Who posted what? output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:who-posted-what",
+  "run": "run.py",
+  "mapping": "who-posted-what",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Who posted what? output file to parse instead of running it live."
+    }
+  ]
+}

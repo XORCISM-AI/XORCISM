@@ -1,0 +1,16 @@
+{
+  "id": "security-suite",
+  "name": "Security Suite",
+  "type": "import",
+  "category": "Pentest",
+  "description": "Imports recon & scan results from Security Suite (https://github.com/TheSecuredAnalyst/security-suite), an all-in-one Python offensive toolkit (OSINT recon, web/API scanners, vuln scanning). Discovered subdomains/hosts and IPs become ASSETs; detected technologies become services/CPEs; scanner findings (XSS, SQLi, SSL/TLS, etc.) become VULNERABILITIES. Offline mode: parse a Security Suite JSON export (`secsuite ... --json -o <file>`). Live mode: if a `target` is set and the `secsuite` binary is on the worker PATH, runs a scan and parses its JSON. Active scanning (intrusive). No DB access in run.py (worker-safe).",
+  "intrusive": true,
+  "permission": "connector:security-suite",
+  "run": "run.py",
+  "mapping": "security-suite",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Security Suite JSON export to import (offline mode)." },
+    { "name": "target", "type": "target", "required": false, "help": "Live mode: domain, host, IP or URL to scan with the local `secsuite` binary (must be in the engagement scope)." },
+    { "name": "command", "type": "string", "required": false, "default": "scan", "pattern": "^[A-Za-z0-9 _-]+$", "help": "Live mode: secsuite subcommand to run against the target (default: scan)." }
+  ]
+}

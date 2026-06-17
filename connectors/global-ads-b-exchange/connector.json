@@ -1,0 +1,25 @@
+{
+  "id": "global-ads-b-exchange",
+  "name": "Global ADS-B Exchange",
+  "type": "import",
+  "category": "Transport OSINT",
+  "description": "Transport OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/global-ads-b-exchange. [SCAFFOLD generated from XORCISM.TOOL #293 by tool_to_connector.py — implement run() in run.py to map Global ADS-B Exchange output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:global-ads-b-exchange",
+  "run": "run.py",
+  "mapping": "global-ads-b-exchange",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Global ADS-B Exchange output file to parse instead of running it live."
+    }
+  ]
+}

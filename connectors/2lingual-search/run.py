@@ -1,0 +1,35 @@
+"""run.py — XORCISM OSINT pivot connector: 2lingual Search.
+
+Language Translation OSINT tool from the OSINT Newsletter tools library.
+Tool: https://tools.osintnewsletter.com/osint-tools/2lingual-search
+
+Turns a `target` observable into a pivot — a deep-link into 2lingual Search when it exposes
+a stable query URL, otherwise a reference to the tool page — returned as an `intel`
+record (-> XTHREAT.INTELEXCHANGE, idempotent by reference). Worker-safe: no DB
+access here. The shared engine is connectors/_osint.py.
+"""
+from __future__ import annotations
+
+import os
+import sys
+from typing import Any, Dict
+
+# Make the shared engine (connectors/_osint.py) importable wherever this runs.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _osint import osint_run  # noqa: E402
+
+SLUG = '2lingual-search'
+TOOL_NAME = '2lingual Search'
+TOOL_URL = 'https://tools.osintnewsletter.com/osint-tools/2lingual-search'
+CATEGORY = 'Language Translation OSINT'
+
+
+def run(params: Dict[str, Any], workdir: str = "") -> Dict[str, Any]:
+    return osint_run(SLUG, TOOL_NAME, TOOL_URL, CATEGORY, params, workdir)
+
+
+if __name__ == "__main__":
+    import json as _json
+    import tempfile
+
+    print(_json.dumps(run({"target": "example.com"}, tempfile.mkdtemp()), indent=2))

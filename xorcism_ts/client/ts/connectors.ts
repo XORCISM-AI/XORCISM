@@ -78,11 +78,23 @@ function showScopeHint(): void {
 
 async function loadConnectors(): Promise<void> {
   connectors = await jget("/api/connectors");
-  const byCat: Record<string, Connector[]> = {};
-  connectors.forEach((c) => { (byCat[c.category || "autres"] ||= []).push(c); });
+  renderConnectorList(($("cn-search") as HTMLInputElement | null)?.value || "");
+}
+
+// Renders the connector list grouped by category, filtered by `query` on the
+// connector name / id / category / type (case-insensitive).
+function renderConnectorList(query: string): void {
   const host = $("cn-list");
   host.innerHTML = "";
   if (!connectors.length) { host.innerHTML = `<span class="hint">${t("conn.none")}</span>`; return; }
+  const q = query.trim().toLowerCase();
+  const matched = q
+    ? connectors.filter((c) =>
+        `${c.name} ${c.id} ${c.category || ""} ${c.type || ""}`.toLowerCase().includes(q))
+    : connectors;
+  if (!matched.length) { host.innerHTML = `<span class="hint">${t("conn.noMatch")}</span>`; return; }
+  const byCat: Record<string, Connector[]> = {};
+  matched.forEach((c) => { (byCat[c.category || "autres"] ||= []).push(c); });
   Object.keys(byCat).sort().forEach((cat) => {
     const h = document.createElement("div");
     h.className = "meta"; h.style.cssText = "margin:8px 0 4px;color:var(--accent);font-size:10px;text-transform:uppercase";
@@ -91,6 +103,7 @@ async function loadConnectors(): Promise<void> {
     byCat[cat].forEach((c) => {
       const it = document.createElement("div");
       it.className = "cn-item"; it.dataset.id = c.id;
+      if (selected && selected.id === c.id) it.classList.add("sel");
       it.innerHTML =
         `<span><span class="nm">${c.name}</span><div class="meta">${c.type}</div></span>` +
         (c.intrusive ? `<span class="pill intr">intrusif</span>` : "");
@@ -378,6 +391,9 @@ function applyConnectorDeepLink(): void {
 
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
+  ($("cn-search") as HTMLInputElement | null)?.addEventListener("input", (e) => {
+    renderConnectorList((e.target as HTMLInputElement).value);
+  });
   void loadConnectors().then(applyConnectorDeepLink);
   void loadWorkerPath();
   void loadEngagements();

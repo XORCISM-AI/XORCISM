@@ -43,7 +43,7 @@ function renderTable(rows: Assessment[]): void {
     t("tprm.col.risk"), t("tprm.col.score"), t("tprm.col.criticality"), t("tprm.col.due"),
     t("tprm.col.completed"), t("tprm.col.owner"), t("tprm.col.questions"),
   ].map((h) => `<th>${esc(h)}</th>`).join("");
-  const body = rows.map((a) => `<tr>
+  const body = rows.map((a) => `<tr class="tprm-row" data-id="${esc(a.id)}" style="cursor:pointer" title="${esc(t("tprm.editHint"))}">
     <td>${esc(a.organisation)}</td>
     <td>${esc(a.questionnaire)}</td>
     <td>${esc(a.relationship)}</td>
@@ -79,8 +79,22 @@ async function load(): Promise<void> {
   }
 }
 
+// Click a row → edit the underlying assessment (XCOMPLIANCE.QUESTIONNAIREFORORGANISATION)
+// in the main explorer's generic edit form, via its deep-link (editCol/editVal).
+function editAssessment(id: string): void {
+  const p = new URLSearchParams({
+    db: "XCOMPLIANCE", table: "QUESTIONNAIREFORORGANISATION",
+    editCol: "QuestionnaireOrganisationID", editVal: id,
+  });
+  location.href = `/?${p.toString()}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
   ($("tprm-search") as HTMLInputElement).oninput = applyFilter;
+  $("tprm-table").addEventListener("click", (e) => {
+    const tr = (e.target as Element | null)?.closest("tr[data-id]") as HTMLElement | null;
+    if (tr?.dataset.id) editAssessment(tr.dataset.id);
+  });
   void load();
 });

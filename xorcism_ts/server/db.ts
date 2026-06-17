@@ -1705,6 +1705,448 @@ export function setOvalDefinitionTags(ovalDefinitionId: number, tags: string[]):
   tx();
 }
 
+// Tags of a CPE (CPETAG table in XORCISM: TagID only → label resolved via the
+// XORCISM.TAG referential, same database). No TagGUID column (like OVALDEFINITIONTAG).
+export function getCpeTags(cpeId: number): string[] {
+  const xo = getDb("XORCISM");
+  if (!xo.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CPETAG'").get()) return [];
+  const ids = (xo
+    .prepare("SELECT TagID FROM CPETAG WHERE CPEID = ? AND TagID IS NOT NULL ORDER BY CPETagID")
+    .all(cpeId) as { TagID: number }[]).map((r) => r.TagID);
+  if (!ids.length) return [];
+  const ph = ids.map(() => "?").join(",");
+  const rows = xo.prepare(`SELECT TagID, TagValue FROM TAG WHERE TagID IN (${ph})`).all(...ids) as
+    { TagID: number; TagValue: string }[];
+  const map = new Map(rows.map((r) => [r.TagID, r.TagValue]));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const i of ids) { const v = map.get(i); if (v && !seen.has(v)) { seen.add(v); out.push(v); } }
+  return out;
+}
+// Replaces the tags of a CPE (shared TAG referential via getOrCreateTag).
+export function setCpeTags(cpeId: number, tags: string[]): void {
+  const clean = cleanTagList(tags);
+  const tagIds = clean.map((t) => getOrCreateTag(t)).filter((n) => n > 0);
+  const xo = getDb("XORCISM");
+  xo.exec(`CREATE TABLE IF NOT EXISTS CPETAG (
+    CPETagID INTEGER PRIMARY KEY, CPEID INTEGER, TagID INTEGER,
+    CreatedDate TEXT, ValidFromDate TEXT, ValidUntilDate TEXT, VocabularyID INTEGER)`);
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const tx = xo.transaction(() => {
+    xo.prepare("DELETE FROM CPETAG WHERE CPEID = ?").run(cpeId);
+    let maxId = (xo.prepare("SELECT COALESCE(MAX(CPETagID),0) AS m FROM CPETAG").get() as { m: number }).m;
+    const ins = xo.prepare(
+      "INSERT INTO CPETAG (CPETagID, CPEID, TagID, CreatedDate, ValidFromDate) VALUES (?,?,?,?,?)"
+    );
+    for (const tid of tagIds) { maxId++; ins.run(maxId, cpeId, tid, ts, today); }
+  });
+  tx();
+}
+
+// Tags of a CWE (CWETAG table in XORCISM: TagID only → label resolved via the
+// XORCISM.TAG referential, same database). No TagGUID column (like CPETAG).
+export function getCweTags(cweId: number): string[] {
+  const xo = getDb("XORCISM");
+  if (!xo.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CWETAG'").get()) return [];
+  const ids = (xo
+    .prepare("SELECT TagID FROM CWETAG WHERE CWEID = ? AND TagID IS NOT NULL ORDER BY CWETagID")
+    .all(cweId) as { TagID: number }[]).map((r) => r.TagID);
+  if (!ids.length) return [];
+  const ph = ids.map(() => "?").join(",");
+  const rows = xo.prepare(`SELECT TagID, TagValue FROM TAG WHERE TagID IN (${ph})`).all(...ids) as
+    { TagID: number; TagValue: string }[];
+  const map = new Map(rows.map((r) => [r.TagID, r.TagValue]));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const i of ids) { const v = map.get(i); if (v && !seen.has(v)) { seen.add(v); out.push(v); } }
+  return out;
+}
+// Replaces the tags of a CWE (shared TAG referential via getOrCreateTag).
+export function setCweTags(cweId: number, tags: string[]): void {
+  const clean = cleanTagList(tags);
+  const tagIds = clean.map((t) => getOrCreateTag(t)).filter((n) => n > 0);
+  const xo = getDb("XORCISM");
+  xo.exec(`CREATE TABLE IF NOT EXISTS CWETAG (
+    CWETagID INTEGER PRIMARY KEY, CWEID INTEGER, TagID INTEGER,
+    CreatedDate TEXT, ValidFromDate TEXT, ValidUntilDate TEXT, VocabularyID INTEGER)`);
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const tx = xo.transaction(() => {
+    xo.prepare("DELETE FROM CWETAG WHERE CWEID = ?").run(cweId);
+    let maxId = (xo.prepare("SELECT COALESCE(MAX(CWETagID),0) AS m FROM CWETAG").get() as { m: number }).m;
+    const ins = xo.prepare(
+      "INSERT INTO CWETAG (CWETagID, CWEID, TagID, CreatedDate, ValidFromDate) VALUES (?,?,?,?,?)"
+    );
+    for (const tid of tagIds) { maxId++; ins.run(maxId, cweId, tid, ts, today); }
+  });
+  tx();
+}
+
+// Basic email-address shape used both by the ASSET form (client) and the
+// server-side harvester below.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Resolves the ORGANISATION the current user belongs to. The XID identity model
+ * has no direct OrganisationID, so we resolve in order of decreasing reliability:
+ *   1. explicit override — XUSERPREF key "OrganisationID";
+ *   2. PERSON linked to the user's email → PERSONFORORGANISATION;
+ *   3. the user's tenant name matching an ORGANISATION name / known-as;
+ *   4. fallback — the lowest OrganisationID (so the link is never null when at
+ *      least one organisation exists).
+ * Returns null only when no ORGANISATION exists at all.
+ */
+export function resolveUserOrganisationId(
+  user: { UserID: number; Email?: string; TenantID?: number } | undefined
+): number | null {
+  if (!user) return null;
+  const xo = getDb("XORCISM");
+  if (!xo.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ORGANISATION'").get()) return null;
+  // 1. explicit override via user preference
+  try {
+    const xid = getDb("XID");
+    const pref = xid
+      .prepare("SELECT PrefValue FROM XUSERPREF WHERE UserID = ? AND PrefKey = 'OrganisationID'")
+      .get(user.UserID) as { PrefValue?: string } | undefined;
+    const n = pref ? Number(pref.PrefValue) : NaN;
+    if (Number.isFinite(n) && n > 0 && xo.prepare("SELECT 1 FROM ORGANISATION WHERE OrganisationID = ?").get(n))
+      return n;
+  } catch { /* XUSERPREF may be absent */ }
+  // 2. PERSON via email → PERSONFORORGANISATION
+  const email = (user.Email || "").trim().toLowerCase();
+  if (email) {
+    try {
+      const persons = xo
+        .prepare(
+          "SELECT PersonID FROM PERSON WHERE LOWER(email) = ? " +
+          "UNION SELECT PersonID FROM EMAILFORPERSON WHERE LOWER(emailaddress) = ?"
+        )
+        .all(email, email) as { PersonID: number }[];
+      for (const p of persons) {
+        const link = xo
+          .prepare(
+            "SELECT OrganisationID FROM PERSONFORORGANISATION WHERE PersonID = ? AND OrganisationID IS NOT NULL " +
+            "ORDER BY PersonOrganisationID DESC LIMIT 1"
+          )
+          .get(p.PersonID) as { OrganisationID: number } | undefined;
+        if (link && link.OrganisationID) return link.OrganisationID;
+      }
+    } catch { /* schema variations */ }
+  }
+  // 3. tenant name ↔ organisation name
+  try {
+    if (user.TenantID) {
+      const ten = getDb("XID")
+        .prepare("SELECT TenantName FROM XTENANT WHERE TenantID = ?")
+        .get(user.TenantID) as { TenantName?: string } | undefined;
+      const tn = (ten?.TenantName || "").trim().toLowerCase();
+      if (tn) {
+        const org = xo
+          .prepare("SELECT OrganisationID FROM ORGANISATION WHERE LOWER(OrganisationName) = ? OR LOWER(OrganisationKnownAs) = ?")
+          .get(tn, tn) as { OrganisationID: number } | undefined;
+        if (org) return org.OrganisationID;
+      }
+    }
+  } catch { /* ignore */ }
+  // 4. fallback: lowest organisation id
+  const first = xo.prepare("SELECT MIN(OrganisationID) AS m FROM ORGANISATION").get() as { m: number | null };
+  return first && first.m != null ? first.m : null;
+}
+
+export interface EmailHarvestResult {
+  email: string;
+  organisationId: number | null;
+  emailInserted: boolean;
+  addressInserted: boolean;
+  orgLinkInserted: boolean;
+}
+
+/**
+ * Captures an email address into the directory tables, idempotently:
+ *   - EMAIL               : one row per address (EmailID = MAX+1);
+ *   - EMAILADDRESS        : one row per address (+GUID, links to EmailID);
+ *   - EMAILFORORGANISATION: one row per (address, organisation) pair.
+ * A matching record is never duplicated. Returns null if `raw` is not an email.
+ */
+export function harvestEmailAddress(raw: string, organisationId: number | null): EmailHarvestResult | null {
+  const email = String(raw || "").trim();
+  if (!EMAIL_RE.test(email)) return null;
+  const xo = getDb("XORCISM");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const lower = email.toLowerCase();
+  const out: EmailHarvestResult = { email, organisationId, emailInserted: false, addressInserted: false, orgLinkInserted: false };
+  const tx = xo.transaction(() => {
+    // EMAIL (one row per address)
+    let emailId = (xo
+      .prepare("SELECT EmailID FROM EMAIL WHERE LOWER(emailaddress) = ? ORDER BY EmailID LIMIT 1")
+      .get(lower) as { EmailID: number } | undefined)?.EmailID;
+    if (!emailId) {
+      emailId = (xo.prepare("SELECT COALESCE(MAX(EmailID),0) AS m FROM EMAIL").get() as { m: number }).m + 1;
+      xo.prepare("INSERT INTO EMAIL (EmailID, emailaddress, isEncrypted) VALUES (?,?,0)").run(emailId, email);
+      out.emailInserted = true;
+    }
+    // EMAILADDRESS (one row per address)
+    if (!xo.prepare("SELECT 1 FROM EMAILADDRESS WHERE LOWER(emailaddress) = ? LIMIT 1").get(lower)) {
+      const maxA = (xo.prepare("SELECT COALESCE(MAX(EmailAddressID),0) AS m FROM EMAILADDRESS").get() as { m: number }).m;
+      xo.prepare(
+        "INSERT INTO EMAILADDRESS (EmailAddressID, EmailAddressGUID, EmailID, emailaddress, CreatedDate, ValidFromDate, isEncrypted) VALUES (?,?,?,?,?,?,0)"
+      ).run(maxA + 1, randomUUID(), emailId, email, ts, today);
+      out.addressInserted = true;
+    }
+    // EMAILFORORGANISATION (one row per address + organisation)
+    if (organisationId != null) {
+      if (!xo.prepare("SELECT 1 FROM EMAILFORORGANISATION WHERE LOWER(emailaddress) = ? AND OrganisationID = ? LIMIT 1").get(lower, organisationId)) {
+        xo.prepare(
+          "INSERT INTO EMAILFORORGANISATION (emailaddress, OrganisationID, CreatedDate, ValidFromDate) VALUES (?,?,?,?)"
+        ).run(email, organisationId, ts, today);
+        out.orgLinkInserted = true;
+      }
+    }
+  });
+  tx();
+  return out;
+}
+
+// ── First-run setup wizard ──────────────────────────────────────────────────
+// True on a fresh install: no ORGANISATION exists yet. Used (together with the
+// Admin role, checked in the route) to offer the first-run wizard.
+export function setupFirstRunNeeded(): boolean {
+  const xo = getDb("XORCISM");
+  if (!xo.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ORGANISATION'").get())
+    return false;
+  const n = (xo.prepare("SELECT COUNT(*) AS n FROM ORGANISATION").get() as { n: number }).n;
+  return n === 0;
+}
+
+// Creates an ASSET (idempotent by name within the tenant) and links it to the
+// organisation via ASSETFORORGANISATION (idempotent by asset + organisation).
+function ensureAssetLinkedToOrg(
+  xo: Database.Database, name: string, description: string,
+  organisationId: number, orgGuid: string | null, tenantId: number | null,
+  ts: string, today: string
+): { assetId: number; created: boolean } {
+  const existing = xo
+    .prepare(`SELECT AssetID, AssetGUID FROM "ASSET" WHERE AssetName = ? AND (TenantID IS ? OR ? IS NULL) ORDER BY AssetID LIMIT 1`)
+    .get(name, tenantId, tenantId) as { AssetID: number; AssetGUID: string } | undefined;
+  let assetId: number;
+  let assetGuid: string;
+  let created = false;
+  if (existing) {
+    assetId = existing.AssetID;
+    assetGuid = existing.AssetGUID || randomUUID();
+  } else {
+    assetId = (xo.prepare(`SELECT COALESCE(MAX(AssetID),0)+1 AS n FROM "ASSET"`).get() as { n: number }).n;
+    assetGuid = randomUUID();
+    xo.prepare(
+      `INSERT INTO "ASSET" (AssetID, AssetGUID, AssetName, AssetDescription, Enabled, CreatedDate, ValidFromDate, TenantID)
+       VALUES (?,?,?,?,?,?,?,?)`
+    ).run(assetId, assetGuid, name, description, 1, ts, today, tenantId);
+    created = true;
+  }
+  if (!xo.prepare("SELECT 1 FROM ASSETFORORGANISATION WHERE AssetID = ? AND OrganisationID = ? LIMIT 1").get(assetId, organisationId)) {
+    const linkId = (xo.prepare("SELECT COALESCE(MAX(AssetForOrganisationID),0)+1 AS n FROM ASSETFORORGANISATION").get() as { n: number }).n;
+    xo.prepare(
+      `INSERT INTO ASSETFORORGANISATION
+         (AssetForOrganisationID, OrganisationAssetGUID, OrganisationID, OrganisationGUID, AssetID, AssetGUID, CreatedDate, ValidFromDate)
+       VALUES (?,?,?,?,?,?,?,?)`
+    ).run(linkId, randomUUID(), organisationId, orgGuid, assetId, assetGuid, ts, today);
+  }
+  return { assetId, created };
+}
+
+// Creates an APPLICATION (idempotent by name — APPLICATION has no TenantID) and
+// links it to the organisation via APPLICATIONFORORGANISATION.
+function ensureApplicationLinkedToOrg(
+  xo: Database.Database, name: string, description: string,
+  organisationId: number, orgGuid: string | null, ts: string, today: string
+): { applicationId: number; created: boolean } {
+  const existing = xo
+    .prepare(`SELECT ApplicationID, ApplicationGUID FROM "APPLICATION" WHERE ApplicationName = ? ORDER BY ApplicationID LIMIT 1`)
+    .get(name) as { ApplicationID: number; ApplicationGUID: string } | undefined;
+  let applicationId: number;
+  let appGuid: string;
+  let created = false;
+  if (existing) {
+    applicationId = existing.ApplicationID;
+    appGuid = existing.ApplicationGUID || randomUUID();
+  } else {
+    applicationId = (xo.prepare(`SELECT COALESCE(MAX(ApplicationID),0)+1 AS n FROM "APPLICATION"`).get() as { n: number }).n;
+    appGuid = randomUUID();
+    xo.prepare(
+      `INSERT INTO "APPLICATION" (ApplicationID, ApplicationGUID, ApplicationName, ApplicationDescription, CreatedDate, ValidFromDate)
+       VALUES (?,?,?,?,?,?)`
+    ).run(applicationId, appGuid, name, description, ts, today);
+    created = true;
+  }
+  if (!xo.prepare("SELECT 1 FROM APPLICATIONFORORGANISATION WHERE ApplicationID = ? AND OrganisationID = ? LIMIT 1").get(applicationId, organisationId)) {
+    const linkId = (xo.prepare("SELECT COALESCE(MAX(OrganisationApplicationID),0)+1 AS n FROM APPLICATIONFORORGANISATION").get() as { n: number }).n;
+    xo.prepare(
+      `INSERT INTO APPLICATIONFORORGANISATION
+         (OrganisationApplicationID, OrganisationApplicationGUID, OrganisationID, OrganisationGUID, ApplicationID, ApplicationGUID, CreatedDate, ValidFromDate)
+       VALUES (?,?,?,?,?,?,?,?)`
+    ).run(linkId, randomUUID(), organisationId, orgGuid, applicationId, appGuid, ts, today);
+  }
+  return { applicationId, created };
+}
+
+export interface AdminAssetResult {
+  adminAssetId: number;   // "XORCISM Admin account" ASSET
+  xorcismAssetId: number; // "XORCISM" ASSET
+  applicationId: number;  // "XORCISM" APPLICATION
+  created: { adminAsset: boolean; xorcismAsset: boolean; application: boolean };
+}
+
+/**
+ * First-run wizard step 2: for the just-created ORGANISATION, creates (all
+ * idempotent, in one transaction, each linked to the organisation):
+ *   - the "XORCISM Admin account" ASSET  + ASSETFORORGANISATION
+ *   - the "XORCISM" ASSET                + ASSETFORORGANISATION
+ *   - the "XORCISM" APPLICATION          + APPLICATIONFORORGANISATION
+ */
+export function setupCreateAdminAsset(organisationId: number, tenantId: number | null): AdminAssetResult {
+  const xo = getDb("XORCISM");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const out: AdminAssetResult = {
+    adminAssetId: 0, xorcismAssetId: 0, applicationId: 0,
+    created: { adminAsset: false, xorcismAsset: false, application: false },
+  };
+  const tx = xo.transaction(() => {
+    const orgGuid = (xo.prepare("SELECT OrganisationGUID FROM ORGANISATION WHERE OrganisationID = ?")
+      .get(organisationId) as { OrganisationGUID?: string } | undefined)?.OrganisationGUID ?? null;
+    const admin = ensureAssetLinkedToOrg(xo, "XORCISM Admin account",
+      "Initial administrator account asset, created by the XORCISM first-run setup wizard.",
+      organisationId, orgGuid, tenantId, ts, today);
+    out.adminAssetId = admin.assetId;
+    out.created.adminAsset = admin.created;
+    const xasset = ensureAssetLinkedToOrg(xo, "XORCISM",
+      "The XORCISM platform itself, registered as an asset by the first-run setup wizard.",
+      organisationId, orgGuid, tenantId, ts, today);
+    out.xorcismAssetId = xasset.assetId;
+    out.created.xorcismAsset = xasset.created;
+    const app = ensureApplicationLinkedToOrg(xo, "XORCISM",
+      "The XORCISM platform application, registered by the first-run setup wizard.",
+      organisationId, orgGuid, ts, today);
+    out.applicationId = app.applicationId;
+    out.created.application = app.created;
+  });
+  tx();
+  return out;
+}
+
+// ── ASSET ↔ ORGANISATION (ASSETFORORGANISATION) and ASSET ↔ PERSON (PERSONFORASSET) ──
+// Readable person name (FullName, else First+Last, else "Person #id"), `alias`
+// being the PERSON table alias used in the query ("" for none).
+function personNameExpr(alias: string): string {
+  const a = alias ? alias + "." : "";
+  return `COALESCE(NULLIF(TRIM(${a}FullName),''), ` +
+    `NULLIF(TRIM(COALESCE(${a}FirstName,'')||' '||COALESCE(${a}LastName,'')),''), 'Person #'||${a}PersonID)`;
+}
+
+export function searchOrganisations(q: string, limit = 30): { OrganisationID: number; OrganisationName: string }[] {
+  const xo = getDb("XORCISM");
+  const like = `%${q.trim()}%`;
+  return xo.prepare(
+    `SELECT OrganisationID, COALESCE(OrganisationName,'Organisation #'||OrganisationID) AS OrganisationName
+     FROM ORGANISATION
+     WHERE OrganisationName LIKE ? OR OrganisationKnownAs LIKE ? OR CAST(OrganisationID AS TEXT)=?
+     ORDER BY OrganisationName LIMIT ?`
+  ).all(like, like, q.trim(), limit) as { OrganisationID: number; OrganisationName: string }[];
+}
+
+export function searchPersons(q: string, limit = 30): { PersonID: number; PersonName: string }[] {
+  const xo = getDb("XORCISM");
+  const like = `%${q.trim()}%`;
+  return xo.prepare(
+    `SELECT PersonID, ${personNameExpr("")} AS PersonName FROM PERSON
+     WHERE FullName LIKE ? OR FirstName LIKE ? OR LastName LIKE ? OR email LIKE ? OR CAST(PersonID AS TEXT)=?
+     ORDER BY PersonName LIMIT ?`
+  ).all(like, like, like, like, q.trim(), limit) as { PersonID: number; PersonName: string }[];
+}
+
+export function getDefaultOrganisationForUser(
+  user: { UserID: number; Email?: string; TenantID?: number } | undefined
+): { OrganisationID: number; OrganisationName: string } | null {
+  const id = resolveUserOrganisationId(user);
+  if (id == null) return null;
+  const r = getDb("XORCISM")
+    .prepare("SELECT OrganisationID, COALESCE(OrganisationName,'Organisation #'||OrganisationID) AS OrganisationName FROM ORGANISATION WHERE OrganisationID = ?")
+    .get(id) as { OrganisationID: number; OrganisationName: string } | undefined;
+  return r ?? null;
+}
+
+export function getAssetOrganisations(assetId: number): { OrganisationID: number; OrganisationName: string }[] {
+  return getDb("XORCISM").prepare(
+    `SELECT afo.OrganisationID AS OrganisationID,
+            COALESCE(o.OrganisationName,'Organisation #'||afo.OrganisationID) AS OrganisationName
+     FROM ASSETFORORGANISATION afo
+     LEFT JOIN ORGANISATION o ON o.OrganisationID = afo.OrganisationID
+     WHERE afo.AssetID = ? AND afo.OrganisationID IS NOT NULL
+     ORDER BY OrganisationName`
+  ).all(assetId) as { OrganisationID: number; OrganisationName: string }[];
+}
+
+/** Replaces an asset's ORGANISATION links (DELETE then INSERT into ASSETFORORGANISATION). */
+export function setAssetOrganisations(assetId: number, organisationIds: number[]): void {
+  const xo = getDb("XORCISM");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const assetGuid = (xo.prepare(`SELECT AssetGUID FROM "ASSET" WHERE AssetID = ?`).get(assetId) as { AssetGUID?: string } | undefined)?.AssetGUID ?? null;
+  const ids = Array.from(new Set(organisationIds.filter((n) => Number.isFinite(n) && n > 0)));
+  const orgGuidStmt = xo.prepare("SELECT OrganisationGUID FROM ORGANISATION WHERE OrganisationID = ?");
+  const tx = xo.transaction(() => {
+    xo.prepare("DELETE FROM ASSETFORORGANISATION WHERE AssetID = ?").run(assetId);
+    let maxId = (xo.prepare("SELECT COALESCE(MAX(AssetForOrganisationID),0) AS m FROM ASSETFORORGANISATION").get() as { m: number }).m;
+    const ins = xo.prepare(
+      `INSERT INTO ASSETFORORGANISATION
+         (AssetForOrganisationID, OrganisationAssetGUID, OrganisationID, OrganisationGUID, AssetID, AssetGUID, CreatedDate, ValidFromDate)
+       VALUES (?,?,?,?,?,?,?,?)`
+    );
+    for (const oid of ids) {
+      const orgGuid = (orgGuidStmt.get(oid) as { OrganisationGUID?: string } | undefined)?.OrganisationGUID ?? null;
+      maxId++;
+      ins.run(maxId, randomUUID(), oid, orgGuid, assetId, assetGuid, ts, today);
+    }
+  });
+  tx();
+}
+
+export interface AssetPersonRow { PersonID: number; PersonName: string; relationshiptype: string; }
+
+export function getAssetPersons(assetId: number): AssetPersonRow[] {
+  return getDb("XORCISM").prepare(
+    `SELECT pfa.PersonID AS PersonID,
+            COALESCE(${personNameExpr("p")},'Person #'||pfa.PersonID) AS PersonName,
+            COALESCE(pfa.relationshiptype,'') AS relationshiptype
+     FROM PERSONFORASSET pfa
+     LEFT JOIN PERSON p ON p.PersonID = pfa.PersonID
+     WHERE pfa.AssetID = ? AND pfa.PersonID IS NOT NULL
+     ORDER BY PersonName`
+  ).all(assetId) as AssetPersonRow[];
+}
+
+/** Replaces an asset's PERSON links (DELETE then INSERT into PERSONFORASSET). One role per person. */
+export function setAssetPersons(assetId: number, links: { personId: number; relationshiptype: string }[]): void {
+  const xo = getDb("XORCISM");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const byPerson = new Map<number, string>();
+  for (const l of links) {
+    const pid = Number(l.personId);
+    if (Number.isFinite(pid) && pid > 0) byPerson.set(pid, String(l.relationshiptype || "").slice(0, 100));
+  }
+  const tx = xo.transaction(() => {
+    xo.prepare("DELETE FROM PERSONFORASSET WHERE AssetID = ?").run(assetId);
+    const ins = xo.prepare(
+      "INSERT INTO PERSONFORASSET (PersonID, AssetID, relationshiptype, CreatedDate, ValidFromDate) VALUES (?,?,?,?,?)"
+    );
+    for (const [pid, role] of byPerson) ins.run(pid, assetId, role || null, ts, today);
+  });
+  tx();
+}
+
 // Tag cloud (dashboard): frequency of ACTIVE ASSETTAG.Tag — ValidUntil
 // empty/beyond today AND ValidFrom empty/<= today. Scoped to the tenant (ASSET
 // join) if the caller is isolated; all tenants if super-admin (tenant null).
@@ -1877,6 +2319,76 @@ export function setAlertAssets(alertId: number, assetIds: number[], tenant: numb
     }
   });
   tx();
+}
+
+// ── THREAT ↔ ASSET link (XTHREAT.THREATFORASSET) ────────────────────────────
+export function getThreatAssets(threatId: number): number[] {
+  const db = getDb("XTHREAT");
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='THREATFORASSET'").get()) return [];
+  return (
+    db.prepare("SELECT AssetID FROM THREATFORASSET WHERE ThreatID = ? AND AssetID IS NOT NULL").all(threatId) as { AssetID: number }[]
+  ).map((r) => r.AssetID);
+}
+
+/** Replaces the whole set of assets linked to a threat (DELETE then INSERT); stamps TenantID. */
+export function setThreatAssets(threatId: number, assetIds: number[], tenant: number | null = null): void {
+  const db = getDb("XTHREAT");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM THREATFORASSET WHERE ThreatID = ?").run(threatId);
+    let maxId = (db.prepare("SELECT COALESCE(MAX(AssetThreatID),0) AS m FROM THREATFORASSET").get() as { m: number }).m;
+    const ins = db.prepare(
+      "INSERT INTO THREATFORASSET (AssetThreatID, ThreatID, AssetID, CreatedDate, ValidFrom, TenantID) VALUES (?,?,?,?,?,?)"
+    );
+    for (const aid of Array.from(new Set(assetIds))) {
+      if (aid == null) continue;
+      maxId++;
+      ins.run(maxId, threatId, aid, ts, today, tenant);
+    }
+  });
+  tx();
+}
+
+/** ASSET list with their ASSETTAG tags (comma-joined), for the tag-filterable picker. */
+export function getAssetsWithTags(tenant: number | null = null): { AssetID: number; AssetName: string; Tags: string }[] {
+  return getDb("XORCISM").prepare(
+    `SELECT a.AssetID AS AssetID, COALESCE(a.AssetName,'#'||a.AssetID) AS AssetName,
+            COALESCE((SELECT GROUP_CONCAT(DISTINCT t.Tag) FROM ASSETTAG t WHERE t.AssetID = a.AssetID AND t.Tag IS NOT NULL AND TRIM(t.Tag) <> ''),'') AS Tags
+     FROM ASSET a
+     WHERE (? IS NULL OR a.TenantID = ? OR a.TenantID IS NULL)
+     ORDER BY a.AssetName`
+  ).all(tenant, tenant) as { AssetID: number; AssetName: string; Tags: string }[];
+}
+
+/** Bulk-creates THREATFORASSET rows: one per asset for the given threat (skips existing asset+threat pairs). */
+export function bulkCreateThreatForAsset(
+  threatId: number, assetIds: number[],
+  opts: { relationship?: string; validFrom?: string; validUntil?: string; personId?: number | null },
+  tenant: number | null = null
+): { created: number; skipped: number } {
+  const xt = getDb("XTHREAT");
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const ids = Array.from(new Set(assetIds.filter((n) => Number.isFinite(n) && n > 0)));
+  let created = 0, skipped = 0;
+  const tx = xt.transaction(() => {
+    let maxId = (xt.prepare("SELECT COALESCE(MAX(AssetThreatID),0) AS m FROM THREATFORASSET").get() as { m: number }).m;
+    const dup = xt.prepare("SELECT 1 FROM THREATFORASSET WHERE AssetID = ? AND ThreatID = ? LIMIT 1");
+    const ins = xt.prepare(
+      `INSERT INTO THREATFORASSET (AssetThreatID, AssetID, ThreatID, CreatedDate, PersonID, Relationship, ValidFrom, ValidUntil, TenantID)
+       VALUES (?,?,?,?,?,?,?,?,?)`
+    );
+    for (const aid of ids) {
+      if (dup.get(aid, threatId)) { skipped++; continue; }
+      maxId++;
+      ins.run(maxId, aid, threatId, ts, opts.personId ?? null, opts.relationship || null,
+        opts.validFrom || today, opts.validUntil || null, tenant);
+      created++;
+    }
+  });
+  tx();
+  return { created, skipped };
 }
 
 /**
@@ -2819,14 +3331,71 @@ export function ensureThreatTables(): void {
       ThreatFeedDescription TEXT, Category TEXT, Vendor TEXT,
       Enabled INTEGER DEFAULT 1, CreatedDate TEXT);
     CREATE INDEX IF NOT EXISTS ix_threatfeed_enabled ON THREATFEED(Enabled);
+    -- THREATFORASSET: links a THREAT to an ASSET (with relationship + validity + tenant).
+    CREATE TABLE IF NOT EXISTS THREATFORASSET (
+      AssetThreatID INTEGER PRIMARY KEY,
+      AssetID INTEGER, ThreatID INTEGER, CreatedDate TEXT, PersonID INTEGER,
+      Relationship TEXT, ValidFrom TEXT, ValidUntil TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_threatforasset_asset ON THREATFORASSET(AssetID);
+    CREATE INDEX IF NOT EXISTS ix_threatforasset_threat ON THREATFORASSET(ThreatID);
+    -- WATCHLIST: terms (keyword / actor / CVE) the analyst tracks across the feed.
+    -- The feed poller alerts (NOTIFICATION) the owner when new reporting matches.
+    CREATE TABLE IF NOT EXISTS WATCHLIST (
+      WatchlistID INTEGER PRIMARY KEY,
+      Term TEXT, WatchType TEXT DEFAULT 'keyword', WatchlistName TEXT,
+      UserID INTEGER, Enabled INTEGER DEFAULT 1, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_watchlist_enabled ON WATCHLIST(Enabled);
+    -- PIR: standing priority intelligence requirements (CTI tasking).
+    CREATE TABLE IF NOT EXISTS PIR (
+      PIRID INTEGER PRIMARY KEY,
+      PIRName TEXT, PIRDescription TEXT, Priority TEXT DEFAULT 'Medium',
+      Keywords TEXT, Status TEXT DEFAULT 'Active', PersonID INTEGER,
+      CreatedDate TEXT, ValidFrom TEXT, ValidUntil TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_pir_status ON PIR(Status);
   `);
   seedThreatFeeds(db);
-  // THREATREPORT PDF-ingestion + feed-ingestion columns on existing DBs (CREATE above covers fresh ones).
+  // THREATREPORT PDF-ingestion + feed-ingestion + enrichment columns on existing DBs.
   const trCols = new Set((db.prepare(`PRAGMA table_info("THREATREPORT")`).all() as { name: string }[]).map((c) => c.name));
-  for (const [n, ty] of [["ThreatReportFileName", "TEXT"], ["ThreatReportSource", "TEXT"], ["ThreatReportReference", "TEXT"]] as const) {
+  for (const [n, ty] of [["ThreatReportFileName", "TEXT"], ["ThreatReportSource", "TEXT"],
+    ["ThreatReportReference", "TEXT"], ["CveTags", "TEXT"], ["AiSummary", "TEXT"]] as const) {
     if (!trCols.has(n)) db.exec(`ALTER TABLE "THREATREPORT" ADD COLUMN "${n}" ${ty}`);
   }
   db.exec("CREATE INDEX IF NOT EXISTS ix_threatreport_ref ON THREATREPORT(ThreatReportReference)");
+}
+
+// ── CTI: watchlists, IOC/CVE extraction, brief building ──────────────────────
+// CVE references (precise, low-noise) and common IOC shapes pulled from free text.
+const CVE_RE = /CVE-\d{4}-\d{3,7}/gi;
+const SHA_RE = /\b[a-fA-F0-9]{64}\b|\b[a-fA-F0-9]{40}\b|\b[a-fA-F0-9]{32}\b/g;
+
+export function extractCves(text: string): string[] {
+  const out = new Set<string>();
+  for (const m of String(text || "").matchAll(CVE_RE)) out.add(m[0].toUpperCase());
+  return [...out];
+}
+export function extractHashes(text: string): string[] {
+  const out = new Set<string>();
+  for (const m of String(text || "").matchAll(SHA_RE)) out.add(m[0].toLowerCase());
+  return [...out];
+}
+
+export interface WatchTerm { WatchlistID: number; Term: string; WatchType: string; UserID: number | null; TenantID: number | null; }
+export function getActiveWatchlist(): WatchTerm[] {
+  const xt = getDb("XTHREAT");
+  if (!xt.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='WATCHLIST'").get()) return [];
+  return xt.prepare(
+    "SELECT WatchlistID, Term, COALESCE(WatchType,'keyword') AS WatchType, UserID, TenantID FROM WATCHLIST WHERE Enabled = 1 AND Term IS NOT NULL AND TRIM(Term) <> ''"
+  ).all() as WatchTerm[];
+}
+
+/** A watch term matches a report's text. CVE terms match the exact CVE token; others substring. */
+export function watchTermMatches(term: WatchTerm, haystack: string, cves: string[]): boolean {
+  const t = (term.Term || "").trim().toLowerCase();
+  if (!t) return false;
+  if ((term.WatchType || "").toLowerCase() === "cve") {
+    return cves.some((c) => c.toLowerCase() === t) || cves.some((c) => c.toLowerCase().includes(t));
+  }
+  return haystack.toLowerCase().includes(t);
 }
 
 // ── Curated trusted CTI RSS feeds (seeded once into THREATFEED) ──────────────
@@ -2853,11 +3422,24 @@ const TRUSTED_CTI_FEEDS: [string, string, string, string, string][] = [
   ["Security Affairs", "https://securityaffairs.com/feed", "https://securityaffairs.com", "News", "Pierluigi Paganini"],
   ["The DFIR Report", "https://thedfirreport.com/feed/", "https://thedfirreport.com", "Community", "The DFIR Report"],
   ["NCSC UK", "https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml", "https://www.ncsc.gov.uk", "Government", "NCSC UK"],
+  ["CrowdStrike Blog", "https://www.crowdstrike.com/blog/feed/", "https://www.crowdstrike.com/blog", "Vendor research", "CrowdStrike"],
+  ["SentinelOne Labs", "https://www.sentinelone.com/labs/feed/", "https://www.sentinelone.com/labs", "Vendor research", "SentinelOne"],
+  ["Google Project Zero", "https://googleprojectzero.blogspot.com/feeds/posts/default", "https://googleprojectzero.blogspot.com", "Vendor research", "Google Project Zero"],
+  ["CERT-FR (ANSSI)", "https://www.cert.ssi.gouv.fr/feed/", "https://www.cert.ssi.gouv.fr", "Government", "ANSSI / CERT-FR"],
+  ["CERT-EU", "https://cert.europa.eu/publications/threat-intelligence-rss", "https://cert.europa.eu", "Government", "CERT-EU"],
+  ["CyberScoop", "https://cyberscoop.com/feed/", "https://cyberscoop.com", "News", "CyberScoop"],
+  ["The Record", "https://therecord.media/feed/", "https://therecord.media", "News", "Recorded Future News"],
+  ["Graham Cluley", "https://grahamcluley.com/feed/", "https://grahamcluley.com", "Community", "Graham Cluley"],
+  ["The Register — Security", "https://www.theregister.com/security/headlines.atom", "https://www.theregister.com/security", "News", "The Register"],
+  ["Volexity", "https://www.volexity.com/blog/feed/", "https://www.volexity.com/blog", "Vendor research", "Volexity"],
+  ["WithSecure Labs", "https://labs.withsecure.com/content/labs/rss.xml", "https://labs.withsecure.com", "Vendor research", "WithSecure"],
+  ["r/netsec", "https://www.reddit.com/r/netsec/.rss", "https://www.reddit.com/r/netsec", "Community", "Reddit r/netsec"],
 ];
 
 /** Seeds THREATFEED with the trusted CTI RSS feeds once (idempotent by FeedURL). */
 function seedThreatFeeds(db: Database.Database): void {
-  if ((db.prepare("SELECT COUNT(*) AS n FROM THREATFEED").get() as { n: number }).n > 0) return;
+  // Idempotent top-up: INSERT OR IGNORE on the UNIQUE FeedURL adds the curated feeds
+  // on a fresh setup AND tops up existing DBs with any newly-added feeds.
   let id = (db.prepare("SELECT COALESCE(MAX(ThreatFeedID),0) AS m FROM THREATFEED").get() as { m: number }).m;
   const ins = db.prepare(
     `INSERT OR IGNORE INTO THREATFEED
@@ -3053,6 +3635,24 @@ export function ensureAssetColumns(): void {
   for (const [n, t] of Object.entries(cols)) {
     if (!existing.has(n)) db.exec(`ALTER TABLE "ASSET" ADD COLUMN "${n}" ${t}`);
   }
+  // ASSETVULNERABILITY.FalsePositive flag (0/1) — idempotent.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETVULNERABILITY'").get()) {
+    const avCols = new Set(
+      (db.prepare(`PRAGMA table_info("ASSETVULNERABILITY")`).all() as { name: string }[]).map((c) => c.name)
+    );
+    if (!avCols.has("FalsePositive")) {
+      db.exec(`ALTER TABLE "ASSETVULNERABILITY" ADD COLUMN "FalsePositive" INTEGER DEFAULT 0`);
+    }
+  }
+  // ASSETFORORGANISATION.Relationship (free text describing the asset↔org relationship) — idempotent.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETFORORGANISATION'").get()) {
+    const afoCols = new Set(
+      (db.prepare(`PRAGMA table_info("ASSETFORORGANISATION")`).all() as { name: string }[]).map((c) => c.name)
+    );
+    if (!afoCols.has("Relationship")) {
+      db.exec(`ALTER TABLE "ASSETFORORGANISATION" ADD COLUMN "Relationship" TEXT`);
+    }
+  }
 }
 
 /**
@@ -3066,7 +3666,7 @@ export function ensureVulnerabilityColumns(): void {
   const existing = new Set(
     (db.prepare(`PRAGMA table_info("VULNERABILITY")`).all() as { name: string }[]).map((c) => c.name)
   );
-  const cols: Record<string, string> = { EPSS: "REAL" };
+  const cols: Record<string, string> = { EPSS: "REAL", FalsePositive: "INTEGER DEFAULT 0" };
   for (const [n, t] of Object.entries(cols)) {
     if (!existing.has(n)) db.exec(`ALTER TABLE "VULNERABILITY" ADD COLUMN "${n}" ${t}`);
   }

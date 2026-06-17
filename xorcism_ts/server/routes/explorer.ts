@@ -55,6 +55,10 @@ import {
   setIncidentAssets,
   getAlertAssets,
   setAlertAssets,
+  getThreatAssets,
+  setThreatAssets,
+  getAssetsWithTags,
+  bulkCreateThreatForAsset,
   getIncidentThreatActor,
   setIncidentThreatActor,
   getAuditAssets,
@@ -77,6 +81,21 @@ import {
   listTags,
   getVulnerabilityTags,
   setVulnerabilityTags,
+  getCpeTags,
+  setCpeTags,
+  getCweTags,
+  setCweTags,
+  resolveUserOrganisationId,
+  harvestEmailAddress,
+  setupFirstRunNeeded,
+  setupCreateAdminAsset,
+  searchOrganisations,
+  searchPersons,
+  getDefaultOrganisationForUser,
+  getAssetOrganisations,
+  setAssetOrganisations,
+  getAssetPersons,
+  setAssetPersons,
   getOvalDefinitionTags,
   setOvalDefinitionTags,
   getTprmDashboard,
@@ -947,6 +966,150 @@ router.put("/ovaldef-tags", (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// GET /api/cpe-tags?cpeId=N — tags of a CPE (CPETAG)
+router.get("/cpe-tags", (req: Request, res: Response) => {
+  const cid = Number(req.query.cpeId);
+  if (!cid) return void res.status(400).json({ error: "cpeId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "CPE")) return deny(req, res, "read", "XORCISM", "CPE");
+  res.json(getCpeTags(cid));
+});
+
+// PUT /api/cpe-tags { cpeId, tags:[...] } — replaces the tags
+router.put("/cpe-tags", (req: Request, res: Response) => {
+  const { cpeId, tags } = req.body as { cpeId: number; tags: unknown[] };
+  if (!cpeId || !Array.isArray(tags))
+    return void res.status(400).json({ error: "cpeId et tags[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "CPE") && !userCan(req.user, "create", "XORCISM", "CPE"))
+    return deny(req, res, "update", "XORCISM", "CPE");
+  setCpeTags(Number(cpeId), tags.map((t) => String(t)));
+  xid.addAudit({ userId: req.user!.UserID, action: "cpe_tags", resourceType: "table",
+    resourceKey: "XORCISM.CPETAG", detail: `cpe=${cpeId} n=${tags.length}`, ip: clientIp(req) });
+  res.json({ ok: true });
+});
+
+// GET /api/cwe-tags?cweId=N — tags of a CWE (CWETAG)
+router.get("/cwe-tags", (req: Request, res: Response) => {
+  const cid = Number(req.query.cweId);
+  if (!cid) return void res.status(400).json({ error: "cweId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "CWE")) return deny(req, res, "read", "XORCISM", "CWE");
+  res.json(getCweTags(cid));
+});
+
+// PUT /api/cwe-tags { cweId, tags:[...] } — replaces the tags
+router.put("/cwe-tags", (req: Request, res: Response) => {
+  const { cweId, tags } = req.body as { cweId: number; tags: unknown[] };
+  if (!cweId || !Array.isArray(tags))
+    return void res.status(400).json({ error: "cweId et tags[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "CWE") && !userCan(req.user, "create", "XORCISM", "CWE"))
+    return deny(req, res, "update", "XORCISM", "CWE");
+  setCweTags(Number(cweId), tags.map((t) => String(t)));
+  xid.addAudit({ userId: req.user!.UserID, action: "cwe_tags", resourceType: "table",
+    resourceKey: "XORCISM.CWETAG", detail: `cwe=${cweId} n=${tags.length}`, ip: clientIp(req) });
+  res.json({ ok: true });
+});
+
+// ── ASSET form combobox lookups + ASSET↔ORG / ASSET↔PERSON links ──────────────
+// GET /api/lookup/organisations?q= — searchable organisation list (ASSET form combobox)
+router.get("/lookup/organisations", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  res.json(searchOrganisations(String(req.query.q ?? ""), 30));
+});
+// GET /api/lookup/persons?q= — searchable person list (ASSET form combobox)
+router.get("/lookup/persons", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  res.json(searchPersons(String(req.query.q ?? ""), 30));
+});
+// GET /api/default-organisation — the current user's organisation (combobox default)
+router.get("/default-organisation", (req: Request, res: Response) => {
+  res.json(getDefaultOrganisationForUser(req.user) ?? {});
+});
+// GET /api/asset-organisations?assetId= — organisations linked to an asset (ASSETFORORGANISATION)
+router.get("/asset-organisations", (req: Request, res: Response) => {
+  const assetId = Number(req.query.assetId);
+  if (!assetId) return void res.status(400).json({ error: "assetId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  if (!parentTenantOr403(req, res, "XORCISM", "ASSET", "AssetID", assetId, "read")) return;
+  res.json(getAssetOrganisations(assetId));
+});
+// PUT /api/asset-organisations { assetId, organisationIds:[...] } — replaces the ORG links
+router.put("/asset-organisations", (req: Request, res: Response) => {
+  const { assetId, organisationIds } = req.body as { assetId: number; organisationIds: number[] };
+  if (!assetId || !Array.isArray(organisationIds))
+    return void res.status(400).json({ error: "assetId et organisationIds[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "ASSET") && !userCan(req.user, "create", "XORCISM", "ASSET"))
+    return deny(req, res, "update", "XORCISM", "ASSET");
+  if (!parentTenantOr403(req, res, "XORCISM", "ASSET", "AssetID", Number(assetId), "update")) return;
+  setAssetOrganisations(Number(assetId), organisationIds.map(Number));
+  xid.addAudit({ userId: req.user!.UserID, action: "link_asset_organisations", resourceType: "table",
+    resourceKey: "XORCISM.ASSETFORORGANISATION", detail: `asset=${assetId} n=${organisationIds.length}`, ip: clientIp(req) });
+  res.json({ ok: true });
+});
+// GET /api/asset-persons?assetId= — persons linked to an asset (PERSONFORASSET) + name + role
+router.get("/asset-persons", (req: Request, res: Response) => {
+  const assetId = Number(req.query.assetId);
+  if (!assetId) return void res.status(400).json({ error: "assetId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  if (!parentTenantOr403(req, res, "XORCISM", "ASSET", "AssetID", assetId, "read")) return;
+  res.json(getAssetPersons(assetId));
+});
+// PUT /api/asset-persons { assetId, links:[{personId, relationshiptype}] } — replaces the PERSON links
+router.put("/asset-persons", (req: Request, res: Response) => {
+  const { assetId, links } = req.body as { assetId: number; links: { personId: number; relationshiptype: string }[] };
+  if (!assetId || !Array.isArray(links))
+    return void res.status(400).json({ error: "assetId et links[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "ASSET") && !userCan(req.user, "create", "XORCISM", "ASSET"))
+    return deny(req, res, "update", "XORCISM", "ASSET");
+  if (!parentTenantOr403(req, res, "XORCISM", "ASSET", "AssetID", Number(assetId), "update")) return;
+  setAssetPersons(Number(assetId), links.map((l) => ({ personId: Number(l.personId), relationshiptype: String(l.relationshiptype ?? "") })));
+  xid.addAudit({ userId: req.user!.UserID, action: "link_asset_persons", resourceType: "table",
+    resourceKey: "XORCISM.PERSONFORASSET", detail: `asset=${assetId} n=${links.length}`, ip: clientIp(req) });
+  res.json({ ok: true });
+});
+
+// GET /api/setup/status — true when the first-run wizard should be offered:
+// the caller is an Admin and no ORGANISATION exists yet (fresh install).
+router.get("/setup/status", (req: Request, res: Response) => {
+  const needed = !!req.user?.isAdmin && setupFirstRunNeeded();
+  res.json({ needed });
+});
+
+// POST /api/setup/admin-asset { organisationId } — wizard step 2: create the
+// "XORCISM Admin account" ASSET and the ASSETFORORGANISATION link. Admin only.
+router.post("/setup/admin-asset", (req: Request, res: Response) => {
+  if (!req.user?.isAdmin) return deny(req, res, "create", "XORCISM", "ASSET");
+  const { organisationId } = req.body as { organisationId?: number };
+  if (!organisationId) return void res.status(400).json({ error: "organisationId requis" });
+  const r = setupCreateAdminAsset(Number(organisationId), req.user.tenantId ?? null);
+  xid.addAudit({ userId: req.user.UserID, action: "setup_admin_asset", resourceType: "table",
+    resourceKey: "XORCISM.ASSETFORORGANISATION",
+    detail: `org=${organisationId} adminAsset=${r.adminAssetId} xorcismAsset=${r.xorcismAssetId} app=${r.applicationId} ` +
+      `new=${r.created.adminAsset}/${r.created.xorcismAsset}/${r.created.application}`,
+    ip: clientIp(req) });
+  res.json({ ok: true, ...r });
+});
+
+// POST /api/asset-email-harvest { email } — when an ASSET name is an email
+// address, capture it into the directory (EMAIL / EMAILADDRESS /
+// EMAILFORORGANISATION for the current user's organisation), idempotently.
+router.post("/asset-email-harvest", (req: Request, res: Response) => {
+  const { email } = req.body as { email?: string };
+  if (!email || typeof email !== "string")
+    return void res.status(400).json({ error: "email requis" });
+  if (!userCan(req.user, "create", "XORCISM", "ASSET") && !userCan(req.user, "update", "XORCISM", "ASSET"))
+    return deny(req, res, "create", "XORCISM", "ASSET");
+  const orgId = resolveUserOrganisationId(req.user);
+  const result = harvestEmailAddress(email, orgId);
+  if (!result)
+    return void res.status(400).json({ error: "AssetName n'est pas une adresse email valide" });
+  xid.addAudit({
+    userId: req.user!.UserID, action: "asset_email_harvest", resourceType: "table",
+    resourceKey: "XORCISM.EMAIL",
+    detail: `${result.email} org=${orgId ?? "-"} email=${result.emailInserted} addr=${result.addressInserted} orglink=${result.orgLinkInserted}`,
+    ip: clientIp(req),
+  });
+  res.json({ ok: true, ...result });
+});
+
 // PUT /api/asset-cpes { assetId, cpeIds:[...] } — replaces the linked CPEs
 router.put("/asset-cpes", (req: Request, res: Response) => {
   const { assetId, cpeIds } = req.body as { assetId: number; cpeIds: number[] };
@@ -1122,6 +1285,52 @@ router.put("/alert-assets", (req: Request, res: Response) => {
     ip: clientIp(req),
   });
   res.json({ ok: true });
+});
+
+// GET /api/threat-assets?threatId=N — assets linked to a threat (XTHREAT.THREATFORASSET)
+router.get("/threat-assets", (req: Request, res: Response) => {
+  const threatId = Number(req.query.threatId);
+  if (!threatId) return void res.status(400).json({ error: "threatId requis" });
+  if (!userCan(req.user, "read", "XTHREAT", "THREAT")) return deny(req, res, "read", "XTHREAT", "THREAT");
+  res.json(getThreatAssets(threatId));
+});
+
+// PUT /api/threat-assets { threatId, assetIds:[...] } — replaces the THREAT↔ASSET links
+router.put("/threat-assets", (req: Request, res: Response) => {
+  const { threatId, assetIds } = req.body as { threatId: number; assetIds: number[] };
+  if (!threatId || !Array.isArray(assetIds))
+    return void res.status(400).json({ error: "threatId et assetIds[] requis" });
+  if (!userCan(req.user, "update", "XTHREAT", "THREAT") && !userCan(req.user, "create", "XTHREAT", "THREAT"))
+    return deny(req, res, "update", "XTHREAT", "THREAT");
+  setThreatAssets(Number(threatId), assetIds.map(Number), req.user!.tenantId ?? null);
+  xid.addAudit({
+    userId: req.user!.UserID, action: "link_threat_assets", resourceType: "table",
+    resourceKey: "XTHREAT.THREATFORASSET", detail: `threat=${threatId} assets=[${assetIds.join(",")}]`,
+    ip: clientIp(req),
+  });
+  res.json({ ok: true });
+});
+
+// GET /api/assets-with-tags — ASSET list (id + name + comma-joined ASSETTAG tags) for the tag-filterable picker
+router.get("/assets-with-tags", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  res.json(getAssetsWithTags(req.user!.tenantId ?? null));
+});
+
+// POST /api/threat-for-asset/bulk { threatId, assetIds:[...], relationship?, validFrom?, validUntil? }
+// — creates one THREATFORASSET per asset for the given threat (skips existing pairs).
+router.post("/threat-for-asset/bulk", (req: Request, res: Response) => {
+  const b = req.body as { threatId?: number; assetIds?: number[]; relationship?: string; validFrom?: string; validUntil?: string };
+  if (!b?.threatId || !Array.isArray(b.assetIds) || !b.assetIds.length)
+    return void res.status(400).json({ error: "threatId et assetIds[] requis" });
+  if (!userCan(req.user, "create", "XTHREAT", "THREATFORASSET") && !userCan(req.user, "update", "XTHREAT", "THREATFORASSET"))
+    return deny(req, res, "create", "XTHREAT", "THREATFORASSET");
+  const r = bulkCreateThreatForAsset(Number(b.threatId), b.assetIds.map(Number), {
+    relationship: b.relationship, validFrom: b.validFrom, validUntil: b.validUntil,
+  }, req.user!.tenantId ?? null);
+  xid.addAudit({ userId: req.user!.UserID, action: "bulk_threat_for_asset", resourceType: "table",
+    resourceKey: "XTHREAT.THREATFORASSET", detail: `threat=${b.threatId} created=${r.created} skipped=${r.skipped}`, ip: clientIp(req) });
+  res.json({ ok: true, ...r });
 });
 
 // GET /api/incident-threatactor?incidentId=N — name of the linked threat actor

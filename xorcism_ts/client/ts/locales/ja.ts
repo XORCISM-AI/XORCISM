@@ -30,7 +30,7 @@ export const ja: Record<string, string> = {
   "explorer.searchTable": "🔎 テーブルを検索…",
   "nav.assets": "🗂️ 資産",
   "nav.bia": "📄 BIA 監査",
-  "nav.attack": "🎯 ATT&amp;CK",
+  "nav.attack": "🎯 ATT&CK",
   "nav.d3fend": "🛡️ D3FEND",
   "nav.dashboard": "📊 ダッシュボード",
   "nav.tprm": "🤝 TPRM",

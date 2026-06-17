@@ -1,0 +1,25 @@
+{
+  "id": "human-or-ai",
+  "name": "Human or AI",
+  "type": "import",
+  "category": "Foundational OSINT",
+  "description": "Foundational OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/human-or-ai. [SCAFFOLD generated from XORCISM.TOOL #257 by tool_to_connector.py — implement run() in run.py to map Human or AI output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:human-or-ai",
+  "run": "run.py",
+  "mapping": "human-or-ai",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Human or AI output file to parse instead of running it live."
+    }
+  ]
+}

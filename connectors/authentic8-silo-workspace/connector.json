@@ -1,0 +1,25 @@
+{
+  "id": "authentic8-silo-workspace",
+  "name": "Authentic8 Silo Workspace",
+  "type": "import",
+  "category": "Foundational OSINT",
+  "description": "Foundational OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/authentic8-silo-workspace. [SCAFFOLD generated from XORCISM.TOOL #264 by tool_to_connector.py — implement run() in run.py to map Authentic8 Silo Workspace output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:authentic8-silo-workspace",
+  "run": "run.py",
+  "mapping": "authentic8-silo-workspace",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Authentic8 Silo Workspace output file to parse instead of running it live."
+    }
+  ]
+}

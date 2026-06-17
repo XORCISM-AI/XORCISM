@@ -30,7 +30,7 @@ export const es: Record<string, string> = {
   "explorer.searchTable": "🔎 Buscar una tabla…",
   "nav.assets": "🗂️ Activos",
   "nav.bia": "📄 Auditoría BIA",
-  "nav.attack": "🎯 ATT&amp;CK",
+  "nav.attack": "🎯 ATT&CK",
   "nav.d3fend": "🛡️ D3FEND",
   "nav.dashboard": "📊 Panel",
   "nav.tprm": "🤝 TPRM",

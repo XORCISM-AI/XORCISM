@@ -30,7 +30,7 @@ export const zh: Record<string, string> = {
   "explorer.searchTable": "🔎 搜索表…",
   "nav.assets": "🗂️ 资产",
   "nav.bia": "📄 BIA 审计",
-  "nav.attack": "🎯 ATT&amp;CK",
+  "nav.attack": "🎯 ATT&CK",
   "nav.d3fend": "🛡️ D3FEND",
   "nav.dashboard": "📊 仪表板",
   "nav.tprm": "🤝 TPRM",

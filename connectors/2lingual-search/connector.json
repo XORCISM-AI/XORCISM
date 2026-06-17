@@ -1,0 +1,25 @@
+{
+  "id": "2lingual-search",
+  "name": "2lingual Search",
+  "type": "import",
+  "category": "Language Translation OSINT",
+  "description": "Language Translation OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/2lingual-search. [SCAFFOLD generated from XORCISM.TOOL #300 by tool_to_connector.py — implement run() in run.py to map 2lingual Search output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:2lingual-search",
+  "run": "run.py",
+  "mapping": "2lingual-search",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved 2lingual Search output file to parse instead of running it live."
+    }
+  ]
+}

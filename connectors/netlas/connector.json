@@ -1,0 +1,25 @@
+{
+  "id": "netlas",
+  "name": "Netlas",
+  "type": "import",
+  "category": "Network Infrastructure OSINT",
+  "description": "Network Infrastructure OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/netlas. [SCAFFOLD generated from XORCISM.TOOL #235 by tool_to_connector.py — implement run() in run.py to map Netlas output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:netlas",
+  "run": "run.py",
+  "mapping": "netlas",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Netlas output file to parse instead of running it live."
+    }
+  ]
+}

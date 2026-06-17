@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -36,22 +36,22 @@
 
 <div class="ask-wrap">
   <div class="ask-head">
-    <h2>&#129302; Ask the threat model</h2>
+    <h2 data-i18n="ask.heading">&#129302; Ask the threat model</h2>
     <span class="ai-badge" id="ai-status">…</span>
   </div>
   <div class="ask-box">
-    <textarea id="ask-q" placeholder="Ex. : Quelles sont les menaces les plus impactantes pour mon organisation ?"></textarea>
+    <textarea id="ask-q" data-i18n-placeholder="ask.placeholder" placeholder="E.g.: What are the most impactful threats to my organisation?"></textarea>
   </div>
   <div class="ask-ex" id="ask-examples"></div>
   <div style="margin-bottom:14px">
-    <button class="btn btn-primary btn-sm" id="ask-btn">Poser la question</button>
+    <button class="btn btn-primary btn-sm" id="ask-btn" data-i18n="ask.btn">Ask the question</button>
   </div>
-  <div id="ask-answer">La réponse de l'IA locale s'affichera ici. Elle s'appuie sur vos données XORCISM (KEV sur actifs, exposition, ATT&amp;CK, hunts).</div>
+  <div id="ask-answer" data-i18n="ask.answerHint">The local AI's answer appears here. It draws on your XORCISM data (KEV on assets, exposure, ATT&amp;CK, hunts).</div>
   <div class="ask-sources" id="ask-sources"></div>
   <div class="ask-hint">
-    100&nbsp;% local &amp; privé : les questions et vos données ne quittent pas la machine (serveur Ollama local).
-    Si l'IA est indisponible, installez <a href="https://ollama.com" target="_blank" rel="noopener" style="color:#7c83fd">Ollama</a>
-    puis <code>ollama pull llama3.1:8b</code>.
+    <span data-i18n="ask.hint1">100% local &amp; private: your questions and data never leave the machine (local Ollama server). If the AI is unavailable, install</span>
+    <a href="https://ollama.com" target="_blank" rel="noopener" style="color:#7c83fd">Ollama</a>
+    <span data-i18n="ask.hint2">then</span> <code>ollama pull llama3.1:8b</code>.
   </div>
 </div>
 

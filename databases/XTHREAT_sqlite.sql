@@ -1518,4 +1518,27 @@ CREATE TABLE IF NOT EXISTS THREATFEED (
         Enabled INTEGER DEFAULT 1, CreatedDate TEXT);
 CREATE INDEX IF NOT EXISTS ix_threatfeed_enabled ON THREATFEED(Enabled);
 
+-- THREATFORASSET: links a THREAT to an ASSET (relationship + validity + tenant).
+CREATE TABLE IF NOT EXISTS THREATFORASSET (
+        AssetThreatID INTEGER PRIMARY KEY,
+        AssetID INTEGER, ThreatID INTEGER, CreatedDate TEXT, PersonID INTEGER,
+        Relationship TEXT, ValidFrom TEXT, ValidUntil TEXT, TenantID INTEGER);
+CREATE INDEX IF NOT EXISTS ix_threatforasset_asset ON THREATFORASSET(AssetID);
+CREATE INDEX IF NOT EXISTS ix_threatforasset_threat ON THREATFORASSET(ThreatID);
+
+-- WATCHLIST: keyword/actor/CVE terms tracked across the feed (alerts on new matches).
+CREATE TABLE IF NOT EXISTS WATCHLIST (
+        WatchlistID INTEGER PRIMARY KEY,
+        Term TEXT, WatchType TEXT DEFAULT 'keyword', WatchlistName TEXT,
+        UserID INTEGER, Enabled INTEGER DEFAULT 1, CreatedDate TEXT, TenantID INTEGER);
+CREATE INDEX IF NOT EXISTS ix_watchlist_enabled ON WATCHLIST(Enabled);
+
+-- PIR: standing priority intelligence requirements (CTI tasking).
+CREATE TABLE IF NOT EXISTS PIR (
+        PIRID INTEGER PRIMARY KEY,
+        PIRName TEXT, PIRDescription TEXT, Priority TEXT DEFAULT 'Medium',
+        Keywords TEXT, Status TEXT DEFAULT 'Active', PersonID INTEGER,
+        CreatedDate TEXT, ValidFrom TEXT, ValidUntil TEXT, TenantID INTEGER);
+CREATE INDEX IF NOT EXISTS ix_pir_status ON PIR(Status);
+
 COMMIT;

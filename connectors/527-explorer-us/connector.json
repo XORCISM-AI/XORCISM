@@ -1,0 +1,25 @@
+{
+  "id": "527-explorer-us",
+  "name": "527 Explorer (US)",
+  "type": "import",
+  "category": "Public Records OSINT",
+  "description": "Public Records OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/527-explorer. [SCAFFOLD generated from XORCISM.TOOL #248 by tool_to_connector.py — implement run() in run.py to map 527 Explorer (US) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:527-explorer-us",
+  "run": "run.py",
+  "mapping": "527-explorer-us",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved 527 Explorer (US) output file to parse instead of running it live."
+    }
+  ]
+}

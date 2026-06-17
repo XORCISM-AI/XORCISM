@@ -1,0 +1,25 @@
+{
+  "id": "baidu-maps",
+  "name": "Baidu Maps",
+  "type": "import",
+  "category": "Geolocation & Maps OSINT",
+  "description": "Geolocation & Maps OSINT. OSINT tool from the OSINT Newsletter tools library (https://tools.osintnewsletter.com/). Tool: https://tools.osintnewsletter.com/osint-tools/baidu-maps. [SCAFFOLD generated from XORCISM.TOOL #278 by tool_to_connector.py — implement run() in run.py to map Baidu Maps output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:baidu-maps",
+  "run": "run.py",
+  "mapping": "baidu-maps",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Baidu Maps output file to parse instead of running it live."
+    }
+  ]
+}

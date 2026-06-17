@@ -213,6 +213,9 @@ function gridLabel(table: string, col: string, val: unknown): string | null {
 const DEFAULT_SORT: Record<string, [string, "asc" | "desc"]> = {
   "XVULNERABILITY.VULNERABILITY": ["VulnerabilityID", "desc"], // largest ID first
   "XORCISM.ASSETVULNERABILITY": ["AssetVulnerabilityID", "desc"], // most recent first
+  "XORCISM.ASSETFINANCIALVALUE": ["AssetFinancialValueID", "desc"], // most recent first
+  "XORCISM.ASSET": ["AssetName", "asc"], // alphabetical by name
+  "XCOMPLIANCE.AUDIT": ["AuditID", "desc"], // most recent first
 };
 
 // Conditional visibility: a "controller" field shows the dependent
@@ -729,6 +732,21 @@ const NAME_SEARCH_COLUMNS: Record<string, NameSearchSpec> = {
   "ASSETPLATFORM.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName" },
   "ASSETPRODUCT.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName" },
   "ASSETPRODUCT.ProductID": { db: "XORCISM", table: "PRODUCT", idCol: "ProductID", labelCol: "ProductName" },
+  // ASSETBLACKLIST: searchable name comboboxes replace the raw ID fields (fill the IDs).
+  "ASSETBLACKLIST.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName", replaceIdField: true },
+  "ASSETBLACKLIST.OrganisationID": { db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", labelCol: "OrganisationName", searchLabel: "OrganisationName", replaceIdField: true },
+  "ASSETBLACKLIST.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "PersonName", replaceIdField: true },
+  // ASSETFORASSET: both endpoints are ASSETs → searchable AssetName comboboxes (fill AssetID).
+  "ASSETFORASSET.AssetRefID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName (Ref)", replaceIdField: true },
+  "ASSETFORASSET.AssetSubjectID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName (Subject)", replaceIdField: true },
+  // THREATFORASSET: ThreatID → searchable ThreatName combobox. AssetID → searchable AssetName
+  // combobox in EDIT mode; in INSERT mode the combobox is hidden in favour of the multi-asset
+  // selector (see openInsertModal: one THREATFORASSET per checked asset).
+  "THREATFORASSET.ThreatID": { db: "XTHREAT", table: "THREAT", idCol: "ThreatID", labelCol: "ThreatName", searchLabel: "ThreatName", replaceIdField: true },
+  "THREATFORASSET.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName", replaceIdField: true },
+  // ASSETFORORGANISATION: searchable name comboboxes replace the raw ID fields (fill the IDs).
+  "ASSETFORORGANISATION.OrganisationID": { db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", labelCol: "OrganisationName", searchLabel: "OrganisationName", replaceIdField: true },
+  "ASSETFORORGANISATION.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName", replaceIdField: true },
   "ASSET.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "Owner" },
   // Location: search in ASSETLOCATION.AssetLocationName → fills AssetLocationID
   // (the dropdown replaces the ID field, kept hidden). The detail of the chosen location
@@ -1020,6 +1038,106 @@ const GRID_DISPLAY_COLUMNS: Record<string, GridDisplaySpec[]> = {
       hintLabel: "AssetName",
       srcCol: "AssetID",
       colLabel: "AssetName",
+    },
+  ],
+  // ASSETFINANCIALVALUE: resolved asset name, shown right after AssetID.
+  ASSETFINANCIALVALUE: [
+    {
+      db: "XORCISM",
+      table: "ASSET",
+      idCol: "AssetID",
+      labelCol: "AssetName",
+      hintLabel: "AssetName",
+      srcCol: "AssetID",
+      colLabel: "AssetName",
+    },
+  ],
+  // CPEFORASSET: resolved asset name (after AssetID) + CPE name (after CPEID).
+  CPEFORASSET: [
+    {
+      db: "XORCISM",
+      table: "ASSET",
+      idCol: "AssetID",
+      labelCol: "AssetName",
+      hintLabel: "AssetName",
+      srcCol: "AssetID",
+      colLabel: "AssetName",
+    },
+    {
+      db: "XORCISM",
+      table: "CPE",
+      idCol: "CPEID",
+      labelCol: "CPEName",
+      hintLabel: "CPEName",
+      srcCol: "CPEID",
+      colLabel: "CPEName",
+    },
+  ],
+  // APPLICATIONFORASSET: ApplicationName (after ApplicationGUID, looked up by ApplicationID)
+  // + AssetName (after AssetGUID, looked up by AssetID). The matching GRID_FIELD_REORDER
+  // rules keep each name beside its GUID once the GUID columns are repositioned.
+  APPLICATIONFORASSET: [
+    {
+      db: "XORCISM",
+      table: "APPLICATION",
+      idCol: "ApplicationID",
+      labelCol: "ApplicationName",
+      hintLabel: "ApplicationName",
+      srcCol: "ApplicationGUID",
+      keyCol: "ApplicationID",
+      colLabel: "ApplicationName",
+    },
+    {
+      db: "XORCISM",
+      table: "ASSET",
+      idCol: "AssetID",
+      labelCol: "AssetName",
+      hintLabel: "AssetName",
+      srcCol: "AssetGUID",
+      keyCol: "AssetID",
+      colLabel: "AssetName",
+    },
+  ],
+  // ASSETAUDIT: resolved asset name (after AssetID) + audit name (after AuditID).
+  ASSETAUDIT: [
+    {
+      db: "XORCISM",
+      table: "ASSET",
+      idCol: "AssetID",
+      labelCol: "AssetName",
+      hintLabel: "AssetName",
+      srcCol: "AssetID",
+      colLabel: "AssetName",
+    },
+    {
+      db: "XCOMPLIANCE",
+      table: "AUDIT",
+      idCol: "AuditID",
+      labelCol: "AuditName",
+      hintLabel: "AuditName",
+      srcCol: "AuditID",
+      colLabel: "AuditName",
+    },
+  ],
+  // INCIDENTFORASSET: resolved asset name (after AssetID) + incident name (after IncidentID).
+  INCIDENTFORASSET: [
+    {
+      db: "XORCISM",
+      table: "ASSET",
+      idCol: "AssetID",
+      labelCol: "AssetName",
+      hintLabel: "AssetName",
+      srcCol: "AssetID",
+      colLabel: "AssetName",
+    },
+    {
+      db: "XINCIDENT",
+      table: "INCIDENT",
+      idCol: "IncidentID",
+      labelCol: "IncidentName",
+      hintLabel: "IncidentName",
+      srcCol: "IncidentID",
+      colLabel: "IncidentName",
     },
   ],
   RISKREGISTERENTRY: [
@@ -1527,6 +1645,14 @@ const GRID_FIELD_REORDER: Record<string, [string, string][]> = {
   TOOL: [["ToolURL", "ToolDescription"]],
   // IncidentName shown just to the right of IncidentID
   INCIDENT: [["IncidentName", "IncidentID"]],
+  // ApplicationID right of AssetApplicationID, then ApplicationGUID right of ApplicationID;
+  // the resolved names (injected after their GUID) follow their GUID once it is moved.
+  APPLICATIONFORASSET: [
+    ["ApplicationID", "AssetApplicationID"], ["ApplicationGUID", "ApplicationID"],
+    ["ApplicationName", "ApplicationGUID"], ["AssetName", "AssetGUID"],
+  ],
+  // AUDIT: the audit's own name shown just to the right of AuditDate.
+  AUDIT: [["AuditName", "AuditDate"]],
 };
 
 // Column headers renamed for the grid DISPLAY (the real column and the
@@ -2006,8 +2132,10 @@ const CHECKBOX_COLUMNS: Record<string, CheckboxSpec> = {
   "VULNERABILITY.Exploited": { checked: "1", unchecked: "0", default: "0" },
   "VULNERABILITY.EasilyExploitable": { checked: "1", unchecked: "0", default: "0" },
   "VULNERABILITY.KEV": { checked: "1", unchecked: "0", default: "0" },
+  "VULNERABILITY.FalsePositive": { checked: "1", unchecked: "0", default: "0" },
   "INCIDENTFORASSET.Compromised": { checked: "1", unchecked: "0", default: "0" },
   "ASSETVULNERABILITY.TotalControl": { checked: "1", unchecked: "0", default: "0" },
+  "ASSETVULNERABILITY.FalsePositive": { checked: "1", unchecked: "0", default: "0" },
 };
 
 // ── OpenCTI/STIX properties on the XTHREAT tables (adapted by ensureOpenctiColumns) ──
@@ -2819,6 +2947,7 @@ async function init(): Promise<void> {
   if (!qdb) {
     if (landing) landing.style.display = "";
     if (explorer) explorer.style.display = "none";
+    void maybeOfferSetupWizard(); // first-run wizard (Admin + no organisation yet)
     return; // no explorer to load: we stay on the landing
   }
   if (landing) landing.style.display = "none";
@@ -2868,10 +2997,88 @@ async function init(): Promise<void> {
           }
         }
       }
+      // First-run wizard step 1: open the ORGANISATION create form (reused as-is).
+      if (qp.get("setup") === "1" && qdb === "XORCISM" && qtable === "ORGANISATION") {
+        setupWizardActive = true;
+        showSetupBanner();
+        await openInsertModal();
+      }
     }
   } catch (e) {
     toast(t("toast.errLoadDbs") + " " + e, "err");
   }
+}
+
+// ── First-run setup wizard ────────────────────────────────────────────────
+// Fresh install: when an Admin first connects and no ORGANISATION exists, offer
+// a one-time wizard → create the first ORGANISATION (reusing its standard form),
+// then the "XORCISM Admin account" ASSET + ASSETFORORGANISATION link.
+let setupWizardActive = false;
+
+async function maybeOfferSetupWizard(): Promise<void> {
+  try {
+    const { needed } = await api.setupStatus();
+    if (needed) showSetupWelcomeModal();
+  } catch {
+    /* not logged in / endpoint absent: ignore */
+  }
+}
+
+function showSetupWelcomeModal(): void {
+  if (document.getElementById("setup-wizard-bg")) return;
+  const bg = document.createElement("div");
+  bg.id = "setup-wizard-bg";
+  bg.style.cssText =
+    "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center";
+  const card = document.createElement("div");
+  card.style.cssText =
+    "background:var(--surface,#1b1f27);border:1px solid var(--border,#333);border-radius:12px;" +
+    "max-width:520px;width:92%;padding:24px;color:var(--text,#e6e6e6);box-shadow:0 12px 40px rgba(0,0,0,.5)";
+  card.innerHTML =
+    '<h2 style="margin:0 0 8px;font-size:20px">\u{1F44B} Welcome to XORCISM</h2>' +
+    '<p style="margin:0 0 12px;color:var(--text-muted,#9aa)">This one-time setup wizard will:</p>' +
+    '<ol style="margin:0 0 16px;padding-left:20px;line-height:1.8">' +
+    "<li>Create your first <b>Organisation</b> (you fill the standard form)</li>" +
+    '<li>Create the <b>“XORCISM Admin account”</b> asset</li>' +
+    "<li>Link that asset to your organisation</li></ol>" +
+    '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+    '<button id="setup-later" class="btn btn-ghost">Later</button>' +
+    '<button id="setup-now" class="btn btn-primary">Set up now →</button></div>';
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+  (document.getElementById("setup-later") as HTMLButtonElement).onclick = () => bg.remove();
+  (document.getElementById("setup-now") as HTMLButtonElement).onclick = () => {
+    location.href = location.pathname + "?db=XORCISM&table=ORGANISATION&setup=1";
+  };
+}
+
+function showSetupBanner(): void {
+  if (document.getElementById("setup-banner")) return;
+  const b = document.createElement("div");
+  b.id = "setup-banner";
+  b.style.cssText =
+    "position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--accent,#3b82f6);color:#fff;" +
+    "padding:8px 16px;text-align:center;font-size:14px";
+  b.textContent =
+    "Setup wizard — Step 1 of 2: create your first organisation and save. " +
+    "The “XORCISM Admin account” asset and its link are then created automatically.";
+  document.body.appendChild(b);
+}
+
+// Wizard step 2: after the ORGANISATION is created, create the admin asset + link.
+function finishSetupWizard(orgId: number): void {
+  setupWizardActive = false;
+  void api
+    .setupAdminAsset(orgId)
+    .then((r) => {
+      document.getElementById("setup-banner")?.remove();
+      toast(
+        "✅ Setup complete — linked to your organisation: the “XORCISM Admin account” asset " +
+          `(#${r.adminAssetId}), the “XORCISM” asset (#${r.xorcismAssetId}) and the “XORCISM” application (#${r.applicationId}).`,
+        "ok"
+      );
+    })
+    .catch((e) => toast("Setup wizard: " + e, "err"));
 }
 
 // ── Table favorites (user preference, keys "DB.TABLE") ─────────────
@@ -3226,6 +3433,102 @@ function appendSocradarIocField(prefix: string): void {
 
 // "↓ EPSS" button placed to the RIGHT of the EPSS field (VULNERABILITY form):
 // fetches the EPSS score from FIRST.org for the CVE in VULReferentialID.
+// Adds a native date picker to the right of a (text) date field and keeps the two
+// in sync (YYYY-MM-DD). Lets users pick a date from a calendar while the stored
+// value stays a plain text field. Idempotent per field.
+function appendDatePicker(prefix: string, col: string): void {
+  const input = document.getElementById(`${prefix}${col}`) as HTMLInputElement | null;
+  if (!input || input.dataset.dpWired) return;
+  const parent = input.parentElement;
+  if (!parent) return;
+  input.dataset.dpWired = "1";
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;gap:6px;align-items:center";
+  parent.insertBefore(row, input);
+  input.style.flex = "1";
+  row.appendChild(input);
+  const picker = document.createElement("input");
+  picker.type = "date";
+  picker.title = `${col}: pick a date`;
+  picker.style.cssText =
+    "flex:0 0 auto;width:150px;background:var(--bg);border:1px solid var(--border);border-radius:6px;" +
+    "color:var(--text);padding:6px 8px;font-size:13px;color-scheme:dark";
+  row.appendChild(picker);
+  // The native picker only handles YYYY-MM-DD; extract that from the free-text field.
+  const isoOf = (v: string): string => (v || "").trim().match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? "";
+  picker.value = isoOf(input.value);
+  picker.addEventListener("change", () => {
+    if (!picker.value) return;
+    input.value = picker.value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  input.addEventListener("input", () => {
+    const iso = isoOf(input.value);
+    if (iso !== picker.value) picker.value = iso;
+  });
+}
+
+// ASSET form: when AssetName looks like an email address, the address is
+// captured into the email directory (EMAIL / EMAILADDRESS / EMAILFORORGANISATION)
+// server-side on save. Detection happens on blur and shows an inline hint; the
+// actual harvest is triggered at validation (see submitInsert / edit-save).
+const ASSET_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Returns the trimmed AssetName value when it is a valid email, "" otherwise.
+function assetNameEmail(prefix: string): string {
+  const v = ((document.getElementById(`${prefix}AssetName`) as HTMLInputElement | null)?.value || "").trim();
+  return ASSET_EMAIL_RE.test(v) ? v : "";
+}
+function appendEmailHarvestHint(prefix: string): void {
+  const input = document.getElementById(`${prefix}AssetName`) as HTMLInputElement | null;
+  if (!input || input.dataset.emailHintWired) return;
+  const parent = input.parentElement;
+  if (!parent) return;
+  input.dataset.emailHintWired = "1";
+  const hint = document.createElement("div");
+  hint.id = `${prefix}assetEmailHint`;
+  hint.style.cssText = "display:none;margin-top:4px;font-size:12px;color:var(--accent)";
+  hint.textContent = "📧 Looks like an email address — it will be added to the email directory on save.";
+  parent.appendChild(hint);
+  const refresh = (): void => { hint.style.display = assetNameEmail(prefix) ? "block" : "none"; };
+  input.addEventListener("blur", refresh);
+  input.addEventListener("input", refresh);
+  refresh();
+}
+
+// Generic "local-AI action" button + result area appended to a form body.
+// `run` returns the text/markdown to display. Used by the CTI agents (vuln triage,
+// report enrichment) — the local LLM (Ollama) does the work, the analyst controls.
+function appendAiActionButton(body: HTMLElement, label: string, run: () => Promise<string>): void {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "margin:10px 0;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg)";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-ghost btn-sm";
+  btn.textContent = label;
+  const out = document.createElement("div");
+  out.style.cssText = "margin-top:8px;font-size:12px;color:var(--text-soft);white-space:pre-wrap;line-height:1.5;display:none";
+  btn.onclick = async () => {
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "… (local AI)";
+    out.style.display = "block";
+    out.style.color = "var(--text-soft)";
+    out.textContent = "…";
+    try {
+      out.textContent = await run();
+    } catch (e) {
+      out.textContent = "⚠️ " + ((e as Error)?.message || e);
+      out.style.color = "var(--danger)";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  };
+  wrap.appendChild(btn);
+  wrap.appendChild(out);
+  body.appendChild(wrap);
+}
+
 function appendEpssButton(prefix: string): void {
   const input = document.getElementById(`${prefix}EPSS`) as HTMLInputElement | null;
   if (!input || input.dataset.epssWired) return;
@@ -4123,7 +4426,43 @@ function renderTable(rows: Record<string, unknown>[]): void {
       // "Remediate" → creates an ASSETVULNERABILITYREMEDIATION with AssetVulnerabilityID set.
       const linkSpec = getGridLink(currentTable, col);
       const linkId = linkSpec ? row[linkSpec.srcCol] : null;
-      if (currentTable === "ASSETVULNERABILITY" && col === "REMEDIATION") {
+      if (currentDb === "XORCISM" && currentTable === "ASSET" && col === "AssetName" && display !== "") {
+        // AssetName → clickable to open this ASSET in the edit form.
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = display;
+        a.style.cssText = "color:var(--accent);cursor:pointer;font-weight:600";
+        a.title = t("tip.edit");
+        a.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void openEditModal(row);
+        };
+        td.appendChild(a);
+      } else if (currentDb === "XORCISM" && currentTable === "ASSET" && col === "AssetCriticalityLevel") {
+        // AssetCriticalityLevel: show the level; "Critical" highlighted in red.
+        if (display !== "") {
+          const span = document.createElement("span");
+          span.textContent = display;
+          if (display.trim().toLowerCase() === "critical") {
+            span.style.cssText = "color:var(--danger);font-weight:600";
+          }
+          td.appendChild(span);
+        }
+      } else if (currentDb === "XVULNERABILITY" && currentTable === "VULNERABILITY" && col === "VULReferentialID" && display !== "") {
+        // VULReferentialID (the CVE/ref) → clickable to edit this VULNERABILITY row.
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = display;
+        a.style.cssText = "color:var(--accent);cursor:pointer;font-weight:600";
+        a.title = t("tip.edit");
+        a.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void openEditModal(row);
+        };
+        td.appendChild(a);
+      } else if (currentTable === "ASSETVULNERABILITY" && col === "REMEDIATION") {
         const a = document.createElement("a");
         a.href = "#";
         a.textContent = display;
@@ -4233,6 +4572,7 @@ async function deleteRow(rowid: number): Promise<void> {
 let editRowId = 0;
 let editIncidentId = 0;
 let editAlertId = 0;
+let editThreatId = 0;
 let editThreatAgentId = 0;
 let editAuditId = 0;
 
@@ -4465,6 +4805,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   editRowId = Number(row["rowid"]);
   editIncidentId = Number(row["IncidentID"]) || 0;
   editAlertId = currentTable === "ALERT" ? Number(row["AlertID"]) || 0 : 0;
+  editThreatId = currentTable === "THREAT" ? Number(row["ThreatID"]) || 0 : 0;
   const body = $("edit-modal-body");
   body.innerHTML = "";
   appendFormJsonImport(body, "ef_"); // "pre-fill from JSON" button at the top of the form
@@ -4655,9 +4996,21 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   if (isStixTable()) appendStixBundleButton(body, "ef_");
 
   // Web security scanner + network scanner (ASSET form)
-  if (currentTable === "ASSET") { void appendWebScanPanel("ef_"); void appendNetworkScanPanel("ef_"); }
+  if (currentTable === "ASSET") { void appendWebScanPanel("ef_"); void appendNetworkScanPanel("ef_"); appendEmailHarvestHint("ef_"); }
   // SOCRadar IOC Radar: search a CVE (VULNERABILITY form)
-  if (isOsvTable()) { appendSocradarIocField("ef_"); appendEpssButton("ef_"); }
+  if (isOsvTable()) {
+    appendSocradarIocField("ef_"); appendEpssButton("ef_"); appendDatePicker("ef_", "ValidUntilDate");
+    appendAiActionButton(body, "🧠 AI triage (KEV / EPSS / affected assets)", async () => {
+      const vid = Number((document.getElementById("ef_VulnerabilityID") as HTMLInputElement)?.value) || undefined;
+      const cve = ((document.getElementById("ef_VULReferential") as HTMLInputElement)?.value || "").trim() || undefined;
+      if (!vid && !cve) throw new Error("VulnerabilityID / CVE manquant");
+      return (await api.triageVuln({ vulnerabilityId: vid, cve })).assessment;
+    });
+  }
+  // BUGBOUNTYPROGRAM: date pickers to the right of StartDate / EndDate
+  if (currentTable === "BUGBOUNTYPROGRAM") { appendDatePicker("ef_", "StartDate"); appendDatePicker("ef_", "EndDate"); }
+  // Any form with a validity-end field gets a date picker (no-op if the field is absent).
+  appendDatePicker("ef_", "ValidUntil"); appendDatePicker("ef_", "ValidUntilDate");
   // AI answer suggestion (QUESTION / OCIL form)
   if (currentTable === "QUESTION") appendOcilSuggestPanel(body, "ef_");
 
@@ -4726,6 +5079,8 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     await appendGeoTable(body, aid);
     await appendAssetLocationTable(body, "ef_");
     appendTagsPanel(body, "Tags (ASSETTAG)", aid, api.getAssetTags, api.setAssetTags, null);
+    await appendAssetOrgPanel(body, aid);
+    await appendAssetPersonPanel(body, aid);
   } else if (currentTable === "VULNERABILITY") {
     appendTagsPanel(body, "Tags (VULNERABILITYTAG)", Number(row["VulnerabilityID"]) || null,
       api.getVulnerabilityTags, api.setVulnerabilityTags, null);
@@ -4740,18 +5095,33 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     await appendOvalDefinitionXml(body, String(row["OVALDefinitionIDPattern"] ?? ""));
     appendTagsPanel(body, "Tags (OVALDEFINITIONTAG)", Number(row["OVALDefinitionID"]) || null,
       api.getOvalDefinitionTags, api.setOvalDefinitionTags, null);
+  } else if (currentTable === "CPE") {
+    appendTagsPanel(body, "Tags (CPETAG)", Number(row["CPEID"]) || null,
+      api.getCpeTags, api.setCpeTags, null);
+  } else if (currentTable === "CWE") {
+    appendTagsPanel(body, "Tags (CWETAG)", Number(row["CWEID"]) || null,
+      api.getCweTags, api.setCweTags, null);
   } else if (currentTable === "QUESTIONNAIRE") {
     appendQuestionnaireImportButton(body); // "📥 Excel import" at the top of the form
     await appendQuestionnaireQuestions(body, Number(row["QuestionnaireID"]) || null);
     appendQuestionnaireExcelButton(body, Number(row["QuestionnaireID"]) || null, String(row["QuestionnaireName"] ?? ""));
   } else if (currentTable === "THREATREPORT") {
     appendThreatReportImportButton(body, "ef_"); // PDF ingestion at the top of the form
+    appendAiActionButton(body, "🧠 AI enrich (analyst note + CVEs)", async () => {
+      const id = Number((document.getElementById("ef_ThreatReportID") as HTMLInputElement)?.value);
+      if (!id) throw new Error("ThreatReportID manquant");
+      const r = await api.enrichReport(id);
+      return r.summary + (r.cves.length ? `\n\nCVEs: ${r.cves.join(", ")}` : "");
+    });
   } else if (currentTable === "SIGMARULE") {
     appendSigmaConvertButton(body, "ef_"); // Sigma → SPL/KQL/EQL at the top of the form
   } else if (currentTable === "ANSWER") {
     await appendAnswerEvidences(body, Number(row["AnswerID"]) || null);
   } else if (currentTable === "THREAT") {
     await appendThreatTtps(body, Number(row["ThreatID"]) || null);
+    // Linked assets (XTHREAT.THREATFORASSET): search on AssetName + checkbox table.
+    const tLinked = editThreatId ? await api.getThreatAssets(editThreatId).catch(() => []) : [];
+    await appendAssetSelector(body, "ef", new Set(tLinked), "THREATFORASSET");
   } else if (currentTable === "ASSETVULNERABILITYREMEDIATION") {
     appendRemediationAssetName("ef_");
   }
@@ -4773,6 +5143,13 @@ async function submitEdit(): Promise<void> {
     await api.updateRow(currentDb, currentTable, editRowId, row);
     // ASSET: on submit, detects the uncorrected KEV ASSETVULNERABILITY rows and notifies.
     if (currentTable === "ASSET") void api.checkAssetKevNotify().catch(() => {});
+    // ASSET: when AssetName is an email, capture it into the email directory.
+    if (currentTable === "ASSET") {
+      const em = assetNameEmail("ef_");
+      if (em) void api.harvestAssetEmail(em).then((r) => {
+        if (r.emailInserted || r.addressInserted || r.orgLinkInserted) toast(`📧 ${em} added to the email directory`, "ok");
+      }).catch(() => {});
+    }
     // Impacted assets (ALERTFORASSET) for the ALERT table
     if (currentTable === "ALERT" && editAlertId) {
       try { await api.setAlertAssets(editAlertId, collectCheckedAssets("ef")); }
@@ -4802,6 +5179,11 @@ async function submitEdit(): Promise<void> {
       } catch (e) {
         toast(t("toast.assetLinksErr") + " " + e, "err");
       }
+    }
+    // ASSET links (THREATFORASSET) for the THREAT table
+    if (currentTable === "THREAT" && editThreatId) {
+      try { await api.setThreatAssets(editThreatId, collectCheckedAssets("ef")); }
+      catch (e) { toast(t("toast.assetLinksErr") + " " + e, "err"); }
     }
     // CATEGORY link (THREATAGENTCATEGORY)
     if (currentTable === "THREATAGENT" && editThreatAgentId) {
@@ -4853,7 +5235,8 @@ async function appendAssetSelector(
   body: HTMLElement,
   prefix: string,
   selected: Set<number>,
-  relLabel = "INCIDENTFORASSET"
+  relLabel = "INCIDENTFORASSET",
+  opts?: { tagFilter?: boolean; checkAll?: boolean }
 ): Promise<void> {
   const div = document.createElement("div");
   div.style.marginBottom = "10px";
@@ -4862,38 +5245,80 @@ async function appendAssetSelector(
   label.style.cssText = "display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px";
   div.appendChild(label);
 
+  // Controls: search on AssetName + optional ASSETTAG filter.
+  const controls = document.createElement("div");
+  controls.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px";
+  const search = document.createElement("input");
+  search.type = "search";
+  search.placeholder = t("asset.searchName");
+  search.style.cssText = "flex:1 1 160px;min-width:140px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px";
+  controls.appendChild(search);
+  const tagSel = document.createElement("select");
+  if (opts?.tagFilter) {
+    tagSel.style.cssText = "flex:0 0 150px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px";
+    const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "All tags"; tagSel.appendChild(o0);
+    controls.appendChild(tagSel);
+  }
+  div.appendChild(controls);
+
   const box = document.createElement("div");
   box.id = `${prefix}_m2m_assets`;
-  box.style.cssText =
-    "max-height:160px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:6px 8px;background:var(--bg)";
+  box.style.cssText = "max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:6px 8px;background:var(--bg)";
   div.appendChild(box);
+
+  // "Check all (filtered)" — toggles every currently-visible row.
+  if (opts?.checkAll) {
+    const ca = document.createElement("label");
+    ca.style.cssText = "display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-muted);margin-top:4px;cursor:pointer";
+    const cb = document.createElement("input"); cb.type = "checkbox";
+    cb.onchange = () => box.querySelectorAll<HTMLElement>("label").forEach((r) => {
+      if (r.style.display !== "none") { const c = r.querySelector<HTMLInputElement>("input[type=checkbox]"); if (c) c.checked = cb.checked; }
+    });
+    const sp = document.createElement("span"); sp.textContent = "Check all (filtered)";
+    ca.appendChild(cb); ca.appendChild(sp); div.appendChild(ca);
+  }
   body.appendChild(div);
 
-  let assets: { id: unknown; label: unknown }[] = [];
+  let rows: { id: number; name: string; tags: string[] }[] = [];
   try {
-    assets = await api.getLookup("XORCISM", "ASSET", "AssetID", "AssetName");
+    if (opts?.tagFilter) {
+      rows = (await api.assetsWithTags()).map((a) => ({ id: a.AssetID, name: a.AssetName, tags: (a.Tags || "").split(",").map((s) => s.trim()).filter(Boolean) }));
+    } else {
+      rows = (await api.getLookup("XORCISM", "ASSET", "AssetID", "AssetName")).map((a) => ({ id: Number(a.id), name: a.label == null || a.label === "" ? `#${a.id}` : String(a.label), tags: [] }));
+    }
   } catch (e) {
     box.innerHTML = `<span style="color:var(--danger);font-size:12px">${t("asset.unavailable")} ${e}</span>`;
     return;
   }
-  if (!assets.length) {
-    box.innerHTML = `<span style="color:var(--text-dim);font-size:12px">${t("asset.none")}</span>`;
-    return;
-  }
-  assets.forEach((a) => {
+  if (!rows.length) { box.innerHTML = `<span style="color:var(--text-dim);font-size:12px">${t("asset.none")}</span>`; return; }
+
+  const allTags = new Set<string>();
+  rows.forEach((a) => {
     const row = document.createElement("label");
-    row.style.cssText =
-      "display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-soft);padding:2px 0;cursor:pointer";
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.value = String(a.id);
-    cb.checked = selected.has(Number(a.id));
+    row.style.cssText = "display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-soft);padding:2px 0;cursor:pointer";
+    row.dataset.name = a.name.toLowerCase();
+    row.dataset.tags = a.tags.map((s) => s.toLowerCase()).join(",");
+    a.tags.forEach((tg) => allTags.add(tg));
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = String(a.id); cb.checked = selected.has(a.id);
     row.appendChild(cb);
-    const txt = document.createElement("span");
-    txt.textContent = a.label == null || a.label === "" ? `#${a.id}` : String(a.label);
+    const txt = document.createElement("span"); txt.textContent = a.tags.length ? `${a.name}  ·  ${a.tags.join(", ")}` : a.name;
     row.appendChild(txt);
     box.appendChild(row);
   });
+  if (opts?.tagFilter) [...allTags].sort().forEach((tg) => { const o = document.createElement("option"); o.value = tg.toLowerCase(); o.textContent = tg; tagSel.appendChild(o); });
+
+  // Filter by AssetName AND tag; checked-but-hidden rows stay selected (collectCheckedAssets reads all).
+  const applyFilter = (): void => {
+    const q = search.value.trim().toLowerCase();
+    const tag = opts?.tagFilter ? tagSel.value.trim().toLowerCase() : "";
+    box.querySelectorAll<HTMLElement>("label").forEach((r) => {
+      const okName = !q || (r.dataset.name ?? "").includes(q);
+      const okTag = !tag || (r.dataset.tags ?? "").split(",").includes(tag);
+      r.style.display = okName && okTag ? "flex" : "none";
+    });
+  };
+  search.addEventListener("input", applyFilter);
+  if (opts?.tagFilter) tagSel.addEventListener("change", applyFilter);
 }
 
 function collectCheckedAssets(prefix: string): number[] {
@@ -5415,10 +5840,175 @@ interface PendingAssetLinks {
   ovals: Map<number, string>;
   audits: Map<number, string>;
   tags: Set<string>; // pending tags (ASSETTAG): free text
+  orgs: Map<number, string>; // ASSETFORORGANISATION (OrganisationID → name)
+  persons: Map<number, { name: string; role: string }>; // PERSONFORASSET (PersonID → {name, role})
 }
 let pendingAssetLinks: PendingAssetLinks | null = null;
 function resetPendingAssetLinks(): void {
-  pendingAssetLinks = { cpes: new Map(), vulns: new Map(), ovals: new Map(), audits: new Map(), tags: new Set() };
+  pendingAssetLinks = {
+    cpes: new Map(), vulns: new Map(), ovals: new Map(), audits: new Map(), tags: new Set(),
+    orgs: new Map(), persons: new Map(),
+  };
+}
+
+// Predefined PERSONFORASSET roles (editable combobox — free text also allowed).
+const ASSET_PERSON_ROLES = ["Owner", "Maintainer", "Auditor", "Contributor", "Custodian", "Approver", "Reviewer", "Reader"];
+
+// Compact searchable combobox: an <input type=search> + a results dropdown.
+// `searchFn(q)` returns [{id,name}]; `onPick` fires on selection.
+function makeSearchPicker(
+  placeholder: string,
+  searchFn: (q: string) => Promise<{ id: number; name: string }[]>,
+  onPick: (item: { id: number; name: string }) => void
+): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "position:relative;flex:1 1 200px;min-width:160px";
+  const input = document.createElement("input");
+  input.type = "search";
+  input.placeholder = placeholder;
+  input.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px";
+  const results = document.createElement("div");
+  results.style.cssText = "position:absolute;left:0;right:0;z-index:30;max-height:200px;overflow:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-top:2px;display:none";
+  wrap.appendChild(input); wrap.appendChild(results);
+  const hide = () => { results.style.display = "none"; };
+  let timer: number | undefined;
+  input.addEventListener("input", () => {
+    const q = input.value.trim();
+    window.clearTimeout(timer);
+    if (q.length < 1) { hide(); return; }
+    timer = window.setTimeout(async () => {
+      let rows: { id: number; name: string }[] = [];
+      try { rows = await searchFn(q); } catch { hide(); return; }
+      results.innerHTML = "";
+      if (!rows.length) {
+        results.innerHTML = `<div style="padding:7px 10px;font-size:12px;color:var(--text-dim)">Aucun résultat</div>`;
+      } else {
+        rows.forEach((r) => {
+          const it = document.createElement("div");
+          it.style.cssText = "padding:7px 10px;font-size:12px;color:var(--text-soft);cursor:pointer;border-bottom:1px solid var(--surface)";
+          it.textContent = `${r.name} (#${r.id})`;
+          it.addEventListener("mouseenter", () => (it.style.background = "var(--surface)"));
+          it.addEventListener("mouseleave", () => (it.style.background = ""));
+          it.addEventListener("click", () => { onPick(r); input.value = ""; hide(); });
+          results.appendChild(it);
+        });
+      }
+      results.style.display = "";
+    }, 250);
+  });
+  input.addEventListener("blur", () => window.setTimeout(hide, 200));
+  return wrap;
+}
+
+// ASSET form: link to ORGANISATION(s) via ASSETFORORGANISATION. Searchable combobox
+// on OrganisationName; in creation mode pre-seeded with the current user's org.
+async function appendAssetOrgPanel(body: HTMLElement, assetId: number | null): Promise<void> {
+  const div = document.createElement("div");
+  div.style.cssText = "margin-top:14px";
+  const header = document.createElement("div");
+  header.style.cssText = "font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)";
+  header.textContent = "Organisations (ASSETFORORGANISATION)";
+  const box = document.createElement("div");
+  box.style.cssText = "border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px";
+  const model: Map<number, string> = (!assetId && pendingAssetLinks) ? pendingAssetLinks.orgs : new Map();
+
+  const persist = (): void => {
+    if (assetId) void api.setAssetOrganisations(assetId, [...model.keys()]).catch((e) => toast(t("link.addErr") + " " + e, "err"));
+  };
+  const render = (): void => {
+    box.innerHTML = "";
+    if (!model.size) { box.innerHTML = `<div style="color:var(--text-dim);font-size:12px">No organisation linked.</div>`; return; }
+    model.forEach((name, id) => {
+      const chip = document.createElement("div");
+      chip.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-size:12px;border-bottom:1px solid var(--surface)";
+      const lbl = document.createElement("span"); lbl.textContent = `${name} (#${id})`;
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.className = "btn btn-ghost btn-sm"; x.style.cssText = "padding:0 6px";
+      x.onclick = () => { model.delete(id); persist(); render(); };
+      chip.appendChild(lbl); chip.appendChild(x); box.appendChild(chip);
+    });
+  };
+  const picker = makeSearchPicker(
+    "Search organisation…",
+    async (q) => (await api.lookupOrganisations(q)).map((o) => ({ id: o.OrganisationID, name: o.OrganisationName })),
+    (item) => { model.set(item.id, item.name); persist(); render(); }
+  );
+  div.appendChild(header); div.appendChild(box); div.appendChild(picker);
+  body.appendChild(div);
+
+  if (assetId) {
+    try { (await api.getAssetOrganisations(assetId)).forEach((o) => model.set(o.OrganisationID, o.OrganisationName)); } catch { /* ignore */ }
+  } else if (!model.size) {
+    // creation: default to the current user's organisation
+    try { const d = await api.defaultOrganisation(); if (d.OrganisationID) model.set(d.OrganisationID, d.OrganisationName || `#${d.OrganisationID}`); } catch { /* ignore */ }
+  }
+  render();
+}
+
+// ASSET form: link to PERSON(s) via PERSONFORASSET. Person searchable by name +
+// an editable role combobox (Owner default, Maintainer, Auditor, …).
+async function appendAssetPersonPanel(body: HTMLElement, assetId: number | null): Promise<void> {
+  const div = document.createElement("div");
+  div.style.cssText = "margin-top:14px";
+  const header = document.createElement("div");
+  header.style.cssText = "font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)";
+  header.textContent = "People (PERSONFORASSET)";
+  const box = document.createElement("div");
+  box.style.cssText = "border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px";
+  const model: Map<number, { name: string; role: string }> = (!assetId && pendingAssetLinks) ? pendingAssetLinks.persons : new Map();
+
+  const persist = (): void => {
+    if (assetId) {
+      void api.setAssetPersons(assetId, [...model.entries()].map(([pid, v]) => ({ personId: pid, relationshiptype: v.role })))
+        .catch((e) => toast(t("link.addErr") + " " + e, "err"));
+    }
+  };
+  const render = (): void => {
+    box.innerHTML = "";
+    if (!model.size) { box.innerHTML = `<div style="color:var(--text-dim);font-size:12px">No person linked.</div>`; return; }
+    model.forEach((v, id) => {
+      const chip = document.createElement("div");
+      chip.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-size:12px;border-bottom:1px solid var(--surface)";
+      const lbl = document.createElement("span"); lbl.textContent = `${v.name} (#${id}) — ${v.role || "—"}`;
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.className = "btn btn-ghost btn-sm"; x.style.cssText = "padding:0 6px";
+      x.onclick = () => { model.delete(id); persist(); render(); };
+      chip.appendChild(lbl); chip.appendChild(x); box.appendChild(chip);
+    });
+  };
+
+  const addRow = document.createElement("div");
+  addRow.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap";
+  let picked: { id: number; name: string } | null = null;
+  const personLabel = document.createElement("span");
+  personLabel.style.cssText = "font-size:12px;color:var(--text-soft);min-width:80px";
+  const personPicker = makeSearchPicker(
+    "Search person…",
+    async (q) => (await api.lookupPersons(q)).map((p) => ({ id: p.PersonID, name: p.PersonName })),
+    (item) => { picked = item; personLabel.textContent = `${item.name} (#${item.id})`; }
+  );
+  const roleListId = `asset-role-${Math.random().toString(36).slice(2)}`;
+  const roleInput = document.createElement("input");
+  roleInput.setAttribute("list", roleListId);
+  roleInput.placeholder = "Role";
+  roleInput.value = "Owner";
+  roleInput.style.cssText = "flex:0 0 120px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px";
+  const dl = document.createElement("datalist"); dl.id = roleListId;
+  ASSET_PERSON_ROLES.forEach((r) => { const o = document.createElement("option"); o.value = r; dl.appendChild(o); });
+  const addBtn = document.createElement("button");
+  addBtn.type = "button"; addBtn.className = "btn btn-primary btn-sm"; addBtn.textContent = "+ Add";
+  addBtn.onclick = () => {
+    if (!picked) { toast("Select a person first", "err"); return; }
+    model.set(picked.id, { name: picked.name, role: roleInput.value.trim() || "Owner" });
+    picked = null; personLabel.textContent = ""; roleInput.value = "Owner";
+    persist(); render();
+  };
+  addRow.appendChild(personPicker); addRow.appendChild(personLabel); addRow.appendChild(roleInput); addRow.appendChild(dl); addRow.appendChild(addBtn);
+  div.appendChild(header); div.appendChild(box); div.appendChild(addRow);
+  body.appendChild(div);
+
+  if (assetId) {
+    try { (await api.getAssetPersons(assetId)).forEach((p) => model.set(p.PersonID, { name: p.PersonName, role: p.relationshiptype })); } catch { /* ignore */ }
+  }
+  render();
 }
 
 // Questions selected/created pending during the CREATION of a QUESTIONNAIRE
@@ -5436,6 +6026,8 @@ let pendingThreatTtps: Set<number> | null = null;
 // Tags pending during the CREATION of a VULNERABILITY (VULNERABILITYTAG).
 let pendingVulnTags: Set<string> | null = null;
 let pendingOvalTags: Set<string> | null = null;
+let pendingCpeTags: Set<string> | null = null;
+let pendingCweTags: Set<string> | null = null;
 
 // Shows a list of pending links (label + removal button) in `box`.
 function renderStagedBox(box: HTMLElement, items: Map<number, string>, emptyMsg: string): void {
@@ -7415,6 +8007,8 @@ async function openInsertModal(): Promise<void> {
   pendingThreatTtps = null; // ATT&CK techniques buffer: THREAT creation
   pendingVulnTags = null; // tags buffer: VULNERABILITY creation
   pendingOvalTags = null; // tags buffer: OVALDEFINITION creation
+  pendingCpeTags = null; // tags buffer: CPE creation
+  pendingCweTags = null; // tags buffer: CWE creation
 
   if (!schema.length) {
     body.innerHTML = `<p style="color:var(--text-muted)">Schema non charge</p>`;
@@ -7645,9 +8239,13 @@ async function openInsertModal(): Promise<void> {
   if (isStixTable()) appendStixBundleButton(body, "f_");
 
   // Web security scanner + network scanner (ASSET form)
-  if (currentTable === "ASSET") { void appendWebScanPanel("f_"); void appendNetworkScanPanel("f_"); wireAssetScreenshot("f_"); }
+  if (currentTable === "ASSET") { void appendWebScanPanel("f_"); void appendNetworkScanPanel("f_"); wireAssetScreenshot("f_"); appendEmailHarvestHint("f_"); }
   // SOCRadar IOC Radar: search a CVE (VULNERABILITY form)
-  if (isOsvTable()) { appendSocradarIocField("f_"); appendEpssButton("f_"); }
+  if (isOsvTable()) { appendSocradarIocField("f_"); appendEpssButton("f_"); appendDatePicker("f_", "ValidUntilDate"); }
+  // BUGBOUNTYPROGRAM: date pickers to the right of StartDate / EndDate
+  if (currentTable === "BUGBOUNTYPROGRAM") { appendDatePicker("f_", "StartDate"); appendDatePicker("f_", "EndDate"); }
+  // Any form with a validity-end field gets a date picker (no-op if the field is absent).
+  appendDatePicker("f_", "ValidUntil"); appendDatePicker("f_", "ValidUntilDate");
   // AI answer suggestion (QUESTION / OCIL form)
   if (currentTable === "QUESTION") appendOcilSuggestPanel(body, "f_");
 
@@ -7681,6 +8279,8 @@ async function openInsertModal(): Promise<void> {
       get: () => Array.from(pendingAssetLinks?.tags ?? []),
       set: (tg) => { if (pendingAssetLinks) pendingAssetLinks.tags = new Set(tg); },
     });
+    await appendAssetOrgPanel(body, null);
+    await appendAssetPersonPanel(body, null);
   } else if (currentTable === "VULNERABILITY") {
     pendingVulnTags = new Set(); // buffered tags (creation) → saved after the insert
     appendTagsPanel(body, "Tags (VULNERABILITYTAG)", null, api.getVulnerabilityTags, api.setVulnerabilityTags, {
@@ -7692,6 +8292,18 @@ async function openInsertModal(): Promise<void> {
     appendTagsPanel(body, "Tags (OVALDEFINITIONTAG)", null, api.getOvalDefinitionTags, api.setOvalDefinitionTags, {
       get: () => Array.from(pendingOvalTags ?? []),
       set: (tg) => { pendingOvalTags = new Set(tg); },
+    });
+  } else if (currentTable === "CPE") {
+    pendingCpeTags = new Set(); // buffered tags (creation) → saved after the insert
+    appendTagsPanel(body, "Tags (CPETAG)", null, api.getCpeTags, api.setCpeTags, {
+      get: () => Array.from(pendingCpeTags ?? []),
+      set: (tg) => { pendingCpeTags = new Set(tg); },
+    });
+  } else if (currentTable === "CWE") {
+    pendingCweTags = new Set(); // buffered tags (creation) → saved after the insert
+    appendTagsPanel(body, "Tags (CWETAG)", null, api.getCweTags, api.setCweTags, {
+      get: () => Array.from(pendingCweTags ?? []),
+      set: (tg) => { pendingCweTags = new Set(tg); },
     });
   } else if (currentTable === "THREATMODEL") {
     // Scope/threats: handled AFTER creation (the model must exist in the database).
@@ -7717,6 +8329,16 @@ async function openInsertModal(): Promise<void> {
   } else if (currentTable === "THREAT") {
     pendingThreatTtps = new Set(); // prepares the ATT&CK techniques, saved at insertion
     await appendThreatTtps(body, null);
+    // Linked assets (XTHREAT.THREATFORASSET) — checked boxes saved after the insert.
+    await appendAssetSelector(body, "f", new Set(), "THREATFORASSET");
+  } else if (currentTable === "THREATFORASSET") {
+    // Multi-asset creation: hide the single AssetName combobox (NAME_SEARCH replaces the raw
+    // field with `f_field_AssetID_search`); pick assets via a tag-filterable, check-all selector.
+    // ThreatID stays the searchable ThreatName combobox.
+    for (const id of ["f_field_AssetID_search", "f_field_AssetID"]) {
+      const el = document.getElementById(id); if (el) el.style.display = "none";
+    }
+    await appendAssetSelector(body, "f", new Set(), "ASSET (one THREATFORASSET per checked asset)", { tagFilter: true, checkAll: true });
   } else if (currentTable === "ASSETVULNERABILITYREMEDIATION") {
     appendRemediationAssetName("f_");
   }
@@ -7726,6 +8348,28 @@ async function openInsertModal(): Promise<void> {
 }
 
 async function submitInsert(): Promise<void> {
+  // THREATFORASSET: multi-asset creation — one row per checked asset, sharing the
+  // chosen threat + Relationship/validity. Bypasses the generic single-row insert.
+  if (currentDb === "XTHREAT" && currentTable === "THREATFORASSET") {
+    const assetIds = collectCheckedAssets("f");
+    if (!assetIds.length) { toast("Sélectionnez au moins un ASSET", "err"); return; }
+    const threatId = Number((document.getElementById("f_ThreatID") as HTMLInputElement)?.value);
+    if (!threatId) { toast("ThreatName / ThreatID requis", "err"); return; }
+    const val = (id: string): string => (document.getElementById(id) as HTMLInputElement | null)?.value?.trim() || "";
+    try {
+      const r = await api.bulkThreatForAsset({
+        threatId, assetIds,
+        relationship: val("f_Relationship"), validFrom: val("f_ValidFrom"), validUntil: val("f_ValidUntil"),
+      });
+      ($("insert-modal") as HTMLElement).style.display = "none";
+      toast(`${r.created} THREATFORASSET créé(s)${r.skipped ? ` (${r.skipped} déjà existant)` : ""}`, "ok");
+      loadRows();
+    } catch (e) {
+      toast(t("toast.errInsert") + " " + e, "err");
+    }
+    return;
+  }
+
   const row: Record<string, string> = {};
   // Includes all columns, including the primary key (auto-incremented
   // for an integer PK, entered for a text PK).
@@ -7768,6 +8412,18 @@ async function submitInsert(): Promise<void> {
       const oid = Number((document.getElementById("f_OVALDefinitionID") as HTMLInputElement)?.value);
       if (oid) { try { await api.setOvalDefinitionTags(oid, [...pendingOvalTags]); } catch (e) { toast(t("tag.saveErr") + " " + e, "err"); } }
       pendingOvalTags = null;
+    }
+    // CPE: saves the buffered tags (CPETAG) after the insert.
+    if (currentTable === "CPE" && pendingCpeTags && pendingCpeTags.size) {
+      const cid = Number((document.getElementById("f_CPEID") as HTMLInputElement)?.value);
+      if (cid) { try { await api.setCpeTags(cid, [...pendingCpeTags]); } catch (e) { toast(t("tag.saveErr") + " " + e, "err"); } }
+      pendingCpeTags = null;
+    }
+    // CWE: saves the buffered tags (CWETAG) after the insert.
+    if (currentTable === "CWE" && pendingCweTags && pendingCweTags.size) {
+      const cid = Number((document.getElementById("f_CWEID") as HTMLInputElement)?.value);
+      if (cid) { try { await api.setCweTags(cid, [...pendingCweTags]); } catch (e) { toast(t("tag.saveErr") + " " + e, "err"); } }
+      pendingCweTags = null;
     }
     // Creation of a VULNERABILITY in the KEV catalog (KEV=1) → notification. Best-effort.
     if (currentTable === "VULNERABILITY" && row["KEV"] === "1") {
@@ -7831,6 +8487,8 @@ async function submitInsert(): Promise<void> {
           if (p.audits.size) await api.setAssetAudits(assetId, [...p.audits.keys()]);
           for (const ovalId of p.ovals.keys()) await api.addAssetOval(assetId, ovalId);
           if (p.tags.size) await api.setAssetTags(assetId, [...p.tags]);
+          if (p.orgs.size) await api.setAssetOrganisations(assetId, [...p.orgs.keys()]);
+          if (p.persons.size) await api.setAssetPersons(assetId, [...p.persons.entries()].map(([pid, v]) => ({ personId: pid, relationshiptype: v.role })));
         } catch (e) {
           toast(t("toast.someLinksErr") + " " + e, "err");
         }
@@ -7840,6 +8498,21 @@ async function submitInsert(): Promise<void> {
     // ASSET: after saving (vuln links included), detects the uncorrected KEV
     // ASSETVULNERABILITY rows and notifies. Best-effort (does not block creation).
     if (currentTable === "ASSET") void api.checkAssetKevNotify().catch(() => {});
+    // ASSET: when AssetName is an email, capture it into the email directory
+    // (EMAIL / EMAILADDRESS / EMAILFORORGANISATION). Idempotent, best-effort.
+    if (currentTable === "ASSET") {
+      const em = assetNameEmail("f_");
+      if (em) void api.harvestAssetEmail(em).then((r) => {
+        if (r.emailInserted || r.addressInserted || r.orgLinkInserted) toast(`📧 ${em} added to the email directory`, "ok");
+      }).catch(() => {});
+    }
+    // First-run wizard: after the first ORGANISATION is created, create the
+    // "XORCISM Admin account" ASSET + ASSETFORORGANISATION link — OrganisationID
+    // = auto pre-filled PK.
+    if (currentTable === "ORGANISATION" && setupWizardActive) {
+      const orgId = Number((document.getElementById("f_OrganisationID") as HTMLInputElement)?.value);
+      if (orgId) finishSetupWizard(orgId);
+    }
     // QUESTION links staged at the creation of a QUESTIONNAIRE — QuestionnaireID = auto pre-filled PK
     if (currentTable === "QUESTIONNAIRE" && pendingQuestionLinks) {
       const ids = [...pendingQuestionLinks];
@@ -7869,6 +8542,15 @@ async function submitInsert(): Promise<void> {
         catch (e) { toast(t("toast.techniqueLinksErr") + " " + e, "err"); }
       }
       pendingThreatTtps = null;
+    }
+    // ASSET links (THREATFORASSET) staged at the creation of a THREAT — ThreatID = auto pre-filled PK
+    if (currentTable === "THREAT") {
+      const tId = Number((document.getElementById("f_ThreatID") as HTMLInputElement)?.value);
+      const aids = collectCheckedAssets("f");
+      if (tId && aids.length) {
+        try { await api.setThreatAssets(tId, aids); }
+        catch (e) { toast(t("toast.assetLinksErr") + " " + e, "err"); }
+      }
     }
     // ALERT (XINCIDENT): on creation, save impacted assets then offer to notify all
     // tenant users with read access to XINCIDENT. Best-effort (does not block creation).

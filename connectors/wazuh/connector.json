@@ -3,23 +3,15 @@
   "name": "Wazuh",
   "type": "import",
   "category": "SIEM",
-  "description": "Open-source XDR/SIEM platform for threat detection and compliance. Tool: https://wazuh.com. [SCAFFOLD generated from XORCISM.TOOL #139 by tool_to_connector.py — implement run() in run.py to map Wazuh output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "description": "Imports endpoint inventory and vulnerability findings from Wazuh (https://wazuh.com), the open-source XDR/SIEM. Each Wazuh agent becomes an ASSET (name + IP + OS); syscollector packages become components/CPEs; vulnerability-detector findings become VULNERABILITIES (CVE + severity) attached to their agent. Offline mode: parse a saved Wazuh API JSON (an /agents or /vulnerability/{agent} response, shape {data:{affected_items:[...]}}, or a {agents,vulnerabilities,packages} bundle). Live mode: if `manager` (or WAZUH_API_URL) is set and WAZUH_API_USER/WAZUH_API_PASSWORD are in the worker env, authenticates (JWT) and pulls agents + per-agent vulnerabilities (needs `pip install requests`). Read-only API queries (non-intrusive). No DB access in run.py (worker-safe).",
   "intrusive": false,
   "permission": "connector:wazuh",
   "run": "run.py",
   "mapping": "wazuh",
   "parameters": [
-    {
-      "name": "target",
-      "type": "string",
-      "required": false,
-      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
-    },
-    {
-      "name": "file",
-      "type": "file",
-      "required": false,
-      "help": "Offline mode: a saved Wazuh output file to parse instead of running it live."
-    }
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a saved Wazuh API JSON (/agents, /vulnerability/{agent}, or a {agents,vulnerabilities,packages} bundle) to import." },
+    { "name": "manager", "type": "string", "required": false, "help": "Live mode: Wazuh server API base URL, e.g. https://wazuh.example:55000 (else WAZUH_API_URL in the worker env). Credentials come from WAZUH_API_USER/WAZUH_API_PASSWORD." },
+    { "name": "agent", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._:-]+$", "help": "Optional: agent name to attribute vulnerabilities to when an offline vulnerability export lacks the agent context." },
+    { "name": "limit", "type": "int", "required": false, "default": 200, "min": 1, "max": 5000, "help": "Live mode: maximum number of agents to enrich with vulnerabilities/packages." }
   ]
 }
