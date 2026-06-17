@@ -84,6 +84,22 @@ export function setEngagementActive(id: number, active: boolean): void {
   getJobDb().prepare("UPDATE XENGAGEMENT SET active=? WHERE EngagementID=?").run(active ? 1 : 0, id);
 }
 
+/**
+ * Creates or refreshes (by unique name) an engagement's scope/ROE and activates it.
+ * Used by the Pentesting module to keep one backing ROE engagement per audit
+ * rather than proliferating engagements on every scan.
+ */
+export function upsertEngagementByName(name: string, scope: string[], roe: string, userId: number): number {
+  const db = getJobDb();
+  const ex = db.prepare("SELECT EngagementID FROM XENGAGEMENT WHERE name=?").get(name) as { EngagementID: number } | undefined;
+  if (ex) {
+    db.prepare("UPDATE XENGAGEMENT SET scope=?, roe=?, active=1 WHERE EngagementID=?")
+      .run(JSON.stringify(scope), roe || null, ex.EngagementID);
+    return ex.EngagementID;
+  }
+  return createEngagement(name, scope, roe, userId);
+}
+
 export interface Job {
   JobID: number;
   connector: string;

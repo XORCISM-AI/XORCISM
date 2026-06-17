@@ -52,10 +52,11 @@ your data never leaves your infrastructure.
 - **Schema-driven explorer.** Every table gets a generated form & grid; add a
   table to the database and it appears in the UI after a restart — no code.
 - **Standards built in.** MITRE ATT&CK / ATLAS / D3FEND / CAPEC, STIX/TAXII 2.1,
-  OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS, and GRC frameworks (ISO 27001,
-  NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
-- **Extensible by drop-in.** 27 security connectors and a remote-worker model;
-  add one with a `connector.json` manifest — no rebuild.
+  Sigma, OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS, and GRC frameworks (ISO
+  27001, NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
+- **Extensible by drop-in.** A searchable catalogue of **300+ security
+  connectors** and a remote-worker model; add one with a `connector.json`
+  manifest — no rebuild.
 - **Multi-tenant & RBAC.** Row-level tenant scoping and role-based access, with
   passkey (WebAuthn) and optional OIDC sign-in.
 - **10 UI languages.** EN, FR, DE, IT, ES, PT, 中文, 日本語, العربية (RTL), Русский.
@@ -68,6 +69,10 @@ your data never leaves your infrastructure.
 
 - **Asset Management** — inventory, owners, business/financial value, tags,
   exposure; per-asset risk scoring with history.
+- **Attack-surface graph** — an asset-centric force-directed map linking each
+  asset to its applications, CPEs, vulnerabilities, owners, threats and incidents
+  (`/attack-surface`, reachable from the ASSET form; focus one asset or the whole
+  tenant, filter by entity type, deep-link back to any form).
 - **Configuration Management** — CPE naming, **OVAL** definitions and audits.
 - **Vulnerability Management** — CVE with **KEV**, **CVSS** and **EPSS**; CIRCL &
   OSV lookups; SOCRadar IOC-Radar deep-link for CVE references; **bug-bounty**
@@ -97,13 +102,31 @@ your data never leaves your infrastructure.
 
 - **Threat Management (CTI)** — STIX entities (actors, malware, tools, campaigns,
   indicators, observables) with OpenCTI-style common properties (Confidence,
-  TLP, Labels, Score), **sightings** and **relationships**; **hunts** and
-  **hypotheses**.
+  TLP, Labels, Score), **sightings** and **relationships**.
+- **Threat feeds & reports** — a curated **CTI RSS reader** (33 feeds) and threat
+  reports with **automatic IOC extraction** (IPs, domains, URLs, hashes, CVEs)
+  into the `IOC` table; per-report **CVE enrichment**, **watchlists with
+  alerting**, priority-intelligence requirements (**PIR**) and a local-AI **intel
+  brief builder**.
+- **Threat hunting & detection** — hunts, hypotheses and an IOC/technique
+  overview with a local-AI **hunt assistant**; **3,750+ Sigma detection rules**
+  browsable and linked to ATT&CK techniques.
 - **MITRE matrices** — **ATT&CK** (Enterprise / Mobile / ICS / **ATLAS**),
   **D3FEND** defensive countermeasures (mapped to ATT&CK and `XORCISM.CONTROL`),
   and **A3M — Agentic AI Attack Matrix**.
+- **LLM ATT&CK Navigator (Anthropic)** — an AI-enablement **overlay layer** on the
+  ATT&CK matrix: the techniques AI-enabled threat actors actually use, shaded by
+  prevalence (% of banned accounts), from Anthropic's 2026 analysis. Toggle it on
+  `/attack` alongside the BAS coverage layer.
 - **Adversary emulation (BAS)** — emulation plans, atomic tests & executors, and
   an **ATT&CK coverage heatmap** overlaid on the matrix.
+- **Pentesting** — engagements modeled as **AUDITs (type Pentest)** scoped to
+  assets: launch tool connectors (nmap, nuclei, nikto, whatweb, wpscan, sqlmap,
+  OpenVAS, Metasploit) against the scope under an enforced **ROE**, then collect
+  **AUDITFINDINGs** and the **VULNERABILITYs** found on the in-scope assets
+  (promote a vuln to a finding in one click), then print a client-ready
+  **PDF report** (executive summary, scope, findings, vulnerabilities). Scan
+  launch is capability-gated.
 - **STIX relationship graph** — interactive graph linking hunts ↔ techniques ↔
   actors; nodes deep-link back to their forms.
 - **Threat Modeling** — STRIDE scope, assets, threats and controls.
@@ -112,18 +135,22 @@ your data never leaves your infrastructure.
 
 ### 🔌 Integrations & automation
 
-- **27 connectors** — tool-runners (nmap, nuclei, nikto, sqlmap, whatweb,
-  wpscan, w3af, OpenVAS) and API imports (Nessus, Qualys, Rapid7, Caldera,
-  Dependency-Track, OSV-Scanner, depx, Wiz, Lacework, Sysdig, Aikido, Burp
-  Suite, Metasploit, Splunk, Elastic Security, Microsoft Sentinel, QRadar,
-  SAINT). See [§ Connectors](#-connectors).
+- **300+ connectors** — a **searchable catalogue**: curated tool-runners (nmap,
+  nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS) and API imports
+  (Nessus, Qualys, Rapid7, Caldera, Dependency-Track, OSV-Scanner, depx, Wiz,
+  Lacework, Sysdig, Aikido, Burp Suite, Metasploit, Splunk, Elastic Security,
+  Microsoft Sentinel, QRadar, SAINT), plus a large **OSINT tool-runner** set. See
+  [§ Connectors](#-connectors).
 - **Remote workers** — run connectors on a separate host (e.g. a Kali VM) over a
   worker token; normalized results import centrally.
 - **TAXII 2.1 server** — publish/consume STIX feeds.
-- **Local AI (Ollama)** — "Ask the threat model" (RAG over your XORCISM data) and
-  OCIL answer suggestions, fully offline.
+- **Local AI (Ollama)** — fully-offline assistants: **"Ask the threat model"**
+  (RAG over your XORCISM data), an **intel brief builder**, a
+  **vulnerability-triage agent** (KEV/EPSS + affected-asset blast radius), a
+  **hunt assistant**, and OCIL answer suggestions.
 - **Python importers** — load reference data: ATT&CK, D3FEND, CAPEC, CVE/NVD,
-  KEV, ISO 27001, NIST 800-53, CCE, OVAL, MAEC, Atomic Red Team, A3M, hunts.
+  KEV, ISO 27001, NIST 800-53, CCE, OVAL, MAEC, Atomic Red Team, A3M, **Sigma
+  rules**, hunts, **threat reports & IOCs**, **OSINT tools**.
 
 ### 🔐 Security & identity
 
@@ -155,6 +182,9 @@ your data never leaves your infrastructure.
 | ![Ticketing](docs/screenshots/13_ticketing.png)<br>**Ticketing** — tasks & comments | ![Connectors](docs/screenshots/14_xposure_connectors.png)<br>**Connectors** — nmap, nuclei, Nessus, SBOM… | ![OSINT](docs/screenshots/15_osint_tools.png)<br>**OSINT** toolbox |
 | ![ATT&CK](docs/screenshots/16_matrix_attack.png)<br>**MITRE ATT&CK** — with BAS coverage heatmap | ![D3FEND](docs/screenshots/17_matrix_d3fend.png)<br>**MITRE D3FEND** — defensive matrix | ![A3M](docs/screenshots/18_matrix_a3m.png)<br>**A3M** — Agentic AI Attack Matrix |
 | ![Dashboard](docs/screenshots/19_dashboard.png)<br>**Executive dashboard** — risk, exposure, trends | ![BIA](docs/screenshots/20_bia_audit.png)<br>**Business Impact Analysis (BIA)** | ![STIX graph](docs/screenshots/21_stix_graph.png)<br>**STIX graph** — hunts ↔ ATT&CK techniques |
+| ![Threat hunting](docs/screenshots/22_threat_hunting.png)<br>**Threat hunting** — HUNT · IOC · ATT&CK, local-AI assistant | ![Ask the threat model](docs/screenshots/23_ask_ai.png)<br>**Ask the threat model** — local-AI RAG | ![Connectors](docs/screenshots/24_connector_search.png)<br>**Connectors** — searchable catalogue (300+) |
+| ![Threat feeds](docs/screenshots/25_threat_feeds.png)<br>**Threat feeds** — curated CTI RSS reader | ![Attack-surface graph](docs/screenshots/26_attack_surface.png)<br>**Attack-surface graph** — asset-centric force map | ![Attack-surface focus](docs/screenshots/27_attack_surface_focus.png)<br>**Attack surface** — focused on one asset |
+| ![Pentesting](docs/screenshots/28_pentest.png)<br>**Pentesting** — engagements, scope, tooling, findings & vulns | ![LLM ATT&CK](docs/screenshots/31_llm_attack.png)<br>**LLM ATT&CK** — AI-enabled technique overlay (Anthropic) | |
 
 ---
 
@@ -279,7 +309,7 @@ XORCISM/
 │   │       └── …
 │   ├── client/
 │   │   ├── *.html              # explorer, dashboard, bia, attack, d3fend, stix-graph, tprm,
-│   │   │                       #   ebios, threat-feeds, admin, connectors, login/register…
+│   │   │                       #   ebios, hunting, ask, threat-feeds, admin, connectors, login…
 │   │   └── ts/
 │   │       ├── app.ts          # schema-driven forms & grids (the explorer engine)
 │   │       ├── dashboard.ts attack.ts d3fend.ts stix-graph.ts bia.ts ebios.ts tprm.ts
@@ -289,7 +319,7 @@ XORCISM/
 │
 ├── databases/                  # Canonical SQLite DDL (XORCISM, XVULNERABILITY, XTHREAT, …)
 ├── xorcism_python/             # SQLAlchemy models + importers/ (reference-data loaders)
-├── connectors/                 # 27 connectors (connector.json + run.py) + runner.py
+├── connectors/                 # 300+ connectors (connector.json + run.py) + runner.py
 ├── taxii/                      # TAXII 2.1 server (Flask)
 ├── docs/                       # Documentation + screenshots/
 ├── tools/nodejs/               # Portable Node 20 runtime (better-sqlite3 ABI)
@@ -344,7 +374,10 @@ timers — **no external cron**:
 | **Compliance (GRC)** | explorer | Policies, controls, audits, evidence, findings, CRQ/FAIR |
 | **EBIOS Risk Manager** | `/ebios` | 5 ANSSI workshops, business values, feared events, ecosystem |
 | **TPRM** | `/tprm` | Third-party / supplier risk assessments & questionnaires |
-| **Threat Management (CTI)** | explorer | STIX entities, OpenCTI properties, sightings, hunts, hypotheses |
+| **Threat Management (CTI)** | explorer | STIX entities, OpenCTI properties, sightings, watchlists, PIR |
+| **Threat hunting** | `/hunting` | Hunts, hypotheses, IOC/technique overview, Sigma rules, local-AI hunt assistant |
+| **Threat feeds** | `/threat-feeds` | Curated CTI RSS reader; reports with IOC extraction & CVE enrichment |
+| **Ask the threat model** | `/ask` | Local-AI RAG assistant over your XORCISM data |
 | **Threat Modeling** | explorer | STRIDE scope, assets, threats, controls |
 | **Incident Management** | explorer | Alerts → incidents → response |
 | **Ticketing** | explorer | Tasks, comments, attachments |
@@ -352,10 +385,12 @@ timers — **no external cron**:
 | **OSINT** | explorer | Open-source intelligence toolbox |
 | **Dashboard** | `/dashboard` | Enterprise risk, vulnerabilities, value, **risk×value**, tags, incidents |
 | **BIA** | `/bia` | Business Impact Analysis audits & entries |
-| **ATT&CK** | `/attack` | Enterprise / Mobile / ICS / ATLAS + BAS coverage heatmap |
+| **ATT&CK** | `/attack` | Enterprise / Mobile / ICS / ATLAS + BAS coverage & **LLM-enabled (Anthropic)** overlays |
 | **D3FEND** | `/d3fend` | Defensive countermeasures mapped to ATT&CK & controls |
 | **A3M** | `/a3m` | Agentic AI Attack Matrix |
 | **STIX graph** | `/stix-graph` | Relationship graph; nodes link back to forms |
+| **Attack-surface graph** | `/attack-surface` | Asset-centric force graph — apps, CPEs, vulns, orgs, persons, threats, incidents, tags |
+| **Pentesting** | `/pentest` | Engagements (AUDIT type=Pentest) scoped to assets; run tool connectors; findings & vulnerabilities |
 
 ---
 
@@ -364,15 +399,17 @@ timers — **no external cron**:
 Connectors live in `connectors/<id>/` with a `connector.json` manifest
 (auto-discovered under **Connectors** — no rebuild) and a `run.py`. Results are
 normalized into findings (project → `ASSET`, vuln → `VULNERABILITY` /
-`ASSETVULNERABILITY`).
+`ASSETVULNERABILITY`). The catalogue holds **300+** connectors and is
+**searchable** in the UI.
 
 | Type | Connectors |
 |---|---|
-| **Network / web scanners** (tool-runners) | nmap, nuclei, nikto, sqlmap, whatweb, wpscan, w3af, OpenVAS |
+| **Network / web scanners** (tool-runners) | nmap, nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS |
 | **Vulnerability / posture (API)** | Nessus, Qualys, Rapid7, Wiz, Lacework, Sysdig, Aikido |
 | **SCA / supply chain** | Dependency-Track, OSV-Scanner, **depx** (malicious-package audit) |
 | **Offensive / BAS** | Caldera, Metasploit, Metasploit-scan, Burp Suite, SAINT |
 | **SIEM / detection** | Splunk, Elastic Security, Microsoft Sentinel, QRadar |
+| **OSINT** (tool-runners) | 300+ reconnaissance / OSINT tools from the searchable catalogue |
 
 - **Tool-runners** need the named binary on `PATH` on the runner host.
 - **API connectors** are configured **only** via environment variables (never in
@@ -397,7 +434,7 @@ operational DBs are created in code.
 | `XORCISM` | Core: assets, applications, controls, persons, tags, risk scores |
 | `XVULNERABILITY` | CVE/KEV/CVSS/EPSS, vulnerability domains, bug bounty |
 | `XCOMPLIANCE` | GRC: audits, evidence, OCIL, TPRM, EBIOS, regulator notifications |
-| `XTHREAT` | ATT&CK / ATLAS / D3FEND / A3M, CTI/STIX, hunts, hypotheses, BAS |
+| `XTHREAT` | ATT&CK / ATLAS / D3FEND / A3M, CTI/STIX, hunts, hypotheses, BAS, Sigma rules, feeds, reports & IOCs |
 | `XATTACK` | CAPEC attack patterns |
 | `XINCIDENT` | Incidents & alerts |
 | `XOVAL` | OVAL definitions |
@@ -424,7 +461,11 @@ SQLAlchemy + `requests`; DB paths from `xorcism_python/config.py`):
 | `import_capec.py` | MITRE CAPEC XML → `XATTACK` |
 | `import_a3m.py` | Agentic AI Attack Matrix → `XTHREAT` |
 | `import_atomics.py` | Atomic Red Team → BAS tables in `XTHREAT` |
+| `import_llm_attack.py` | Anthropic LLM ATT&CK Navigator → `XTHREAT.LLMATTACKTECHNIQUE` |
 | `import_hunts.py` · `import_hypotheses.py` | Threat hunts & hypotheses → `XTHREAT` |
+| `import_sigma.py` | SigmaHQ detection rules → `XTHREAT.SIGMARULE` |
+| `import_threat_reports.py` | CTI reports + extracted IOCs → `XTHREAT.THREATREPORT` / `IOC` |
+| `import_osint_tools.py` | OSINT tools catalogue → `XORCISM.TOOL` |
 | `import_nvd_cve.py` · `import_vulnerabilities.py` · `import_KEV.py` · `import_cisa_kev.py` | CVE / KEV → `XVULNERABILITY` |
 | `import_iso27001.py` · `import_nist800-53.py` · `import_controls.py` · `import_cce.py` | Control frameworks → `XORCISM.CONTROL` |
 | `import_oval.py` · `import_maec.py` · `import_threatevent.py` · `import_vulnerabilitydomains.py` | OVAL / MAEC / threat events / domains |
@@ -432,6 +473,9 @@ SQLAlchemy + `requests`; DB paths from `xorcism_python/config.py`):
 ```powershell
 py -3 xorcism_python\importers\import_attack.py --domain atlas
 py -3 xorcism_python\importers\import_d3fend.py
+py -3 xorcism_python\importers\import_sigma.py                 # SigmaHQ detection rules
+py -3 xorcism_python\importers\import_threat_reports.py        # CTI reports + IOCs
+py -3 xorcism_python\importers\import_threat_reports.py --url https://.../report   # one report
 .\import_nvd_cve.ps1
 ```
 

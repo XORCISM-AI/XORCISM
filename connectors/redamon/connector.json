@@ -1,0 +1,17 @@
+{
+  "id": "redamon",
+  "name": "RedAmon",
+  "type": "import",
+  "category": "Exploitation",
+  "description": "Imports findings from RedAmon (https://github.com/samugit83/redamon), an autonomous AI red-team framework (recon + exploitation + post-exploitation) that builds a Neo4j attack-surface graph and exports JSON scan results. This connector parses RedAmon's exports and maps them into XORCISM: discovered hosts / domains / subdomains / IPs become ASSETs; open ports / services / detected technologies become services & CPEs on those assets; vulnerability findings (Nuclei templates, GVM/OpenVAS NVTs, CVEs) become VULNERABILITYs (CVE/template ref + severity). Reads a single JSON/JSONL export ('file'), a directory of exports ('dir'), or pulls JSON from a RedAmon backend export URL ('endpoint', authenticated with the REDAMON_API_KEY worker env var). Defensive multi-shape parser (findings lists, Nuclei JSONL, host/port records, Neo4j node exports). Import-only — it does NOT run the RedAmon framework or any LLM. No XORCISM DB access in run.py (worker-safe). Secrets via worker env only (REDAMON_API_KEY), never in the manifest or UI.",
+  "intrusive": false,
+  "permission": "connector:redamon",
+  "run": "run.py",
+  "mapping": "redamon",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a RedAmon JSON / JSON-lines export to import." },
+    { "name": "dir", "type": "string", "required": false, "help": "Path to a directory of RedAmon exports — every *.json / *.jsonl inside is imported." },
+    { "name": "endpoint", "type": "url", "required": false, "help": "Optional RedAmon backend export URL returning JSON findings; sent with 'Authorization: Bearer <REDAMON_API_KEY>' (worker env)." },
+    { "name": "target", "type": "target", "required": false, "help": "Default engagement target (host or URL) for findings that don't carry their own; must be within the engagement scope." }
+  ]
+}

@@ -1401,6 +1401,202 @@ export function assetRiskExposure(limit = 15): {
   return { assets, totalExposure: agg.te, totalValue: agg.tv, count: agg.c };
 }
 
+// ── Attack-surface graph (ASSET ↔ apps / CPEs / vulns / orgs / persons / threats / incidents / tags) ──
+export interface AsNode {
+  id: string; type: string; label: string; sub?: string;
+  db?: string; table?: string; idCol?: string; idVal?: string;
+}
+export interface AsLink { source: string; target: string; label: string }
+
+function sevFromCvss(c: number): string {
+  if (!Number.isFinite(c) || c <= 0) return "";
+  if (c >= 9) return "Critical";
+  if (c >= 7) return "High";
+  if (c >= 4) return "Medium";
+  return "Low";
+}
+
+/**
+ * Builds a tenant-scoped attack-surface graph centered on ASSETs. Each asset is
+ * linked to its applications, CPEs/components, vulnerabilities (XVULNERABILITY),
+ * owning organisations, responsible persons, threats (XTHREAT), incidents
+ * (XINCIDENT), related assets (ASSETFORASSET) and tags. `assetId` focuses on a
+ * single asset (its direct neighbourhood); otherwise the whole tenant surface
+ * (top assets by risk, capped). Every related-table read is defensive: a missing
+ * table/column is skipped rather than failing the whole graph. tenantId=null
+ * (super-admin) = no tenant filter.
+ */
+export function assetAttackSurface(
+  tenantId: number | null, assetId?: number | null
+): { nodes: AsNode[]; links: AsLink[]; focus: string | null } {
+  const xo = getDb("XORCISM");
+  const nodes = new Map<string, AsNode>();
+  const links: AsLink[] = [];
+  const seenLink = new Set<string>();
+  const addNode = (n: AsNode): void => { if (!nodes.has(n.id)) nodes.set(n.id, n); };
+  const addLink = (s: string, t: string, label: string): void => {
+    const k = `${s}|${t}|${label}`;
+    if (s && t && s !== t && !seenLink.has(k)) { seenLink.add(k); links.push({ source: s, target: t, label }); }
+  };
+  const safe = (fn: () => void): void => { try { fn(); } catch { /* table/columns absent */ } };
+
+  // Tenant asset universe (names + risk for nodes, membership for asset↔asset links).
+  const tArgs: number[] = [];
+  const tWhere = tenantId != null ? "WHERE TenantID = ?" : "";
+  if (tenantId != null) tArgs.push(tenantId);
+  const nameOf = new Map<number, { name: string; risk: number; crit: string }>();
+  for (const a of xo.prepare(
+    `SELECT AssetID, AssetName, RiskScore, AssetCriticalityLevel FROM ASSET ${tWhere} LIMIT 5000`
+  ).all(...tArgs) as { AssetID: number; AssetName: string; RiskScore: unknown; AssetCriticalityLevel: unknown }[]) {
+    nameOf.set(a.AssetID, {
+      name: a.AssetName || `Asset #${a.AssetID}`,
+      risk: Math.round(Number(a.RiskScore) || 0),
+      crit: String(a.AssetCriticalityLevel ?? ""),
+    });
+  }
+  if (assetId && !nameOf.has(assetId) && tenantId == null) {
+    const a = xo.prepare(
+      "SELECT AssetID, AssetName, RiskScore, AssetCriticalityLevel FROM ASSET WHERE AssetID = ?"
+    ).get(assetId) as { AssetID: number; AssetName: string; RiskScore: unknown; AssetCriticalityLevel: unknown } | undefined;
+    if (a) nameOf.set(a.AssetID, { name: a.AssetName || `Asset #${a.AssetID}`, risk: Math.round(Number(a.RiskScore) || 0), crit: String(a.AssetCriticalityLevel ?? "") });
+  }
+
+  // Focal assets: one asset (focused neighbourhood) or the tenant's top assets by risk (capped).
+  const focal: number[] = assetId
+    ? (nameOf.has(assetId) ? [assetId] : [])
+    : [...nameOf.entries()].sort((x, y) => y[1].risk - x[1].risk).slice(0, 150).map(([id]) => id);
+  if (!focal.length) return { nodes: [], links: [], focus: assetId ? `asset:${assetId}` : null };
+
+  const assetNode = (id: number): string => {
+    const nid = `asset:${id}`;
+    const m = nameOf.get(id);
+    if (m) addNode({ id: nid, type: "asset", label: m.name, sub: `risk ${m.risk}${m.crit ? " · " + m.crit : ""}`, db: "XORCISM", table: "ASSET", idCol: "AssetID", idVal: String(id) });
+    return nid;
+  };
+  for (const id of focal) assetNode(id);
+  const inC = focal.map(() => "?").join(",");
+
+  // Applications (APPLICATIONFORASSET → APPLICATION)
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT fa.AssetID aid, a.ApplicationID id, a.ApplicationName name
+       FROM APPLICATIONFORASSET fa JOIN APPLICATION a ON a.ApplicationID = fa.ApplicationID
+       WHERE fa.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string }[]) {
+      const nid = `app:${r.id}`;
+      addNode({ id: nid, type: "application", label: r.name || `App #${r.id}`, db: "XORCISM", table: "APPLICATION", idCol: "ApplicationID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, "runs");
+    }
+  });
+
+  // CPEs / components (CPEFORASSET → CPE)
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT fa.AssetID aid, c.CPEID id, COALESCE(NULLIF(c.CPETitle,''), c.CPEName) name
+       FROM CPEFORASSET fa JOIN CPE c ON c.CPEID = fa.CPEID WHERE fa.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string }[]) {
+      const nid = `cpe:${r.id}`;
+      addNode({ id: nid, type: "cpe", label: r.name || `CPE #${r.id}`, db: "XORCISM", table: "CPE", idCol: "CPEID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, "exposes");
+    }
+  });
+
+  // Vulnerabilities (ASSETVULNERABILITY → XVULNERABILITY.VULNERABILITY)
+  safe(() => {
+    const av = xo.prepare(
+      `SELECT AssetID aid, VulnerabilityID vid FROM ASSETVULNERABILITY
+       WHERE AssetID IN (${inC}) AND COALESCE(FalsePositive,0)=0`).all(...focal) as { aid: number; vid: number }[];
+    const vids = [...new Set(av.map((r) => r.vid).filter(Boolean))].slice(0, 900);
+    const meta = new Map<number, { label: string; sev: string }>();
+    if (vids.length) safe(() => {
+      const xv = getDb("XVULNERABILITY");
+      const vin = vids.map(() => "?").join(",");
+      for (const v of xv.prepare(
+        `SELECT VulnerabilityID id, COALESCE(NULLIF(VULReferential,''), NULLIF(VULName,''), 'Vuln #'||VulnerabilityID) label,
+                CVSSBaseScore cvss, KEV kev FROM VULNERABILITY WHERE VulnerabilityID IN (${vin})`).all(...vids) as { id: number; label: string; cvss: unknown; kev: unknown }[]) {
+        meta.set(v.id, { label: v.label, sev: Number(v.kev) > 0 ? "KEV" : sevFromCvss(Number(v.cvss)) });
+      }
+    });
+    const vidSet = new Set(vids);
+    for (const r of av) {
+      if (!vidSet.has(r.vid)) continue;
+      const m = meta.get(r.vid);
+      const nid = `vuln:${r.vid}`;
+      addNode({ id: nid, type: "vulnerability", label: m?.label || `Vuln #${r.vid}`, sub: m?.sev || undefined, db: "XVULNERABILITY", table: "VULNERABILITY", idCol: "VulnerabilityID", idVal: String(r.vid) });
+      addLink(`asset:${r.aid}`, nid, "vulnerable-to");
+    }
+  });
+
+  // Organisations (ASSETFORORGANISATION → ORGANISATION)
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT fo.AssetID aid, o.OrganisationID id, o.OrganisationName name
+       FROM ASSETFORORGANISATION fo JOIN ORGANISATION o ON o.OrganisationID = fo.OrganisationID
+       WHERE fo.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string }[]) {
+      const nid = `org:${r.id}`;
+      addNode({ id: nid, type: "organisation", label: r.name || `Org #${r.id}`, db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, "belongs-to");
+    }
+  });
+
+  // Persons (PERSONFORASSET → PERSON)
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT pa.AssetID aid, p.PersonID id, COALESCE(NULLIF(p.FullName,''), p.LastName) name, pa.relationshiptype rel
+       FROM PERSONFORASSET pa JOIN PERSON p ON p.PersonID = pa.PersonID WHERE pa.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string; rel: string }[]) {
+      const nid = `person:${r.id}`;
+      addNode({ id: nid, type: "person", label: r.name || `Person #${r.id}`, db: "XORCISM", table: "PERSON", idCol: "PersonID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, r.rel || "responsible");
+    }
+  });
+
+  // Threats (XTHREAT.THREATFORASSET → XTHREAT.THREAT)
+  safe(() => {
+    const xt = getDb("XTHREAT");
+    for (const r of xt.prepare(
+      `SELECT fa.AssetID aid, th.ThreatID id, th.ThreatName name FROM THREATFORASSET fa
+       JOIN THREAT th ON th.ThreatID = fa.ThreatID WHERE fa.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string }[]) {
+      const nid = `threat:${r.id}`;
+      addNode({ id: nid, type: "threat", label: r.name || `Threat #${r.id}`, db: "XTHREAT", table: "THREAT", idCol: "ThreatID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, "targeted-by");
+    }
+  });
+
+  // Incidents (XINCIDENT.INCIDENTFORASSET → XINCIDENT.INCIDENT)
+  safe(() => {
+    const xi = getDb("XINCIDENT");
+    for (const r of xi.prepare(
+      `SELECT fa.AssetID aid, i.IncidentID id, i.IncidentName name, fa.Compromised comp FROM INCIDENTFORASSET fa
+       JOIN INCIDENT i ON i.IncidentID = fa.IncidentID WHERE fa.AssetID IN (${inC})`).all(...focal) as { aid: number; id: number; name: string; comp: unknown }[]) {
+      const nid = `incident:${r.id}`;
+      const compromised = Number(r.comp) === 1;
+      addNode({ id: nid, type: "incident", label: r.name || `Incident #${r.id}`, sub: compromised ? "compromised" : undefined, db: "XINCIDENT", table: "INCIDENT", idCol: "IncidentID", idVal: String(r.id) });
+      addLink(`asset:${r.aid}`, nid, compromised ? "compromised-in" : "affected-by");
+    }
+  });
+
+  // Asset ↔ asset relationships (ASSETFORASSET) — kept within the tenant universe.
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT AssetSubjectID s, AssetRefID r, relationshiptype rel FROM ASSETFORASSET
+       WHERE AssetSubjectID IN (${inC}) OR AssetRefID IN (${inC})`).all(...focal, ...focal) as { s: number; r: number; rel: string }[]) {
+      const s = Number(r.s), rr = Number(r.r);
+      if (!s || !rr || !nameOf.has(s) || !nameOf.has(rr)) continue;
+      addLink(assetNode(s), assetNode(rr), r.rel || "related-to");
+    }
+  });
+
+  // Tags (ASSETTAG)
+  safe(() => {
+    for (const r of xo.prepare(
+      `SELECT AssetID aid, Tag tag FROM ASSETTAG WHERE AssetID IN (${inC}) AND COALESCE(Tag,'') <> ''`).all(...focal) as { aid: number; tag: string }[]) {
+      const nid = `tag:${String(r.tag).toLowerCase()}`;
+      addNode({ id: nid, type: "tag", label: String(r.tag) });
+      addLink(`asset:${r.aid}`, nid, "tagged");
+    }
+  });
+
+  return { nodes: [...nodes.values()], links, focus: assetId ? `asset:${assetId}` : null };
+}
+
 /**
  * Dashboard: number of incidents per status (INCIDENT.IncidentStatusID join
  * → INCIDENTSTATUS.IncidentStatusID), XINCIDENT database.
@@ -3609,6 +3805,38 @@ export function getAttackCoverage(): { byAttackId: Record<string, AttackCoverage
   }
   for (const v of Object.values(out)) v.status = v.prevented ? "prevented" : v.detected ? "detected" : v.tests ? "tested" : "";
   return { byAttackId: out };
+}
+
+// ── LLM ATT&CK Navigator (Anthropic) — AI-enablement layer over ATT&CK ────────
+const LLM_ATTACK_META = {
+  source: "https://red.anthropic.com/2026/attack-navigator/",
+  accounts: 832, observations: 13873, subtechniques: 482,
+  version: "MITRE ATT&CK v18 (Enterprise + Mobile)",
+  window: "Mar 2025 – Mar 2026",
+  aries: "AI Risk Enablement Score (ARiES) 0–100 = Threat (0–35) + Vulnerability (0–35) + Impact (0–30)",
+};
+export interface LlmAttackTech { name: string; tactic: string; actorCount: number | null; prevalence: number | null; ariesMean: number | null }
+
+/**
+ * The Anthropic "LLM ATT&CK Navigator" as a per-technique AI-enablement layer
+ * (XTHREAT.LLMATTACKTECHNIQUE, seeded by import_llm_attack.py). Keyed by AttackID
+ * so the /attack matrix can overlay it (prevalence heatmap). Empty if not imported.
+ */
+export function getLlmAttackLayer(): {
+  byAttackId: Record<string, LlmAttackTech>; techniques: number; maxPrevalence: number; meta: typeof LLM_ATTACK_META;
+} {
+  const db = getDb("XTHREAT");
+  const out: Record<string, LlmAttackTech> = {};
+  let max = 0;
+  try {
+    for (const r of db.prepare(
+      "SELECT AttackID, Name, TacticName, ActorCount, PrevalencePct, AriesMean FROM LLMATTACKTECHNIQUE"
+    ).all() as { AttackID: string; Name: string; TacticName: string; ActorCount: number | null; PrevalencePct: number | null; AriesMean: number | null }[]) {
+      out[r.AttackID] = { name: r.Name, tactic: r.TacticName, actorCount: r.ActorCount, prevalence: r.PrevalencePct, ariesMean: r.AriesMean };
+      if (r.PrevalencePct && r.PrevalencePct > max) max = r.PrevalencePct;
+    }
+  } catch { /* table absent — run import_llm_attack.py */ }
+  return { byAttackId: out, techniques: Object.keys(out).length, maxPrevalence: max, meta: LLM_ATTACK_META };
 }
 
 /**

@@ -27,6 +27,7 @@ import {
   vulnByYear,
   assetFinancialValues,
   assetRiskExposure,
+  assetAttackSurface,
   recordAssetFinancialValue,
   assetFinancialHistory,
   getOrCreateCpe,
@@ -42,6 +43,7 @@ import {
   createEvidence,
   getAttackMatrix,
   getAttackCoverage,
+  getLlmAttackLayer,
   searchAttackTechniques,
   getD3fendMatrix,
   getA3mMatrix,
@@ -338,6 +340,15 @@ router.get("/dashboard/asset-risk-exposure", (_req: Request, res: Response) => {
   res.json(assetRiskExposure());
 });
 
+// GET /api/asset-graph?assetId=<optional> — tenant-scoped attack-surface graph
+// (assets ↔ apps / CPEs / vulns / orgs / persons / threats / incidents / tags).
+router.get("/asset-graph", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return deny(req, res, "read", "XORCISM", "ASSET");
+  const raw = Number(req.query.assetId);
+  const assetId = Number.isFinite(raw) && raw > 0 ? raw : null;
+  res.json(assetAttackSurface(tenantScope(req), assetId));
+});
+
 // GET /api/dashboard/asset-financial-history?asset=<AssetName> — value over time
 router.get("/dashboard/asset-financial-history", (req: Request, res: Response) => {
   const name = String(req.query.asset || "").trim();
@@ -583,6 +594,14 @@ router.get("/attack/coverage", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XTHREAT", "ATTACKTECHNIQUE"))
     return deny(req, res, "read", "XTHREAT", "ATTACKTECHNIQUE");
   try { res.json(getAttackCoverage()); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// GET /api/attack/llm-layer — Anthropic "LLM ATT&CK Navigator" AI-enablement layer
+router.get("/attack/llm-layer", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XTHREAT", "ATTACKTECHNIQUE"))
+    return deny(req, res, "read", "XTHREAT", "ATTACKTECHNIQUE");
+  try { res.json(getLlmAttackLayer()); }
   catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 

@@ -13,6 +13,7 @@ Idempotent: THREATREPORT keyed by its URL, IOC keyed by (value, type). Re-runnab
     python import_threat_reports.py --count 10
     python import_threat_reports.py --count 5 --dry-run
     python import_threat_reports.py --no-fetch       # IOCs from the RSS summary only
+    python import_threat_reports.py --url https://.../report  # import one specific report
 """
 from __future__ import annotations
 
@@ -52,6 +53,8 @@ BENIGN = set(("google.com googleapis.com gstatic.com googletagmanager.com youtub
               "unpkg.com w3.org schema.org mozilla.org wikipedia.org creativecommons.org gravatar.com "
               "wordpress.com wp.com gstatic.com doubleclick.net google-analytics.com mitre.org first.org "
               "cisa.gov ncsc.gov.uk virustotal.com abuse.ch shodan.io censys.io archive.org web.archive.org "
+              # registrars / certificate authorities (appear as WHOIS/cert context, not IOCs)
+              "gname.com ssl.com namecheap.com godaddy.com letsencrypt.org digicert.com sectigo.com "
               "bleepingcomputer.com thehackernews.com krebsonsecurity.com darkreading.com therecord.media "
               "securityaffairs.com welivesecurity.com securelist.com talosintelligence.com unit42.paloaltonetworks.com "
               "crowdstrike.com sentinelone.com sophos.com malwarebytes.com rapid7.com checkpoint.com "
@@ -125,6 +128,20 @@ def parse_feed(xml: str, limit: int) -> list[dict]:
     return out
 
 
+def fetch_article(sess: "requests.Session", url: str) -> tuple[str, str]:
+    """Fetch one article URL; return (title, stripped_body). Title prefers og:title,
+    then <title> (with a trailing ' | Site' / ' - Site' suffix trimmed off)."""
+    r = sess.get(url, timeout=30)
+    r.raise_for_status()
+    page = r.text
+    m = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']', page, re.I) \
+        or re.search(r'<meta[^>]+name=["\']twitter:title["\'][^>]+content=["\']([^"\']+)["\']', page, re.I)
+    title = html.unescape(m.group(1)).strip() if m else ""
+    if not title:
+        title = re.sub(r"\s*[|–—-]\s*[^|–—-]{1,40}$", "", tag(page, "title")).strip()
+    return title[:250], strip_html(page)[:200000]
+
+
 def extract_iocs(text: str, source_host: str) -> list[tuple[str, str, str]]:
     """Returns deduped (value, type, stix_type) IOC tuples from `text`."""
     t = refang(text)
@@ -155,6 +172,14 @@ def extract_iocs(text: str, source_host: str) -> list[tuple[str, str, str]]:
         dom, tld = m.group(0).lower(), m.group(1).lower()
         if tld in TLDS and not _is_benign(dom, source_host):
             add(dom, "domain", "domain-name")
+
+    # Drop mid-label fragments: "rity.com" extracted from "coachcybersecu rity.com"
+    # (HTML stripping can inject a space inside a styled domain). A domain is junk if
+    # it is the tail of a longer extracted domain starting mid-label (preceded by alnum).
+    doms = {v for v, k, _ in found.values() if k == "domain"}
+    junk = {d for d in doms if any(o != d and o.endswith(d) and o[-len(d) - 1].isalnum() for o in doms)}
+    if junk:
+        found = {key: tup for key, tup in found.items() if not (tup[1] == "domain" and tup[0] in junk)}
     return list(found.values())
 
 
@@ -170,6 +195,8 @@ def _is_benign(host: str, source_host: str) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Import threat reports + their IOCs")
     ap.add_argument("--count", type=int, default=50, help="Number of new reports to import")
+    ap.add_argument("--url", help="Import one specific report URL (skips feed gathering)")
+    ap.add_argument("--source", help="Source/publisher name to label the report (only used with --url)")
     ap.add_argument("--no-fetch", action="store_true", help="Don't fetch article bodies (IOCs from RSS summary only)")
     ap.add_argument("--dry-run", action="store_true", help="Parse only; write nothing")
     args = ap.parse_args()
@@ -187,39 +214,58 @@ def main() -> int:
     sess = requests.Session()
     sess.headers.update({"User-Agent": UA})
 
-    # Gather candidates (round-robin across feeds for source diversity).
-    per_feed: list[list[dict]] = []
-    for name, url in feeds:
+    if args.url:
+        u = args.url.strip()
+        src = args.source
+        if not src:  # reuse the curated feed's name if this URL's host is a known feed
+            host = safe_host(u)
+            row = host and conn.execute("SELECT ThreatFeedName FROM THREATFEED WHERE FeedURL LIKE ?",
+                                        (f"%{host}%",)).fetchone()
+            src = (row[0] if row else None) or host or "Manual import"
         try:
-            r = sess.get(url, timeout=25)
-            items = parse_feed(r.text, 40) if r.status_code == 200 else []
-            for it in items:
-                it["feed"] = name
-            per_feed.append([it for it in items if it.get("link")])
-        except Exception:  # noqa: BLE001
-            per_feed.append([])
-    candidates: list[dict] = []
-    i = 0
-    while any(i < len(f) for f in per_feed):  # round-robin across all fetched items
-        for f in per_feed:
-            if i < len(f):
-                candidates.append(f[i])
-        i += 1
+            title, prebody = fetch_article(sess, u)
+        except Exception as e:  # noqa: BLE001
+            log(f"fetch failed for {u}: {e}")
+            return 1
+        if u[:500] in have:
+            log("note: a THREATREPORT already exists for this URL — re-running (IOCs are deduped).")
+        chosen = [{"title": title or "(untitled)", "link": u, "summary": "",
+                   "feed": src, "date": "", "prefetched": prebody}]
+        log(f"single-URL mode — '{title or u}'  [{src}]")
+    else:
+        # Gather candidates (round-robin across feeds for source diversity).
+        per_feed: list[list[dict]] = []
+        for name, url in feeds:
+            try:
+                r = sess.get(url, timeout=25)
+                items = parse_feed(r.text, 40) if r.status_code == 200 else []
+                for it in items:
+                    it["feed"] = name
+                per_feed.append([it for it in items if it.get("link")])
+            except Exception:  # noqa: BLE001
+                per_feed.append([])
+        candidates: list[dict] = []
+        i = 0
+        while any(i < len(f) for f in per_feed):  # round-robin across all fetched items
+            for f in per_feed:
+                if i < len(f):
+                    candidates.append(f[i])
+            i += 1
 
-    chosen = []
-    seen_url: set[str] = set()
-    for c in candidates:
-        u = c["link"][:500]
-        if u in have or u in seen_url:
-            continue
-        seen_url.add(u)
-        chosen.append(c)
-        if len(chosen) >= args.count:
-            break
+        chosen = []
+        seen_url: set[str] = set()
+        for c in candidates:
+            u = c["link"][:500]
+            if u in have or u in seen_url:
+                continue
+            seen_url.add(u)
+            chosen.append(c)
+            if len(chosen) >= args.count:
+                break
 
-    log(f"{len(feeds)} feeds, {sum(len(f) for f in per_feed)} items fetched, {len(chosen)} new report(s) to import.")
+        log(f"{len(feeds)} feeds, {sum(len(f) for f in per_feed)} items fetched, {len(chosen)} new report(s) to import.")
 
-    rep_ins = ioc_ins = 0
+    rep_ins = rep_upd = ioc_ins = 0
     seen_ioc = {(r[0] or "").lower(): True for r in conn.execute("SELECT IOCName FROM IOC").fetchall()}
     ts = now()
     trcols = {r[1] for r in conn.execute('PRAGMA table_info("THREATREPORT")').fetchall()}
@@ -227,8 +273,8 @@ def main() -> int:
 
     for c in chosen:
         host = safe_host(c["link"])
-        body = c["summary"]
-        if not args.no_fetch:
+        body = c.get("prefetched") or c["summary"]
+        if not args.no_fetch and not c.get("prefetched"):
             try:
                 ar = sess.get(c["link"], timeout=25)
                 if ar.status_code == 200:
@@ -237,27 +283,42 @@ def main() -> int:
                 pass
         iocs = extract_iocs(f"{c['title']}\n{body}", host)
         cves = ",".join(sorted({v for v, k, _ in iocs if k == "cve"}))
+        existing = conn.execute("SELECT ThreatReportID FROM THREATREPORT WHERE ThreatReportReference=?",
+                                (c["link"][:500],)).fetchone()
 
         if args.dry_run:
-            log(f"  · {c['title'][:70]}  [{c['feed']}]  {len(iocs)} IOC(s)")
-            rep_ins += 1
+            log(f"  · {c['title'][:70]}  [{c['feed']}]  {len(iocs)} IOC(s)  "
+                f"({'enrich existing #%d' % existing[0] if existing else 'new report'})")
+            rep_upd += 1 if existing else 0
+            rep_ins += 0 if existing else 1
             ioc_ins += len(iocs)
             continue
 
         with conn:  # one transaction per report → IDs via subquery stay race-safe vs the live poller
-            desc = (c["summary"][:1500] + f"\n\nSource: {c['feed']} — {c['link']}").strip()
-            if has_cve:
-                conn.execute(
-                    """INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName,
-                       ThreatReportDescription, CreatedDate, ThreatReportSource, ThreatReportReference, CveTags)
-                       VALUES ((SELECT COALESCE(MAX(ThreatReportID),0)+1 FROM THREATREPORT),?,?,?,?,?,?,?)""",
-                    (str(uuid.uuid4()), c["title"] or "(untitled)", desc, ts, c["feed"], c["link"][:500], cves or None))
+            desc = ((c["summary"] or body)[:1500] + f"\n\nSource: {c['feed']} — {c['link']}").strip()
+            if existing:  # idempotent by URL: enrich the row the feed poller created, don't duplicate
+                if has_cve:
+                    conn.execute("UPDATE THREATREPORT SET ThreatReportDescription=?, "
+                                 "CveTags=COALESCE(NULLIF(?,''),CveTags) WHERE ThreatReportID=?",
+                                 (desc, cves, existing[0]))
+                else:
+                    conn.execute("UPDATE THREATREPORT SET ThreatReportDescription=? WHERE ThreatReportID=?",
+                                 (desc, existing[0]))
+                rep_upd += 1
             else:
-                conn.execute(
-                    """INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName,
-                       ThreatReportDescription, CreatedDate, ThreatReportSource, ThreatReportReference)
-                       VALUES ((SELECT COALESCE(MAX(ThreatReportID),0)+1 FROM THREATREPORT),?,?,?,?,?,?)""",
-                    (str(uuid.uuid4()), c["title"] or "(untitled)", desc, ts, c["feed"], c["link"][:500]))
+                if has_cve:
+                    conn.execute(
+                        """INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName,
+                           ThreatReportDescription, CreatedDate, ThreatReportSource, ThreatReportReference, CveTags)
+                           VALUES ((SELECT COALESCE(MAX(ThreatReportID),0)+1 FROM THREATREPORT),?,?,?,?,?,?,?)""",
+                        (str(uuid.uuid4()), c["title"] or "(untitled)", desc, ts, c["feed"], c["link"][:500], cves or None))
+                else:
+                    conn.execute(
+                        """INSERT INTO THREATREPORT (ThreatReportID, ThreatReportGUID, ThreatReportName,
+                           ThreatReportDescription, CreatedDate, ThreatReportSource, ThreatReportReference)
+                           VALUES ((SELECT COALESCE(MAX(ThreatReportID),0)+1 FROM THREATREPORT),?,?,?,?,?,?)""",
+                        (str(uuid.uuid4()), c["title"] or "(untitled)", desc, ts, c["feed"], c["link"][:500]))
+                rep_ins += 1
             for val, kind, stix in iocs:
                 if val.lower() in seen_ioc:
                     continue
@@ -271,11 +332,10 @@ def main() -> int:
                     (str(uuid.uuid4()), val[:400], f"From: {c['title'][:200]} ({c['link'][:300]})",
                      ts, kind, pattern[:600], "stix", c["feed"][:100], ts[:10], 50, 3))
                 ioc_ins += 1
-            rep_ins += 1
 
     conn.close()
     verb = "would import" if args.dry_run else "imported"
-    log(f"OK — {verb} {rep_ins} THREATREPORT and {ioc_ins} IOC(s).")
+    log(f"OK — {verb} {rep_ins} new + {rep_upd} enriched THREATREPORT and {ioc_ins} IOC(s).")
     return 0
 
 

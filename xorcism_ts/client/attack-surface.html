@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Attack-surface graph</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .as-layout{display:flex;height:calc(100vh - 46px)}
+  .as-side{width:290px;min-width:290px;background:#13162a;border-right:1px solid #2d3250;display:flex;flex-direction:column;overflow:auto}
+  .as-side .sec{padding:12px 14px;border-bottom:1px solid #1e2133}
+  .as-side h3{font-size:12px;color:#94a3b8;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+  .as-main{flex:1;position:relative;overflow:hidden;background:#0b0d18}
+  #as-svg{width:100%;height:100%;display:block;cursor:grab}
+  #as-svg:active{cursor:grabbing}
+  .as-side input[type=text],.as-side select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12px;padding:7px}
+  .as-side label{display:block;font-size:11px;color:#94a3b8;margin:8px 0 3px}
+  .as-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .node circle{stroke:#0b0d18;stroke-width:1.5px;cursor:pointer}
+  .node text{font-size:9px;fill:#cbd5e1;pointer-events:none}
+  .node.sel circle{stroke:#fff;stroke-width:2.5px}
+  .node.focus circle{stroke:#fde047;stroke-width:3px}
+  .link{stroke:#475569;stroke-width:1.2px}
+  .linklabel{font-size:8px;fill:#7c83fd;pointer-events:none}
+  #as-details{position:absolute;top:10px;right:10px;width:320px;max-height:calc(100% - 20px);overflow:auto;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px;display:none;font-size:12px}
+  #as-details h4{margin:0 0 6px;font-size:13px;color:#e2e8f0}
+  #as-details .close{float:right;cursor:pointer;color:#94a3b8}
+  .legend{display:flex;flex-direction:column;gap:4px}
+  .legend .it{display:flex;align-items:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;user-select:none}
+  .legend .it.off{opacity:.35}
+  .legend .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .as-stat{font-size:11px;color:#64748b}
+  #as-toast{position:absolute;bottom:12px;left:12px;background:#7f1d1d;color:#fecaca;border-radius:6px;padding:7px 12px;font-size:12px;display:none}
+  #as-focusbar{position:absolute;top:10px;left:10px;background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:6px 10px;font-size:12px;color:#cbd5e1;display:none}
+  #as-focusbar b{color:#fde047}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/dashboard" data-i18n="nav.dashboard">&#128202; Dashboard</a>
+  <span class="spacer"></span>
+  <span class="title">&#128376;&#65039; Attack-surface graph</span>
+</div>
+
+<div class="as-layout">
+  <div class="as-side">
+    <div class="sec">
+      <h3>Scope</h3>
+      <label>Focus on an asset</label>
+      <input type="text" id="as-search" list="as-assets" placeholder="AssetName…" autocomplete="off">
+      <datalist id="as-assets"></datalist>
+      <div class="as-btns">
+        <button class="btn btn-primary btn-sm" id="as-focus">Focus</button>
+        <button class="btn btn-ghost btn-sm" id="as-all">Whole tenant</button>
+      </div>
+      <div class="as-stat" id="as-scope" style="margin-top:8px"></div>
+    </div>
+    <div class="sec">
+      <h3>Options</h3>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="as-labels" style="width:auto"> <span>Relationship labels</span></label>
+      <div class="as-btns">
+        <button class="btn btn-ghost btn-sm" id="as-fit">Fit</button>
+        <button class="btn btn-ghost btn-sm" id="as-export">Export SVG</button>
+        <button class="btn btn-ghost btn-sm" id="as-reload">Reload</button>
+      </div>
+      <div class="as-stat" id="as-counts" style="margin-top:8px"></div>
+    </div>
+    <div class="sec">
+      <h3>Legend / filter</h3>
+      <div class="legend" id="as-legend"></div>
+    </div>
+  </div>
+
+  <div class="as-main">
+    <svg id="as-svg"></svg>
+    <div id="as-focusbar"></div>
+    <div id="as-details"></div>
+    <div id="as-toast"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="/js/session-ui.js"></script>
+<script src="/js/attack-surface.js"></script>
+</body>
+</html>

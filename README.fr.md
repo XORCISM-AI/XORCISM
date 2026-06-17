@@ -57,11 +57,11 @@ jamais votre infrastructure.
   grille ; ajoutez une table à la base et elle apparaît dans l'UI après un
   redémarrage — sans code.
 - **Standards intégrés.** MITRE ATT&CK / ATLAS / D3FEND / CAPEC, STIX/TAXII 2.1,
-  OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS et référentiels GRC (ISO 27001,
-  NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
-- **Extensible par simple dépôt de fichiers.** 27 connecteurs de sécurité et un
-  modèle de worker distant ; on en ajoute un avec un manifeste `connector.json` —
-  sans recompilation.
+  Sigma, OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS et référentiels GRC (ISO
+  27001, NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
+- **Extensible par simple dépôt de fichiers.** Un catalogue **recherchable de
+  300+ connecteurs de sécurité** et un modèle de worker distant ; on en ajoute un
+  avec un manifeste `connector.json` — sans recompilation.
 - **Multi-tenant et RBAC.** Cloisonnement par locataire au niveau ligne et
   contrôle d'accès par rôle, avec connexion par clé d'accès (WebAuthn) et OIDC
   optionnel.
@@ -75,6 +75,10 @@ jamais votre infrastructure.
 
 - **Gestion des actifs** — inventaire, propriétaires, valeur métier/financière,
   étiquettes, exposition ; scoring de risque par actif avec historique.
+- **Graphe de surface d'attaque** — une carte interactive centrée sur l'actif,
+  reliant chaque actif à ses applications, CPE, vulnérabilités, propriétaires,
+  menaces et incidents (`/attack-surface`, accessible depuis le formulaire ASSET ;
+  focus sur un actif ou tout le locataire, filtre par type, lien direct vers chaque formulaire).
 - **Gestion de la configuration** — nommage CPE, définitions et audits **OVAL**.
 - **Gestion des vulnérabilités** — CVE avec **KEV**, **CVSS** et **EPSS** ;
   recherches CIRCL et OSV ; lien direct SOCRadar IOC-Radar pour les références
@@ -104,11 +108,22 @@ jamais votre infrastructure.
 
 - **Gestion des menaces (CTI)** — entités STIX (acteurs, malwares, outils,
   campagnes, indicateurs, observables) avec propriétés communes façon OpenCTI
-  (Confidence, TLP, Labels, Score), **observations (sightings)** et
-  **relations** ; **chasses** et **hypothèses**.
+  (Confidence, TLP, Labels, Score), **observations (sightings)** et **relations**.
+- **Flux et rapports de menaces** — un **lecteur RSS CTI** curé (33 flux) et des
+  rapports de menaces avec **extraction automatique d'IOC** (IP, domaines, URL,
+  empreintes, CVE) dans la table `IOC` ; **enrichissement CVE** par rapport,
+  **listes de surveillance avec alertes**, besoins prioritaires de renseignement
+  (**PIR**) et un **générateur de note de synthèse** par IA locale.
+- **Chasse aux menaces et détection** — chasses, hypothèses et une vue d'ensemble
+  IOC/techniques avec un **assistant de chasse** par IA locale ; **3 750+ règles
+  de détection Sigma** consultables et reliées aux techniques ATT&CK.
 - **Matrices MITRE** — **ATT&CK** (Enterprise / Mobile / ICS / **ATLAS**),
   contre-mesures défensives **D3FEND** (mappées à ATT&CK et à `XORCISM.CONTROL`),
   et **A3M — Agentic AI Attack Matrix**.
+- **LLM ATT&CK Navigator (Anthropic)** — une **surcouche** d'exposition à l'IA sur
+  la matrice ATT&CK : les techniques réellement employées par les acteurs assistés
+  par IA, teintées selon leur prévalence (% de comptes bannis), d'après l'analyse
+  Anthropic 2026. Activable sur `/attack` à côté de la couche de couverture BAS.
 - **Émulation d'adversaire (BAS)** — plans d'émulation, tests atomiques et
   exécuteurs, et une **heatmap de couverture ATT&CK** superposée à la matrice.
 - **Graphe de relations STIX** — graphe interactif reliant chasses ↔ techniques ↔
@@ -119,20 +134,23 @@ jamais votre infrastructure.
 
 ### 🔌 Intégrations et automatisation
 
-- **27 connecteurs** — lanceurs d'outils (nmap, nuclei, nikto, sqlmap, whatweb,
-  wpscan, w3af, OpenVAS) et imports par API (Nessus, Qualys, Rapid7, Caldera,
-  Dependency-Track, OSV-Scanner, depx, Wiz, Lacework, Sysdig, Aikido, Burp Suite,
-  Metasploit, Splunk, Elastic Security, Microsoft Sentinel, QRadar, SAINT). Voir
-  [§ Connecteurs](#-connecteurs).
+- **300+ connecteurs** — un **catalogue recherchable** : lanceurs d'outils curés
+  (nmap, nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS) et
+  imports par API (Nessus, Qualys, Rapid7, Caldera, Dependency-Track, OSV-Scanner,
+  depx, Wiz, Lacework, Sysdig, Aikido, Burp Suite, Metasploit, Splunk, Elastic
+  Security, Microsoft Sentinel, QRadar, SAINT), plus un large jeu de **lanceurs
+  d'outils OSINT**. Voir [§ Connecteurs](#-connecteurs).
 - **Workers distants** — exécutez les connecteurs sur une autre machine (ex. une
   VM Kali) via un jeton de worker ; les résultats normalisés sont importés
   centralement.
 - **Serveur TAXII 2.1** — publier/consommer des flux STIX.
-- **IA locale (Ollama)** — « Ask the threat model » (RAG sur vos données XORCISM)
-  et suggestions de réponses OCIL, entièrement hors ligne.
+- **IA locale (Ollama)** — assistants entièrement hors ligne : **« Ask the threat
+  model »** (RAG sur vos données XORCISM), un **générateur de note de synthèse**,
+  un **agent de triage de vulnérabilités** (KEV/EPSS + rayon d'impact sur les
+  actifs touchés), un **assistant de chasse**, et des suggestions de réponses OCIL.
 - **Importeurs Python** — chargent les données de référence : ATT&CK, D3FEND,
   CAPEC, CVE/NVD, KEV, ISO 27001, NIST 800-53, CCE, OVAL, MAEC, Atomic Red Team,
-  A3M, chasses.
+  A3M, **règles Sigma**, chasses, **rapports de menaces et IOC**, **outils OSINT**.
 
 ### 🔐 Sécurité et identité
 
@@ -299,7 +317,7 @@ XORCISM/
 │   │       └── …
 │   ├── client/
 │   │   ├── *.html              # explorer, dashboard, bia, attack, d3fend, stix-graph, tprm,
-│   │   │                       #   ebios, threat-feeds, admin, connectors, login/register…
+│   │   │                       #   ebios, hunting, ask, threat-feeds, admin, connectors, login…
 │   │   └── ts/
 │   │       ├── app.ts          # formulaires et grilles pilotés par le schéma (moteur de l'explorateur)
 │   │       ├── dashboard.ts attack.ts d3fend.ts stix-graph.ts bia.ts ebios.ts tprm.ts
@@ -309,7 +327,7 @@ XORCISM/
 │
 ├── databases/                  # DDL SQLite canonique (XORCISM, XVULNERABILITY, XTHREAT, …)
 ├── xorcism_python/             # Modèles SQLAlchemy + importers/ (chargeurs de données de référence)
-├── connectors/                 # 27 connecteurs (connector.json + run.py) + runner.py
+├── connectors/                 # 300+ connecteurs (connector.json + run.py) + runner.py
 ├── taxii/                      # Serveur TAXII 2.1 (Flask)
 ├── docs/                       # Documentation + screenshots/
 ├── tools/nodejs/               # Runtime Node 20 portable (ABI de better-sqlite3)
@@ -368,7 +386,10 @@ externe** :
 | **Conformité (GRC)** | explorer | Politiques, mesures, audits, preuves, constats, CRQ/FAIR |
 | **EBIOS Risk Manager** | `/ebios` | 5 ateliers ANSSI, valeurs métier, événements redoutés, écosystème |
 | **TPRM** | `/tprm` | Évaluations de risque tiers / fournisseurs et questionnaires |
-| **Gestion des menaces (CTI)** | explorer | Entités STIX, propriétés OpenCTI, sightings, chasses, hypothèses |
+| **Gestion des menaces (CTI)** | explorer | Entités STIX, propriétés OpenCTI, sightings, listes de surveillance, PIR |
+| **Chasse aux menaces** | `/hunting` | Chasses, hypothèses, vue IOC/techniques, règles Sigma, assistant de chasse IA |
+| **Flux de menaces** | `/threat-feeds` | Lecteur RSS CTI curé ; rapports avec extraction d'IOC et enrichissement CVE |
+| **Ask the threat model** | `/ask` | Assistant RAG par IA locale sur vos données XORCISM |
 | **Modélisation des menaces** | explorer | Périmètre STRIDE, actifs, menaces, mesures |
 | **Gestion des incidents** | explorer | Alertes → incidents → réponse |
 | **Ticketing** | explorer | Tâches, commentaires, pièces jointes |
@@ -376,10 +397,12 @@ externe** :
 | **OSINT** | explorer | Boîte à outils de renseignement open source |
 | **Tableau de bord** | `/dashboard` | Risque d'entreprise, vulnérabilités, valeur, **risque×valeur**, étiquettes, incidents |
 | **BIA** | `/bia` | Audits et entrées d'analyse d'impact métier |
-| **ATT&CK** | `/attack` | Enterprise / Mobile / ICS / ATLAS + heatmap de couverture BAS |
+| **ATT&CK** | `/attack` | Enterprise / Mobile / ICS / ATLAS + surcouches couverture BAS & **LLM-enabled (Anthropic)** |
 | **D3FEND** | `/d3fend` | Contre-mesures défensives mappées à ATT&CK et aux mesures |
 | **A3M** | `/a3m` | Agentic AI Attack Matrix |
 | **Graphe STIX** | `/stix-graph` | Graphe de relations ; les nœuds renvoient aux formulaires |
+| **Graphe de surface d'attaque** | `/attack-surface` | Graphe centré sur l'actif — applications, CPE, vulns, organisations, personnes, menaces, incidents, étiquettes |
+| **Pentest** | `/pentest` | Engagements (AUDIT type=Pentest) cadrés sur des actifs ; connecteurs d'outils ; constats, vulnérabilités et **rapport PDF** |
 
 ---
 
@@ -388,15 +411,17 @@ externe** :
 Les connecteurs vivent dans `connectors/<id>/` avec un manifeste `connector.json`
 (découvert automatiquement sous **Connecteurs** — sans recompilation) et un
 `run.py`. Les résultats sont normalisés en constats (projet → `ASSET`,
-vulnérabilité → `VULNERABILITY` / `ASSETVULNERABILITY`).
+vulnérabilité → `VULNERABILITY` / `ASSETVULNERABILITY`). Le catalogue compte
+**300+** connecteurs et est **recherchable** dans l'UI.
 
 | Type | Connecteurs |
 |---|---|
-| **Scanners réseau / web** (lanceurs d'outils) | nmap, nuclei, nikto, sqlmap, whatweb, wpscan, w3af, OpenVAS |
+| **Scanners réseau / web** (lanceurs d'outils) | nmap, nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS |
 | **Vulnérabilités / posture (API)** | Nessus, Qualys, Rapid7, Wiz, Lacework, Sysdig, Aikido |
 | **SCA / chaîne d'approvisionnement** | Dependency-Track, OSV-Scanner, **depx** (audit de paquets malveillants) |
 | **Offensif / BAS** | Caldera, Metasploit, Metasploit-scan, Burp Suite, SAINT |
 | **SIEM / détection** | Splunk, Elastic Security, Microsoft Sentinel, QRadar |
+| **OSINT** (lanceurs d'outils) | 300+ outils de reconnaissance / OSINT du catalogue recherchable |
 
 - Les **lanceurs d'outils** ont besoin du binaire nommé dans le `PATH` de la
   machine qui exécute le runner.
@@ -422,7 +447,7 @@ dans `DB_DIR`. Les bases de schéma proviennent des fichiers versionnés
 | `XORCISM` | Cœur : actifs, applications, mesures, personnes, étiquettes, scores de risque |
 | `XVULNERABILITY` | CVE/KEV/CVSS/EPSS, domaines de vulnérabilité, bug bounty |
 | `XCOMPLIANCE` | GRC : audits, preuves, OCIL, TPRM, EBIOS, notifications aux régulateurs |
-| `XTHREAT` | ATT&CK / ATLAS / D3FEND / A3M, CTI/STIX, chasses, hypothèses, BAS |
+| `XTHREAT` | ATT&CK / ATLAS / D3FEND / A3M, CTI/STIX, chasses, hypothèses, BAS, règles Sigma, flux, rapports et IOC |
 | `XATTACK` | Modèles d'attaque CAPEC |
 | `XINCIDENT` | Incidents et alertes |
 | `XOVAL` | Définitions OVAL |
@@ -450,6 +475,9 @@ SQLAlchemy + `requests` ; chemins des bases depuis `xorcism_python/config.py`) :
 | `import_a3m.py` | Agentic AI Attack Matrix → `XTHREAT` |
 | `import_atomics.py` | Atomic Red Team → tables BAS de `XTHREAT` |
 | `import_hunts.py` · `import_hypotheses.py` | Chasses et hypothèses → `XTHREAT` |
+| `import_sigma.py` | Règles de détection SigmaHQ → `XTHREAT.SIGMARULE` |
+| `import_threat_reports.py` | Rapports CTI + IOC extraits → `XTHREAT.THREATREPORT` / `IOC` |
+| `import_osint_tools.py` | Catalogue d'outils OSINT → `XORCISM.TOOL` |
 | `import_nvd_cve.py` · `import_vulnerabilities.py` · `import_KEV.py` · `import_cisa_kev.py` | CVE / KEV → `XVULNERABILITY` |
 | `import_iso27001.py` · `import_nist800-53.py` · `import_controls.py` · `import_cce.py` | Référentiels de mesures → `XORCISM.CONTROL` |
 | `import_oval.py` · `import_maec.py` · `import_threatevent.py` · `import_vulnerabilitydomains.py` | OVAL / MAEC / événements de menace / domaines |
@@ -457,6 +485,9 @@ SQLAlchemy + `requests` ; chemins des bases depuis `xorcism_python/config.py`) :
 ```powershell
 py -3 xorcism_python\importers\import_attack.py --domain atlas
 py -3 xorcism_python\importers\import_d3fend.py
+py -3 xorcism_python\importers\import_sigma.py                 # règles de détection SigmaHQ
+py -3 xorcism_python\importers\import_threat_reports.py        # rapports CTI + IOC
+py -3 xorcism_python\importers\import_threat_reports.py --url https://.../rapport   # un seul rapport
 .\import_nvd_cve.ps1
 ```
 

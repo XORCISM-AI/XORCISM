@@ -3495,6 +3495,23 @@ function appendEmailHarvestHint(prefix: string): void {
   refresh();
 }
 
+// "Attack-surface graph" button on the ASSET edit form — opens the force-directed
+// map (/attack-surface) focused on this asset (apps, CPEs, vulns, orgs, persons,
+// threats, incidents, related assets, tags) in a new tab.
+function appendAttackSurfaceButton(body: HTMLElement, assetId: number | null): void {
+  if (!assetId) return;
+  const div = document.createElement("div");
+  div.style.cssText = "margin:6px 0";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-ghost btn-sm";
+  btn.textContent = "🕸️ Attack-surface graph";
+  btn.title = "Visualize this asset's attack surface as a graph";
+  btn.onclick = () => window.open(`/attack-surface?asset=${assetId}`, "_blank", "noopener");
+  div.appendChild(btn);
+  body.appendChild(div);
+}
+
 // Generic "local-AI action" button + result area appended to a form body.
 // `run` returns the text/markdown to display. Used by the CTI agents (vuln triage,
 // report enrichment) — the local LLM (Ollama) does the work, the analyst controls.
@@ -5071,6 +5088,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   setModalWide($("edit-modal") as HTMLElement, WIDE_MODAL_TABLES.has(currentTable));
   if (currentTable === "ASSET") {
     const aid = Number(row["AssetID"]) || null;
+    appendAttackSurfaceButton(body, aid);
     appendAgentScan(body, String(row["AssetName"] ?? ""));
     await appendCpeTable(body, aid);
     await appendOvalTable(body, aid);

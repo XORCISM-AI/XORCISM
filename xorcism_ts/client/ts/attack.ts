@@ -34,6 +34,38 @@ function rollup(t: Tech): Cov {
   return best;
 }
 
+// ── LLM ATT&CK Navigator (Anthropic): AI-enablement layer over the same techniques ──
+interface LlmTech { name: string; tactic: string; actorCount: number | null; prevalence: number | null; ariesMean: number | null }
+let layerMode: "bas" | "llm" = "bas";
+let llmLayer: Record<string, LlmTech> = {};
+let llmMeta: { source: string; accounts: number; observations: number; version: string; window: string; aries: string } | null = null;
+let currentMatrix: Matrix | null = null;
+// Parent cell = the highest-prevalence match among the technique or its sub-techniques.
+function llmRollup(t: Tech): { id: string; v: LlmTech } | null {
+  let best: { id: string; v: LlmTech } | null = null;
+  const consider = (id: string): void => {
+    const v = llmLayer[id];
+    if (v && (!best || (v.prevalence ?? -1) > (best.v.prevalence ?? -1))) best = { id, v };
+  };
+  consider(t.attackId);
+  for (const s of t.subtechniques) consider(s.attackId);
+  return best;
+}
+function llmColor(prev: number | null): string {
+  if (prev == null) return "rgba(244,63,94,0.10)"; // observed, no published prevalence
+  return `rgba(244,63,94,${(0.18 + Math.min(1, prev / 70) * 0.62).toFixed(2)})`;
+}
+function updateCredit(): void {
+  const c = $("att-llm-credit");
+  if (layerMode === "llm" && llmMeta) {
+    c.style.display = "";
+    c.innerHTML = `🤖 <b>LLM ATT&amp;CK Navigator</b> — Anthropic (${llmMeta.window}): ${llmMeta.accounts} banned accounts, ` +
+      `${llmMeta.observations.toLocaleString()} observations mapped to ${llmMeta.version}. ` +
+      `Cell shading = % of banned accounts using the technique. ${llmMeta.aries}. ` +
+      `<a href="${llmMeta.source}" target="_blank" rel="noopener" style="color:#7c83fd">source ↗</a>`;
+  } else c.style.display = "none";
+}
+
 function techLink(attackId: string, name: string, url: string | null): HTMLElement {
   const a = document.createElement("a");
   a.textContent = name;
@@ -82,16 +114,34 @@ function render(m: Matrix): void {
         };
         main.appendChild(toggle);
       }
-      // Validation coverage (BAS): border + badge based on the aggregated status.
-      const cov = rollup(t);
-      if (cov.status) {
-        covered++;
-        cell.style.borderLeft = `3px solid ${COV_COLOR[cov.status]}`;
-        const badge = el("span", "att-cov");
-        badge.textContent = "🛡" + (cov.tests || cov.detected + cov.prevented);
-        badge.title = `${tr("tip.validation")} ${covLabel(cov.status)} · ${tr("tip.tests")} ${cov.tests}, ${tr("cov.detected")} ${cov.detected}, ${tr("cov.prevented")} ${cov.prevented}`;
-        badge.style.cssText = `margin-left:6px;font-size:10px;color:${COV_COLOR[cov.status]}`;
-        main.appendChild(badge);
+      if (layerMode === "bas") {
+        // Validation coverage (BAS): border + badge based on the aggregated status.
+        const cov = rollup(t);
+        if (cov.status) {
+          covered++;
+          cell.style.borderLeft = `3px solid ${COV_COLOR[cov.status]}`;
+          const badge = el("span", "att-cov");
+          badge.textContent = "🛡" + (cov.tests || cov.detected + cov.prevented);
+          badge.title = `${tr("tip.validation")} ${covLabel(cov.status)} · ${tr("tip.tests")} ${cov.tests}, ${tr("cov.detected")} ${cov.detected}, ${tr("cov.prevented")} ${cov.prevented}`;
+          badge.style.cssText = `margin-left:6px;font-size:10px;color:${COV_COLOR[cov.status]}`;
+          main.appendChild(badge);
+        }
+      } else {
+        // LLM ATT&CK Navigator (Anthropic): AI-enablement heatmap by prevalence.
+        const hit = llmRollup(t);
+        if (hit) {
+          covered++;
+          cell.style.background = llmColor(hit.v.prevalence);
+          cell.style.borderLeft = "3px solid #f43f5e";
+          const badge = el("span", "att-cov");
+          const lbl = hit.v.prevalence != null ? `${hit.v.prevalence}%` : (hit.v.actorCount != null ? String(hit.v.actorCount) : "obs");
+          badge.textContent = "🤖 " + lbl;
+          badge.title = `Anthropic LLM ATT&CK · ${hit.id} ${hit.v.name}` +
+            (hit.v.prevalence != null ? ` · ${hit.v.prevalence}% of banned accounts` : "") +
+            (hit.v.actorCount != null ? ` · ${hit.v.actorCount} actors` : "") + " (AI-enabled)";
+          badge.style.cssText = "margin-left:6px;font-size:10px;color:#f43f5e";
+          main.appendChild(badge);
+        }
       }
       cell.appendChild(main);
       if (subsBox) cell.appendChild(subsBox);
@@ -101,12 +151,17 @@ function render(m: Matrix): void {
     root.appendChild(col);
   }
   const base = `${m.tactics.length} ${tr("attack.tactics")} · ${techCount} ${tr("attack.techniques")} · ${subCount} ${tr("attack.subtechniques")}`;
-  $("att-stats").innerHTML = Object.keys(coverage).length
-    ? `${base} · <span style="color:${COV_COLOR.tested}">🛡 ${covered} ${tr("attack.validated")}</span> ` +
-      `<span style="color:#64748b">(<span style="color:${COV_COLOR.prevented}">■</span> ${tr("cov.prevented")} ` +
-      `<span style="color:${COV_COLOR.detected}">■</span> ${tr("cov.detected")} ` +
-      `<span style="color:${COV_COLOR.tested}">■</span> ${tr("cov.tested")})</span>`
-    : base;
+  if (layerMode === "llm") {
+    $("att-stats").innerHTML = `${base} · <span style="color:#f43f5e">🤖 ${covered} AI-enabled (Anthropic)</span>`;
+  } else {
+    $("att-stats").innerHTML = Object.keys(coverage).length
+      ? `${base} · <span style="color:${COV_COLOR.tested}">🛡 ${covered} ${tr("attack.validated")}</span> ` +
+        `<span style="color:#64748b">(<span style="color:${COV_COLOR.prevented}">■</span> ${tr("cov.prevented")} ` +
+        `<span style="color:${COV_COLOR.detected}">■</span> ${tr("cov.detected")} ` +
+        `<span style="color:${COV_COLOR.tested}">■</span> ${tr("cov.tested")})</span>`
+      : base;
+  }
+  updateCredit();
   applyFilter();
 }
 
@@ -128,9 +183,14 @@ async function load(domain: string): Promise<void> {
       return;
     }
     const matrix = (await r.json()) as Matrix;
-    // Validation coverage (BAS) — best-effort, does not block rendering.
+    currentMatrix = matrix;
+    // Overlay layers — best-effort, do not block rendering.
     try { coverage = ((await (await fetch("/api/attack/coverage")).json()) as { byAttackId: Record<string, Cov> }).byAttackId || {}; }
     catch { coverage = {}; }
+    try {
+      const lr = await (await fetch("/api/attack/llm-layer")).json() as { byAttackId: Record<string, LlmTech>; meta: typeof llmMeta };
+      llmLayer = lr.byAttackId || {}; llmMeta = lr.meta || null;
+    } catch { llmLayer = {}; }
     render(matrix);
   } catch (e) {
     root.innerHTML = `<div style="padding:24px;color:var(--danger)">${(e as Error).message}</div>`;
@@ -142,5 +202,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const sel = $("att-domain") as HTMLSelectElement;
   sel.onchange = () => void load(sel.value);
   ($("att-search") as HTMLInputElement).oninput = applyFilter;
+  // Overlay-layer selector (BAS coverage / LLM ATT&CK). ?layer=llm deep-links the LLM layer.
+  const layerSel = $("att-layer") as HTMLSelectElement;
+  if (new URLSearchParams(location.search).get("layer") === "llm") { layerMode = "llm"; layerSel.value = "llm"; }
+  layerSel.onchange = () => {
+    layerMode = layerSel.value === "llm" ? "llm" : "bas";
+    if (currentMatrix) render(currentMatrix); else void load(sel.value); // re-render from cache, no refetch
+  };
   void load(sel.value);
 });

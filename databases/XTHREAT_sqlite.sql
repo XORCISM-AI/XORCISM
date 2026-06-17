@@ -1498,6 +1498,13 @@ CREATE TABLE IF NOT EXISTS A3MTECHNIQUE (
         A3MTechniqueID INTEGER PRIMARY KEY, AATID TEXT UNIQUE, Name TEXT, Description TEXT,
         TacticName TEXT, MatrixOrder INTEGER, URL TEXT);
 CREATE INDEX IF NOT EXISTS ix_a3mtech_tactic ON A3MTECHNIQUE(TacticName);
+-- LLM ATT&CK Navigator (Anthropic) — AI-enablement layer over MITRE ATT&CK, populated by import_llm_attack.py.
+CREATE TABLE IF NOT EXISTS LLMATTACKTECHNIQUE (
+        LLMAttackTechniqueID INTEGER PRIMARY KEY,
+        AttackID TEXT UNIQUE, Name TEXT, TacticName TEXT,
+        ActorCount INTEGER, PrevalencePct REAL, AriesMean REAL,
+        Observed INTEGER DEFAULT 1, Notes TEXT, Source TEXT, CreatedDate TEXT);
+CREATE INDEX IF NOT EXISTS ix_llmattack_attackid ON LLMATTACKTECHNIQUE(AttackID);
 -- SAIF — Google Secure AI Framework risk map (saif.google), populated by import_saif.py.
 CREATE TABLE IF NOT EXISTS SAIFCOMPONENT (
         SaifComponentID INTEGER PRIMARY KEY, Name TEXT UNIQUE, Description TEXT,

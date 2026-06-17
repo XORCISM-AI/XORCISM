@@ -21,6 +21,7 @@ import notificationsRouter from "./routes/notifications";
 import ocilRouter from "./routes/ocil";
 import osvRouter from "./routes/osv";
 import pentestRouter from "./routes/pentest";
+import { ensurePentestColumns } from "./engagements";
 import screenshotRouter from "./routes/screenshot";
 import circlRouter from "./routes/circl";
 import aiRouter from "./routes/ai";
@@ -212,6 +213,15 @@ app.get("/ebios", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/stix-graph", pageGuard("/stix-graph"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "stix-graph.html"));
 });
+app.get("/attack-surface", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "attack-surface.html"));
+});
+app.get("/pentest", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "pentest.html"));
+});
+app.get("/pentest/report", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "pentest-report.html"));
+});
 
 app.get("/vault", requireAdmin, (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "vault.html"));
@@ -235,6 +245,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 ensureSchemaDbs(); // creates the "schema" databases (XORCISM, XVULNERABILITY, XATTACK, XMALWARE, XINCIDENT, XTHREAT, XOVAL, XWINDOWS) if missing
 seedAdmin();
 ensureComplianceDb(); // creates the XCOMPLIANCE.db database (AUDIT, AUDITFINDING, AUDITREPORT)
+ensurePentestColumns(); // links AUDITFINDING to its engagement (AUDIT type=Pentest) — must run after ensureComplianceDb
 ensureTicketDb(); // creates the XTICKET.db database (TICKET, TICKETCOMMENT, TICKETCATEGORY, TICKETATTACHMENT)
 getAgentDb(); // creates the XAGENT.db database (XOR agents, events, IOC) if needed
 ensureThreatModelTables(); // creates the THREATMODEL* tables (XORCISM.db) if needed

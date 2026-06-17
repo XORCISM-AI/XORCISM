@@ -54,9 +54,16 @@
       <option value="atlas">ATLAS (IA)</option>
     </select>
   </label>
+  <label style="font-size:12px;color:#94a3b8">Layer
+    <select id="att-layer">
+      <option value="bas">🛡 BAS validation coverage</option>
+      <option value="llm">🤖 LLM-enabled (Anthropic)</option>
+    </select>
+  </label>
   <input id="att-search" type="search" placeholder="Filtrer (ID ou nom de technique)…">
   <span class="att-stats" id="att-stats"></span>
 </div>
+<div id="att-llm-credit" style="display:none;margin:0 16px 10px;font-size:12px;color:#94a3b8"></div>
 <div class="matrix" id="att-matrix"></div>
 
 <div id="toast"></div>
