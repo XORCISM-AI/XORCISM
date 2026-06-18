@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Priority Intelligence Requirements</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .pir-wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .pir-wrap h1{font-size:20px;margin:0 0 2px}
+  .pir-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:880px}
+  .pir-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .pir-card{flex:1;min-width:140px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .pir-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .pir-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .pir-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  table.pir{width:100%;border-collapse:collapse;font-size:13px}
+  table.pir th,table.pir td{text-align:left;padding:9px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.pir th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .prio{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .p-critical{background:#7f1d1d;color:#fecaca}.p-high{background:#7c2d12;color:#fed7aa}
+  .p-medium{background:#78350f;color:#fcd34d}.p-low{background:#1e2133;color:#94a3b8}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .kw{font-size:11px;background:#0f1117;border:1px solid #2d3250;border-radius:5px;padding:1px 6px;margin:0 4px 4px 0;display:inline-block;color:#cbd5e1}
+  .cov-ok{color:#34d399;font-weight:600}.cov-gap{color:#f87171;font-weight:600}.cov-na{color:#64748b}
+  .recent{font-size:11px;color:#94a3b8;margin-top:3px}
+  .pirname{font-weight:600;color:#e2e8f0}
+  .qn{color:#94a3b8;font-size:12px;margin-top:2px}
+  .muted{color:#64748b}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .gap-row td{background:rgba(127,29,29,.10)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XTHREAT&amp;table=PIR">&#9881;&#65039; Manage PIRs</a>
+  <a href="/?db=XTHREAT&amp;table=THREATREPORT">&#128240; Reporting</a>
+  <a href="/threat-feeds">&#128225; Feeds</a>
+  <span class="spacer"></span>
+  <span class="title">&#127919; Priority Intelligence Requirements</span>
+</div>
+
+<div class="pir-wrap">
+  <div>
+    <h1>Priority Intelligence Requirements</h1>
+    <div class="pir-sub">PIRs are the standing questions that drive your collection. Each requirement's
+      <b>keywords</b> are matched against collected reporting (<code>THREATREPORT</code>) to show what's
+      <b>covered</b> and what's a <b>collection gap</b> — an active requirement with no reporting against it.
+      Define PIRs and their keywords under <a href="/?db=XTHREAT&amp;table=PIR">Manage PIRs</a>.</div>
+  </div>
+  <div id="pir-body"><div class="muted" style="padding:24px;text-align:center">Measuring coverage…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/pir.js"></script>
+</body>
+</html>

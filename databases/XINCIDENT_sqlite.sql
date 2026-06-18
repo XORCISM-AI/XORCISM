@@ -548,6 +548,7 @@ CREATE TABLE IF NOT EXISTS "ALERT"(
 	"Determination" TEXT NULL,
 	"AssignedTo" TEXT NULL,
 	"Tags" TEXT NULL,
+	"Duration" REAL NULL,
 	"PersonID" INTEGER NULL,
 	"CreatedDate" DATE NULL,
 	"IncidentID" INTEGER NULL,

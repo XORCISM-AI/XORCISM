@@ -2221,6 +2221,12 @@ FK_COLUMNS["EMULATIONRUN.ScenarioID"] = { db: "XTHREAT", table: "EMULATIONSCENAR
 FK_COLUMNS["EMULATIONRUN.TargetAssetID"] = { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true };
 FK_COLUMNS["EMULATIONRESULT.RunID"] = { db: "XTHREAT", table: "EMULATIONRUN", idCol: "RunID", labelCol: "Name", distinct: true };
 FK_COLUMNS["EMULATIONRESULT.AtomicTestID"] = { db: "XTHREAT", table: "ATOMICTEST", idCol: "AtomicTestID", labelCol: "Name", distinct: true };
+// PIR — Priority Intelligence Requirements (CTI tasking): priority/status dropdowns + owner.
+STATIC_DATALIST_COLUMNS["PIR.Priority"] = ["Critical", "High", "Medium", "Low"];
+STATIC_DATALIST_DEFAULTS["PIR.Priority"] = "Medium";
+STATIC_DATALIST_COLUMNS["PIR.Status"] = ["Active", "Satisfied", "On Hold", "Retired", "Draft"];
+STATIC_DATALIST_DEFAULTS["PIR.Status"] = "Active";
+FK_COLUMNS["PIR.PersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 // OpenCTI properties on the emulation scenario (TLP / Confidence / Labels).
 STATIC_DATALIST_COLUMNS["EMULATIONSCENARIO.TLP"] = OPENCTI_TLP_VALUES;
 STATIC_DATALIST_DEFAULTS["EMULATIONSCENARIO.TLP"] = "TLP:AMBER";

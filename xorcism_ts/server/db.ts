@@ -3626,6 +3626,29 @@ export function watchTermMatches(term: WatchTerm, haystack: string, cves: string
   return haystack.toLowerCase().includes(t);
 }
 
+// ── PIR (Priority Intelligence Requirements): keyword tasking for new reporting ──
+export interface PirTerm { PIRID: number; PIRName: string; Keywords: string; PersonID: number | null; TenantID: number | null; }
+
+/** Active PIRs that carry keywords (used by the feed poller to alert the owner). */
+export function getActivePirs(): PirTerm[] {
+  const xt = getDb("XTHREAT");
+  if (!xt.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='PIR'").get()) return [];
+  return xt.prepare(
+    `SELECT PIRID, COALESCE(PIRName,'PIR') AS PIRName, Keywords, PersonID, TenantID FROM PIR
+     WHERE lower(COALESCE(Status,'active')) IN ('active','on hold','draft')
+       AND Keywords IS NOT NULL AND TRIM(Keywords) <> ''`
+  ).all() as PirTerm[];
+}
+
+/** First PIR keyword (comma-separated) found in the report text, or null. */
+export function pirMatches(keywords: string, haystack: string): string | null {
+  const hay = (haystack || "").toLowerCase();
+  for (const k of String(keywords || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+    if (hay.includes(k)) return k;
+  }
+  return null;
+}
+
 // ── Curated trusted CTI RSS feeds (seeded once into THREATFEED) ──────────────
 const TRUSTED_CTI_FEEDS: [string, string, string, string, string][] = [
   // [Name, FeedURL, SiteURL, Category, Vendor]

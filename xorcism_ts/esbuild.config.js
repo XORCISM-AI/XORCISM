@@ -32,6 +32,7 @@ const entryPoints = [
   "client/ts/ransomware.ts",
   "client/ts/assurance.ts",
   "client/ts/sla.ts",
+  "client/ts/pir.ts",
   "client/ts/api-keys.ts",
   "client/ts/api-docs.ts",
   "client/ts/webhooks.ts",

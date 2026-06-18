@@ -1,0 +1,2724 @@
+{
+  "entities": [
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/a3m/matrix",
+      "method": "GET",
+      "path": "/api/a3m/matrix",
+      "file": "a3m.ts",
+      "line": 53,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/roles",
+      "method": "GET",
+      "path": "/api/admin/roles",
+      "file": "admin.ts",
+      "line": 241,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/roles",
+      "method": "GET",
+      "path": "/api/admin/roles",
+      "file": "admin.ts",
+      "line": 247,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/tenants",
+      "method": "GET",
+      "path": "/api/admin/tenants",
+      "file": "admin.ts",
+      "line": 262,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/users",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "file": "admin.ts",
+      "line": 326,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/whoami",
+      "method": "GET",
+      "path": "/api/admin/whoami",
+      "file": "admin.ts",
+      "line": 430,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/resources",
+      "method": "GET",
+      "path": "/api/admin/resources",
+      "file": "admin.ts",
+      "line": 439,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/tenants",
+      "method": "GET",
+      "path": "/api/admin/tenants",
+      "file": "admin.ts",
+      "line": 463,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/backup",
+      "method": "GET",
+      "path": "/api/admin/backup",
+      "file": "admin.ts",
+      "line": 478,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/correlate-cve",
+      "method": "GET",
+      "path": "/api/admin/correlate-cve",
+      "file": "admin.ts",
+      "line": 494,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/notifications",
+      "method": "GET",
+      "path": "/api/notifications",
+      "file": "admin.ts",
+      "line": 514,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/roles",
+      "method": "GET",
+      "path": "/api/admin/roles",
+      "file": "admin.ts",
+      "line": 529,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/admin/users",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "file": "admin.ts",
+      "line": 551,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/v1",
+      "method": "GET",
+      "path": "/api/v1",
+      "file": "api-docs.ts",
+      "line": 72,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/apikeys",
+      "method": "GET",
+      "path": "/api/apikeys",
+      "file": "api-keys.ts",
+      "line": 27,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/apikeys",
+      "method": "GET",
+      "path": "/api/apikeys",
+      "file": "api-keys.ts",
+      "line": 64,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/databases",
+      "method": "GET",
+      "path": "/api/databases",
+      "file": "api.ts",
+      "line": 88,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset/check-kev-notify",
+      "method": "GET",
+      "path": "/api/asset/check-kev-notify",
+      "file": "api.ts",
+      "line": 151,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/connectors",
+      "method": "GET",
+      "path": "/api/connectors",
+      "file": "api.ts",
+      "line": 155,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/engagements",
+      "method": "GET",
+      "path": "/api/engagements",
+      "file": "api.ts",
+      "line": 157,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset/screenshot",
+      "method": "GET",
+      "path": "/api/asset/screenshot",
+      "file": "api.ts",
+      "line": 159,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/bulk-scan",
+      "method": "GET",
+      "path": "/api/pentest/bulk-scan",
+      "file": "api.ts",
+      "line": 162,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/agent-bulk-scan",
+      "method": "GET",
+      "path": "/api/agent-bulk-scan",
+      "file": "api.ts",
+      "line": 166,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cpe",
+      "method": "GET",
+      "path": "/api/cpe",
+      "file": "api.ts",
+      "line": 169,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cpe-builder-options",
+      "method": "GET",
+      "path": "/api/cpe-builder-options",
+      "file": "api.ts",
+      "line": 171,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/questionnaire-questions",
+      "method": "GET",
+      "path": "/api/questionnaire-questions",
+      "file": "api.ts",
+      "line": 176,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/question",
+      "method": "GET",
+      "path": "/api/question",
+      "file": "api.ts",
+      "line": 183,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/questionnaire-import",
+      "method": "GET",
+      "path": "/api/questionnaire-import",
+      "file": "api.ts",
+      "line": 187,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/answer-evidences",
+      "method": "GET",
+      "path": "/api/answer-evidences",
+      "file": "api.ts",
+      "line": 193,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/evidence",
+      "method": "GET",
+      "path": "/api/evidence",
+      "file": "api.ts",
+      "line": 195,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threat-ttps",
+      "method": "GET",
+      "path": "/api/threat-ttps",
+      "file": "api.ts",
+      "line": 204,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/notifications/read-all",
+      "method": "GET",
+      "path": "/api/notifications/read-all",
+      "file": "api.ts",
+      "line": 211,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/notifications",
+      "method": "GET",
+      "path": "/api/notifications",
+      "file": "api.ts",
+      "line": 213,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/alert/notify",
+      "method": "GET",
+      "path": "/api/alert/notify",
+      "file": "api.ts",
+      "line": 216,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/osv/import",
+      "method": "GET",
+      "path": "/api/osv/import",
+      "file": "api.ts",
+      "line": 230,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/circl/import",
+      "method": "GET",
+      "path": "/api/circl/import",
+      "file": "api.ts",
+      "line": 241,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threatagent-category",
+      "method": "GET",
+      "path": "/api/threatagent-category",
+      "file": "api.ts",
+      "line": 258,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/import",
+      "method": "GET",
+      "path": "/api/import",
+      "file": "api.ts",
+      "line": 261,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/risk-score",
+      "method": "GET",
+      "path": "/api/dashboard/risk-score",
+      "file": "api.ts",
+      "line": 264,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/vuln-by-year",
+      "method": "GET",
+      "path": "/api/dashboard/vuln-by-year",
+      "file": "api.ts",
+      "line": 266,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/tag-cloud",
+      "method": "GET",
+      "path": "/api/dashboard/tag-cloud",
+      "file": "api.ts",
+      "line": 268,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/incidents-by-status",
+      "method": "GET",
+      "path": "/api/dashboard/incidents-by-status",
+      "file": "api.ts",
+      "line": 270,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/asset-financial-value",
+      "method": "GET",
+      "path": "/api/dashboard/asset-financial-value",
+      "file": "api.ts",
+      "line": 273,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/asset-risk-exposure",
+      "method": "GET",
+      "path": "/api/dashboard/asset-risk-exposure",
+      "file": "api.ts",
+      "line": 279,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/dashboard/incidents-by-asset",
+      "method": "GET",
+      "path": "/api/dashboard/incidents-by-asset",
+      "file": "api.ts",
+      "line": 288,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-cpes",
+      "method": "GET",
+      "path": "/api/asset-cpes",
+      "file": "api.ts",
+      "line": 294,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-vulnerabilities",
+      "method": "GET",
+      "path": "/api/asset-vulnerabilities",
+      "file": "api.ts",
+      "line": 304,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-tags",
+      "method": "GET",
+      "path": "/api/asset-tags",
+      "file": "api.ts",
+      "line": 308,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/tags",
+      "method": "GET",
+      "path": "/api/tags",
+      "file": "api.ts",
+      "line": 309,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/vuln-tags",
+      "method": "GET",
+      "path": "/api/vuln-tags",
+      "file": "api.ts",
+      "line": 313,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cpe-tags",
+      "method": "GET",
+      "path": "/api/cpe-tags",
+      "file": "api.ts",
+      "line": 317,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cwe-tags",
+      "method": "GET",
+      "path": "/api/cwe-tags",
+      "file": "api.ts",
+      "line": 321,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-email-harvest",
+      "method": "GET",
+      "path": "/api/asset-email-harvest",
+      "file": "api.ts",
+      "line": 324,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/default-organisation",
+      "method": "GET",
+      "path": "/api/default-organisation",
+      "file": "api.ts",
+      "line": 330,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-organisations",
+      "method": "GET",
+      "path": "/api/asset-organisations",
+      "file": "api.ts",
+      "line": 334,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-persons",
+      "method": "GET",
+      "path": "/api/asset-persons",
+      "file": "api.ts",
+      "line": 338,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/setup/status",
+      "method": "GET",
+      "path": "/api/setup/status",
+      "file": "api.ts",
+      "line": 340,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/setup/admin-asset",
+      "method": "GET",
+      "path": "/api/setup/admin-asset",
+      "file": "api.ts",
+      "line": 344,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ovaldef-tags",
+      "method": "GET",
+      "path": "/api/ovaldef-tags",
+      "file": "api.ts",
+      "line": 348,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/incident-assets",
+      "method": "GET",
+      "path": "/api/incident-assets",
+      "file": "api.ts",
+      "line": 352,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/alert-assets",
+      "method": "GET",
+      "path": "/api/alert-assets",
+      "file": "api.ts",
+      "line": 356,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/triage-vuln",
+      "method": "GET",
+      "path": "/api/ai/triage-vuln",
+      "file": "api.ts",
+      "line": 358,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/enrich-report",
+      "method": "GET",
+      "path": "/api/ai/enrich-report",
+      "file": "api.ts",
+      "line": 360,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/brief",
+      "method": "GET",
+      "path": "/api/ai/brief",
+      "file": "api.ts",
+      "line": 362,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/assets-with-tags",
+      "method": "GET",
+      "path": "/api/assets-with-tags",
+      "file": "api.ts",
+      "line": 364,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threat-for-asset/bulk",
+      "method": "GET",
+      "path": "/api/threat-for-asset/bulk",
+      "file": "api.ts",
+      "line": 366,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threat-assets",
+      "method": "GET",
+      "path": "/api/threat-assets",
+      "file": "api.ts",
+      "line": 370,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/incident-threatactor",
+      "method": "GET",
+      "path": "/api/incident-threatactor",
+      "file": "api.ts",
+      "line": 374,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/audit-assets",
+      "method": "GET",
+      "path": "/api/audit-assets",
+      "file": "api.ts",
+      "line": 379,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-audits",
+      "method": "GET",
+      "path": "/api/asset-audits",
+      "file": "api.ts",
+      "line": 384,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-ovals",
+      "method": "GET",
+      "path": "/api/asset-ovals",
+      "file": "api.ts",
+      "line": 395,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-ovals",
+      "method": "GET",
+      "path": "/api/asset-ovals",
+      "file": "api.ts",
+      "line": 397,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threatmodel-assets",
+      "method": "GET",
+      "path": "/api/threatmodel-assets",
+      "file": "api.ts",
+      "line": 407,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threatmodel-threats",
+      "method": "GET",
+      "path": "/api/threatmodel-threats",
+      "file": "api.ts",
+      "line": 413,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threat-controls",
+      "method": "GET",
+      "path": "/api/threat-controls",
+      "file": "api.ts",
+      "line": 417,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/insert",
+      "method": "GET",
+      "path": "/api/insert",
+      "file": "api.ts",
+      "line": 419,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/update",
+      "method": "GET",
+      "path": "/api/update",
+      "file": "api.ts",
+      "line": 421,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/delete",
+      "method": "GET",
+      "path": "/api/delete",
+      "file": "api.ts",
+      "line": 423,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/audits",
+      "method": "GET",
+      "path": "/api/bia/audits",
+      "file": "api.ts",
+      "line": 429,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/audits",
+      "method": "GET",
+      "path": "/api/bia/audits",
+      "file": "api.ts",
+      "line": 431,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/entries",
+      "method": "GET",
+      "path": "/api/bia/entries",
+      "file": "api.ts",
+      "line": 442,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/asset-names",
+      "method": "GET",
+      "path": "/api/bia/asset-names",
+      "file": "api.ts",
+      "line": 452,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/prefs/table-favorites",
+      "method": "GET",
+      "path": "/api/prefs/table-favorites",
+      "file": "app.ts",
+      "line": 3096,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/prefs/table-favorites",
+      "method": "GET",
+      "path": "/api/prefs/table-favorites",
+      "file": "app.ts",
+      "line": 3106,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "file": "app.ts",
+      "line": 3196,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/suggest-answer",
+      "method": "GET",
+      "path": "/api/ai/suggest-answer",
+      "file": "app.ts",
+      "line": 5988,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/agent-scan",
+      "method": "GET",
+      "path": "/api/agent-scan",
+      "file": "app.ts",
+      "line": 6089,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/threatreport/parse",
+      "method": "GET",
+      "path": "/api/threatreport/parse",
+      "file": "app.ts",
+      "line": 6941,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/sigma/convert",
+      "method": "GET",
+      "path": "/api/sigma/convert",
+      "file": "app.ts",
+      "line": 6998,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "file": "app.ts",
+      "line": 9122,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/status",
+      "method": "GET",
+      "path": "/api/ai/status",
+      "file": "ask.ts",
+      "line": 14,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/ask",
+      "method": "GET",
+      "path": "/api/ai/ask",
+      "file": "ask.ts",
+      "line": 32,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/assurance",
+      "method": "GET",
+      "path": "/api/assurance",
+      "file": "assurance.ts",
+      "line": 30,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/attack-path",
+      "method": "GET",
+      "path": "/api/attack-path",
+      "file": "attack-path.ts",
+      "line": 107,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/asset-graph",
+      "method": "GET",
+      "path": "/api/asset-graph",
+      "file": "attack-surface.ts",
+      "line": 54,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/attack/coverage",
+      "method": "GET",
+      "path": "/api/attack/coverage",
+      "file": "attack.ts",
+      "line": 188,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/attack/llm-layer",
+      "method": "GET",
+      "path": "/api/attack/llm-layer",
+      "file": "attack.ts",
+      "line": 191,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/audits",
+      "method": "GET",
+      "path": "/api/bia/audits",
+      "file": "bia-graph.ts",
+      "line": 51,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/bia/dependencies",
+      "method": "GET",
+      "path": "/api/bia/dependencies",
+      "file": "bia-graph.ts",
+      "line": 197,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/prefs/worker-path",
+      "method": "GET",
+      "path": "/api/prefs/worker-path",
+      "file": "connectors.ts",
+      "line": 34,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/prefs/worker-path",
+      "method": "GET",
+      "path": "/api/prefs/worker-path",
+      "file": "connectors.ts",
+      "line": 42,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/engagements",
+      "method": "GET",
+      "path": "/api/engagements",
+      "file": "connectors.ts",
+      "line": 62,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/connectors",
+      "method": "GET",
+      "path": "/api/connectors",
+      "file": "connectors.ts",
+      "line": 83,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/schedules",
+      "method": "GET",
+      "path": "/api/schedules",
+      "file": "connectors.ts",
+      "line": 192,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/connectors/run",
+      "method": "GET",
+      "path": "/api/connectors/run",
+      "file": "connectors.ts",
+      "line": 196,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/schedules",
+      "method": "GET",
+      "path": "/api/schedules",
+      "file": "connectors.ts",
+      "line": 214,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/engagements",
+      "method": "GET",
+      "path": "/api/engagements",
+      "file": "connectors.ts",
+      "line": 271,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/workers",
+      "method": "GET",
+      "path": "/api/workers",
+      "file": "connectors.ts",
+      "line": 284,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/workers",
+      "method": "GET",
+      "path": "/api/workers",
+      "file": "connectors.ts",
+      "line": 323,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ocil/questionnaires",
+      "method": "GET",
+      "path": "/api/ocil/questionnaires",
+      "file": "connectors.ts",
+      "line": 419,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ocil/export",
+      "method": "GET",
+      "path": "/api/ocil/export",
+      "file": "connectors.ts",
+      "line": 433,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ocil/validate",
+      "method": "GET",
+      "path": "/api/ocil/validate",
+      "file": "connectors.ts",
+      "line": 447,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ocil/import",
+      "method": "GET",
+      "path": "/api/ocil/import",
+      "file": "connectors.ts",
+      "line": 458,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/playbooks/import",
+      "method": "GET",
+      "path": "/api/pentest/playbooks/import",
+      "file": "content.ts",
+      "line": 26,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/playbooks",
+      "method": "GET",
+      "path": "/api/pentest/playbooks",
+      "file": "content.ts",
+      "line": 33,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cti/ticket",
+      "method": "GET",
+      "path": "/api/cti/ticket",
+      "file": "cti-watch.ts",
+      "line": 31,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/cti/impact",
+      "method": "GET",
+      "path": "/api/cti/impact",
+      "file": "cti-watch.ts",
+      "line": 40,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/d3fend/matrix",
+      "method": "GET",
+      "path": "/api/d3fend/matrix",
+      "file": "d3fend.ts",
+      "line": 102,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/drift",
+      "method": "GET",
+      "path": "/api/drift",
+      "file": "drift.ts",
+      "line": 45,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/drift/snapshot",
+      "method": "GET",
+      "path": "/api/drift/snapshot",
+      "file": "drift.ts",
+      "line": 52,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ebios/dashboard",
+      "method": "GET",
+      "path": "/api/ebios/dashboard",
+      "file": "ebios.ts",
+      "line": 90,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/exploitdb/info",
+      "method": "GET",
+      "path": "/api/exploitdb/info",
+      "file": "exploitdb.ts",
+      "line": 61,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/exposure-brief",
+      "method": "GET",
+      "path": "/api/ai/exposure-brief",
+      "file": "exposure.ts",
+      "line": 65,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/forgot",
+      "method": "GET",
+      "path": "/api/auth/forgot",
+      "file": "forgot.ts",
+      "line": 13,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/hunting/overview",
+      "method": "GET",
+      "path": "/api/hunting/overview",
+      "file": "hunting.ts",
+      "line": 38,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ai/status",
+      "method": "GET",
+      "path": "/api/ai/status",
+      "file": "hunting.ts",
+      "line": 83,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/hunting/generate",
+      "method": "GET",
+      "path": "/api/hunting/generate",
+      "file": "hunting.ts",
+      "line": 103,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/hunting/save",
+      "method": "GET",
+      "path": "/api/hunting/save",
+      "file": "hunting.ts",
+      "line": 127,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/kill-chain/groups",
+      "method": "GET",
+      "path": "/api/kill-chain/groups",
+      "file": "kill-chain.ts",
+      "line": 32,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/kill-chain",
+      "method": "GET",
+      "path": "/api/kill-chain",
+      "file": "kill-chain.ts",
+      "line": 39,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/oidc/status",
+      "method": "GET",
+      "path": "/api/auth/oidc/status",
+      "file": "login.ts",
+      "line": 80,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "file": "login.ts",
+      "line": 87,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/login",
+      "method": "GET",
+      "path": "/api/auth/login",
+      "file": "login.ts",
+      "line": 102,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/pin-login",
+      "method": "GET",
+      "path": "/api/auth/pin-login",
+      "file": "login.ts",
+      "line": 153,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/change-password",
+      "method": "GET",
+      "path": "/api/auth/change-password",
+      "file": "login.ts",
+      "line": 172,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkey/register/options",
+      "method": "GET",
+      "path": "/api/auth/passkey/register/options",
+      "file": "passkey.ts",
+      "line": 34,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkey/register/verify",
+      "method": "GET",
+      "path": "/api/auth/passkey/register/verify",
+      "file": "passkey.ts",
+      "line": 57,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkey/login/options",
+      "method": "GET",
+      "path": "/api/auth/passkey/login/options",
+      "file": "passkey.ts",
+      "line": 73,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkey/login/verify",
+      "method": "GET",
+      "path": "/api/auth/passkey/login/verify",
+      "file": "passkey.ts",
+      "line": 87,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkeys",
+      "method": "GET",
+      "path": "/api/auth/passkeys",
+      "file": "passkey.ts",
+      "line": 107,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/passkeys/",
+      "method": "GET",
+      "path": "/api/auth/passkeys/",
+      "file": "passkey.ts",
+      "line": 112,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/engagements",
+      "method": "GET",
+      "path": "/api/pentest/engagements",
+      "file": "pentest-page.ts",
+      "line": 52,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/assets-with-tags",
+      "method": "GET",
+      "path": "/api/assets-with-tags",
+      "file": "pentest-page.ts",
+      "line": 76,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/playbooks/export",
+      "method": "GET",
+      "path": "/api/pentest/playbooks/export",
+      "file": "pentest-page.ts",
+      "line": 221,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/playbooks/import",
+      "method": "GET",
+      "path": "/api/pentest/playbooks/import",
+      "file": "pentest-page.ts",
+      "line": 231,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pentest/engagements",
+      "method": "GET",
+      "path": "/api/pentest/engagements",
+      "file": "pentest-page.ts",
+      "line": 340,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/pir",
+      "method": "GET",
+      "path": "/api/pir",
+      "file": "pir.ts",
+      "line": 47,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/purple/sigma-suggest",
+      "method": "GET",
+      "path": "/api/purple/sigma-suggest",
+      "file": "purple-team.ts",
+      "line": 34,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/ransomware/groups",
+      "method": "GET",
+      "path": "/api/ransomware/groups",
+      "file": "ransomware.ts",
+      "line": 77,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/register",
+      "method": "GET",
+      "path": "/api/auth/register",
+      "file": "register.ts",
+      "line": 19,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/reset",
+      "method": "GET",
+      "path": "/api/auth/reset",
+      "file": "reset.ts",
+      "line": 15,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/set-pin",
+      "method": "GET",
+      "path": "/api/auth/set-pin",
+      "file": "session-ui.ts",
+      "line": 74,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/me",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "file": "session-ui.ts",
+      "line": 196,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/auth/logout",
+      "method": "GET",
+      "path": "/api/auth/logout",
+      "file": "session-ui.ts",
+      "line": 257,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/sla/incidents",
+      "method": "GET",
+      "path": "/api/sla/incidents",
+      "file": "sla.ts",
+      "line": 58,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/stix-examples",
+      "method": "GET",
+      "path": "/api/stix-examples",
+      "file": "stix-graph.ts",
+      "line": 328,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/stix/hunts",
+      "method": "GET",
+      "path": "/api/stix/hunts",
+      "file": "stix-graph.ts",
+      "line": 380,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/stix/reports",
+      "method": "GET",
+      "path": "/api/stix/reports",
+      "file": "stix-graph.ts",
+      "line": 394,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/tprm/dashboard",
+      "method": "GET",
+      "path": "/api/tprm/dashboard",
+      "file": "tprm.ts",
+      "line": 70,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/webhooks",
+      "method": "GET",
+      "path": "/api/webhooks",
+      "file": "webhooks.ts",
+      "line": 21,
+      "requiresAuth": false
+    },
+    {
+      "kind": "http-route",
+      "id": "route:GET:/api/webhooks",
+      "method": "GET",
+      "path": "/api/webhooks",
+      "file": "webhooks.ts",
+      "line": 65,
+      "requiresAuth": false
+    }
+  ],
+  "boundaries": [
+    {
+      "from": "external",
+      "to": "route:GET:/api/a3m/matrix",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/roles",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/roles",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/tenants",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/users",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/whoami",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/resources",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/tenants",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/backup",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/correlate-cve",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/notifications",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/roles",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/admin/users",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/v1",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/apikeys",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/apikeys",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/databases",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset/check-kev-notify",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/connectors",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/engagements",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset/screenshot",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/bulk-scan",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/agent-bulk-scan",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cpe",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cpe-builder-options",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/questionnaire-questions",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/question",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/questionnaire-import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/answer-evidences",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/evidence",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threat-ttps",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/notifications/read-all",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/notifications",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/alert/notify",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/osv/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/circl/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threatagent-category",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/risk-score",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/vuln-by-year",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/tag-cloud",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/incidents-by-status",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/asset-financial-value",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/asset-risk-exposure",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/dashboard/incidents-by-asset",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-cpes",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-vulnerabilities",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/vuln-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cpe-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cwe-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-email-harvest",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/default-organisation",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-organisations",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-persons",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/setup/status",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/setup/admin-asset",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ovaldef-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/incident-assets",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/alert-assets",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/triage-vuln",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/enrich-report",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/brief",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/assets-with-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threat-for-asset/bulk",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threat-assets",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/incident-threatactor",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/audit-assets",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-audits",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-ovals",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-ovals",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threatmodel-assets",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threatmodel-threats",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threat-controls",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/insert",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/update",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/delete",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/audits",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/audits",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/entries",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/asset-names",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/prefs/table-favorites",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/prefs/table-favorites",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/me",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/suggest-answer",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/agent-scan",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/threatreport/parse",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/sigma/convert",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/me",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/status",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/ask",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/assurance",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/attack-path",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/asset-graph",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/attack/coverage",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/attack/llm-layer",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/audits",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/bia/dependencies",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/prefs/worker-path",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/prefs/worker-path",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/engagements",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/connectors",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/schedules",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/connectors/run",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/schedules",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/engagements",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/workers",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/workers",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ocil/questionnaires",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ocil/export",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ocil/validate",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ocil/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/playbooks/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/playbooks",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cti/ticket",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/cti/impact",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/d3fend/matrix",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/drift",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/drift/snapshot",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ebios/dashboard",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/exploitdb/info",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/exposure-brief",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/forgot",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/hunting/overview",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ai/status",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/hunting/generate",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/hunting/save",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/kill-chain/groups",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/kill-chain",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/oidc/status",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/me",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/login",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/pin-login",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/change-password",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkey/register/options",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkey/register/verify",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkey/login/options",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkey/login/verify",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkeys",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/passkeys/",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/engagements",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/assets-with-tags",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/playbooks/export",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/playbooks/import",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pentest/engagements",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/pir",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/purple/sigma-suggest",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/ransomware/groups",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/register",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/reset",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/set-pin",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/me",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/auth/logout",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/sla/incidents",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/stix-examples",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/stix/hunts",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/stix/reports",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/tprm/dashboard",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/webhooks",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "external",
+      "to": "route:GET:/api/webhooks",
+      "kind": "trust-boundary",
+      "requiresAuth": false
+    },
+    {
+      "from": "application",
+      "to": "datastore:default",
+      "kind": "asset-boundary"
+    }
+  ],
+  "assets": [
+    {
+      "kind": "datastore",
+      "id": "datastore:default",
+      "name": "Application Database"
+    }
+  ],
+  "threats": [
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "bia-graph.ts",
+      "vuln": "XSS",
+      "finding_id": "bia-graph.ts:54:53:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "connectors.ts",
+      "vuln": "XSS",
+      "finding_id": "connectors.ts:377:288:XSS",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/prefs/worker-path"
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "exploitdb.ts",
+      "vuln": "XSS",
+      "finding_id": "exploitdb.ts:41:45:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "pentest-page.ts",
+      "vuln": "XSS",
+      "finding_id": "pentest-page.ts:350:263:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "kill-chain.ts",
+      "vuln": "XSS",
+      "finding_id": "kill-chain.ts:134:34:XSS",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/kill-chain/groups"
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "high",
+      "file": "connectors.ts",
+      "vuln": "SSRF",
+      "finding_id": "connectors.ts:377:42:SSRF",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/prefs/worker-path"
+    },
+    {
+      "stride": "E",
+      "strideLabel": "Elevation of Privilege",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "high",
+      "file": "connectors.ts",
+      "vuln": "SSRF",
+      "finding_id": "connectors.ts:377:42:SSRF",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/prefs/worker-path"
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "medium",
+      "file": "app.ts",
+      "vuln": "XSS",
+      "finding_id": "app.ts:1724:902:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "medium",
+      "file": "purple-team.ts",
+      "vuln": "SSRF",
+      "finding_id": "purple-team.ts:12:44:SSRF",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/purple/sigma-suggest"
+    },
+    {
+      "stride": "E",
+      "strideLabel": "Elevation of Privilege",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "medium",
+      "file": "purple-team.ts",
+      "vuln": "SSRF",
+      "finding_id": "purple-team.ts:12:44:SSRF",
+      "affectsAsset": null,
+      "atEntity": "route:GET:/api/purple/sigma-suggest"
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-89",
+      "family": "sql-injection",
+      "severity": "low",
+      "file": "app.ts",
+      "vuln": "SQL Injection",
+      "finding_id": "app.ts:1724:6198:SQL_Injection",
+      "affectsAsset": "datastore:default",
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-89",
+      "family": "sql-injection",
+      "severity": "low",
+      "file": "app.ts",
+      "vuln": "SQL Injection",
+      "finding_id": "app.ts:1724:6198:SQL_Injection",
+      "affectsAsset": "datastore:default",
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-22",
+      "family": "path-traversal",
+      "severity": "low",
+      "file": "app.ts",
+      "vuln": "Path Traversal",
+      "finding_id": "app.ts:1724:7186:Path_Traversal",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-922",
+      "family": "data-exposure",
+      "severity": "low",
+      "file": "app.ts",
+      "vuln": "Data Exposure",
+      "finding_id": "app.ts:1724:1698:Data_Exposure",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "chain.ts",
+      "vuln": "XSS",
+      "finding_id": "chain.ts:25:64:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-79",
+      "family": "xss",
+      "severity": "critical",
+      "file": "pentest-report.ts",
+      "vuln": "XSS",
+      "finding_id": "pentest-report.ts:115:49:XSS",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-208",
+      "family": "timing-attack",
+      "severity": "low",
+      "file": "app.ts",
+      "line": 5805,
+      "vuln": "Timing-Unsafe Comparison — secret/HMAC compared with === instead of timingSafeEqual",
+      "finding_id": "timing-unsafe:app.ts:5805",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": null,
+      "family": "concurrency-bug",
+      "severity": "low",
+      "file": "app.ts",
+      "line": 7718,
+      "vuln": "Concurrency: fire-and-forget async call in openCpeModal() — result not awaited",
+      "finding_id": "concurrency:fire-forget:app.ts:7718",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": null,
+      "family": "concurrency-bug",
+      "severity": "low",
+      "file": "app.ts",
+      "line": 8114,
+      "vuln": "Concurrency: fire-and-forget async call in appendThreatModelScope() — result not awaited",
+      "finding_id": "concurrency:fire-forget:app.ts:8114",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": null,
+      "family": "concurrency-bug",
+      "severity": "low",
+      "file": "app.ts",
+      "line": 8238,
+      "vuln": "Concurrency: fire-and-forget async call in appendThreatMitigations() — result not awaited",
+      "finding_id": "concurrency:fire-forget:app.ts:8238",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "medium",
+      "file": "chain.ts",
+      "vuln": "SSRF",
+      "finding_id": "chain.ts:25:162:SSRF",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "E",
+      "strideLabel": "Elevation of Privilege",
+      "cwe": "CWE-918",
+      "family": "ssrf",
+      "severity": "medium",
+      "file": "chain.ts",
+      "vuln": "SSRF",
+      "finding_id": "chain.ts:25:162:SSRF",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": [
+    {
+      "root": "Compromise datastore: Application Database",
+      "asset_id": "datastore:default",
+      "leaves": [
+        {
+          "label": "Tampering via sql-injection (CWE-89)",
+          "severity": "low",
+          "file": "app.ts",
+          "finding_id": "app.ts:1724:6198:SQL_Injection"
+        },
+        {
+          "label": "Information Disclosure via sql-injection (CWE-89)",
+          "severity": "low",
+          "file": "app.ts",
+          "finding_id": "app.ts:1724:6198:SQL_Injection"
+        }
+      ],
+      "severity": "medium"
+    }
+  ]
+}

@@ -33,6 +33,7 @@ import ransomwareRouter from "./routes/ransomware";
 import assuranceRouter from "./routes/assurance";
 import slaRouter from "./routes/sla";
 import { ensureSlaColumns } from "./sla";
+import pirRouter from "./routes/pir";
 import v1Router from "./routes/v1";
 import apikeysRouter from "./routes/apikeys";
 import webhooksRouter from "./routes/webhooks";
@@ -157,6 +158,7 @@ app.use("/api", purpleTeamRouter); // purple-team: chain ATT&CK detection covera
 app.use("/api", ransomwareRouter); // ransomware-to-$ scenario simulator (BIA/FAIR impact + D3FEND controls)
 app.use("/api", assuranceRouter); // continuously-proven compliance (control assurance from live telemetry)
 app.use("/api", slaRouter); // incident SLA view: incidents measured against asset-defined resolution SLAs
+app.use("/api", pirRouter); // Priority Intelligence Requirements coverage register
 app.use("/api/v1", v1Router); // public REST API v1 (API-key auth, read-only, tenant-scoped)
 app.use("/api", apikeysRouter); // manage your own API keys (session-authenticated)
 app.use("/api", webhooksRouter); // manage outbound webhooks (session-authenticated)
@@ -285,6 +287,9 @@ app.get("/assurance", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/incident-sla", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "incident-sla.html"));
+});
+app.get("/pir", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "pir.html"));
 });
 app.get("/api-docs", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "api-docs.html"));

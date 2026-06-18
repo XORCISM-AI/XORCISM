@@ -6,7 +6,8 @@
  * (never the client) → no SSRF. Parsed items are cached in memory (10 min).
  */
 import { randomUUID } from "crypto";
-import { getDb, extractCves, getActiveWatchlist, watchTermMatches, createNotification } from "./db";
+import { getDb, extractCves, getActiveWatchlist, watchTermMatches, createNotification, getActivePirs, pirMatches } from "./db";
+import * as xid from "./xid";
 
 export interface FeedRow {
   id: number; name: string; url: string; site: string;
@@ -183,7 +184,57 @@ export async function pollFeedsToThreatReports(opts?: { maxAgeDays?: number; per
   } catch (e) {
     console.warn(`[feeds] watchlist alerting error: ${(e as Error)?.message || e}`);
   }
+
+  // PIR alerting: notify the requirement owner when new reporting matches a PIR keyword.
+  alerts += notifyPirMatches(createdReports);
   return { feeds: feeds.length, fetched, checked, created, alerts };
+}
+
+/** Resolve a PIR owner (PERSON) to a platform user, matching on email. */
+function resolvePirOwner(personId: number | null): number | null {
+  if (!personId) return null;
+  try {
+    const xo = getDb("XORCISM");
+    const cols = new Set((xo.prepare(`PRAGMA table_info("PERSON")`).all() as { name: string }[]).map((c) => c.name));
+    if (!cols.has("email")) return null;
+    const row = xo.prepare(`SELECT email FROM PERSON WHERE PersonID = ?`).get(personId) as { email?: string } | undefined;
+    const email = (row?.email || "").trim();
+    if (!email) return null;
+    const u = xid.findUserByEmail(email);
+    return u ? u.UserID : null;
+  } catch { return null; }
+}
+
+/** Notify each PIR's owner when a newly-collected report matches one of its keywords. */
+export function notifyPirMatches(reports: { text: string; title: string; ref: string | null }[]): number {
+  let alerts = 0;
+  try {
+    const pirs = getActivePirs();
+    if (!pirs.length || !reports.length) return 0;
+    const ownerCache = new Map<number, number | null>(); // PersonID → UserID (resolved once per poll)
+    for (const rep of reports) {
+      for (const pir of pirs) {
+        if (!pirMatches(pir.Keywords, rep.text)) continue;
+        const pid = pir.PersonID ?? 0;
+        let uid = ownerCache.get(pid);
+        if (uid === undefined) { uid = resolvePirOwner(pir.PersonID); ownerCache.set(pid, uid); }
+        if (!uid) continue; // owner isn't a platform user → no one to notify in-app
+        createNotification({
+          userId: uid,
+          title: `PIR hit: ${pir.PIRName}`.slice(0, 200),
+          message: rep.title,
+          level: "warning",
+          link: rep.ref,
+          source: "pir",
+          tenantId: pir.TenantID ?? null,
+        });
+        alerts++;
+      }
+    }
+  } catch (e) {
+    console.warn(`[feeds] PIR alerting error: ${(e as Error)?.message || e}`);
+  }
+  return alerts;
 }
 
 let pollTimer: NodeJS.Timeout | null = null;
