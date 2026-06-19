@@ -6,6 +6,7 @@
  *    POST /api/agent/checkin         heartbeat → pending scan jobs + intel state
  *    POST /api/agent/inventory       software inventory → CPE/CPEFORASSET (via import)
  *    POST /api/agent/vulnerabilities detected CVEs → ASSETVULNERABILITY (via import)
+ *    POST /api/agent/oval            OpenSCAP OVAL verdicts → XOVAL.OVALRESULTS + fan-out
  *    POST /api/agent/events          AV detections / hunting hits / EDR / compliance
  *    GET  /api/agent/intel           IOCs (threat intel) to hunt locally
  *    POST /api/agent/job/:id/result  end of a scan job
@@ -20,6 +21,7 @@ import {
   createAgentJob, claimAgentJobs, finishAgentJob, listAgentJobs, listIocs, iocCount, Agent,
 } from "../agents";
 import { createCollectedJob } from "../jobs";
+import { ingestOvalResults, ovalResultsView, findOvalContent, listOvalContent, ovalContentDir, OvalPayload } from "../oval";
 import { getDb, createNotification } from "../db";
 import * as xid from "../xid";
 import { clientIp } from "../auth";
@@ -82,6 +84,21 @@ agentTokenRouter.post("/agent/events", tokenAuth, (req: AReq, res: Response) => 
   res.json({ ok: true, stored: events.length });
 });
 
+// OVAL scan results (OpenSCAP `oscap oval eval`): stored in XOVAL.OVALRESULTS and
+// fanned out — vulnerability-class → ASSETVULNERABILITY, inventory-class → CPEFORASSET.
+agentTokenRouter.post("/agent/oval", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  const asset = req.agent!.asset_name || req.agent!.name;
+  const summary = ingestOvalResults(asset, (req.body as OvalPayload) || {}, null);
+  addAgentEvent(req.agent!.name, {
+    type: "oval_scan",
+    severity: summary.compliance.fail > 0 ? "warning" : "info",
+    title: `OVAL: ${summary.stored} verdicts (${summary.vulnerabilities} CVE, compliance ${summary.compliance.fail} fail/${summary.compliance.pass} pass)`,
+    detail: { engine: summary.engine, content: summary.content, byClass: summary.byClass },
+  });
+  res.json({ ok: true, ...summary });
+});
+
 // CPE→CVE correlation (heuristic bounded by product name) against the CVE database (NVD).
 // ⚠️ Demonstration heuristic: to be replaced by a real NVD "CPE applicability match".
 agentTokenRouter.post("/agent/match", tokenAuth, (req: AReq, res: Response) => {
@@ -110,6 +127,16 @@ agentTokenRouter.post("/agent/match", tokenAuth, (req: AReq, res: Response) => {
   res.json({ vulns });
 });
 
+// OVAL/SCAP content served to agents (offline / centralized content). The admin drops
+// OVAL/SCAP files in the content dir; the agent fetches the one matching its platform.
+agentTokenRouter.get("/agent/oval-content", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  const hit = findOvalContent(String(req.query.platform || ""));
+  if (!hit) return void res.status(404).json({ error: "no OVAL content available", available: listOvalContent().map((f) => f.name) });
+  res.setHeader("X-OVAL-Content-Name", hit.name);
+  res.sendFile(hit.path);
+});
+
 agentTokenRouter.get("/agent/intel", tokenAuth, (req: AReq, res: Response) => {
   touchAgent(req.agent!.name);
   res.json({ iocs: listIocs() });
@@ -124,6 +151,14 @@ agentTokenRouter.post("/agent/job/:id/result", tokenAuth, (req: AReq, res: Respo
 export const agentAdminRouter = Router();
 
 agentAdminRouter.get("/agents", (_req: Request, res: Response) => res.json(listAgents()));
+// OVAL scan results (per-asset verdicts + compliance/vuln worklist) for the /oval-scan page.
+agentAdminRouter.get("/oval-results", (req: Request, res: Response) => {
+  const tenant = req.user?.isSuperAdmin ? null : (req.user?.tenantId ?? null);
+  res.json(ovalResultsView(tenant));
+});
+// OVAL content the server makes available to agents (admin visibility).
+agentAdminRouter.get("/oval-content", (_req: Request, res: Response) =>
+  res.json({ dir: ovalContentDir(), files: listOvalContent() }));
 agentAdminRouter.get("/agent-events", (req: Request, res: Response) =>
   res.json(listAgentEvents(Math.min(Number(req.query.limit) || 100, 500), req.query.agent ? String(req.query.agent) : undefined)));
 agentAdminRouter.get("/agent-jobs", (req: Request, res: Response) =>

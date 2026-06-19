@@ -459,8 +459,59 @@ async function initTagCloud(): Promise<void> {
   }
 }
 
+// Security-posture KPI strip — aggregates the governance module summaries.
+interface Kpis {
+  riskScore: number | null;
+  assets: { total: number; crownJewels: number; internetFacing: number; criticalVulns: number; unbacked: number; noOwner: number } | null;
+  identities: { total: number; privileged: number; orphaned: number; mfaGaps: number } | null;
+  incidents: { open: number; criticalOpen: number; breached: number; mttrHours: number | null } | null;
+  compliance: { completionRate: number | null; openFindings: number; highOpen: number; overdue: number } | null;
+}
+const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
+const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
+const pctColor = (n: number | null): string => (n == null ? "#94a3b8" : n >= 70 ? "#34d399" : n >= 40 ? "#fbbf24" : "#f87171");
+
+async function initKpis(): Promise<void> {
+  const strip = document.getElementById("kpi-strip");
+  if (!strip) return;
+  let k: Kpis;
+  try { const r = await fetch("/api/dashboard/kpis"); if (!r.ok) throw new Error(String(r.status)); k = await r.json(); }
+  catch { strip.style.display = "none"; return; }
+
+  const tiles: string[] = [];
+  const tile = (val: string | number | null, lbl: string, foot: string, href: string, color?: string): void => {
+    tiles.push(`<a class="kpi" href="${href}"${color ? ` style="--accent:${color}"` : ""}>
+      <div class="k-val"${color ? ` style="color:${color}"` : ""}>${val == null ? "—" : val}</div>
+      <div class="k-lbl">${lbl}</div><div class="k-foot">${foot}</div></a>`);
+  };
+
+  tile(k.riskScore, "Enterprise risk", "risk × value", "/exposure", riskColor(k.riskScore ?? 0));
+  if (k.assets) {
+    tile(k.assets.crownJewels, "Crown jewels", `of ${k.assets.total} assets`, "/asset-management", "#7c83fd");
+    tile(k.assets.criticalVulns, "Assets · KEV/critical", "open critical vulns", "/asset-management", badColor(k.assets.criticalVulns));
+    tile(k.assets.internetFacing, "Internet-facing", "publicly exposed", "/asset-management", warnColor(k.assets.internetFacing));
+    tile(k.assets.unbacked, "Unbacked critical", "critical · no backup", "/asset-management", badColor(k.assets.unbacked));
+  }
+  if (k.identities) {
+    tile(k.identities.privileged, "Privileged identities", "admin / root / owner", "/identities", "#c084fc");
+    tile(k.identities.orphaned, "Orphaned NHI", "no accountable owner", "/identities", warnColor(k.identities.orphaned));
+    tile(k.identities.mfaGaps, "MFA gaps", "privileged · no MFA", "/identities", badColor(k.identities.mfaGaps));
+  }
+  if (k.incidents) {
+    tile(k.incidents.criticalOpen, "Open critical incidents", `${k.incidents.open} open total`, "/incident-management", badColor(k.incidents.criticalOpen));
+    tile(k.incidents.breached, "SLA / RTO breaches", "past target", "/incident-sla", warnColor(k.incidents.breached));
+    tile(k.incidents.mttrHours != null ? `${k.incidents.mttrHours}h` : null, "MTTR", "mean time to resolve", "/incident-management");
+  }
+  if (k.compliance) {
+    tile(k.compliance.completionRate != null ? `${k.compliance.completionRate}%` : null, "Audit completion", "audits completed", "/compliance-management", pctColor(k.compliance.completionRate));
+    tile(k.compliance.highOpen, "High findings open", `${k.compliance.openFindings} open · ${k.compliance.overdue} overdue`, "/compliance-management", badColor(k.compliance.highOpen));
+  }
+  strip.innerHTML = tiles.join("");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
+  initKpis();
   initRiskScore();
   initVuln();
   initFinancial();

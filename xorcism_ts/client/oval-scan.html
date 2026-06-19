@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — OVAL scan results</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ov-wrap{max-width:1240px;margin:0 auto;padding:18px}
+  .ov-wrap h1{font-size:20px;margin:0 0 2px}
+  .ov-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:920px}
+  .ov-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .ov-card{flex:1;min-width:130px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ov-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ov-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .ov-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ov-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.ov{width:100%;border-collapse:collapse;font-size:13px}
+  table.ov th,table.ov td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.ov th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .pill{font-size:11px;border-radius:5px;padding:1px 7px;display:inline-block;margin-right:4px}
+  .p-vuln{background:#7f1d1d;color:#fecaca}.p-fail{background:#7c2d12;color:#fed7aa}.p-pass{background:#14532d;color:#bbf7d0}.p-inv{background:#1e2133;color:#94a3b8}
+  .cls-vulnerability{color:#f87171;font-weight:700}.cls-compliance{color:#fb923c;font-weight:700}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .d-vuln{background:#f87171}.d-fail{background:#fb923c}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XOVAL&amp;table=OVALRESULTS">&#9881;&#65039; OVAL results table</a>
+  <a href="/?db=XOVAL&amp;table=OVALDEFINITION">&#128218; OVAL definitions</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <span class="spacer"></span>
+  <span class="title">&#129516; OVAL scan results</span>
+</div>
+
+<div class="ov-wrap">
+  <div>
+    <h1>OVAL scan results</h1>
+    <div class="ov-sub">Verdicts from the XOR agent's OpenSCAP (<code>oscap oval eval</code>) evaluations against
+      each host's distro / SSG content — <b>vulnerability</b> (CVE detected), <b>compliance</b> (configuration
+      pass/fail) and <b>inventory</b> (installed software). Vulnerability hits flow to
+      <a href="/asset-management">Asset Management</a> as <code>ASSETVULNERABILITY</code>; the raw verdicts live in
+      <a href="/?db=XOVAL&amp;table=OVALRESULTS"><code>XOVAL.OVALRESULTS</code></a>.</div>
+  </div>
+  <div id="ov-body"><div class="muted" style="padding:24px;text-align:center">Loading OVAL results…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/oval-scan.js"></script>
+</body>
+</html>

@@ -134,6 +134,12 @@ your data never leaves your infrastructure.
   readiness; **findings workflow**; **CRQ / FAIR** quantitative risk on the
   register. Frameworks: ISO 27001, NIST CSF, NIST 800-53, CIS Controls, NIS2,
   DORA, CRA, SOC 2.
+- **Policies & Documents** — one governance view over the documented-information
+  estate: policy **lifecycle** (draft → in review → approved → published →
+  retired) and a controlled-**document register**, with a per-policy governance
+  score and a worklist of overdue reviews, unpublished/unowned policies, missing
+  versions and expired documents. Ships a seedable baseline of **ISO/IEC
+  42001:2023 (AI Management System) policies in English & French**.
 - **EBIOS Risk Manager** — the full 5-workshop ANSSI method (framing & security
   baseline, risk sources, strategic & operational scenarios, treatment) with an
   **Express mode**, business values, supporting assets, feared events (DICT),
@@ -272,7 +278,8 @@ your data never leaves your infrastructure.
 | ![OSINT attacker journey](docs/screenshots/42_attack_chain_osint.png)<br>**OSINT chain** — domain → subfinder/theHarvester → Shodan/HIBP → web scan (auto-inventory) | ![Top exposures](docs/screenshots/43_top_exposures.png)<br>**Top exposures** — exploitability fusion score, prioritized worklist | ![Attack paths](docs/screenshots/44_attack_paths.png)<br>**Attack paths** — easiest routes to crown jewels + choke-point analysis |
 | ![AI exposure brief](docs/screenshots/45_ai_exposure_brief.png)<br>**AI copilots** — red/blue chain analyst + CISO exposure briefing (local Ollama) | ![Purple-team coverage](docs/screenshots/46_purple_coverage.png)<br>**Purple-team** — chain → ATT&CK detection coverage (Sigma) + rule generation | ![Ransomware $ impact](docs/screenshots/47_ransomware_impact.png)<br>**Ransomware $** — group TTPs → SLE/ALE dollar impact + D3FEND controls | ![Control assurance](docs/screenshots/48_control_assurance.png)<br>**Control assurance** — compliance proven live from telemetry (ISO/NIST) | ![CTI watch](docs/screenshots/49_cti_watch.png)<br>**CTI watch** — KEV/reports matched to your inventory + auto-ticket |
 | ![Surface drift](docs/screenshots/50_surface_drift.png)<br>**Surface drift** — snapshot & diff the external attack surface | ![Content hub](docs/screenshots/51_content_hub.png)<br>**Content hub** — export/import playbooks, Sigma, OpenVEX | ![Identities & IAM](docs/screenshots/54_identities.png)<br>**Identities & IAM** — human + non-human (NHI) inventory, governance worklist & risk score |
-| ![SSVC calculator](docs/screenshots/55_ssvc_calculator.png)<br>**SSVC** — CISA Stakeholder-Specific Vulnerability Categorization calculator (Track / Track\* / Attend / Act) | | |
+| ![SSVC calculator](docs/screenshots/55_ssvc_calculator.png)<br>**SSVC** — CISA Stakeholder-Specific Vulnerability Categorization calculator (Track / Track\* / Attend / Act) | ![Incident management](docs/screenshots/56_incidents.png)<br>**Incident management** — queue, governance worklist, SLA/RTO breach & priority score | ![Compliance & GRC](docs/screenshots/57_compliance.png)<br>**Compliance & GRC** — audit inventory, remediation worklist & posture score |
+| ![Policies & Documents](docs/screenshots/58_policy_management.png)<br>**Policies & Documents** — policy lifecycle & controlled-document register, governance worklist & per-policy score (ISO 42001 AIMS policies seeded EN/FR) | | |
 
 ---
 

@@ -121,6 +121,27 @@ export function buildOpenApi(): Record<string, unknown> {
           responses: { "200": ok("IdentityInventory"), ...errors },
         },
       },
+      "/incident-management": {
+        get: {
+          tags: ["Governance"],
+          summary: "Incident inventory + response worklist (open critical / SLA-RTO breach / unassigned / stale / compromise), with a priority score + MTTR (scope: incidents:read)",
+          responses: { "200": ok("IncidentInventory"), ...errors },
+        },
+      },
+      "/compliance-management": {
+        get: {
+          tags: ["Governance"],
+          summary: "Audit inventory + remediation worklist (open findings by severity / overdue / unassigned / policies past review), with a posture score (scope: compliance:read)",
+          responses: { "200": ok("ComplianceInventory"), ...errors },
+        },
+      },
+      "/policy-management": {
+        get: {
+          tags: ["Governance"],
+          summary: "Policy lifecycle inventory + document register + governance worklist (overdue reviews / unpublished / unowned / missing version / expired documents), with a per-policy governance score (scope: policies:read)",
+          responses: { "200": ok("PolicyInventory"), ...errors },
+        },
+      },
     },
     components: {
       securitySchemes: {
@@ -157,6 +178,9 @@ export function buildOpenApi(): Record<string, unknown> {
         Risk: { type: "object", properties: { tenantId: { type: "integer", nullable: true }, enterpriseRiskScore: { type: "integer" } } },
         AssetInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "total, crownJewels, internetFacing, pii, unbackedCritical, noOwner, withCriticalVulns, stale, byCriticality, byEnvironment" } } },
         IdentityInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "total, human, nonHuman, privileged, orphaned, stale, expiring, hardcoded, compromised, mfaGaps, byType, byClass" } } },
+        IncidentInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "total, open, criticalOpen, breached, unassigned, stale, compromises, mttrHours, byStatus, bySeverity" } } },
+        ComplianceInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "audits, inProgress, completed, completionRate, openFindings, highOpen, overdue, unassigned, policiesReview, bySeverity, byType" } } },
+        PolicyInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "policies with lifecycle + governance score" }, documents: { type: "array", items: { type: "object" }, description: "controlled-document register" }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "policies, published, draft, inReview, approved, retired, overdueReview, dueSoon, noOwner, noVersion, documents, expiredDocs, frameworks, byStatus, byFramework, byCategory, byLanguage" } } },
         IncidentCreate: {
           type: "object", required: ["name"],
           properties: { name: { type: "string" }, severity: { type: "string" }, status: { type: "string" }, synopsis: { type: "string" }, durationHours: { type: "number" } },

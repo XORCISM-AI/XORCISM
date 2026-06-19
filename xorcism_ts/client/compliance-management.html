@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Compliance</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cp-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .cp-wrap h1{font-size:20px;margin:0 0 2px}
+  .cp-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:940px}
+  .cp-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cp-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cp-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cp-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .cp-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cp-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  table.cp{width:100%;border-collapse:collapse;font-size:13px}
+  table.cp th,table.cp td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.cp th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .sev{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .s-critical{background:#7f1d1d;color:#fecaca}.s-high{background:#7c2d12;color:#fed7aa}
+  .s-medium{background:#78350f;color:#fcd34d}.s-low{background:#1e2133;color:#94a3b8}.s-info{background:#1e2133;color:#64748b}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-completed{background:#14532d;color:#bbf7d0}.st-progress{background:#3b2f1e;color:#fcd34d}.st-planned{background:#1e2133;color:#94a3b8}
+  .pill{font-size:11px;border-radius:5px;padding:1px 6px;display:inline-block;margin-right:4px}
+  .p-open{background:#7c2d12;color:#fed7aa}.p-high{background:#7f1d1d;color:#fecaca}.p-clean{background:#14532d;color:#bbf7d0}
+  .tag{font-size:11px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:5px;padding:1px 6px;margin-left:4px;color:#fca5a5}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#34d399}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}.sev-Info{color:#64748b}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=AUDIT">&#9881;&#65039; Audits</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=AUDITFINDING">&#128203; Findings</a>
+  <a href="/assurance">&#9989; Control assurance</a>
+  <span class="spacer"></span>
+  <span class="title">&#9878;&#65039; Compliance &amp; GRC</span>
+</div>
+
+<div class="cp-wrap">
+  <div>
+    <h1>Compliance &amp; GRC</h1>
+    <div class="cp-sub">One governance view over the audit programme — audits, findings and policy lifecycle.
+      Each audit carries its <b>findings posture</b> and a 0-100 score; the worklist surfaces the gaps that
+      matter: <b>high/critical open findings</b>, <b>overdue remediation</b>, <b>unassigned</b> findings or
+      missing plans, and <b>policies past their review date</b>. Manage entries under
+      <a href="/?db=XCOMPLIANCE&amp;table=AUDIT">Audits</a> /
+      <a href="/?db=XCOMPLIANCE&amp;table=AUDITFINDING">Findings</a>; live control proof on
+      <a href="/assurance">Control assurance</a>.</div>
+  </div>
+  <div id="cp-body"><div class="muted" style="padding:24px;text-align:center">Building the compliance posture…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/compliance-management.js"></script>
+</body>
+</html>

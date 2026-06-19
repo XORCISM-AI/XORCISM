@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XORCISM Dashboard</title>
 <link rel="stylesheet" href="/css/style.css">
+<style>
+  .kpi-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .kpi{display:block;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 13px;text-decoration:none;transition:border-color .15s,transform .15s}
+  .kpi:hover{border-color:var(--accent,#7c83fd);transform:translateY(-2px)}
+  .kpi .k-val{font-size:24px;font-weight:800;line-height:1.1}
+  .kpi .k-lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+  .kpi .k-foot{font-size:11px;color:#64748b;margin-top:2px}
+  .kpi-sec{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:2px 0 -6px 2px}
+</style>
 </head>
 <body>
 
@@ -16,6 +25,9 @@
 </div>
 
 <div class="container">
+  <div class="kpi-sec" data-i18n="dash.kpiTitle">Security posture — key indicators</div>
+  <div class="kpi-strip" id="kpi-strip"></div>
+
   <div class="card" id="risk-card">
     <div class="card-header">
       <span class="card-title" data-i18n="dash.riskScore">Enterprise RiskScore</span>

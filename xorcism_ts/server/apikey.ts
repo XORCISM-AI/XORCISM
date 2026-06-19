@@ -15,7 +15,7 @@ const KEY_PREFIX = "xor_";
 const sha256 = (s: string): string => crypto.createHash("sha256").update(s).digest("hex");
 
 /** Per-resource scopes a key can hold. `read`/`write` are broad aliases. */
-export const API_SCOPES = ["assets:read", "assets:write", "incidents:read", "incidents:write", "exposure:read", "risk:read", "identities:read"] as const;
+export const API_SCOPES = ["assets:read", "assets:write", "incidents:read", "incidents:write", "exposure:read", "risk:read", "identities:read", "compliance:read", "policies:read"] as const;
 
 /** Does a key's scope list grant `required`? read = all *:read; write = all *:read+*:write; resource:write implies resource:read. */
 export function scopeGrants(scopesCsv: string | null | undefined, required: string): boolean {

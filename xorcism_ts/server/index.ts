@@ -36,6 +36,9 @@ import { ensureSlaColumns } from "./sla";
 import pirRouter from "./routes/pir";
 import identitiesRouter from "./routes/identities";
 import assetsRouter from "./routes/assets";
+import incidentsRouter from "./routes/incidents";
+import complianceRouter from "./routes/compliance";
+import policiesRouter from "./routes/policies";
 import v1Router from "./routes/v1";
 import apikeysRouter from "./routes/apikeys";
 import webhooksRouter from "./routes/webhooks";
@@ -65,7 +68,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureVulnerabilityColumns } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -163,6 +166,9 @@ app.use("/api", slaRouter); // incident SLA view: incidents measured against ass
 app.use("/api", pirRouter); // Priority Intelligence Requirements coverage register
 app.use("/api", identitiesRouter); // IAM: identity inventory (human + non-human) + governance findings
 app.use("/api", assetsRouter); // Asset Management: asset inventory + governance worklist
+app.use("/api", incidentsRouter); // Incident Management: incident inventory + governance worklist
+app.use("/api", complianceRouter); // Compliance Management: audit inventory + findings/policy worklist
+app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api/v1", v1Router); // public REST API v1 (API-key auth, read-only, tenant-scoped)
 app.use("/api", apikeysRouter); // manage your own API keys (session-authenticated)
 app.use("/api", webhooksRouter); // manage outbound webhooks (session-authenticated)
@@ -301,6 +307,18 @@ app.get("/identities", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/asset-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "asset-management.html"));
 });
+app.get("/incident-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "incident-management.html"));
+});
+app.get("/compliance-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "compliance-management.html"));
+});
+app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
+});
+app.get("/oval-scan", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "oval-scan.html"));
+});
 app.get("/api-docs", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "api-docs.html"));
 });
@@ -354,6 +372,7 @@ ensureOpenctiColumns(); // adapts the XTHREAT tables to OpenCTI properties (Conf
 ensureEmulationTables(); // adversary emulation / validation (BAS) module: EMULATION*/ATOMICTEST
 ensureAssetColumns(); // adds ASSET.BusinessValue (and future core ASSET fields) if missing
 ensureIdentityTables(); // IAM registry: XORCISM.IDENTITY + IDENTITYPERSON (human + non-human identities)
+ensureOvalScanTables(); // OVAL scan results: extend XOVAL.OVALRESULTS into per-asset verdicts + seed result enum
 ensureSlaColumns(); // ASSET.SLAResponseHours/SLAResolutionHours + INCIDENT.Duration (SLA breach view)
 ensureVulnerabilityColumns(); // adds VULNERABILITY.EPSS (Exploit Prediction Scoring System) if missing
 ensureGrcColumns(); // advanced GRC: CRQ/FAIR (risk register), findings workflow, policy lifecycle

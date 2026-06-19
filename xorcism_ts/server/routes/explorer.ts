@@ -121,6 +121,10 @@ import { userCan, clientIp, deniedFields } from "../auth";
 import * as xid from "../xid";
 import { tr } from "../i18n";
 import { computeEnterpriseRiskScore } from "../riskscore";
+import { assetInventory } from "../assets";
+import { identityInventory } from "../identities";
+import { incidentInventory } from "../incidents";
+import { complianceInventory } from "../compliance";
 
 // Removes the forbidden columns from a row object (keeps rowid)
 function stripCols(row: Record<string, unknown>, denied: Set<string>): Record<string, unknown> {
@@ -320,6 +324,24 @@ router.get("/dashboard/risk-score", (req: Request, res: Response) => {
 // GET /api/dashboard/vuln-by-year — aggregate (any authenticated user)
 router.get("/dashboard/vuln-by-year", (_req: Request, res: Response) => {
   res.json(vulnByYear());
+});
+
+// GET /api/dashboard/kpis — security-posture KPI strip, aggregating the governance
+// module summaries (asset / identity / incident / compliance) + the enterprise risk score.
+router.get("/dashboard/kpis", (req: Request, res: Response) => {
+  const tenant = req.user!.isSuperAdmin ? null : (req.user!.tenantId ?? null);
+  const safe = <T>(fn: () => T): T | null => { try { return fn(); } catch { return null; } };
+  const a = safe(() => assetInventory(tenant).summary);
+  const i = safe(() => identityInventory(tenant).summary);
+  const inc = safe(() => incidentInventory(tenant).summary);
+  const c = safe(() => complianceInventory(tenant).summary);
+  res.json({
+    riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
+    assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
+    identities: i && { total: i.total, privileged: i.privileged, orphaned: i.orphaned, mfaGaps: i.mfaGaps },
+    incidents: inc && { open: inc.open, criticalOpen: inc.criticalOpen, breached: inc.breached, mttrHours: inc.mttrHours },
+    compliance: c && { completionRate: c.completionRate, openFindings: c.openFindings, highOpen: c.highOpen, overdue: c.overdue },
+  });
 });
 
 // GET /api/dashboard/tag-cloud — cloud of active ASSETTAG tags (scoped to the tenant)

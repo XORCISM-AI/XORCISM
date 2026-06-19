@@ -725,6 +725,7 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XORCISM.ASSET",
   "XORCISM.ASSETCONTROL",
   "XORCISM.BACKUPPLAN",
+  "XOVAL.OVALRESULTS",
   "XORCISM.IDENTITY",
   "XORCISM.IDENTITYPERSON",
   "XORCISM.BIAAUDIT",
@@ -780,6 +781,9 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XCOMPLIANCE.ANSWERFORQUESTION",
   // ── Tooling catalogue (multi-tenant isolation) ──
   "XORCISM.TOOL",
+  // ── Policy & document management (multi-tenant isolation) ──
+  "XORCISM.POLICY",
+  "XCOMPLIANCE.DOCUMENT",
 ]);
 
 export const TENANT_COL = "TenantID";
@@ -4130,6 +4134,45 @@ export function ensureAssetColumns(): void {
 }
 
 /**
+ * OVAL scan results — the XOR agent's OpenSCAP (`oscap oval eval`) verdicts.
+ * The native OVAL "results" model tables (XOVAL.OVALRESULTS / OVALRESULTSTYPE) are
+ * skeletal EF scaffolds (no asset/definition granularity), so we EXTEND OVALRESULTS
+ * into a usable per-(asset × definition) verdict row and seed the OVAL result-value
+ * enum. Each row keeps the OVAL definition id-pattern + its class (vulnerability /
+ * inventory / compliance / patch) so results can be sliced per asset/class/date.
+ * Idempotent (CREATE table if the whole XOVAL schema is missing + conditional ALTER).
+ */
+export function ensureOvalScanTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XOVAL"); } catch { return; }
+  // Create OVALRESULTS if the XOVAL schema was never built (fresh install).
+  db.exec(`CREATE TABLE IF NOT EXISTS "OVALRESULTS" (
+    "OVALResultsID" INTEGER PRIMARY KEY, "GeneratorTypeID" INTEGER, "OVALDefaultDirectivesID" INTEGER,
+    "OVALDefinitionsID" INTEGER, "OVALResultsTypeID" INTEGER, "signature" TEXT
+  );`);
+  const rc = new Set((db.prepare(`PRAGMA table_info("OVALRESULTS")`).all() as { name: string }[]).map((c) => c.name));
+  const want: Record<string, string> = {
+    AssetID: "INTEGER", OVALDefinitionID: "INTEGER", OVALDefinitionIDPattern: "TEXT",
+    ResultValue: "TEXT", ClassValue: "TEXT", Title: "TEXT", Severity: "TEXT",
+    ScanDate: "DATE", AgentName: "TEXT", TenantID: "INTEGER",
+  };
+  for (const [n, t] of Object.entries(want)) if (!rc.has(n)) db.exec(`ALTER TABLE "OVALRESULTS" ADD COLUMN "${n}" ${t}`);
+  db.exec(`CREATE INDEX IF NOT EXISTS ix_ovalresults_asset ON "OVALRESULTS"("AssetID");
+           CREATE INDEX IF NOT EXISTS ix_ovalresults_scan ON "OVALRESULTS"("ScanDate");
+           CREATE INDEX IF NOT EXISTS ix_ovalresults_class ON "OVALRESULTS"("ClassValue");`);
+
+  // Seed the OVAL result-value enum (oval-results-5 ResultEnumeration).
+  db.exec(`CREATE TABLE IF NOT EXISTS "OVALRESULTSTYPE" ("OVALResultsTypeId" INTEGER PRIMARY KEY);`);
+  const tc = new Set((db.prepare(`PRAGMA table_info("OVALRESULTSTYPE")`).all() as { name: string }[]).map((c) => c.name));
+  if (!tc.has("ResultValue")) db.exec(`ALTER TABLE "OVALRESULTSTYPE" ADD COLUMN "ResultValue" TEXT`);
+  const RESULT_VALUES = ["true", "false", "error", "unknown", "not evaluated", "not applicable"];
+  const have = new Set((db.prepare(`SELECT ResultValue FROM OVALRESULTSTYPE WHERE ResultValue IS NOT NULL`).all() as { ResultValue: string }[]).map((r) => r.ResultValue));
+  let nextId = (db.prepare(`SELECT COALESCE(MAX(OVALResultsTypeId),0) m FROM OVALRESULTSTYPE`).get() as { m: number }).m;
+  const ins = db.prepare(`INSERT INTO OVALRESULTSTYPE (OVALResultsTypeId, ResultValue) VALUES (?, ?)`);
+  for (const v of RESULT_VALUES) if (!have.has(v)) ins.run(++nextId, v);
+}
+
+/**
  * Identity & Access Management (IAM) registry — XORCISM.IDENTITY + the
  * XORCISM.IDENTITYPERSON junction. One inventory for BOTH human identities
  * (mapped to PERSON via IDENTITYPERSON) and non-human identities / NHI
@@ -4237,10 +4280,21 @@ export function ensureGrcColumns(): void {
     WorkflowStatus: "TEXT", Severity: "TEXT", RemediationPlan: "TEXT",
     RemediationOwnerPersonID: "INTEGER", DueDate: "DATE",
   });
-  // Policy lifecycle (GRC).
+  // Policy lifecycle (GRC) + document/management-system metadata (ISO 42001 / 27001 …).
   addCols("XORCISM", "POLICY", {
     Status: "TEXT", WorkflowStatus: "TEXT", Version: "TEXT", PolicyReference: "TEXT",
     OwnerPersonID: "INTEGER", ApprovedByPersonID: "INTEGER", EffectiveDate: "DATE", ReviewDate: "DATE",
+    // management-system context: which framework/clause this policy supports, its category,
+    // classification, language (en/fr…) and full markdown body.
+    Category: "TEXT", Framework: "TEXT", Clause: "TEXT", Classification: "TEXT",
+    Language: "TEXT", Scope: "TEXT", PolicyContent: "TEXT", ApprovedDate: "DATE",
+  });
+  // Document register (records / evidence) lifecycle — mirror the policy fields so the
+  // governance view can treat DOCUMENT as a controlled-document register.
+  addCols("XCOMPLIANCE", "DOCUMENT", {
+    Status: "TEXT", Category: "TEXT", DocumentType: "TEXT", Classification: "TEXT",
+    Framework: "TEXT", Language: "TEXT", PolicyReference: "TEXT", RelatedPolicyID: "INTEGER",
+    OwnerPersonID: "INTEGER", ReviewDate: "DATE",
   });
   // TPRM — third-party assessment via questionnaire (QUESTIONNAIREFORORGANISATION).
   addCols("XCOMPLIANCE", "QUESTIONNAIREFORORGANISATION", {

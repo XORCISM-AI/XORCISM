@@ -137,11 +137,29 @@ const RICHTEXT_COLUMNS = new Set<string>([
   "RISKREGISTERENTRY.Description",
   "RISKREGISTERENTRY.TreatmentPlan",
   "RISKREGISTERENTRY.Justification",
+  // Policy & document bodies (full WYSIWYG documents)
+  "POLICY.PolicyContent",
+  "POLICY.PolicyDescription",
+  "POLICY.Scope",
 ]);
 
 function isRichTextField(table: string, col: string): boolean {
   return isRichTextCol(col) || RICHTEXT_COLUMNS.has(`${table}.${col}`);
 }
+
+// Rich-text columns rendered with a TALL editor (long documents, not short notes).
+const TALL_RICHTEXT_COLUMNS = new Set<string>(["POLICY.PolicyContent"]);
+function richTextOpts(table: string, col: string): { minHeight?: number } | undefined {
+  return TALL_RICHTEXT_COLUMNS.has(`${table}.${col}`) ? { minHeight: 340 } : undefined;
+}
+
+// Columns rendered as a PROMINENT input — the record's "title": large font, full width.
+const PROMINENT_INPUT_COLUMNS = new Set<string>(["POLICY.PolicyName"]);
+function isProminentInput(table: string, col: string): boolean {
+  return PROMINENT_INPUT_COLUMNS.has(`${table}.${col}`);
+}
+const PROMINENT_INPUT_CSS =
+  "width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 13px;color:var(--text);font-size:18px;font-weight:600";
 
 // Columns never shown in forms: handled server-side from
 // the session (e.g. TenantID, multi-tenant). Case-insensitive comparison.
@@ -2332,6 +2350,26 @@ for (const t of ["RISKREGISTERENTRY", "RISKSCENARIO"]) STATIC_DATALIST_COLUMNS[`
 FK_COLUMNS["POLICY.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["POLICY.ApprovedByPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["AUDITFINDING.RemediationOwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
+
+// ── Policy & document management metadata (ISO 42001 / 27001 / NIST AI RMF …) ──
+const DOC_LANGUAGES = ["en", "fr", "de", "es", "it", "nl", "pt", "ar"];
+const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "EU AI Act", "SOC 2", "GDPR"];
+const DOC_CLASSIFICATION = ["Public", "Internal", "Confidential", "Restricted"];
+const DOC_CATEGORIES = ["AI Management System", "Information Security", "Privacy", "Data Governance", "Risk Management", "Operations", "Human Resources"];
+const DOC_TYPES = ["Policy", "Procedure", "Standard", "Guideline", "Record", "Report", "Evidence", "Form", "Plan"];
+for (const t of ["POLICY", "DOCUMENT"]) {
+  STATIC_DATALIST_COLUMNS[`${t}.Category`] = DOC_CATEGORIES;
+  STATIC_DATALIST_COLUMNS[`${t}.Framework`] = DOC_FRAMEWORKS;
+  STATIC_DATALIST_COLUMNS[`${t}.Language`] = DOC_LANGUAGES;
+  STATIC_DATALIST_DEFAULTS[`${t}.Language`] = "en";
+  STATIC_DATALIST_COLUMNS[`${t}.Classification`] = DOC_CLASSIFICATION;
+}
+STATIC_DATALIST_COLUMNS["DOCUMENT.Status"] = GRC_POLICY_STATUS;
+STATIC_DATALIST_DEFAULTS["DOCUMENT.Status"] = "Draft";
+GRID_VALUE_COLORS["DOCUMENT.Status"] = GRC_POLICY_COLORS;
+STATIC_DATALIST_COLUMNS["DOCUMENT.DocumentType"] = DOC_TYPES;
+FK_COLUMNS["DOCUMENT.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
+FK_COLUMNS["DOCUMENT.RelatedPolicyID"] = { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", distinct: true };
 
 // ── Defender XDR-aligned incident & alert metadata (XINCIDENT.ALERT / INCIDENT) ──
 const DEFENDER_SEVERITY = ["High", "Medium", "Low", "Informational"];
@@ -5118,7 +5156,7 @@ let formDirty = false;
 // A field that should span the full form width (textareas, rich text, file pickers,
 // multi-control rows like the labels chips). Short scalars stay half-width.
 function isWideField(el: HTMLElement): boolean {
-  if (el.querySelector('textarea, [contenteditable], input[type="file"]')) return true;
+  if (el.querySelector('textarea, [contenteditable], input[type="file"], [data-fullwidth]')) return true;
   return el.querySelectorAll("input, select, textarea").length >= 2;
 }
 
@@ -5374,7 +5412,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
 
     // WYSIWYG editor (AssetDescription, INCIDENT.summary…) — never a primary key
     if (isRichTextField(currentTable, col.name) && col.pk !== 1) {
-      const rte = mkRichText(currentVal == null ? "" : String(currentVal), col.type);
+      const rte = mkRichText(currentVal == null ? "" : String(currentVal), col.type, richTextOpts(currentTable, col.name));
       rte.hidden.id = `ef_${col.name}`;
       div.appendChild(rte.hidden);
       div.appendChild(rte.mount);
@@ -5394,7 +5432,9 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     input.value = currentVal == null ? "" : String(currentVal);
     input.placeholder = col.type;
     input.readOnly = col.pk === 1;
-    input.style.cssText = "width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:13px";
+    const efProminent = isProminentInput(currentTable, col.name) && col.pk !== 1;
+    input.style.cssText = efProminent ? PROMINENT_INPUT_CSS : FIELD_INPUT_CSS;
+    if (efProminent) input.dataset.fullwidth = "1";
     if (col.pk === 1) input.style.opacity = "0.5";
     // Calendar icon for CreatedDate / ValidFromDate + date-picker columns
     if ((hasAutoDate(currentTable, col.name) || hasDatePicker(currentTable, col.name)) && col.pk !== 1) {
@@ -8616,7 +8656,7 @@ async function openInsertModal(): Promise<void> {
 
     // WYSIWYG editor (AssetDescription, INCIDENT.summary…)
     if (isRichTextField(currentTable, col.name)) {
-      const rte = mkRichText("", col.type);
+      const rte = mkRichText("", col.type, richTextOpts(currentTable, col.name));
       rte.hidden.id = `f_${col.name}`;
       div.appendChild(rte.hidden);
       div.appendChild(rte.mount);
@@ -8634,7 +8674,9 @@ async function openInsertModal(): Promise<void> {
     const input = document.createElement("input");
     input.id = `f_${col.name}`;
     input.placeholder = col.type;
-    input.style.cssText = INPUT_CSS;
+    const fProminent = isProminentInput(currentTable, col.name);
+    input.style.cssText = fProminent ? PROMINENT_INPUT_CSS : INPUT_CSS;
+    if (fProminent) input.dataset.fullwidth = "1";
     // Pre-fills (current date) + calendar icon for CreatedDate / ValidFromDate
     // and the per-table columns (e.g. VOCABULARY.DateModified)
     if (hasAutoDate(currentTable, col.name)) {

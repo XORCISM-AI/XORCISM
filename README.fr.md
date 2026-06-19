@@ -139,6 +139,13 @@ jamais votre infrastructure.
   preuves, état de préparation ; **workflow des constats** ; risque quantitatif
   **CRQ / FAIR** sur le registre. Référentiels : ISO 27001, NIST CSF, NIST
   800-53, CIS Controls, NIS2, DORA, CRA, SOC 2.
+- **Politiques & Documents** — une vue de gouvernance sur les informations
+  documentées : **cycle de vie** des politiques (brouillon → en revue → approuvée
+  → publiée → retirée) et **registre des documents contrôlés**, avec un score de
+  gouvernance par politique et une worklist (revues échues, politiques non
+  publiées ou sans propriétaire, versions manquantes, documents expirés).
+  Comprend un socle de **politiques ISO/IEC 42001:2023 (Système de Management de
+  l'IA) en anglais et en français**, prêt à charger.
 - **EBIOS Risk Manager** — la méthode ANSSI complète à 5 ateliers (cadrage et
   socle de sécurité, sources de risque, scénarios stratégiques et opérationnels,
   traitement) avec un **mode Express**, des valeurs métier, des biens supports,
@@ -265,7 +272,8 @@ jamais votre infrastructure.
 | ![Ticketing](docs/screenshots/fr/13_ticketing.png)<br>**Ticketing** — tâches et commentaires | ![Connecteurs](docs/screenshots/fr/14_xposure_connectors.png)<br>**Connecteurs** — nmap, nuclei, Nessus, SBOM… | ![OSINT](docs/screenshots/fr/15_osint_tools.png)<br>**OSINT** — boîte à outils |
 | ![ATT&CK](docs/screenshots/fr/16_matrix_attack.png)<br>**MITRE ATT&CK** — avec heatmap de couverture BAS | ![D3FEND](docs/screenshots/fr/17_matrix_d3fend.png)<br>**MITRE D3FEND** — matrice défensive | ![A3M](docs/screenshots/fr/18_matrix_a3m.png)<br>**A3M** — Agentic AI Attack Matrix |
 | ![Tableau de bord](docs/screenshots/fr/19_dashboard.png)<br>**Tableau de bord exécutif** — risque, exposition, tendances | ![BIA](docs/screenshots/fr/20_bia_audit.png)<br>**Analyse d'impact métier (BIA)** | ![Graphe STIX](docs/screenshots/fr/21_stix_graph.png)<br>**Graphe STIX** — chasses ↔ techniques ATT&CK |
-| ![Identités & IAM](docs/screenshots/fr/54_identities.png)<br>**Identités & IAM** — inventaire humains + non-humains (NHI), worklist de gouvernance et score de risque | ![SSVC](docs/screenshots/fr/55_ssvc_calculator.png)<br>**SSVC** — calculateur CISA (catégorisation des vulnérabilités : Track / Track\* / Attend / Act) | |
+| ![Identités & IAM](docs/screenshots/fr/54_identities.png)<br>**Identités & IAM** — inventaire humains + non-humains (NHI), worklist de gouvernance et score de risque | ![SSVC](docs/screenshots/fr/55_ssvc_calculator.png)<br>**SSVC** — calculateur CISA (catégorisation des vulnérabilités : Track / Track\* / Attend / Act) | ![Gestion des incidents](docs/screenshots/fr/56_incidents.png)<br>**Gestion des incidents** — file, worklist de gouvernance, dépassement SLA/RTO et score de priorité |
+| ![Conformité & GRC](docs/screenshots/fr/57_compliance.png)<br>**Conformité & GRC** — inventaire des audits, worklist de remédiation et score de posture | ![Politiques & Documents](docs/screenshots/fr/58_policy_management.png)<br>**Politiques & Documents** — cycle de vie des politiques et registre documentaire, worklist de gouvernance et score par politique (politiques ISO 42001 EN/FR pré-chargées) | |
 
 ---
 

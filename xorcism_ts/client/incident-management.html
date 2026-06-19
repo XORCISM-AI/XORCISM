@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Incident Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .im-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .im-wrap h1{font-size:20px;margin:0 0 2px}
+  .im-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:940px}
+  .im-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .im-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .im-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .im-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .im-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .im-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  table.im{width:100%;border-collapse:collapse;font-size:13px}
+  table.im th,table.im td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.im th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .sev{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .s-critical{background:#7f1d1d;color:#fecaca}.s-high{background:#7c2d12;color:#fed7aa}
+  .s-medium{background:#78350f;color:#fcd34d}.s-low{background:#1e2133;color:#94a3b8}.s-informational,.s-unrated{background:#1e2133;color:#64748b}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-open{background:#3b2f1e;color:#fcd34d}.st-resolved{background:#14532d;color:#bbf7d0}
+  .flag{font-size:11px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:5px;padding:1px 6px;margin:0 4px 4px 0;display:inline-block;color:#fca5a5}
+  .badge{font-size:11px;border-radius:5px;padding:1px 6px;display:inline-block}
+  .b-breach{background:#7f1d1d;color:#fecaca}.b-comp{background:#581c87;color:#e9d5ff}
+  .iname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#64748b}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}
+  .sev-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .dot-Critical{background:#f87171}.dot-High{background:#fb923c}.dot-Medium{background:#fbbf24}.dot-Low{background:#94a3b8}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XINCIDENT&amp;table=INCIDENT">&#9881;&#65039; Manage incidents</a>
+  <a href="/?db=XINCIDENT&amp;table=ALERT">&#128276; Alerts</a>
+  <a href="/incident-sla">&#9201;&#65039; SLA / RTO</a>
+  <span class="spacer"></span>
+  <span class="title">&#128680; Incident Management</span>
+</div>
+
+<div class="im-wrap">
+  <div>
+    <h1>Incident Management</h1>
+    <div class="im-sub">One governance view over the incident queue — severity, status, owner, age, scoped
+      assets, <b>SLA/RTO breach</b> and confirmed compromise. Each incident is checked for the response-hygiene
+      gaps that matter: <b>open critical incidents</b>, <b>SLA/RTO breaches</b>, <b>unassigned</b> or <b>stale</b>
+      tickets, unclassified / awaiting-determination, and unscoped incidents. Manage entries under
+      <a href="/?db=XINCIDENT&amp;table=INCIDENT">Manage incidents</a>; breach detail on the
+      <a href="/incident-sla">SLA / RTO</a> view.</div>
+  </div>
+  <div id="im-body"><div class="muted" style="padding:24px;text-align:center">Building the incident queue…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/incident-management.js"></script>
+</body>
+</html>

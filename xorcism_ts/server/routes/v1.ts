@@ -11,6 +11,9 @@ import { incidentSlaView } from "../sla";
 import { computeEnterpriseRiskScore } from "../riskscore";
 import { identityInventory } from "../identities";
 import { assetInventory } from "../assets";
+import { incidentInventory } from "../incidents";
+import { complianceInventory } from "../compliance";
+import { policyInventory } from "../policies";
 import { buildOpenApi } from "../openapi";
 import { dispatchWebhook } from "../webhook";
 
@@ -212,6 +215,30 @@ router.get("/identities", (req: Request, res: Response) => {
   if (!gate(req, res, "identities:read")) return;
   if (!userCan(req.user!, "read", "XORCISM", "IDENTITY")) return void res.status(403).json({ error: "forbidden" });
   res.json(identityInventory(tenantOf(req)));
+});
+
+// GET /api/v1/incident-management — incident inventory + response worklist (open critical /
+// SLA-RTO breach / unassigned / stale / compromise) with a priority score + MTTR.
+router.get("/incident-management", (req: Request, res: Response) => {
+  if (!gate(req, res, "incidents:read")) return;
+  if (!userCan(req.user!, "read", "XINCIDENT", "INCIDENT")) return void res.status(403).json({ error: "forbidden" });
+  res.json(incidentInventory(tenantOf(req)));
+});
+
+// GET /api/v1/compliance-management — audit inventory + remediation worklist (open findings
+// by severity / overdue / unassigned / policies past review) with a posture score.
+router.get("/compliance-management", (req: Request, res: Response) => {
+  if (!gate(req, res, "compliance:read")) return;
+  if (!userCan(req.user!, "read", "XCOMPLIANCE", "AUDIT")) return void res.status(403).json({ error: "forbidden" });
+  res.json(complianceInventory(tenantOf(req)));
+});
+
+// GET /api/v1/policy-management — policy lifecycle inventory + document register + governance
+// worklist (overdue reviews / unpublished / unowned / missing version / expired documents).
+router.get("/policy-management", (req: Request, res: Response) => {
+  if (!gate(req, res, "policies:read")) return;
+  if (!userCan(req.user!, "read", "XORCISM", "POLICY")) return void res.status(403).json({ error: "forbidden" });
+  res.json(policyInventory(tenantOf(req)));
 });
 
 export default router;

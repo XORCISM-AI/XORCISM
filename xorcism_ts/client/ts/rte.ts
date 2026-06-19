@@ -16,7 +16,7 @@ export interface RichText {
   mount: HTMLElement; // visual element (toolbar + editable zone)
 }
 
-export function mkRichText(val?: string, placeholder?: string): RichText {
+export function mkRichText(val?: string, placeholder?: string, opts?: { minHeight?: number }): RichText {
   const wrap = document.createElement("div");
   wrap.className = "rte-wrap";
 
@@ -28,6 +28,14 @@ export function mkRichText(val?: string, placeholder?: string): RichText {
   editor.contentEditable = "true";
   editor.dataset.placeholder = placeholder ?? "";
   editor.innerHTML = val ?? "";
+  // Tall editor for long bodies (e.g. a full policy document) — overrides the
+  // default min-height; the zone still grows with content and scrolls past it.
+  if (opts?.minHeight) {
+    editor.style.minHeight = `${opts.minHeight}px`;
+    editor.style.maxHeight = "60vh";
+    editor.style.overflowY = "auto";
+    editor.style.resize = "vertical";
+  }
 
   const hidden = document.createElement("textarea");
   hidden.style.display = "none";

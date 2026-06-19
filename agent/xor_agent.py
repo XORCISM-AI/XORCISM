@@ -28,6 +28,7 @@ import argparse
 import json
 import os
 import platform
+import re
 import socket
 import ssl
 import subprocess
@@ -35,6 +36,13 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
+import bz2
+import gzip
+import glob
+import shutil
+import tempfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 # Console Windows : la sortie par défaut (cp1252) ne sait pas encoder « → » ni
@@ -255,11 +263,239 @@ def av_scan(paths=None):
 
 
 # ── Configuration / conformité (OpenSCAP ou checks intégrés) ─────────────────────
-def oval_scan():
-    if subprocess.run(["which" if platform.system() != "Windows" else "where", "oscap"],
-                      capture_output=True).returncode == 0:
-        return {"engine": "openscap", "note": "oscap présent — fournir un contenu OVAL/XCCDF pour évaluation complète", "checks": _builtin_compliance()}
-    return {"engine": "builtin", "checks": _builtin_compliance()}
+def _which(cmd):
+    return subprocess.run(["which" if platform.system() != "Windows" else "where", cmd],
+                          capture_output=True).returncode == 0
+
+
+def _os_release():
+    info = {}
+    try:
+        with open("/etc/os-release", encoding="utf-8") as fh:
+            for line in fh:
+                if "=" in line:
+                    k, v = line.rstrip().split("=", 1)
+                    info[k] = v.strip().strip('"')
+    except Exception:
+        pass
+    return info
+
+
+def _download(url, dest):
+    req = urllib.request.Request(url, headers={"User-Agent": "XOR-Agent-OVAL"})
+    with urllib.request.urlopen(req, timeout=180) as r, open(dest, "wb") as out:
+        shutil.copyfileobj(r, out)
+    if dest.endswith(".bz2"):
+        plain = dest[:-4]
+        with bz2.open(dest) as f, open(plain, "wb") as out:
+            shutil.copyfileobj(f, out)
+        return plain
+    if dest.endswith(".gz"):
+        plain = dest[:-3]
+        with gzip.open(dest) as f, open(plain, "wb") as out:
+            shutil.copyfileobj(f, out)
+        return plain
+    return dest
+
+
+def _decompress(dest):
+    if dest.endswith(".bz2"):
+        plain = dest[:-4]
+        with bz2.open(dest) as f, open(plain, "wb") as out:
+            shutil.copyfileobj(f, out)
+        return plain
+    if dest.endswith(".gz"):
+        plain = dest[:-3]
+        with gzip.open(dest) as f, open(plain, "wb") as out:
+            shutil.copyfileobj(f, out)
+        return plain
+    return dest
+
+
+def _fetch_server_content(server, token, insecure, platform, workdir):
+    """Pull OVAL/SCAP content served by XORCISM (GET /api/agent/oval-content)."""
+    url = server.rstrip("/") + "/api/agent/oval-content?platform=" + urllib.parse.quote(platform or "")
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    ctx = ssl._create_unverified_context() if insecure else None
+    with urllib.request.urlopen(req, timeout=180, context=ctx) as r:
+        name = r.headers.get("X-OVAL-Content-Name", "server-oval.xml")
+        dest = os.path.join(workdir, os.path.basename(name) or "server-oval.xml")
+        with open(dest, "wb") as out:
+            shutil.copyfileobj(r, out)
+    return _decompress(dest), name
+
+
+def _oval_content(workdir, server="", token="", insecure=False, platform=""):
+    """Locate OVAL definitions for this host (the chosen 'distro feed / SSG' source):
+       env override → XORCISM-served content → local SSG datastream → distro CVE feed."""
+    env = os.environ.get("XOR_OVAL_CONTENT")
+    if env and os.path.exists(env):
+        return env, os.path.basename(env)
+    # XORCISM-served content (offline / centralized) — first choice when reachable
+    if server and token and os.environ.get("XOR_OVAL_FROM_SERVER", "1") != "0":
+        try:
+            return _fetch_server_content(server, token, insecure, platform, workdir)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                print(f"[oval] contenu serveur erreur {e.code}", file=sys.stderr)
+        except Exception as e:
+            print(f"[oval] contenu serveur indisponible : {e}", file=sys.stderr)
+    url = os.environ.get("XOR_OVAL_URL")
+    if url:
+        try:
+            ext = ".bz2" if url.endswith(".bz2") else ".gz" if url.endswith(".gz") else ".xml"
+            return _download(url, os.path.join(workdir, "oval-content" + ext)), url.rsplit("/", 1)[-1]
+        except Exception as e:
+            print(f"[oval] téléchargement {url} échoué : {e}", file=sys.stderr)
+    if platform.system() != "Linux":
+        return None, None
+    for p in glob.glob("/usr/share/xml/scap/ssg/content/ssg-*-ds.xml"):  # SCAP Security Guide (compliance)
+        return p, os.path.basename(p)
+    rel = _os_release()                                                  # distro CVE OVAL (vulnerability)
+    rid = (rel.get("ID") or "").lower()
+    code = (rel.get("VERSION_CODENAME") or "").lower()
+    try:
+        if rid == "ubuntu" and code:
+            u = f"https://security-metadata.canonical.com/oval/com.ubuntu.{code}.cve.oval.xml.bz2"
+            return _download(u, os.path.join(workdir, "ubuntu.cve.oval.xml.bz2")), f"com.ubuntu.{code}.cve.oval"
+        if rid == "debian" and code:
+            u = f"https://www.debian.org/security/oval/oval-definitions-{code}.xml"
+            return _download(u, os.path.join(workdir, "debian.oval.xml")), f"debian-{code}.oval"
+    except Exception as e:
+        print(f"[oval] flux distro indisponible : {e}", file=sys.stderr)
+    return None, None
+
+
+def _ns(tag):
+    return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+
+def parse_oval_results(results_path, content_path, limit=20000):
+    """Merge oscap OVAL results (definition→result) with the content (definition→
+    class / title / CVE / CPE references). Streamed (iterparse) for large feeds."""
+    meta = {}
+    try:
+        for _, el in ET.iterparse(content_path, events=("end",)):
+            if _ns(el.tag) == "definition" and el.get("id"):
+                title = ""; cves = []; cpes = []; sev = ""
+                for sub in el.iter():
+                    t = _ns(sub.tag)
+                    if t == "title" and not title:
+                        title = (sub.text or "").strip()
+                    elif t == "reference":
+                        src = (sub.get("source") or "").upper(); rid = sub.get("ref_id") or ""
+                        if src == "CVE" and rid:
+                            cves.append(rid)
+                        elif src == "CPE" and rid:
+                            cpes.append(rid)
+                    elif t == "severity" and not sev:
+                        sev = (sub.text or "").strip()
+                meta[el.get("id")] = {"class": el.get("class", ""), "title": title[:1000],
+                                      "cves": cves, "cpes": cpes, "severity": sev}
+                el.clear()
+    except Exception as e:
+        print(f"[oval] parse contenu : {e}", file=sys.stderr)
+    out = []
+    try:
+        for _, el in ET.iterparse(results_path, events=("end",)):
+            if _ns(el.tag) == "definition" and el.get("definition_id"):
+                m = meta.get(el.get("definition_id"), {})
+                out.append({
+                    "definition_id": el.get("definition_id"),
+                    "class": m.get("class") or el.get("class", ""),
+                    "result": el.get("result", ""),
+                    "title": m.get("title", ""), "severity": m.get("severity", ""),
+                    "cves": m.get("cves", []), "cpes": m.get("cpes", []),
+                })
+                el.clear()
+                if len(out) >= limit:
+                    break
+    except Exception as e:
+        print(f"[oval] parse résultats : {e}", file=sys.stderr)
+    return out
+
+
+def _is_datastream(path):
+    """A SCAP datastream / XCCDF benchmark (needs `oscap xccdf eval`, not `oval eval`)."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(4000).decode("utf-8", "replace").lower()
+        return ("data-stream" in head) or ("<benchmark" in head) or ("xccdf" in head)
+    except Exception:
+        return False
+
+
+def _xccdf_profile(content):
+    """Pick an XCCDF profile for `oscap xccdf eval`: env `XOR_XCCDF_PROFILE`, else the
+    benchmark's profiles via `oscap info` (prefer cis/stig/standard/pci), else None."""
+    env = os.environ.get("XOR_XCCDF_PROFILE")
+    if env:
+        return env
+    try:
+        r = subprocess.run(["oscap", "info", content], capture_output=True, text=True, timeout=60)
+        profs = list(dict.fromkeys(re.findall(r"xccdf_[\w.\-]+_profile_[\w.\-]+", r.stdout)))
+        if not profs:
+            return None
+        for kw in ("cis", "stig", "standard", "pci", "hipaa"):
+            for p in profs:
+                if kw in p.lower():
+                    return p
+        return profs[0]
+    except Exception:
+        return None
+
+
+def parse_arf_results(path, limit=20000):
+    """Unified parse of an oscap ARF / XCCDF-results report (both OVAL definitions+results
+    and XCCDF rule-results) → the same item list /api/agent/oval expects."""
+    try:
+        root = ET.parse(path).getroot()
+    except Exception as e:
+        print(f"[oval] parse ARF : {e}", file=sys.stderr)
+        return []
+    meta = {}
+    for el in root.iter():
+        if _ns(el.tag) == "definition" and el.get("id"):
+            title = ""; cves = []; cpes = []
+            for sub in el.iter():
+                st = _ns(sub.tag)
+                if st == "title" and not title:
+                    title = (sub.text or "").strip()
+                elif st == "reference":
+                    src = (sub.get("source") or "").upper(); rid = sub.get("ref_id") or ""
+                    if src == "CVE" and rid:
+                        cves.append(rid)
+                    elif src == "CPE" and rid:
+                        cpes.append(rid)
+            meta[el.get("id")] = {"class": el.get("class", ""), "title": title[:1000], "cves": cves, "cpes": cpes}
+    out = []
+    for el in root.iter():                                  # OVAL results
+        if _ns(el.tag) == "definition" and el.get("definition_id"):
+            m = meta.get(el.get("definition_id"), {})
+            out.append({"definition_id": el.get("definition_id"), "class": m.get("class") or el.get("class", ""),
+                        "result": el.get("result", ""), "title": m.get("title", ""), "severity": "",
+                        "cves": m.get("cves", []), "cpes": m.get("cpes", [])})
+    rules = {}
+    for el in root.iter():                                  # XCCDF rule titles/severity
+        if _ns(el.tag) == "Rule" and el.get("id"):
+            title = ""
+            for sub in el:
+                if _ns(sub.tag) == "title":
+                    title = (sub.text or "").strip(); break
+            rules[el.get("id")] = {"title": title, "severity": el.get("severity", "")}
+    for el in root.iter():                                  # XCCDF rule-results → compliance
+        if _ns(el.tag) == "rule-result" and el.get("idref"):
+            result = ""
+            for sub in el:
+                if _ns(sub.tag) == "result":
+                    result = (sub.text or "").strip(); break
+            if result:
+                ru = rules.get(el.get("idref"), {})
+                out.append({"definition_id": el.get("idref"), "class": "compliance", "result": result,
+                            "title": ru.get("title", ""), "severity": ru.get("severity", ""), "cves": [], "cpes": []})
+            if len(out) >= limit:
+                break
+    return out
 
 
 def _builtin_compliance():
@@ -450,15 +686,46 @@ class XorAgent:
         return len(vulns)
 
     def do_oval(self):
-        res = oval_scan()
-        fails = [c for c in res.get("checks", []) if c.get("result") == "fail"]
-        self._post("/api/agent/events", {"events": [{
-            "type": "compliance", "severity": "medium" if fails else "info",
-            "title": f"Config scan ({res['engine']}): {len(fails)} fail / {len(res.get('checks', []))}",
-            "detail": res,
-        }]})
-        print(f"[oval] {len(res.get('checks', []))} contrôles, {len(fails)} en échec")
-        return len(fails)
+        """Real OVAL evaluation via OpenSCAP against the distro/SSG content; posts the
+        classified verdicts to /api/agent/oval (→ OVALRESULTS + ASSETVULNERABILITY/CPE).
+        Falls back to the built-in config checks when oscap or content is unavailable."""
+        workdir = tempfile.mkdtemp(prefix="xor-oval-")
+        try:
+            rel = _os_release()
+            platform = f"{(rel.get('ID') or '').lower()}-{(rel.get('VERSION_CODENAME') or '').lower()}".strip("-")
+            content, cid = _oval_content(workdir, self.server, self.token, self.insecure, platform)
+            if content and _which("oscap"):
+                if _is_datastream(content):  # SCAP/XCCDF datastream → xccdf eval (compliance + OVAL via ARF)
+                    arf = os.path.join(workdir, "arf.xml")
+                    cmd = ["oscap", "xccdf", "eval", "--results-arf", arf]
+                    prof = _xccdf_profile(content)
+                    if prof:
+                        cmd += ["--profile", prof]
+                        print(f"[oval] XCCDF profile: {prof}")
+                    cmd.append(content)
+                    _tolerant_run(cmd, timeout=1800)
+                    items = parse_arf_results(arf) if os.path.exists(arf) else []
+                else:                        # plain OVAL definitions → oval eval
+                    results = os.path.join(workdir, "oval-results.xml")
+                    _tolerant_run(["oscap", "oval", "eval", "--results", results, content], timeout=1800)
+                    items = parse_oval_results(results, content) if os.path.exists(results) else []
+                if items:
+                    st, d = self._post("/api/agent/oval", {"engine": "openscap", "content": cid,
+                                                           "system": self.si, "results": items})
+                    print(f"[oval] {len(items)} verdicts via oscap ({cid}) → "
+                          f"{d.get('vulnerabilities', 0)} CVE, conformité {d.get('compliance')} ({st})")
+                    return len(items)
+            # fallback: portable built-in config/compliance checks
+            checks = _builtin_compliance()
+            items = [{"definition_id": c["id"], "class": "compliance",
+                      "result": "true" if c["result"] == "pass" else "false" if c["result"] == "fail" else "unknown",
+                      "title": c["title"], "severity": ""} for c in checks]
+            st, d = self._post("/api/agent/oval", {"engine": "builtin", "content": "builtin-compliance",
+                                                   "system": self.si, "results": items})
+            print(f"[oval] oscap/contenu OVAL absent — {len(items)} contrôles intégrés → {st}")
+            return len(items)
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
 
     def do_av(self):
         res = av_scan()

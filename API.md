@@ -34,7 +34,7 @@ leaked key cannot mint more keys.
 **Scopes & expiry.** Each key holds scopes — the presets **read-only** /
 **read+write**, or fine-grained tokens (`assets:read`, `assets:write`,
 `incidents:read`, `incidents:write`, `exposure:read`, `risk:read`,
-`identities:read`). An endpoint
+`identities:read`, `compliance:read`, `policies:read`). An endpoint
 returns `403` if the key lacks its scope (e.g. `POST /incidents` needs
 `incidents:write`). Rules: `write` grants everything; `read` grants all `*:read`;
 `<res>:write` implies `<res>:read`. Writes are *also* governed by the user's RBAC.
@@ -98,18 +98,24 @@ plus a `summary` with per-target breach rates.
 
 ### Governance
 
-Inventory + worklist views with a derived 0–100 risk score per item — the same
-data behind the in-app **Asset Management** and **Identities & IAM** pages.
+Inventory + worklist views with a derived 0–100 score per item — the same data
+behind the in-app **Asset Management**, **Identities & IAM**, **Incident
+Management**, **Compliance & GRC** and **Policies & Documents** pages.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/asset-management` | `assets:read` | Asset inventory + governance findings (owner / Internet exposure / backup / controls / BIA / KEV-critical vulns) |
 | `GET` | `/identities` | `identities:read` | Identity inventory (human + non-human) + findings (orphaned NHI / privileged / stale / expiring credentials / missing MFA) |
+| `GET` | `/incident-management` | `incidents:read` | Incident inventory + response worklist (open critical / SLA-RTO breach / unassigned / stale / compromise) + MTTR |
+| `GET` | `/compliance-management` | `compliance:read` | Audit inventory + remediation worklist (open findings by severity / overdue / unassigned / policies past review) + posture score |
+| `GET` | `/policy-management` | `policies:read` | Policy lifecycle inventory + document register + worklist (overdue reviews / unpublished / unowned / missing version / expired documents) + per-policy governance score |
 
-Each returns `{ rows, findings, summary }`: `rows` is the scored inventory,
-`findings` is the severity-sorted worklist, and `summary` holds the headline
-counters (e.g. `crownJewels`, `internetFacing`, `withCriticalVulns` for assets;
-`nonHuman`, `privileged`, `orphaned`, `mfaGaps` for identities).
+Each returns `{ rows, findings, summary }` (policy adds a `documents` array):
+`rows` is the scored inventory, `findings` is the severity-sorted worklist, and
+`summary` holds the headline counters (e.g. `crownJewels`, `internetFacing`,
+`withCriticalVulns` for assets; `nonHuman`, `privileged`, `orphaned`, `mfaGaps`
+for identities; `published`, `overdueReview`, `noOwner`, `expiredDocs`,
+`byFramework`, `byLanguage` for policies).
 
 ---
 
