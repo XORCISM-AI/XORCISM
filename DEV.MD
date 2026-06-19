@@ -16,7 +16,6 @@ XORCISM/
 ├── agent/               XOR endpoint agent (Python)
 ├── taxii/               TAXII 2.1 server / client (Python, Flask)
 ├── stix/                Sample STIX 2.1 bundles (test data for the STIX graph)
-├── website/             Marketing site (static HTML/JS) + community forum (PHP/MariaDB)
 ├── xorcism_php/         Standalone PHP portal (Infomaniak shared-hosting variant)
 ├── databases/           Generated SQLite schema dumps (*.sql) + build output (*.db)
 ├── docs/                Design docs (connectors, deployment, hardening)
@@ -176,7 +175,7 @@ build artifacts. `uploads/` holds user-uploaded evidence files.
 | `providers/provider_nessus.py` | Nessus `.nessus` report parser (legacy provider path). |
 | `tests/test_models.py`, `tests/test_utils.py` | Smoke tests (models import, `SELECT 1` per DB, utils). Run with `pytest`. |
 
-**Keep models in sync with the live DBs** (see §10.2). `generate_models.ps1`
+**Keep models in sync with the live DBs** (see §9.2). `generate_models.ps1`
 can regenerate a model module wholesale from the SQLite schema, but it discards
 hand-written comments/refinements — prefer targeted manual edits.
 
@@ -204,39 +203,7 @@ hand-written comments/refinements — prefer targeted manual edits.
 
 ---
 
-## 6. `website/` — marketing site & forum
-
-Static marketing site (no build step — edit and publish as-is):
-
-| File | Purpose |
-|---|---|
-| `index.html`, `connectors.html`, `compliance.html`, `teams.html`, `about.html`, `cookies.html`, `privacy.html`, `terms.html`, `legal.html` | Pages (EN inline text + `data-i18n` keys). |
-| `js/i18n.js` | FR translation dictionary + language switcher. **Every `data-i18n` key used in HTML must exist here.** |
-| `js/site.js` | Nav, reveal animations, misc page JS. |
-| `js/consent.js` | Cookie-consent banner (decline non-essential by default). |
-| `css/site.css` | Site styles. |
-| `newsletter.php`, `antibot.php` | Newsletter signup endpoint + bot protection. |
-
-`website/forum/` — community forum, PHP 8 + **MariaDB** (PDO):
-
-| File | Purpose |
-|---|---|
-| `index.php` | Front controller / router. |
-| `config.php` | Defaults (driver `mysql`); merges `config.local.php` (**not committed — holds the DB password**; example provided). |
-| `lib/db.php` | PDO bootstrap + portable DDL (DATETIME vs TEXT), auto-creates tables on first load. |
-| `lib/auth.php`, `lib/security.php`, `lib/antibot.php`, `lib/captcha.php`, `lib/helpers.php` | Sessions/passwords, CSRF/headers, rate limiting, captcha, view helpers. |
-| `views/*.php` | Templates: layout, home, category, thread, new_thread, edit_post, login/register/forgot/reset, admin. |
-| `assets/forum.css`, `php.ini.sample`, `.htaccess` | Styles, required PHP extensions (`pdo_mysql`, `mysqli`), Apache rules. |
-
-`xorcism_php/` — separate lightweight PHP portal for shared hosting
-(Infomaniak): same lib layout (`lib/`, `views/`, `public/`), its own
-`schema/xorcism_core.sql`, themes under `public/assets/css/themes/`. See its
-`README.md` and `docs/DEPLOY-INFOMANIAK.md`. It does **not** share code with
-`xorcism_ts` — changes there must be ported manually if relevant.
-
----
-
-## 7. Root scripts & docs
+## 6. Root scripts & docs
 
 | File | Purpose |
 |---|---|
@@ -252,7 +219,7 @@ Static marketing site (no build step — edit and publish as-is):
 
 ---
 
-## 8. Build, run, and verify
+## 7. Build, run, and verify
 
 ```powershell
 cd xorcism_ts
@@ -284,9 +251,9 @@ server is the classic cause of “`Cannot POST /api/...` returns HTML”).
 
 ---
 
-## 9. Architecture rules you must respect
+## 8. Architecture rules you must respect
 
-### 9.1 Security & RBAC
+### 8.1 Security & RBAC
 - **Permissions** = XPERMISSION rows `(RoleID, ResourceType 'page'|'database'|'table'|'field', ResourceKey, CanCreate/Read/Update/Delete)`.
   `userCan` gives the **table rule priority over the database rule** — so you
   hide a table from non-admins by UPSERTing a deny row: RoleID=2 (`User`),
@@ -304,7 +271,7 @@ server is the classic cause of “`Cannot POST /api/...` returns HTML”).
   behind the auth gate; admin routes behind `requireAdmin`. Always add `deny()`
   + `xid.addAudit` on sensitive mutations (copy an existing route as template).
 
-### 9.2 Database conventions
+### 8.2 Database conventions
 - SQLite, synchronous access via `better-sqlite3`; one shared connection per DB.
 - **Integer PKs are MAX+1** (no AUTOINCREMENT except in XID) — compute inside a
   transaction when inserting (see `setAuditAssets` for the pattern).
@@ -316,29 +283,28 @@ server is the classic cause of “`Cannot POST /api/...` returns HTML”).
 - SQLite can’t ALTER constraints: to relax NOT NULL you rebuild the table
   (CREATE new + INSERT…SELECT + DROP + RENAME, in one transaction).
 
-### 9.3 Background loops (in-process, no cron)
+### 8.3 Background loops (in-process, no cron)
 `scheduler.ts` (connector schedules) and `riskscore.ts` (asset + enterprise
 scores) tick every 30 s; both are started from `index.ts` and `unref()`ed.
 Keep new periodic work in this pattern; make ticks idempotent and cheap, and
 write history rows **only on change** (see riskscore for the template).
 
-### 9.4 i18n
+### 8.4 i18n
 Any user-visible string in the web app needs a key in **both** FR and EN
-dictionaries of `client/ts/i18n.ts` (use `t("key")` / `data-i18n`). The
-marketing site equivalent is `website/js/i18n.js` (FR dict; EN is inline HTML).
+dictionaries of `client/ts/i18n.ts` (use `t("key")` / `data-i18n`).
 
 ---
 
-## 10. Maintenance playbook (how-to recipes)
+## 9. Maintenance playbook (how-to recipes)
 
-### 10.1 Add an API endpoint
+### 9.1 Add an API endpoint
 1. Data function in `server/db.ts` (or the relevant module).
 2. Route in the right `server/routes/*.ts` with `userCan` + tenant guard + audit.
 3. Client method in `client/ts/api.ts`.
 4. UI consumption in the page’s ts file.
 5. Rebuild server + client, restart, verify with a throwaway user, clean up.
 
-### 10.2 Add a column to an existing table
+### 9.2 Add a column to an existing table
 1. `ALTER TABLE ... ADD COLUMN` on the live DB in `DB_DIR` (script it with
    better-sqlite3; check `PRAGMA table_info` first for idempotence).
 2. Mirror it in the matching `xorcism_python/models/<db>.py` model.
@@ -346,20 +312,20 @@ marketing site equivalent is `website/js/i18n.js` (FR dict; EN is inline HTML).
 4. The Explorer picks it up automatically (schema-driven); add registry entries
    (§2.4) if it needs a widget; add to `READONLY_FORM_COLUMNS` if server-owned.
 5. **Import/Export need NO changes.** Both are schema-driven and require zero
-   per-table maintenance — see §10.9.
+   per-table maintenance — see §9.9.
 
-### 10.3 Customize a form field or grid
+### 9.3 Customize a form field or grid
 Add one entry to the relevant `app.ts` registry (§2.4) — dropdowns, date
 pickers, rich text, name-search, computed grid columns, reordering, hiding.
 Only build a bespoke widget when no registry fits (then follow the
 `appendAuditAssetSelector` pattern: helper + wire into open/insert/edit/submit).
 
-### 10.4 Hide tables from non-admin users
-UPSERT XPERMISSION deny rows as in §9.1, verify with a throwaway **User**
+### 9.4 Hide tables from non-admin users
+UPSERT XPERMISSION deny rows as in §8.1, verify with a throwaway **User**
 session that `/api/tables?db=...` no longer lists them, then log the request in
 `HIDE_TABLES.txt`. No rebuild needed (data-only change).
 
-### 10.5 Add a connector
+### 9.5 Add a connector
 1. Create `connectors/<id>/connector.json` (validate against
    `manifest.schema.json`): tool-runner = `command` (argv template) + `parser`;
    import = `run` (module exposing `run(params, workdir)` → normalized result
@@ -369,24 +335,24 @@ session that `/api/tables?db=...` no longer lists them, then log the request in
 3. No server change needed — the registry auto-discovers the folder. Mention it
    in `docs/CONNECTORS.md` and the marketing catalog if public-facing.
 
-### 10.6 Add a page
+### 9.6 Add a page
 HTML in `client/` + entry ts in `client/ts/` (esbuild auto-globs entries; check
 `esbuild.config.js`), include `session-ui.js`, register the static route/auth
 gate in `index.ts`, add page permission handling if non-admin access differs.
 
-### 10.7 Modify the RiskScore formulas
+### 9.7 Modify the RiskScore formulas
 Asset barème in `AssetRiskScoreCalculator.compute()`, tenant aggregate in
 `computeEnterpriseRiskScore()` (both in `server/riskscore.ts`). Keep
 `compute()` pure (no writes) so it stays unit-testable; record functions handle
 persistence/dedup. Verify with synthetic rows covering every branch (including
 should-be-ignored cases), then clean up.
 
-### 10.8 Regenerate databases or models (rare, destructive)
+### 9.8 Regenerate databases or models (rare, destructive)
 `create_databases.ps1` rebuilds empty schema DBs (then re-copy to DB_DIR —
 this wipes data); `generate_models.ps1` rewrites model files (loses manual
-edits). Prefer incremental ALTERs (§10.2) on a live system.
+edits). Prefer incremental ALTERs (§9.2) on a live system.
 
-### 10.9 Import / Export (JSON & CSV) — auto-synced, do not hardcode
+### 9.9 Import / Export (JSON & CSV) — auto-synced, do not hardcode
 The Explorer's **Import JSON/CSV** and **Export CSV/Excel** are **schema-driven
 and require no maintenance** when you add or change tables/columns:
 
@@ -411,7 +377,7 @@ stamped, and risk levels computed — with no import-specific code.
 
 ---
 
-## 11. Known pitfalls
+## 10. Known pitfalls
 
 - **Stale server**: new routes 404 with an HTML error page until rebuild+restart.
 - **OneDrive**: anything under OneDrive with an open SQLite handle will corrupt
