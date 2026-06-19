@@ -1,0 +1,15 @@
+{
+  "id": "telegram-osint",
+  "name": "Telegram OSINT (Dark Web Informer)",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports Telegram OSINT investigations from telegram_osint (Dark Web Informer edition, https://github.com/DarkWebInformer/telegram_osint). The tool profiles Telegram users, channels and groups (Telethon) and exports a structured JSON file (./exports/*.json) for the user / chat / members / search modes. This connector ingests that JSON export and maps it into the XORCISM model: the investigated subject (user / channel / group) becomes an ASSET (tg:<handle|title>); shared / linked real domains become host ASSETs; and notable items become findings (VULN) — a scam/fake/restricted flag, a keyword-search hit (snippet truncated), and investigative pivots (other @handles, t.me links, external/social links). Privacy-aware: phone numbers and personal names are NOT imported as findings — only handles, links, domains, risk flags and truncated keyword snippets. Read-only import (no DB access in run.py, worker-safe). Live collection needs Telegram API credentials + Telethon + interactive auth on YOUR account, so this connector is import-only: run telegram_osint.py yourself (`--export json`) and pass the exported JSON via the 'file' parameter.",
+  "intrusive": false,
+  "permission": "connector:telegram-osint",
+  "run": "run.py",
+  "mapping": "telegram-osint",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a telegram_osint JSON export (exports/<name>_<mode>_<ts>.json) — user / chat / members / search." },
+    { "name": "limit", "type": "int", "required": false, "default": 500, "min": 1, "max": 20000, "help": "Maximum number of findings to import (keyword hits / pivots / shared domains)." }
+  ]
+}

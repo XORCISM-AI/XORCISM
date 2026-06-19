@@ -1,0 +1,39 @@
+[
+  {
+    "type": "chat",
+    "generated_at": "2026-06-19T10:00:00",
+    "investigator": "@analyst",
+    "id": 1234567890,
+    "title": "LeakBase Market",
+    "username": "leakbasechan",
+    "description": "Fresh dumps daily. Mirror: leak-mirror.example.onion. Contact @leakadmin",
+    "members_count": 8421,
+    "is_verified": false,
+    "is_scam": true,
+    "is_fake": false,
+    "analytics": {
+      "top_domains": [["mega.nz", 41], ["anonfiles.example", 22], ["acme-corp.com", 7]],
+      "top_mentions": [["@leakadmin", 30], ["@dumpsbot", 12]]
+    },
+    "pivots": {
+      "mentions": ["@leakadmin", "@dumpsbot"],
+      "tme_links": ["https://t.me/leakbase_backup", "https://t.me/+AbCdEfGhIjK"],
+      "socials": [["twitter", "https://twitter.com/leakbase"], ["github", "https://github.com/leakbase-tools"]]
+    },
+    "messages": [
+      { "id": 1, "date": "2026-06-18T22:14:00", "text": "New acme-corp.com employee database leaked, 12k rows" }
+    ]
+  },
+  {
+    "type": "search",
+    "generated_at": "2026-06-19T10:05:00",
+    "investigator": "@analyst",
+    "title": "DarkMarket Chat",
+    "username": "darkmarketchat",
+    "keyword": "acme-corp",
+    "messages": [
+      { "id": 88, "date": "2026-06-17T09:30:00", "text": "selling acme-corp.com VPN creds, DM @vendor1" },
+      { "id": 92, "date": "2026-06-18T15:10:00", "text": "acme-corp RDP access available, 0.4 BTC" }
+    ]
+  }
+]

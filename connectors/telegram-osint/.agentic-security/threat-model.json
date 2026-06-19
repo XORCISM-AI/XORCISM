@@ -1,0 +1,21 @@
+{
+  "entities": [],
+  "boundaries": [],
+  "assets": [],
+  "threats": [
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-327",
+      "family": "crypto-weak-hash",
+      "severity": "medium",
+      "file": "run.py",
+      "line": 69,
+      "vuln": "Weak hash algorithm (MD5 / SHA-1 / MD2 / MD4) used",
+      "finding_id": "crypto-weak-hash:run.py:69",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": []
+}

@@ -1,0 +1,17 @@
+{
+  "id": "vice",
+  "name": "VICE — web-app security auditor (SAST + DAST)",
+  "type": "import",
+  "category": "Web Scanner",
+  "description": "Security audit with VICE (vice-security, https://github.com/Webba-Creative-Technologies/vice) — a black-box & white-box auditor for web applications. White-box: audits a project directory (source code, .env exposure, npm audit, Supabase RLS, SQLi/XSS). Black-box: crawls a URL, extracts secrets from JS bundles, tests login for brute-force / SQLi, scans ports. VICE emits SARIF, so this connector maps its findings into the XORCISM model via the shared SARIF parser: the audited project / scanned host becomes an ASSET and each finding becomes a VULN (ref = CVE if referenced, else VICE-<rule>@<file:line>; severity from the SARIF security-severity / level). Read-only import (worker-safe, no DB access in run.py). Offline mode: pass a saved VICE SARIF report via the 'file' parameter. Live mode runs VICE (Node ≥18 + `npm install` in the clone, or `npm install -g vice-security`); locate it via VICE_PATH (default C:\\tools\\vice\\bin\\vice.js) or `vice` on PATH; VICE_ACCEPT_TERMS=1 is set automatically.",
+  "intrusive": true,
+  "permission": "connector:vice",
+  "run": "run.py",
+  "mapping": "vice",
+  "parameters": [
+    { "name": "source", "type": "string", "required": false, "help": "White-box: path on the worker to a project directory to audit (e.g. /srv/app). Maps to `vice audit <source>`." },
+    { "name": "url", "type": "url", "required": false, "help": "Black-box: a URL in scope to scan (e.g. https://app.example.com). Maps to `vice scan --url <url>`. Intrusive — engagement scope is enforced." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: path on the worker to a saved VICE SARIF report to import instead of running a scan." },
+    { "name": "min_score", "type": "int", "required": false, "default": 0, "min": 0, "max": 100, "help": "White-box audit: VICE --min-score threshold (0 imports all findings)." }
+  ]
+}
