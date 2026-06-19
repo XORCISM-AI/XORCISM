@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "tool": "Lyra CTI v1.0",
+    "target": "Acme Corp",
+    "start_time": "2026-06-19T10:00:00Z",
+    "end_time": "2026-06-19T10:05:00Z",
+    "keywords": ["ACMECORP", "acmecorporation"],
+    "global_risk": "ÉLEVÉ"
+  },
+  "summary": {
+    "total_findings": 4,
+    "sources_analyzed": 10,
+    "by_criticality": { "CRITIQUE": 0, "ÉLEVÉ": 2, "MOYEN": 1, "FAIBLE": 1 },
+    "by_type": { "credential": 1, "domain_scan": 1, "mention": 1, "ransomware": 0 }
+  },
+  "findings": [
+    {
+      "source": "Have I Been Pwned",
+      "url": "https://haveibeenpwned.com/DomainSearch/acme.com",
+      "title": "Domaine acme.com trouvé dans 3 breach(es) HIBP",
+      "type": "credential",
+      "type_label": "Fuite de credentials",
+      "criticality": "ÉLEVÉ",
+      "confidence": "Élevé",
+      "summary": "3 brèche(s) impliquant le domaine acme.com. Comptes concernés dans: jdoe, asmith.",
+      "data_types": ["emails", "passwords"],
+      "domain": "acme.com",
+      "timestamp": "10:02:14"
+    },
+    {
+      "source": "Shodan",
+      "url": "https://www.shodan.io/host/203.0.113.10",
+      "title": "IP 203.0.113.10 (acme.com): ports sensibles exposés",
+      "type": "domain_scan",
+      "type_label": "Exposition infrastructure",
+      "criticality": "ÉLEVÉ",
+      "confidence": "Élevé",
+      "summary": "Ports risqués ouverts: [22, 3389]. Tous ports: [22, 80, 443, 3389].",
+      "data_types": ["ip", "ports", "services"],
+      "domain": "acme.com",
+      "timestamp": "10:03:01"
+    },
+    {
+      "source": "crt.sh",
+      "url": "https://crt.sh/?q=%.acme.com",
+      "title": "412 certificats SSL pour acme.com (5 inhabituels)",
+      "type": "mention",
+      "type_label": "Mention publique",
+      "criticality": "FAIBLE",
+      "confidence": "Élevé",
+      "summary": "Sous-domaines inhabituels exposés via Certificate Transparency: staging.acme.com, internal.acme.com, dev-api.acme.com",
+      "data_types": ["subdomains", "certificates"],
+      "domain": "acme.com",
+      "timestamp": "10:04:10"
+    },
+    {
+      "source": "GitHub",
+      "url": "https://github.com/search?q=acmecorporation",
+      "title": "Token potentiel dans un dépôt public mentionnant acmecorporation",
+      "type": "mention",
+      "type_label": "Mention publique",
+      "criticality": "MOYEN",
+      "confidence": "Moyen",
+      "summary": "Référence à acme.fr dans un fichier de configuration public.",
+      "data_types": ["secrets"],
+      "domain": "acme.fr",
+      "timestamp": "10:04:55"
+    }
+  ],
+  "timeline": []
+}

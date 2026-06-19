@@ -1,0 +1,20 @@
+{
+  "id": "lyra",
+  "name": "Lyra — CTI / OSINT digital-risk monitor",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Defensive OSINT / digital-risk-protection monitoring with Lyra (CTI Monitor by K3lgy, https://github.com/K3lgy/lyra). Lyra scans ~10 open-web / OSINT sources (Have I Been Pwned, DeHashed, VirusTotal, URLScan.io, Shodan, GitHub, paste sites, Google dorks, Ransomware.live, crt.sh) for public mentions, leaked credentials and exposed infrastructure of an organisation, scores each finding (CRITIQUE/ÉLEVÉ/MOYEN/FAIBLE) and exports a JSON report. This connector maps that report to the XORCISM model: discovered hosts / subdomains / IPs become ASSETs, Shodan-exposed services become SERVICEs, and each finding becomes a redacted exposure (VULN) on the relevant asset (or the monitored organisation as a fallback). For defensive use on YOUR OWN organisation only. Read-only (non-intrusive): no DB access in run.py (worker-safe). API keys are read from the worker ENVIRONMENT, never the UI: LYRA_HIBP, LYRA_VIRUSTOTAL, LYRA_SHODAN, LYRA_URLSCAN, LYRA_DEHASHED, LYRA_DEHASHED_EMAIL. Lyra's location: LYRA_PATH (default C:\\tools\\lyra\\lyra.py) or `lyra.py` on PATH; live mode needs Python 3.8+ and `pip install requests` on the worker. Offline mode: pass a saved lyra_report.json via the 'file' parameter (no network, no keys).",
+  "intrusive": false,
+  "permission": "connector:lyra",
+  "run": "run.py",
+  "mapping": "lyra",
+  "parameters": [
+    { "name": "name", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._&@/,'-]+$", "help": "Organisation / company name under monitoring (labels findings; fallback asset). Required for live mode." },
+    { "name": "domains", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ,._-]*$", "help": "Comma-separated domains you own (e.g. acme.com,acme.fr). Drives HIBP / crt.sh / Shodan / VirusTotal." },
+    { "name": "emails", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ,._%+@-]*$", "help": "Comma-separated organisation email addresses to check for breach exposure." },
+    { "name": "brands", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ,._&-]*$", "help": "Comma-separated brand / product names to search for public mentions." },
+    { "name": "keywords", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ,._-]*$", "help": "Extra search keywords (registration numbers, internal code names…)." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: path on the worker to a saved Lyra JSON report (lyra_report.json) to import instead of running a live scan." },
+    { "name": "limit", "type": "int", "required": false, "default": 1000, "min": 1, "max": 20000, "help": "Maximum number of findings to import." }
+  ]
+}
