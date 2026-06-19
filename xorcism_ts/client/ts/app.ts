@@ -1022,6 +1022,11 @@ const GRID_DISPLAY_COLUMNS: Record<string, GridDisplaySpec[]> = {
     { db: "XORCISM", table: "CONTROL", idCol: "ControlID", labelCol: "ControlName", hintLabel: "ControlName", srcCol: "ControlID", colLabel: "ControlName" },
     { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "PersonName", srcCol: "PersonID", colLabel: "PersonName" },
   ],
+  // BACKUPPLAN: resolved asset & owner names, shown right after AssetID / PersonID.
+  BACKUPPLAN: [
+    { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetID", colLabel: "AssetName" },
+    { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "PersonName", srcCol: "PersonID", colLabel: "PersonName" },
+  ],
   // IDENTITY: resolved owner & bound-asset names, shown right after OwnerPersonID / AssetID.
   IDENTITY: [
     { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "OwnerName", srcCol: "OwnerPersonID", colLabel: "OwnerName" },
@@ -2199,6 +2204,7 @@ for (const t of ["THREAT", "THREATACTOR", "THREATCAMPAIGN", "ATTACKGROUP", "ATTA
 STATIC_DATALIST_COLUMNS["IOC.Score"] = OPENCTI_CONFIDENCE_PRESETS;
 STATIC_DATALIST_COLUMNS["OBSERVABLE.Score"] = OPENCTI_CONFIDENCE_PRESETS;
 STATIC_DATALIST_COLUMNS["OBSERVABLE.ObservableType"] = STIX_SCO_TYPES;
+CHECKBOX_COLUMNS["ASSET.Backed"] = { checked: "1", unchecked: "0", default: "0" }; // backed up? (boolean 0/1)
 CHECKBOX_COLUMNS["IOC.Detection"] = { checked: "1", unchecked: "0", default: "0" };
 CHECKBOX_COLUMNS["SIGHTING.Negative"] = { checked: "1", unchecked: "0", default: "0" };
 FK_COLUMNS["SIGHTING.IOCID"] = { db: "XTHREAT", table: "IOC", idCol: "IOCID", labelCol: "IOCName", distinct: true };
@@ -2251,6 +2257,19 @@ STATIC_DATALIST_COLUMNS["ASSETCONTROL.Status"] = ["Planned", "Implemented", "Par
 STATIC_DATALIST_DEFAULTS["ASSETCONTROL.Status"] = "Planned";
 STATIC_DATALIST_COLUMNS["ASSETCONTROL.ConfidenceLevel"] = ["High", "Medium", "Low"];
 STATIC_DATALIST_DEFAULTS["ASSETCONTROL.ConfidenceLevel"] = "Medium";
+
+// BACKUPPLAN — backup & recovery plan for an asset: FK pickers (asset/owner) + type/schedule/status dropdowns.
+FK_COLUMNS["BACKUPPLAN.AssetID"] = { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true };
+FK_COLUMNS["BACKUPPLAN.PersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "Owner", distinct: true };
+STATIC_DATALIST_COLUMNS["BACKUPPLAN.Type"] = ["Manual", "Automated", "Full", "Incremental", "Differential", "Snapshot", "Continuous", "Cloud", "Offsite", "Tape"];
+STATIC_DATALIST_DEFAULTS["BACKUPPLAN.Type"] = "Automated";
+STATIC_DATALIST_COLUMNS["BACKUPPLAN.FrequencyUnit"] = ["Hours", "Days", "Weeks", "Months"];
+STATIC_DATALIST_DEFAULTS["BACKUPPLAN.FrequencyUnit"] = "Days";
+STATIC_DATALIST_COLUMNS["BACKUPPLAN.StorageLocation"] = ["On-site", "Offsite", "Cloud", "Tape", "NAS", "SAN", "Immutable", "Air-gapped"];
+STATIC_DATALIST_COLUMNS["BACKUPPLAN.Status"] = ["Planned", "Active", "Tested", "Failed", "Suspended", "Retired"];
+STATIC_DATALIST_DEFAULTS["BACKUPPLAN.Status"] = "Active";
+// Close the loop: ASSET.BackupPlanID picks a named plan from BACKUPPLAN.
+FK_COLUMNS["ASSET.BackupPlanID"] = { db: "XORCISM", table: "BACKUPPLAN", idCol: "BackupPlanID", labelCol: "BackupPlanName", searchLabel: "Backup plan", distinct: true };
 
 // IDENTITY (IAM) — human + non-human identity registry: owner/asset FK pickers + governance dropdowns.
 FK_COLUMNS["IDENTITY.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "Owner", distinct: true };

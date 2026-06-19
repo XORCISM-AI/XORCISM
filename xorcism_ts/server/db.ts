@@ -724,6 +724,7 @@ export function getSchema(dbName: string, table: string): object[] {
 export const TENANT_SCOPED_TABLES = new Set<string>([
   "XORCISM.ASSET",
   "XORCISM.ASSETCONTROL",
+  "XORCISM.BACKUPPLAN",
   "XORCISM.IDENTITY",
   "XORCISM.IDENTITYPERSON",
   "XORCISM.BIAAUDIT",
@@ -4058,11 +4059,53 @@ export function ensureAssetColumns(): void {
     if (!acCols.has("AssetControlGUID")) db.exec(`ALTER TABLE "ASSETCONTROL" ADD COLUMN "AssetControlGUID" TEXT`);
     if (!acCols.has("TenantID")) db.exec(`ALTER TABLE "ASSETCONTROL" ADD COLUMN "TenantID" INTEGER`);
   }
+
+  // BACKUPPLAN — define/manage a backup & recovery plan for an ASSET (referenced by
+  // ASSET.BackupPlanID). Tenant-isolated (in TENANT_SCOPED_TABLES) + a GUID. Captures
+  // the plan type (Manual/Automated…), schedule (Frequency + unit), retention, storage,
+  // recovery objectives (RPO/RTO) and the last run / last test.
+  db.exec(`CREATE TABLE IF NOT EXISTS "BACKUPPLAN" (
+    "BackupPlanID" INTEGER PRIMARY KEY,
+    "BackupPlanGUID" TEXT,
+    "BackupPlanName" TEXT,
+    "Description" TEXT,
+    "AssetID" INTEGER,
+    "Type" TEXT,
+    "Frequency" INTEGER,
+    "FrequencyUnit" TEXT,
+    "LastRun" DATE,
+    "LastTested" DATE,
+    "RetentionDays" INTEGER,
+    "StorageLocation" TEXT,
+    "RPOHours" REAL,
+    "RTOHours" REAL,
+    "PersonID" INTEGER,
+    "Status" TEXT,
+    "CreatedDate" DATE,
+    "ValidFrom" DATE,
+    "ValidUntil" DATE,
+    "TenantID" INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS ix_backupplan_asset ON "BACKUPPLAN"("AssetID");`);
+  // Idempotent adds for a BACKUPPLAN created before the management fields existed.
+  {
+    const have = new Set((db.prepare(`PRAGMA table_info("BACKUPPLAN")`).all() as { name: string }[]).map((c) => c.name));
+    const want: Record<string, string> = {
+      BackupPlanGUID: "TEXT", BackupPlanName: "TEXT", Description: "TEXT", Type: "TEXT",
+      Frequency: "INTEGER", FrequencyUnit: "TEXT", LastRun: "DATE", LastTested: "DATE",
+      RetentionDays: "INTEGER", StorageLocation: "TEXT", RPOHours: "REAL", RTOHours: "REAL", TenantID: "INTEGER",
+    };
+    for (const [n, t] of Object.entries(want)) if (!have.has(n)) db.exec(`ALTER TABLE "BACKUPPLAN" ADD COLUMN "${n}" ${t}`);
+  }
   if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSET'").get()) return;
   const existing = new Set(
     (db.prepare(`PRAGMA table_info("ASSET")`).all() as { name: string }[]).map((c) => c.name)
   );
-  const cols: Record<string, string> = { BusinessValue: "INTEGER" };
+  const cols: Record<string, string> = {
+    BusinessValue: "INTEGER",
+    Backed: "INTEGER",        // backed up? boolean (0/1)
+    BackupPlanID: "INTEGER",  // FK-style reference to a backup plan
+  };
   for (const [n, t] of Object.entries(cols)) {
     if (!existing.has(n)) db.exec(`ALTER TABLE "ASSET" ADD COLUMN "${n}" ${t}`);
   }

@@ -26366,6 +26366,8 @@ ALTER TABLE "ASSET" ADD COLUMN "HostPII" INTEGER;
 ALTER TABLE "ASSET" ADD COLUMN "BusinessValue" INTEGER;
 ALTER TABLE "ASSET" ADD COLUMN "SLAResponseHours" REAL;
 ALTER TABLE "ASSET" ADD COLUMN "SLAResolutionHours" REAL;
+ALTER TABLE "ASSET" ADD COLUMN "Backed" INTEGER;
+ALTER TABLE "ASSET" ADD COLUMN "BackupPlanID" INTEGER;
 ALTER TABLE "ASSETLOCATION" ADD COLUMN "AssetLocationName" TEXT;
 ALTER TABLE "CONFIDENTIALITYLEVEL" ADD COLUMN "ConfidentialityLevelName" TEXT;
 ALTER TABLE "CONFIDENTIALITYLEVEL" ADD COLUMN "ConfidentialityLevelDescription" TEXT;
@@ -26451,6 +26453,30 @@ CREATE TABLE IF NOT EXISTS "ASSETCONTROL" (
   "TenantID" INTEGER);
 CREATE INDEX IF NOT EXISTS ix_assetcontrol_asset ON "ASSETCONTROL"("AssetID");
 CREATE INDEX IF NOT EXISTS ix_assetcontrol_control ON "ASSETCONTROL"("ControlID");
+
+-- Backup & recovery plan for an ASSET (referenced by ASSET.BackupPlanID).
+CREATE TABLE IF NOT EXISTS "BACKUPPLAN" (
+  "BackupPlanID" INTEGER PRIMARY KEY,
+  "BackupPlanGUID" TEXT,
+  "BackupPlanName" TEXT,
+  "Description" TEXT,
+  "AssetID" INTEGER,
+  "Type" TEXT,
+  "Frequency" INTEGER,
+  "FrequencyUnit" TEXT,
+  "LastRun" DATE,
+  "LastTested" DATE,
+  "RetentionDays" INTEGER,
+  "StorageLocation" TEXT,
+  "RPOHours" REAL,
+  "RTOHours" REAL,
+  "PersonID" INTEGER,
+  "Status" TEXT,
+  "CreatedDate" DATE,
+  "ValidFrom" DATE,
+  "ValidUntil" DATE,
+  "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_backupplan_asset ON "BACKUPPLAN"("AssetID");
 
 -- Identity & Access Management (IAM) registry: human + non-human identities.
 CREATE TABLE IF NOT EXISTS "IDENTITY" (
