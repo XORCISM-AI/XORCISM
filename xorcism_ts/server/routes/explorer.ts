@@ -130,6 +130,7 @@ import { complianceInventory } from "../compliance";
 import { tidInventory } from "../tid";
 import { crisisInventory } from "../crisis";
 import { riskRegisterInventory } from "../riskregister";
+import { pqcmmInventory } from "../pqcmm";
 
 // Removes the forbidden columns from a row object (keeps rowid)
 function stripCols(row: Record<string, unknown>, denied: Set<string>): Record<string, unknown> {
@@ -343,6 +344,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
   const t = safe(() => tidInventory(tenant).summary);
   const cr = safe(() => crisisInventory(tenant).summary);
   const rr = safe(() => riskRegisterInventory(tenant).summary);
+  const pq = safe(() => pqcmmInventory(tenant).summary);
   res.json({
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
@@ -352,6 +354,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
     tid: t && { tidScore: t.tidScore, detectRate: t.detectRate, mitigateRate: t.mitigateRate, testRate: t.testRate, detectionFailed: t.detectionFailed, detectionRegressed: t.detectionRegressed, exposed: t.exposed, threatRelevant: t.threatRelevant },
     crisis: cr && { readinessScore: cr.readinessScore, exercises: cr.exercises, completionRate: cr.completionRate, scenarioCoverage: cr.scenarioCoverage, openActions: cr.openActions, overdueActions: cr.overdueActions, scenariosNeverExercised: cr.scenariosNeverExercised },
     risk: rr && { riskScore: rr.riskScore, open: rr.open, highCritical: rr.highCritical, untreated: rr.untreated, overdueReview: rr.overdueReview, treatedRate: rr.treatedRate, totalALE: rr.totalALE, currency: rr.currency },
+    pqcmm: pq && pq.assessments ? { maturityScore: pq.maturityScore, assessments: pq.assessments, quantumVulnerable: pq.quantumVulnerable, productionReady: pq.productionReady, managed: pq.managed } : null,
   });
 });
 

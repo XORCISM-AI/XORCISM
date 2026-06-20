@@ -92,6 +92,16 @@ const ENUM_COLUMNS: Record<string, string[]> = {
   "EXERCISEINJECT.InjectType": ["Event", "Decision", "Escalation", "Media", "Technical", "Communication"],
   "EXERCISEINJECT.Status": ["Template", "Pending", "In progress", "Responded", "Done", "Skipped"],
   "EXERCISEPARTICIPANT.CrisisRole": ["Incident Commander", "Communications Lead", "Legal / DPO", "HR", "IT / Security Lead", "Executive Sponsor", "Operations", "Scribe / Notetaker", "Observer", "Facilitator"],
+  // XCOMPLIANCE — PQCMM post-quantum-crypto maturity assessments
+  "PQCMMASSESSMENT.SubjectType": ["Asset", "Application", "Service", "Product", "Protocol", "Library", "Certificate / PKI"],
+  "PQCMMASSESSMENT.Status": ["Active", "Planned", "Retired", "Superseded"],
+  "PQCMMASSESSMENT.CurrentLevel": ["0", "1", "2", "3", "4", "5"],
+  "PQCMMASSESSMENT.TargetLevel": ["0", "1", "2", "3", "4", "5"],
+  // XORCISM — SCA / SBOM (Software Composition Analysis)
+  "SBOM.Format": ["CycloneDX", "SPDX"],
+  "SBOM.Source": ["upload", "import", "connector", "generated", "agent"],
+  "COMPONENT.ComponentType": ["application", "library", "framework", "operating-system", "container", "device", "firmware", "file", "data"],
+  "COMPONENT.Scope": ["required", "optional", "excluded"],
   // OCIL — result associated with an answer/choice (ResultType, NIST IR 7692)
   "ANSWERFORQUESTION.Result": ["PASS", "FAIL", "ERROR", "UNKNOWN", "NOT_TESTED", "NOT_APPLICABLE"],
   // THREAT — confidence / reliability levels (qualitative scale)
@@ -292,6 +302,16 @@ const FK_COLUMNS: Record<string, FkSpec> = {
   "TOOLDOCUMENT.ConfidenceReasonID": { db: "XORCISM", table: "CONFIDENCEREASON", idCol: "ConfidenceReasonID", labelCol: "ConfidenceReasonName", distinct: true },
   // ORGANISATIONRISKSCORE (XORCISM): per-organisation risk-score history.
   "ORGANISATIONRISKSCORE.OrganisationID": { db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", labelCol: "OrganisationName", distinct: true },
+  // PQCMM assessments (XCOMPLIANCE): subject asset + owner.
+  "PQCMMASSESSMENT.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true },
+  "PQCMMASSESSMENT.OwnerPersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true },
+  // SCA / SBOM (XORCISM): SBOM → asset/application/person; component → SBOM/asset/CPE.
+  "SBOM.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true },
+  "SBOM.ApplicationID": { db: "XORCISM", table: "APPLICATION", idCol: "ApplicationID", labelCol: "ApplicationName", distinct: true },
+  "SBOM.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true },
+  "COMPONENT.SbomID": { db: "XORCISM", table: "SBOM", idCol: "SbomID", labelCol: "Name", distinct: true },
+  "COMPONENT.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true },
+  "COMPONENTDEPENDENCY.SbomID": { db: "XORCISM", table: "SBOM", idCol: "SbomID", labelCol: "Name", distinct: true },
   // Crisis management (XCOMPLIANCE): tabletop-exercise injects/participants ↔ audit / scenario / person
   "EXERCISEINJECT.AuditID": { db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID", labelCol: "AuditName", distinct: true },
   "EXERCISEINJECT.ScenarioID": { db: "XCOMPLIANCE", table: "CRISISSCENARIO", idCol: "ScenarioID", labelCol: "ScenarioName", distinct: true },

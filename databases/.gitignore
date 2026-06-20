@@ -1,0 +1,2 @@
+# Local agentic-security scanner state / findings cache — never commit.
+.agentic-security/

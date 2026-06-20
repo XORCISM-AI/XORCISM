@@ -830,6 +830,12 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   // ── FAIR-MAM materiality assessments (multi-tenant isolation; FAIRMAMCATEGORY is global reference) ──
   "XCOMPLIANCE.FAIRMAMASSESSMENT",
   "XCOMPLIANCE.FAIRMAMLINEITEM",
+  // ── PQCMM post-quantum-crypto maturity assessments (PQCMMLEVEL is global reference) ──
+  "XCOMPLIANCE.PQCMMASSESSMENT",
+  // ── SCA / SBOM (Software Composition Analysis; multi-tenant isolation) ──
+  "XORCISM.SBOM",
+  "XORCISM.COMPONENT",
+  "XORCISM.COMPONENTDEPENDENCY",
   // ── Tooling catalogue (multi-tenant isolation) ──
   "XORCISM.TOOL",
   // ── Policy & document management (multi-tenant isolation) ──
@@ -4526,6 +4532,100 @@ export function ensureFairMamTables(): void {
   const tx = db.transaction(() => { TAX.forEach((c, i) => ins.run(i + 1, c[0], c[1], c[2], c[3], c[4], c[5], i + 1)); });
   tx();
   console.log(`[seed] XCOMPLIANCE.FAIRMAMCATEGORY ← ${TAX.length} FAIR-MAM categories`);
+}
+
+/**
+ * PQCMM — the PKI Consortium's Post-Quantum Cryptography Maturity Model (product-centric
+ * quantum-readiness levels 0-5). Assess each product / service / asset that relies on
+ * cryptography against the model, track current vs target maturity, and roll up the
+ * organisation's quantum-readiness posture. Created idempotently at boot:
+ *   PQCMMLEVEL      — the 6 reference levels (global, seeded once)
+ *   PQCMMASSESSMENT — a per-subject maturity assessment (tenant-scoped)
+ */
+export function ensurePqcmmTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XCOMPLIANCE"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS PQCMMLEVEL (
+      LevelID INTEGER PRIMARY KEY, Level INTEGER, Name TEXT, Summary TEXT, Criteria TEXT, SortOrder INTEGER);
+    CREATE TABLE IF NOT EXISTS PQCMMASSESSMENT (
+      AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, SubjectType TEXT, SubjectName TEXT, AssetID INTEGER,
+      CurrentLevel INTEGER, TargetLevel INTEGER, Standard TEXT, CryptoAgile INTEGER, ZeroLegacy INTEGER, HasCBOM INTEGER,
+      Evidence TEXT, Notes TEXT, OwnerPersonID INTEGER, Status TEXT, AssessedDate TEXT, ReviewDate TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_pqcmmassessment_tenant ON PQCMMASSESSMENT(TenantID);
+    CREATE INDEX IF NOT EXISTS ix_pqcmmassessment_asset ON PQCMMASSESSMENT(AssetID);
+  `);
+  if ((db.prepare("SELECT COUNT(*) AS c FROM PQCMMLEVEL").get() as { c: number }).c > 0) return;
+  const LEVELS: [level: number, name: string, summary: string, criteria: string][] = [
+    [0, "None", "No post-quantum cryptography. The product relies entirely on classical, quantum-vulnerable algorithms (RSA, ECC, DH).", "No quantum-safe capability."],
+    [1, "Initial", "Quantum-safe algorithms/features are available for testing and evaluation; configured manually or via beta options.", "PQC available for test/eval; manual or beta configuration."],
+    [2, "Foundational", "Quantum-safe algorithms are supported in core functionality and production-ready, and demonstrate compatibility with relevant standards.", "PQC in core/production; standards-compatible."],
+    [3, "Advanced", "Foundational + a full cryptographic use-case inventory; non-quantum-safe features documented & flagged for risk; SBOM produced/maintained; crypto-agility (swap algorithms without major redesign).", "Crypto inventory; SBOM; non-quantum-safe flagged; crypto-agile."],
+    [4, "Managed", "Advanced + a Cryptographic Bill of Materials (CBOM: algorithms, key sizes, usage context); Zero-Legacy capability (can disable ALL non-quantum-safe algorithms); hybrid/composite algorithm support indicated.", "CBOM; Zero-Legacy capable; hybrid/composite support."],
+    [5, "Optimized", "Managed + quantum-safe algorithms are the default; benchmarked & tuned for performance; primarily NIST-approved PQC standards; implementations from independently verified / certified sources.", "PQC default; NIST-approved; benchmarked; verified/certified."],
+  ];
+  const ins = db.prepare("INSERT INTO PQCMMLEVEL (LevelID, Level, Name, Summary, Criteria, SortOrder) VALUES (?,?,?,?,?,?)");
+  const tx = db.transaction(() => { LEVELS.forEach((l, i) => ins.run(i + 1, l[0], l[1], l[2], l[3], i)); });
+  tx();
+  console.log(`[seed] XCOMPLIANCE.PQCMMLEVEL ← ${LEVELS.length} PQCMM levels`);
+}
+
+/**
+ * SCA — Software Composition Analysis over the existing CPE / CPEFORASSET / APPLICATION
+ * inventory, with first-class SBOM (Software Bill of Materials) support for the two most
+ * widely used standards: CycloneDX (OWASP) and SPDX (Linux Foundation). An imported SBOM
+ * is stored as an SBOM document + its constituent COMPONENT rows (rich metadata: PURL,
+ * CPE, version, license, supplier, hash, scope) + the COMPONENTDEPENDENCY edges (for the
+ * composition graph). Components are linked back to the asset's CPE inventory (CPEFORASSET)
+ * so SCA findings feed the same exposure pipeline. Created idempotently at boot (all in
+ * XORCISM, alongside CPE/CPEFORASSET/APPLICATION/SOFTWARE):
+ *   SBOM                — one imported/exported bill of materials (tenant-scoped)
+ *   COMPONENT           — the pre-existing skeletal table, enriched with SBOM columns (tenant-scoped)
+ *   COMPONENTDEPENDENCY — dependency edges between components (tenant-scoped, for the graph)
+ */
+export function ensureScaTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS SBOM (
+      SbomID INTEGER PRIMARY KEY, SbomGUID TEXT, Name TEXT, Format TEXT, SpecVersion TEXT,
+      SerialNumber TEXT, SubjectName TEXT, SubjectVersion TEXT, AssetID INTEGER, ApplicationID INTEGER,
+      ComponentCount INTEGER, VulnerableCount INTEGER, LicenseCount INTEGER, Source TEXT, ToolName TEXT,
+      Notes TEXT, PersonID INTEGER, CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS COMPONENTDEPENDENCY (
+      DependencyID INTEGER PRIMARY KEY, SbomID INTEGER, FromRef TEXT, ToRef TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_sbom_tenant ON SBOM(TenantID);
+    CREATE INDEX IF NOT EXISTS ix_sbom_asset ON SBOM(AssetID);
+    CREATE INDEX IF NOT EXISTS ix_componentdependency_sbom ON COMPONENTDEPENDENCY(SbomID);
+  `);
+  // The legacy COMPONENT table ships skeletal as `ComponentID INTEGER NOT NULL` (NOT a PRIMARY
+  // KEY → not an auto-rowid alias, so INSERTs without an explicit id fail). It's unused (0 rows);
+  // rebuild it with a proper INTEGER PRIMARY KEY before enriching it, so SBOM imports can insert.
+  const compInfo = db.prepare(`PRAGMA table_info("COMPONENT")`).all() as { name: string; pk: number }[];
+  if (compInfo.length) {
+    const idIsPk = compInfo.some((c) => c.name === "ComponentID" && c.pk > 0);
+    const rowCount = (db.prepare(`SELECT COUNT(*) AS c FROM "COMPONENT"`).get() as { c: number }).c;
+    if (!idIsPk && rowCount === 0) {
+      db.exec(`DROP TABLE "COMPONENT"; CREATE TABLE "COMPONENT" ("ComponentID" INTEGER PRIMARY KEY)`);
+    }
+  }
+  // Enrich the pre-existing skeletal COMPONENT table (it ships with just ComponentID).
+  const addCols = (table: string, cols: Record<string, string>): void => {
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table)) {
+      db.exec(`CREATE TABLE "${table}" ("${table}ID" INTEGER PRIMARY KEY)`);
+    }
+    const existing = new Set((db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name));
+    for (const [n, t] of Object.entries(cols)) if (!existing.has(n)) db.exec(`ALTER TABLE "${table}" ADD COLUMN "${n}" ${t}`);
+  };
+  addCols("COMPONENT", {
+    ComponentGUID: "TEXT", SbomID: "INTEGER", Name: "TEXT", Version: "TEXT", ComponentType: "TEXT",
+    PURL: "TEXT", CPE: "TEXT", CPEID: "INTEGER", Supplier: "TEXT", Publisher: "TEXT", "Group": "TEXT",
+    License: "TEXT", Hash: "TEXT", BOMRef: "TEXT", Scope: "TEXT", Description: "TEXT",
+    AssetID: "INTEGER", CreatedDate: "TEXT", TenantID: "INTEGER",
+  });
+  db.exec("CREATE INDEX IF NOT EXISTS ix_component_sbom ON COMPONENT(SbomID); CREATE INDEX IF NOT EXISTS ix_component_tenant ON COMPONENT(TenantID);");
 }
 
 /**

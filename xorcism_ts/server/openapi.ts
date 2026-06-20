@@ -163,11 +163,25 @@ export function buildOpenApi(): Record<string, unknown> {
           responses: { "200": ok("RiskRegisterInventory"), ...errors },
         },
       },
+      "/pqcmm": {
+        get: {
+          tags: ["Governance"],
+          summary: "PQCMM — Post-Quantum Cryptography Maturity Model (PKI Consortium): the 6 reference levels (0 None → 5 Optimized) + per-subject quantum-readiness assessments (current vs target level, crypto-agility, CBOM, zero-legacy) and a posture rollup (quantum-vulnerable / production-ready / managed, maturity score, below-target worklist) (scope: pqcmm:read)",
+          responses: { "200": ok("PqcmmInventory"), ...errors },
+        },
+      },
       "/fair-mam": {
         get: {
           tags: ["Governance"],
           summary: "FAIR-MAM materiality: the FAIR Materiality Assessment Model cost-category taxonomy (10 categories, primary/secondary loss) + saved assessments with the computed single-loss magnitude (PERT), primary/secondary split and a materiality verdict (scope: fairmam:read)",
           responses: { "200": ok("FairMamInventory"), ...errors },
+        },
+      },
+      "/sca": {
+        get: {
+          tags: ["Governance"],
+          summary: "Software Composition Analysis (SCA): imported SBOM documents (CycloneDX / SPDX) + their components (name, version, type, PURL, CPE, license, supplier) with by-type / by-license / by-supplier breakdowns and a worklist (known-vulnerable components, missing licenses, unpinned versions) (scope: sca:read)",
+          responses: { "200": ok("ScaInventory"), ...errors },
         },
       },
       "/threat-informed-defense": {
@@ -227,6 +241,8 @@ export function buildOpenApi(): Record<string, unknown> {
         TidInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "ATT&CK techniques: threat (adversary groups) vs detect/mitigate/test pillars + gapScore" }, findings: { type: "array", items: { type: "object" }, description: "prioritised TID gaps" }, summary: { type: "object", description: "techniques, threatRelevant, detected, mitigated, tested, detectRate, mitigateRate, testRate, tidScore, exposed, fullyCovered, byTactic" } } },
         CrisisInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "tabletop exercises (audits of type Tabletop Exercise): inject progress, participants, improvement actions, score" }, findings: { type: "array", items: { type: "object" }, description: "worklist: overdue improvement actions, scenarios never exercised, exercises with no after-action report" }, scenarios: { type: "array", items: { type: "object" }, description: "crisis-scenario template library (exercised flag, inject count)" }, summary: { type: "object", description: "exercises, planned, completed, completionRate, scenarios, scenariosNeverExercised, scenarioCoverage, openActions, overdueActions, withoutAAR, readinessScore" } } },
         RiskRegisterInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "risk register entries: ref, title, inherent/current/residual level, treatment, owner, ALE, review, priority score" }, findings: { type: "array", items: { type: "object" }, description: "treatment worklist: untreated high/critical residual, accepted-without-justification, overdue review, treatment past target, no owner" }, summary: { type: "object", description: "risks, open, treatedRate, highCritical, untreated, accepted, overdueReview, quantified, totalALE, byLevel/byTreatment/byCategory, riskScore" } } },
+        PqcmmInventory: { type: "object", properties: { levels: { type: "array", items: { type: "object" }, description: "the 6 PQCMM levels (0 None … 5 Optimized) with summary + criteria" }, rows: { type: "array", items: { type: "object" }, description: "per-subject assessments: subject, type, current/target level, gap, crypto-agility, CBOM, zero-legacy, owner" }, findings: { type: "array", items: { type: "object" }, description: "worklist: quantum-vulnerable (Level 0), below-target, no-target, re-assessment overdue" }, summary: { type: "object", description: "assessments, byLevel[0..5], quantumVulnerable, productionReady (≥2), managed (≥4), avgLevel, maturityScore, belowTarget" } } },
+        ScaInventory: { type: "object", properties: { sboms: { type: "array", items: { type: "object" }, description: "imported SBOM documents: name, format (CycloneDX/SPDX), specVersion, subject, asset, componentCount, licenseCount, source, tool" }, components: { type: "array", items: { type: "object" }, description: "components: name, version, type, purl, cpe, supplier, license, scope, vulnerable" }, findings: { type: "array", items: { type: "object" }, description: "worklist: known-vulnerable components, missing licenses, unpinned versions" }, byType: { type: "array", items: { type: "object" } }, byLicense: { type: "array", items: { type: "object" } }, bySupplier: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "sboms, components, distinctComponents, byFormat, vulnerable, noLicense, noVersion, licenses, suppliers, dependencies, cpeLinked, assetsCovered" } } },
         FairMamInventory: { type: "object", properties: { categories: { type: "array", items: { type: "object" }, description: "FAIR-MAM cost-category taxonomy (code, name, parent, lossType primary/secondary, party first/third-party)" }, assessments: { type: "array", items: { type: "object" }, description: "saved assessments: total (PERT single-loss), primary/secondary, firstParty/thirdParty, threshold, ratio, determination" }, summary: { type: "object", description: "assessments, material, approaching, largestExposure, totalExposure, currency, avgPrimaryShare" } } },
         IncidentCreate: {
           type: "object", required: ["name"],

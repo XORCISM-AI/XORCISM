@@ -592,6 +592,7 @@ interface Kpis {
   tid: { tidScore: number; detectRate: number; mitigateRate: number; testRate: number; detectionFailed: number; detectionRegressed: number; exposed: number; threatRelevant: number } | null;
   crisis: { readinessScore: number; exercises: number; completionRate: number | null; scenarioCoverage: number; openActions: number; overdueActions: number; scenariosNeverExercised: number } | null;
   risk: { riskScore: number; open: number; highCritical: number; untreated: number; overdueReview: number; treatedRate: number | null; totalALE: number; currency: string } | null;
+  pqcmm: { maturityScore: number; assessments: number; quantumVulnerable: number; productionReady: number; managed: number } | null;
 }
 const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
 const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
@@ -643,6 +644,10 @@ async function initKpis(): Promise<void> {
     tile(`${k.tid.detectRate}%`, "Detection coverage", `${k.tid.threatRelevant} threat-relevant techniques`, "/threat-informed-defense", pctColor(k.tid.detectRate));
     tile(k.tid.detectionFailed + k.tid.detectionRegressed, "False coverage / drift", "rules that didn't fire", "/threat-informed-defense", badColor(k.tid.detectionFailed + k.tid.detectionRegressed));
     tile(k.tid.exposed, "Exposed techniques", "high-threat · 0 defence", "/threat-informed-defense", badColor(k.tid.exposed));
+  }
+  if (k.pqcmm) {
+    tile(`${k.pqcmm.maturityScore}%`, "Quantum readiness", `${k.pqcmm.assessments} assessed · PQCMM`, "/pqcmm", pctColor(k.pqcmm.maturityScore));
+    tile(k.pqcmm.quantumVulnerable, "Quantum-vulnerable", "PQCMM Level 0 · classical only", "/pqcmm", badColor(k.pqcmm.quantumVulnerable));
   }
   if (k.crisis) {
     tile(k.crisis.readinessScore, "Crisis readiness", "completion × coverage", "/crisis-management", pctColor(k.crisis.readinessScore));

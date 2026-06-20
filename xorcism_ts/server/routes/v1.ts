@@ -19,6 +19,8 @@ import { tidInventory, tidNavigatorLayer } from "../tid";
 import { crisisInventory } from "../crisis";
 import { fairMamInventory } from "../fairmam";
 import { riskRegisterInventory } from "../riskregister";
+import { pqcmmInventory } from "../pqcmm";
+import { scaInventory } from "../sca";
 import { buildOpenApi } from "../openapi";
 import { dispatchWebhook } from "../webhook";
 
@@ -276,6 +278,22 @@ router.get("/risk-register", (req: Request, res: Response) => {
   if (!gate(req, res, "risk:read")) return;
   if (!userCan(req.user!, "read", "XCOMPLIANCE", "RISKREGISTERENTRY")) return void res.status(403).json({ error: "forbidden" });
   res.json(riskRegisterInventory(tenantOf(req)));
+});
+
+// GET /api/v1/pqcmm — Post-Quantum Cryptography Maturity Model: the 6-level model + per-subject
+// maturity assessments + the organisation's quantum-readiness posture (vulnerable / production / managed).
+router.get("/pqcmm", (req: Request, res: Response) => {
+  if (!gate(req, res, "pqcmm:read")) return;
+  if (!userCan(req.user!, "read", "XCOMPLIANCE", "AUDIT")) return void res.status(403).json({ error: "forbidden" });
+  res.json(pqcmmInventory(tenantOf(req)));
+});
+
+// GET /api/v1/sca — Software Composition Analysis: SBOM documents + components (PURL/CPE/license/
+// supplier) + by-type/license/supplier breakdowns + a worklist (vulnerable / missing-license / unpinned).
+router.get("/sca", (req: Request, res: Response) => {
+  if (!gate(req, res, "sca:read")) return;
+  if (!userCan(req.user!, "read", "XORCISM", "ASSET")) return void res.status(403).json({ error: "forbidden" });
+  res.json(scaInventory(tenantOf(req)));
 });
 
 // GET /api/v1/threat-informed-defense — ATT&CK technique coverage scorecard (adversary use vs

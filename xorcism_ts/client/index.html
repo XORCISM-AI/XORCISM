@@ -8,19 +8,36 @@
 <script>try{var _t=localStorage.getItem('xorcism.theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <link rel="stylesheet" href="/css/style.css">
 <style>
-  .landing{max-width:1120px;margin:0 auto;padding:52px 24px 64px}
-  .landing-hero{text-align:center;margin-bottom:42px}
+  .landing{max-width:1180px;margin:0 auto;padding:48px 24px 64px}
+  .landing-hero{text-align:center;margin-bottom:30px}
   .landing-hero h1{font-size:36px;margin:0 0 8px;font-weight:800;letter-spacing:.5px;
     background:linear-gradient(135deg,#7c83fd,#a78bfa 60%,#22d3ee);-webkit-background-clip:text;
     background-clip:text;-webkit-text-fill-color:transparent}
-  .landing-hero p{color:#94a3b8;font-size:15px;margin:0}
+  .landing-hero p{color:#94a3b8;font-size:15px;margin:0 auto;max-width:760px;line-height:1.5}
+  .landing-hero .eyebrow{display:inline-block;margin-bottom:12px;font-size:11px;font-weight:700;letter-spacing:2px;
+    text-transform:uppercase;color:#22d3ee;padding:4px 12px;border:1px solid #1e3a44;border-radius:20px;
+    background:color-mix(in srgb,#22d3ee 10%,#0f1117)}
+  /* approach bands */
+  .approach{margin:0 0 30px}
+  .approach:last-of-type{margin-bottom:0}
+  .approach-head{display:flex;align-items:center;gap:14px;margin:0 0 16px;padding:0 2px 11px;
+    border-bottom:1px solid #242a45}
+  .approach-num{flex:0 0 auto;font-family:ui-monospace,monospace;font-size:13px;font-weight:700;color:var(--accent);
+    width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;
+    background:color-mix(in srgb,var(--accent) 16%,#0f1117);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+  .approach-titles{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .approach-title{font-size:17px;font-weight:800;letter-spacing:.3px;color:#e7ebf3}
+  .approach-sub{font-size:12.5px;color:#94a3b8;line-height:1.35}
+  .approach-count{margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:700;color:var(--accent);white-space:nowrap;
+    padding:3px 10px;border-radius:20px;background:color-mix(in srgb,var(--accent) 14%,#0f1117);
+    border:1px solid color-mix(in srgb,var(--accent) 32%,transparent)}
   .domain-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:18px}
   .domain-card{display:flex;flex-direction:column;align-items:flex-start;gap:12px;
     background:#1a1d2e;border:1px solid #2d3250;border-radius:16px;padding:24px 22px;
     text-decoration:none;color:#e2e8f0;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
   .domain-card:hover{transform:translateY(-4px);border-color:var(--accent);
     box-shadow:0 12px 34px rgba(0,0,0,.4)}
-  .landing-tools{display:flex;gap:8px;justify-content:flex-end;margin:0 0 12px}
+  .landing-tools{display:flex;gap:8px;justify-content:flex-end;margin:0 0 18px}
   .domain-grid.reordering .domain-card{cursor:grab}
   .domain-grid.reordering .domain-card:hover{transform:none}
   .domain-grid.reordering .domain-card:active{cursor:grabbing}
@@ -67,271 +84,389 @@
   <div id="notif-list" style="overflow:auto;padding:4px 0"></div>
 </div>
 
-<!-- ═══ Landing page: access menu by domain (shown if no ?db= in the URL) ═══ -->
+<!-- ═══ Landing page: fusion center — modules grouped by analytical approach (shown if no ?db= in the URL) ═══ -->
 <div id="landing" class="landing">
   <div class="landing-hero">
+    <span class="eyebrow" data-i18n="landing.eyebrow">Cyber Fusion Center</span>
     <h1>XORCISM</h1>
-    <p data-i18n="landing.sub">Cyber exposure, threat &amp; compliance management — choisissez un domaine</p>
+    <p data-i18n="landing.sub">Un centre de fusion cyber qui réunit actifs, vulnérabilités, menace, risque et conformité en une seule plateforme. Choisissez votre <b>approche</b>.</p>
   </div>
   <div class="landing-tools">
     <button class="btn btn-ghost btn-sm" id="landing-reset" style="display:none" title="Reset to default order">&#8634; <span data-i18n="landing.reset">Reset</span></button>
     <button class="btn btn-ghost btn-sm" id="landing-reorder" title="Drag cards to reorder">&#8645; <span id="lr-label" data-i18n="landing.reorder">Reorder</span></button>
   </div>
-  <div class="domain-grid">
 
-    <a class="domain-card" href="/asset-management" style="--accent:#7c83fd">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
-      <span class="domain-title" data-i18n="landing.assets">Asset Management</span>
-      <span class="domain-sub">Inventory · governance · risk</span>
-      <span class="domain-desc" data-i18n="landing.assets.d">Inventaire des actifs, propriétaires, criticité et exposition.</span>
-    </a>
+  <!-- ── Approach 1 · Asset-based ── -->
+  <section class="approach" data-group="asset" style="--accent:#7c83fd">
+    <div class="approach-head">
+      <span class="approach-num">01</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.asset">Asset-Based</span>
+        <span class="approach-sub" data-i18n="landing.approach.asset.d">Know what you must defend — the inventory foundation every other lens builds on.</span>
+      </span>
+      <span class="approach-count">7</span>
+    </div>
+    <div class="domain-grid" data-group="asset">
 
-    <a class="domain-card" href="/identities" style="--accent:#a78bfa">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="18" cy="8" r="2"/><path d="M22 21v-1a3 3 0 0 0-2.5-2.96"/></svg></span>
-      <span class="domain-title" data-i18n="landing.identities">Identities &amp; IAM</span>
-      <span class="domain-sub">XORCISM · IDENTITY</span>
-      <span class="domain-desc" data-i18n="landing.identities.d">Inventaire des identités humaines et non-humaines (agents IA, API, conteneurs, comptes de service, secrets, certificats, machines) — propriétaires, privilèges, MFA, rotation et risques.</span>
-    </a>
+      <a class="domain-card" href="/asset-management" style="--accent:#7c83fd">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg></span>
+        <span class="domain-title" data-i18n="landing.assets">Asset Management</span>
+        <span class="domain-sub">Inventory · governance · risk</span>
+        <span class="domain-desc" data-i18n="landing.assets.d">Inventaire des actifs, propriétaires, criticité et exposition.</span>
+      </a>
 
-    <a class="domain-card" href="/bia" style="--accent:#60a5fa">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="13" width="3" height="5"/></svg></span>
-      <span class="domain-title" data-i18n="landing.bia">Business Impact Analysis</span>
-      <span class="domain-sub">XORCISM · BIA</span>
-      <span class="domain-desc" data-i18n="landing.bia.d">Criticité métier des actifs (BIA) : dépendances, valeur, SLA — base du calcul de risque.</span>
-    </a>
+      <a class="domain-card" href="/identities" style="--accent:#a78bfa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="18" cy="8" r="2"/><path d="M22 21v-1a3 3 0 0 0-2.5-2.96"/></svg></span>
+        <span class="domain-title" data-i18n="landing.identities">Identities &amp; IAM</span>
+        <span class="domain-sub">XORCISM · IDENTITY</span>
+        <span class="domain-desc" data-i18n="landing.identities.d">Inventaire des identités humaines et non-humaines (agents IA, API, conteneurs, comptes de service, secrets, certificats, machines) — propriétaires, privilèges, MFA, rotation et risques.</span>
+      </a>
 
-    <a class="domain-card" href="/configuration-management" style="--accent:#22d3ee">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
-      <span class="domain-title" data-i18n="landing.config">Configuration Management</span>
-      <span class="domain-sub">Hardening · OVAL · CCE</span>
-      <span class="domain-desc" data-i18n="landing.config.d">Bibliothèque de configuration sécurisée (OVAL) : référentiels de durcissement, vérification par scan, contenu déprécié.</span>
-    </a>
+      <a class="domain-card" href="/bia" style="--accent:#60a5fa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="13" width="3" height="5"/></svg></span>
+        <span class="domain-title" data-i18n="landing.bia">Business Impact Analysis</span>
+        <span class="domain-sub">XORCISM · BIA</span>
+        <span class="domain-desc" data-i18n="landing.bia.d">Criticité métier des actifs (BIA) : dépendances, valeur, SLA — base du calcul de risque.</span>
+      </a>
 
-    <a class="domain-card" href="/oval-scan" style="--accent:#2dd4bf">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-      <span class="domain-title" data-i18n="landing.ovalscan">OVAL scan results</span>
-      <span class="domain-sub">XOVAL · OVALRESULTS</span>
-      <span class="domain-desc" data-i18n="landing.ovalscan.d">Résultats des scans OVAL de l'agent (OpenSCAP) : vulnérabilités, conformité de configuration et inventaire par actif.</span>
-    </a>
+      <a class="domain-card" href="/sca" style="--accent:#0ea5e9">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+        <span class="domain-title" data-i18n="landing.sca">SCA — Software Composition</span>
+        <span class="domain-sub">SBOM · CycloneDX / SPDX</span>
+        <span class="domain-desc" data-i18n="landing.sca.d">Analyse de composition logicielle (SCA) sur l'inventaire CPE/composants : importez/exportez des SBOM CycloneDX &amp; SPDX, suivez composants, versions, licences et fournisseurs, repérez les composants vulnérables et visualisez le graphe de dépendances.</span>
+      </a>
 
-    <a class="domain-card" href="/compliance-management" style="--accent:#4ade80">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
-      <span class="domain-title" data-i18n="landing.compliance">Compliance</span>
-      <span class="domain-sub">Audits · findings · policies</span>
-      <span class="domain-desc" data-i18n="landing.compliance.d">Audits, constats, preuves, référentiels et risques (GRC).</span>
-    </a>
+      <a class="domain-card" href="/configuration-management" style="--accent:#22d3ee">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
+        <span class="domain-title" data-i18n="landing.config">Configuration Management</span>
+        <span class="domain-sub">Hardening · OVAL · CCE</span>
+        <span class="domain-desc" data-i18n="landing.config.d">Bibliothèque de configuration sécurisée (OVAL) : référentiels de durcissement, vérification par scan, contenu déprécié.</span>
+      </a>
 
-    <a class="domain-card" href="/crisis-management" style="--accent:#fb7185">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-      <span class="domain-title" data-i18n="landing.crisis">Crisis Management</span>
-      <span class="domain-sub">Tabletop exercises · scenarios</span>
-      <span class="domain-desc" data-i18n="landing.crisis.d">Exercices de gestion de crise (tabletop) sur une bibliothèque de scénarios : injects, actions d'amélioration, rapports après-action et score de préparation.</span>
-    </a>
+      <a class="domain-card" href="/oval-scan" style="--accent:#2dd4bf">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ovalscan">OVAL scan results</span>
+        <span class="domain-sub">XOVAL · OVALRESULTS</span>
+        <span class="domain-desc" data-i18n="landing.ovalscan.d">Résultats des scans OVAL de l'agent (OpenSCAP) : vulnérabilités, conformité de configuration et inventaire par actif.</span>
+      </a>
 
-    <a class="domain-card" href="/risk-register" style="--accent:#f43f5e">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-      <span class="domain-title" data-i18n="landing.riskregister">Risk Register</span>
-      <span class="domain-sub">Inherent→residual · treatment</span>
-      <span class="domain-desc" data-i18n="landing.riskregister.d">Vue de gouvernance sur le registre des risques : niveau inhérent→résiduel, traitement, propriétaire, revue et quantification CRQ/FAIR (ALE), avec worklist de traitement et score de posture résiduelle.</span>
-    </a>
+      <a class="domain-card" href="/connectors?connector=darkwatch-osint" style="--accent:#818cf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.assetmon">Asset Monitoring</span>
+        <span class="domain-sub">DARKWATCH-OSINT · dark web</span>
+        <span class="domain-desc" data-i18n="landing.assetmon.d">Surveillance des actifs sur le dark web (fuites de données, rançongiciels, ventes d'exploits) via le connecteur DARKWATCH-OSINT : les expositions deviennent des constats sur vos actifs.</span>
+      </a>
 
-    <a class="domain-card" href="/fair-mam" style="--accent:#10b981">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-      <span class="domain-title" data-i18n="landing.fairmam">FAIR-MAM Materiality</span>
-      <span class="domain-sub">Loss decomposition · materiality</span>
-      <span class="domain-desc" data-i18n="landing.fairmam.d">Modèle de matérialité FAIR-MAM : décompose la magnitude d'un événement cyber en 10 catégories de coûts (estimation PERT), répartition perte primaire/secondaire et verdict de matérialité.</span>
-    </a>
+    </div>
+  </section>
 
-    <a class="domain-card" href="/policy-management" style="--accent:#a78bfa">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-      <span class="domain-title" data-i18n="landing.policy">Policies &amp; Documents</span>
-      <span class="domain-sub">Lifecycle · reviews · ISO 42001</span>
-      <span class="domain-desc" data-i18n="landing.policy.d">Cycle de vie des politiques et registre documentaire : revues, propriétaires, versions, conformité (ISO 42001/27001).</span>
-    </a>
+  <!-- ── Approach 2 · Vulnerability & Exposure-based ── -->
+  <section class="approach" data-group="exposure" style="--accent:#fb923c">
+    <div class="approach-head">
+      <span class="approach-num">02</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.exposure">Vulnerability &amp; Exposure-Based</span>
+        <span class="approach-sub" data-i18n="landing.approach.exposure.d">Find the weaknesses and prioritize what truly needs fixing first.</span>
+      </span>
+      <span class="approach-count">7</span>
+    </div>
+    <div class="domain-grid" data-group="exposure">
 
-    <a class="domain-card" href="/assurance" style="--accent:#34d399">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v5c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-      <span class="domain-title" data-i18n="landing.assurance">Control assurance</span>
-      <span class="domain-sub">Continuous · ISO · NIST</span>
-      <span class="domain-desc" data-i18n="landing.assurance.d">Compliance controls proven live by your security telemetry — detection, exposure, findings, pentest — not annual screenshots.</span>
-    </a>
+      <a class="domain-card" href="/?db=XORCISM&amp;table=ASSETVULNERABILITY" style="--accent:#f87171">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6a3 3 0 0 0-3-3 3 3 0 0 0-3 3"/><path d="M5 11a7 7 0 0 1 14 0v2a7 7 0 0 1-14 0z"/><line x1="12" y1="11" x2="12" y2="20"/><line x1="5" y1="11" x2="2" y2="9"/><line x1="5" y1="15" x2="2" y2="15"/><line x1="5" y1="18" x2="3" y2="20"/><line x1="19" y1="11" x2="22" y2="9"/><line x1="19" y1="15" x2="22" y2="15"/><line x1="19" y1="18" x2="21" y2="20"/></svg></span>
+        <span class="domain-title" data-i18n="landing.vuln">Vulnerability Management</span>
+        <span class="domain-sub">XORCISM · ASSETVULNERABILITY</span>
+        <span class="domain-desc" data-i18n="landing.vuln.d">CVE / NVD, KEV, CVSS, EPSS et priorisation de la remédiation.</span>
+      </a>
 
-    <a class="domain-card" href="/?db=XORCISM&amp;table=ASSETVULNERABILITY" style="--accent:#f87171">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6a3 3 0 0 0-3-3 3 3 0 0 0-3 3"/><path d="M5 11a7 7 0 0 1 14 0v2a7 7 0 0 1-14 0z"/><line x1="12" y1="11" x2="12" y2="20"/><line x1="5" y1="11" x2="2" y2="9"/><line x1="5" y1="15" x2="2" y2="15"/><line x1="5" y1="18" x2="3" y2="20"/><line x1="19" y1="11" x2="22" y2="9"/><line x1="19" y1="15" x2="22" y2="15"/><line x1="19" y1="18" x2="21" y2="20"/></svg></span>
-      <span class="domain-title" data-i18n="landing.vuln">Vulnerability Management</span>
-      <span class="domain-sub">XORCISM · ASSETVULNERABILITY</span>
-      <span class="domain-desc" data-i18n="landing.vuln.d">CVE / NVD, KEV, CVSS, EPSS et priorisation de la remédiation.</span>
-    </a>
+      <a class="domain-card" href="/exposure" style="--accent:#fb923c">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
+        <span class="domain-title" data-i18n="landing.exposure">Top exposures</span>
+        <span class="domain-sub">Fusion · prioritized worklist</span>
+        <span class="domain-desc" data-i18n="landing.exposure.d">One exploitability &amp; relevance score fusing EPSS, KEV, public exploits, CTI and blast radius — ranked so you fix the right thing first.</span>
+      </a>
 
-    <a class="domain-card" href="/pentest" style="--accent:#f43f5e">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></span>
-      <span class="domain-title" data-i18n="landing.pentest">Pentesting</span>
-      <span class="domain-sub">Module · AUDIT (Pentest) · Findings</span>
-      <span class="domain-desc" data-i18n="landing.pentest.d">Pentest engagements scoped to assets — run tool connectors, then collect findings and vulnerabilities.</span>
-    </a>
+      <a class="domain-card" href="/exploitdb" style="--accent:#22d3ee">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>
+        <span class="domain-title" data-i18n="landing.exploitdb">Exploit-DB search</span>
+        <span class="domain-sub">Lookup · SearchSploit · CVE → exploit</span>
+        <span class="domain-desc" data-i18n="landing.exploitdb.d">Search the local Exploit-DB index by keyword or CVE; find public exploits for a vulnerability and flag it exploitable.</span>
+      </a>
 
-    <a class="domain-card" href="/tprm" style="--accent:#c084fc">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-      <span class="domain-title" data-i18n="landing.tprm">TPRM: Third Party Risk Management</span>
-      <span class="domain-sub">Module · QUESTIONNAIREFORORGANISATION</span>
-      <span class="domain-desc" data-i18n="landing.tprm.d">Évaluation des risques tiers : questionnaires (OCIL), réponses et preuves.</span>
-    </a>
+      <a class="domain-card" href="/attack-path" style="--accent:#ef4444">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><path d="M6.5 7.2l4.2 9M13.5 17l4-8.2"/></svg></span>
+        <span class="domain-title" data-i18n="landing.attackpath">Attack paths</span>
+        <span class="domain-sub">Reachability · choke points</span>
+        <span class="domain-desc" data-i18n="landing.attackpath.d">Map the easiest routes from internet-exposed assets to your crown jewels, and the single choke point that severs the most attack paths.</span>
+      </a>
 
-    <a class="domain-card" href="/ebios" style="--accent:#f59e0b">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></span>
-      <span class="domain-title" data-i18n="landing.ebios">EBIOS Risk Manager</span>
-      <span class="domain-sub">Module · RISKASSESSMENT (EBIOS*)</span>
-      <span class="domain-desc" data-i18n="landing.ebios.d">Analyse de risque cyber EBIOS RM (ANSSI) : valeurs métier, événements redoutés, sources de risque, écosystème, scénarios et mesures.</span>
-    </a>
+      <a class="domain-card" href="/drift" style="--accent:#38bdf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.drift">Surface drift</span>
+        <span class="domain-sub">Snapshot · diff · monitor</span>
+        <span class="domain-desc" data-i18n="landing.drift.d">Snapshot your external attack surface and diff it over time — what appeared, vanished, or newly became internet-exposed.</span>
+      </a>
 
-    <a class="domain-card" href="/drift" style="--accent:#38bdf8">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
-      <span class="domain-title" data-i18n="landing.drift">Surface drift</span>
-      <span class="domain-sub">Snapshot · diff · monitor</span>
-      <span class="domain-desc" data-i18n="landing.drift.d">Snapshot your external attack surface and diff it over time — what appeared, vanished, or newly became internet-exposed.</span>
-    </a>
+      <a class="domain-card" href="/pqcmm" style="--accent:#8b5cf6">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(120 12 12)"/></svg></span>
+        <span class="domain-title" data-i18n="landing.pqcmm">PQCMM — Quantum Readiness</span>
+        <span class="domain-sub">Post-quantum crypto maturity</span>
+        <span class="domain-desc" data-i18n="landing.pqcmm.d">Modèle de maturité cryptographie post-quantique (PQCMM, PKI Consortium) : évaluez chaque produit/actif sur 6 niveaux (0 Aucun → 5 Optimisé), suivez la migration et la posture de résistance quantique.</span>
+      </a>
 
-    <a class="domain-card" href="/content" style="--accent:#c084fc">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l2 2h7v12H4z"/><path d="M12 11v5"/><path d="M9.5 13.5L12 11l2.5 2.5"/></svg></span>
-      <span class="domain-title" data-i18n="landing.content">Content hub</span>
-      <span class="domain-sub">Playbooks · Sigma · VEX</span>
-      <span class="domain-desc" data-i18n="landing.content.d">Share and reuse content as portable files — attack playbooks, the Sigma detection library, and an OpenVEX document.</span>
-    </a>
+      <a class="domain-card" href="/?db=XVULNERABILITY&amp;table=BUGBOUNTYPROGRAM" style="--accent:#eab308">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l1.5 2.5"/><path d="M15 4l-1.5 2.5"/><rect x="7" y="6" width="10" height="12" rx="5"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="7" y1="10" x2="3" y2="8"/><line x1="7" y1="13" x2="2" y2="13"/><line x1="7" y1="16" x2="3" y2="18"/><line x1="17" y1="10" x2="21" y2="8"/><line x1="17" y1="13" x2="22" y2="13"/><line x1="17" y1="16" x2="21" y2="18"/></svg></span>
+        <span class="domain-title" data-i18n="landing.bugbounty">Bug Bounty</span>
+        <span class="domain-sub">XVULNERABILITY · BUGBOUNTYPROGRAM</span>
+        <span class="domain-desc" data-i18n="landing.bugbounty.d">Programmes de bug bounty : périmètres, chercheurs, soumissions (liées aux vulnérabilités) et récompenses.</span>
+      </a>
 
-    <a class="domain-card" href="/cti-watch" style="--accent:#a78bfa">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5"/></svg></span>
-      <span class="domain-title" data-i18n="landing.ctiwatch">CTI watch</span>
-      <span class="domain-sub">KEV · reports → tickets</span>
-      <span class="domain-desc" data-i18n="landing.ctiwatch.d">Threat intel that acts: CISA KEV and your threat reports cross-referenced with your inventory — only what affects you, one click to a ticket.</span>
-    </a>
+    </div>
+  </section>
 
-    <a class="domain-card" href="/threat-informed-defense" style="--accent:#d946ef">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/></svg></span>
-      <span class="domain-title" data-i18n="landing.tid">Threat-Informed Defense</span>
-      <span class="domain-sub">ATT&amp;CK · detect · mitigate · test</span>
-      <span class="domain-desc" data-i18n="landing.tid.d">Pour chaque technique ATT&amp;CK, confronte l'usage des adversaires à votre couverture (détection Sigma, mitigation D3FEND, test atomique) : score pondéré par la menace et worklist priorisée des lacunes.</span>
-    </a>
+  <!-- ── Approach 3 · Threat-based ── -->
+  <section class="approach" data-group="threat" style="--accent:#d946ef">
+    <div class="approach-head">
+      <span class="approach-num">03</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.threat">Threat-Based</span>
+        <span class="approach-sub" data-i18n="landing.approach.threat.d">Adversary-centric — intelligence, hunting and detection engineering.</span>
+      </span>
+      <span class="approach-count">9</span>
+    </div>
+    <div class="domain-grid" data-group="threat">
 
-    <a class="domain-card" href="/ransomware" style="--accent:#f43f5e">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg></span>
-      <span class="domain-title" data-i18n="landing.ransomware">Ransomware $ impact</span>
-      <span class="domain-sub">Scenario · FAIR · D3FEND</span>
-      <span class="domain-desc" data-i18n="landing.ransomware.d">Replay a ransomware group's TTPs across your estate and quantify the dollar impact (SLE/ALE) — and the controls that break the chain.</span>
-    </a>
+      <a class="domain-card" href="/?db=XTHREAT&amp;table=THREAT" style="--accent:#fb923c">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></span>
+        <span class="domain-title" data-i18n="landing.threat">Threat Management (CTI)</span>
+        <span class="domain-sub">XTHREAT · THREAT</span>
+        <span class="domain-desc" data-i18n="landing.threat.d">Renseignement sur les menaces : acteurs, TTP, STIX/TAXII, ATT&amp;CK.</span>
+      </a>
 
-    <a class="domain-card" href="/attack-path" style="--accent:#ef4444">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><circle cx="19" cy="7" r="2"/><path d="M6.5 7.2l4.2 9M13.5 17l4-8.2"/></svg></span>
-      <span class="domain-title" data-i18n="landing.attackpath">Attack paths</span>
-      <span class="domain-sub">Reachability · choke points</span>
-      <span class="domain-desc" data-i18n="landing.attackpath.d">Map the easiest routes from internet-exposed assets to your crown jewels, and the single choke point that severs the most attack paths.</span>
-    </a>
+      <a class="domain-card" href="/threat-informed-defense" style="--accent:#d946ef">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/></svg></span>
+        <span class="domain-title" data-i18n="landing.tid">Threat-Informed Defense</span>
+        <span class="domain-sub">ATT&amp;CK · detect · mitigate · test</span>
+        <span class="domain-desc" data-i18n="landing.tid.d">Pour chaque technique ATT&amp;CK, confronte l'usage des adversaires à votre couverture (détection Sigma, mitigation D3FEND, test atomique) : score pondéré par la menace et worklist priorisée des lacunes.</span>
+      </a>
 
-    <a class="domain-card" href="/exposure" style="--accent:#fb923c">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-      <span class="domain-title" data-i18n="landing.exposure">Top exposures</span>
-      <span class="domain-sub">Fusion · prioritized worklist</span>
-      <span class="domain-desc" data-i18n="landing.exposure.d">One exploitability &amp; relevance score fusing EPSS, KEV, public exploits, CTI and blast radius — ranked so you fix the right thing first.</span>
-    </a>
+      <a class="domain-card" href="/hunting" style="--accent:#34d399">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>
+        <span class="domain-title" data-i18n="landing.hunting">Threat Hunting</span>
+        <span class="domain-sub">XTHREAT · HUNT · IOC</span>
+        <span class="domain-desc" data-i18n="landing.hunting.d">Chasse aux menaces : hunts, IOCs et techniques ATT&amp;CK, avec un assistant IA local qui propose hypothèses, sources de logs et détections.</span>
+      </a>
 
-    <a class="domain-card" href="/exploitdb" style="--accent:#22d3ee">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>
-      <span class="domain-title" data-i18n="landing.exploitdb">Exploit-DB search</span>
-      <span class="domain-sub">Lookup · SearchSploit · CVE → exploit</span>
-      <span class="domain-desc" data-i18n="landing.exploitdb.d">Search the local Exploit-DB index by keyword or CVE; find public exploits for a vulnerability and flag it exploitable.</span>
-    </a>
+      <a class="domain-card" href="/pir" style="--accent:#f59e0b">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+        <span class="domain-title" data-i18n="landing.pir">Priority Intel Requirements</span>
+        <span class="domain-sub">XTHREAT · PIR</span>
+        <span class="domain-desc" data-i18n="landing.pir.d">Exigences prioritaires de renseignement (PIR) : pilotez la collecte CTI et mesurez la couverture vs les lacunes.</span>
+      </a>
 
-    <a class="domain-card" href="/kill-chain" style="--accent:#fb7185">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="18" y2="12"/></svg></span>
-      <span class="domain-title">Kill Chain</span>
-      <span class="domain-sub">Module · MITRE ATT&amp;CK · phases</span>
-      <span class="domain-desc">Kill-chain graph: ATT&amp;CK tactics as ordered phases, overlaid with an adversary's TTPs to reveal coverage and attack progression.</span>
-    </a>
+      <a class="domain-card" href="/cti-watch" style="--accent:#a78bfa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ctiwatch">CTI watch</span>
+        <span class="domain-sub">KEV · reports → tickets</span>
+        <span class="domain-desc" data-i18n="landing.ctiwatch.d">Threat intel that acts: CISA KEV and your threat reports cross-referenced with your inventory — only what affects you, one click to a ticket.</span>
+      </a>
 
-    <a class="domain-card" href="/?db=XVULNERABILITY&amp;table=BUGBOUNTYPROGRAM" style="--accent:#eab308">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l1.5 2.5"/><path d="M15 4l-1.5 2.5"/><rect x="7" y="6" width="10" height="12" rx="5"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="7" y1="10" x2="3" y2="8"/><line x1="7" y1="13" x2="2" y2="13"/><line x1="7" y1="16" x2="3" y2="18"/><line x1="17" y1="10" x2="21" y2="8"/><line x1="17" y1="13" x2="22" y2="13"/><line x1="17" y1="16" x2="21" y2="18"/></svg></span>
-      <span class="domain-title" data-i18n="landing.bugbounty">Bug Bounty</span>
-      <span class="domain-sub">XVULNERABILITY · BUGBOUNTYPROGRAM</span>
-      <span class="domain-desc" data-i18n="landing.bugbounty.d">Programmes de bug bounty : périmètres, chercheurs, soumissions (liées aux vulnérabilités) et récompenses.</span>
-    </a>
+      <a class="domain-card" href="/kill-chain" style="--accent:#fb7185">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="18" y2="12"/></svg></span>
+        <span class="domain-title">Kill Chain</span>
+        <span class="domain-sub">Module · MITRE ATT&amp;CK · phases</span>
+        <span class="domain-desc">Kill-chain graph: ATT&amp;CK tactics as ordered phases, overlaid with an adversary's TTPs to reveal coverage and attack progression.</span>
+      </a>
 
-    <a class="domain-card" href="/?db=XTHREAT&amp;table=THREAT" style="--accent:#fb923c">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></span>
-      <span class="domain-title" data-i18n="landing.threat">Threat Management (CTI)</span>
-      <span class="domain-sub">XTHREAT · THREAT</span>
-      <span class="domain-desc" data-i18n="landing.threat.d">Renseignement sur les menaces : acteurs, TTP, STIX/TAXII, ATT&amp;CK.</span>
-    </a>
+      <a class="domain-card" href="/?db=XORCISM&amp;table=THREATMODEL" style="--accent:#f472b6">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
+        <span class="domain-title" data-i18n="landing.threatmodel">Threat Modeling</span>
+        <span class="domain-sub">XORCISM · THREATMODEL</span>
+        <span class="domain-desc" data-i18n="landing.threatmodel.d">Modélisation des menaces : STRIDE, périmètre, menaces et contrôles d'atténuation.</span>
+      </a>
 
-    <a class="domain-card" href="/pir" style="--accent:#f59e0b">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-      <span class="domain-title" data-i18n="landing.pir">Priority Intel Requirements</span>
-      <span class="domain-sub">XTHREAT · PIR</span>
-      <span class="domain-desc" data-i18n="landing.pir.d">Exigences prioritaires de renseignement (PIR) : pilotez la collecte CTI et mesurez la couverture vs les lacunes.</span>
-    </a>
+      <a class="domain-card" href="/ransomware" style="--accent:#f43f5e">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ransomware">Ransomware $ impact</span>
+        <span class="domain-sub">Scenario · FAIR · D3FEND</span>
+        <span class="domain-desc" data-i18n="landing.ransomware.d">Replay a ransomware group's TTPs across your estate and quantify the dollar impact (SLE/ALE) — and the controls that break the chain.</span>
+      </a>
 
-    <a class="domain-card" href="/hunting" style="--accent:#34d399">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></span>
-      <span class="domain-title" data-i18n="landing.hunting">Threat Hunting</span>
-      <span class="domain-sub">XTHREAT · HUNT · IOC</span>
-      <span class="domain-desc" data-i18n="landing.hunting.d">Chasse aux menaces : hunts, IOCs et techniques ATT&amp;CK, avec un assistant IA local qui propose hypothèses, sources de logs et détections.</span>
-    </a>
+      <a class="domain-card" href="/?db=XORCISM&amp;table=TOOL&amp;filterCol=Category&amp;filterVal=OSINT" style="--accent:#38bdf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><circle cx="11" cy="11" r="2.5"/></svg></span>
+        <span class="domain-title" data-i18n="landing.osint">OSINT</span>
+        <span class="domain-sub">XORCISM · TOOL · Category=OSINT</span>
+        <span class="domain-desc" data-i18n="landing.osint.d">Outils de renseignement en sources ouvertes : la table TOOL filtrée sur la catégorie OSINT.</span>
+      </a>
 
-    <a class="domain-card" href="/?db=XORCISM&amp;table=THREATMODEL" style="--accent:#f472b6">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-      <span class="domain-title" data-i18n="landing.threatmodel">Threat Modeling</span>
-      <span class="domain-sub">XORCISM · THREATMODEL</span>
-      <span class="domain-desc" data-i18n="landing.threatmodel.d">Modélisation des menaces : STRIDE, périmètre, menaces et contrôles d'atténuation.</span>
-    </a>
+    </div>
+  </section>
 
-    <a class="domain-card" href="/incident-management" style="--accent:#fbbf24">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-      <span class="domain-title" data-i18n="landing.incident">Incident Management</span>
-      <span class="domain-sub">Queue · governance · SLA</span>
-      <span class="domain-desc" data-i18n="landing.incident.d">Détection, qualification, réponse et suivi des incidents.</span>
-    </a>
+  <!-- ── Approach 4 · Risk-based ── -->
+  <section class="approach" data-group="risk" style="--accent:#f43f5e">
+    <div class="approach-head">
+      <span class="approach-num">04</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.risk">Risk-Based</span>
+        <span class="approach-sub" data-i18n="landing.approach.risk.d">Quantify and decide — turn findings into business risk in dollars.</span>
+      </span>
+      <span class="approach-count">4</span>
+    </div>
+    <div class="domain-grid" data-group="risk">
 
-    <a class="domain-card" href="/incident-sla" style="--accent:#fb923c">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/></svg></span>
-      <span class="domain-title" data-i18n="landing.sla">Incident SLAs</span>
-      <span class="domain-sub">XINCIDENT · ASSET SLA</span>
-      <span class="domain-desc" data-i18n="landing.sla.d">Durée des incidents mesurée face aux SLA définis sur les actifs : analyse des dépassements.</span>
-    </a>
+      <a class="domain-card" href="/risk-register" style="--accent:#f43f5e">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span class="domain-title" data-i18n="landing.riskregister">Risk Register</span>
+        <span class="domain-sub">Inherent→residual · treatment</span>
+        <span class="domain-desc" data-i18n="landing.riskregister.d">Vue de gouvernance sur le registre des risques : niveau inhérent→résiduel, traitement, propriétaire, revue et quantification CRQ/FAIR (ALE), avec worklist de traitement et score de posture résiduelle.</span>
+      </a>
 
-    <a class="domain-card" href="/?db=XTICKET&amp;table=TICKET" style="--accent:#a78bfa">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="13" y1="5" x2="13" y2="7"/><line x1="13" y1="11" x2="13" y2="13"/><line x1="13" y1="17" x2="13" y2="19"/></svg></span>
-      <span class="domain-title" data-i18n="landing.ticketing">Ticketing</span>
-      <span class="domain-sub">XTICKET · TICKET</span>
-      <span class="domain-desc" data-i18n="landing.ticketing.d">Tickets, commentaires, catégories et pièces jointes.</span>
-    </a>
+      <a class="domain-card" href="/fair-mam" style="--accent:#10b981">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+        <span class="domain-title" data-i18n="landing.fairmam">FAIR-MAM Materiality</span>
+        <span class="domain-sub">Loss decomposition · materiality</span>
+        <span class="domain-desc" data-i18n="landing.fairmam.d">Modèle de matérialité FAIR-MAM : décompose la magnitude d'un événement cyber en 10 catégories de coûts (estimation PERT), répartition perte primaire/secondaire et verdict de matérialité.</span>
+      </a>
 
-    <a class="domain-card" href="/connectors" style="--accent:#2dd4bf">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 1 0 6 6"/><circle cx="12" cy="12" r="2"/><line x1="13.5" y1="10.5" x2="20" y2="4"/></svg></span>
-      <span class="domain-title" data-i18n="landing.xposure">Xposure</span>
-      <span class="domain-sub">Connectors</span>
-      <span class="domain-desc" data-i18n="landing.xposure.d">Gestion de l'exposition : connecteurs (nmap, nuclei, scanners), engagements (ROE) et agents distants.</span>
-    </a>
+      <a class="domain-card" href="/ebios" style="--accent:#f59e0b">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ebios">EBIOS Risk Manager</span>
+        <span class="domain-sub">Module · RISKASSESSMENT (EBIOS*)</span>
+        <span class="domain-desc" data-i18n="landing.ebios.d">Analyse de risque cyber EBIOS RM (ANSSI) : valeurs métier, événements redoutés, sources de risque, écosystème, scénarios et mesures.</span>
+      </a>
 
-    <a class="domain-card" href="/api-docs" style="--accent:#5eead4">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-      <span class="domain-title" data-i18n="landing.api">Developer API</span>
-      <span class="domain-sub">REST · API keys · OpenAPI</span>
-      <span class="domain-desc" data-i18n="landing.api.d">API REST programmatique (clés API, OpenAPI) : actifs, incidents, expositions, SLA/RTO et score de risque.</span>
-    </a>
+      <a class="domain-card" href="/tprm" style="--accent:#c084fc">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="domain-title" data-i18n="landing.tprm">TPRM: Third Party Risk Management</span>
+        <span class="domain-sub">Module · QUESTIONNAIREFORORGANISATION</span>
+        <span class="domain-desc" data-i18n="landing.tprm.d">Évaluation des risques tiers : questionnaires (OCIL), réponses et preuves.</span>
+      </a>
 
-    <a class="domain-card" href="/connectors?connector=darkwatch-osint" style="--accent:#818cf8">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-      <span class="domain-title" data-i18n="landing.assetmon">Asset Monitoring</span>
-      <span class="domain-sub">DARKWATCH-OSINT · dark web</span>
-      <span class="domain-desc" data-i18n="landing.assetmon.d">Surveillance des actifs sur le dark web (fuites de données, rançongiciels, ventes d'exploits) via le connecteur DARKWATCH-OSINT : les expositions deviennent des constats sur vos actifs.</span>
-    </a>
+    </div>
+  </section>
 
-    <a class="domain-card" href="/?db=XORCISM&amp;table=TOOL&amp;filterCol=Category&amp;filterVal=OSINT" style="--accent:#38bdf8">
-      <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><circle cx="11" cy="11" r="2.5"/></svg></span>
-      <span class="domain-title" data-i18n="landing.osint">OSINT</span>
-      <span class="domain-sub">XORCISM · TOOL · Category=OSINT</span>
-      <span class="domain-desc" data-i18n="landing.osint.d">Outils de renseignement en sources ouvertes : la table TOOL filtrée sur la catégorie OSINT.</span>
-    </a>
+  <!-- ── Approach 5 · Compliance-based ── -->
+  <section class="approach" data-group="compliance" style="--accent:#4ade80">
+    <div class="approach-head">
+      <span class="approach-num">05</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.compliance">Compliance-Based</span>
+        <span class="approach-sub" data-i18n="landing.approach.compliance.d">Govern, audit and prove your controls — continuously, not once a year.</span>
+      </span>
+      <span class="approach-count">3</span>
+    </div>
+    <div class="domain-grid" data-group="compliance">
 
-  </div>
+      <a class="domain-card" href="/compliance-management" style="--accent:#4ade80">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.compliance">Compliance</span>
+        <span class="domain-sub">Audits · findings · policies</span>
+        <span class="domain-desc" data-i18n="landing.compliance.d">Audits, constats, preuves, référentiels et risques (GRC).</span>
+      </a>
+
+      <a class="domain-card" href="/policy-management" style="--accent:#a78bfa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+        <span class="domain-title" data-i18n="landing.policy">Policies &amp; Documents</span>
+        <span class="domain-sub">Lifecycle · reviews · ISO 42001</span>
+        <span class="domain-desc" data-i18n="landing.policy.d">Cycle de vie des politiques et registre documentaire : revues, propriétaires, versions, conformité (ISO 42001/27001).</span>
+      </a>
+
+      <a class="domain-card" href="/assurance" style="--accent:#34d399">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v5c0 5-3.4 8.5-8 11-4.6-2.5-8-6-8-11V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.assurance">Control assurance</span>
+        <span class="domain-sub">Continuous · ISO · NIST</span>
+        <span class="domain-desc" data-i18n="landing.assurance.d">Compliance controls proven live by your security telemetry — detection, exposure, findings, pentest — not annual screenshots.</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Approach 6 · Response & Operations ── -->
+  <section class="approach" data-group="operations" style="--accent:#fbbf24">
+    <div class="approach-head">
+      <span class="approach-num">06</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.operations">Response &amp; Operations</span>
+        <span class="approach-sub" data-i18n="landing.approach.operations.d">Act — respond to incidents, rehearse crises and manage the work.</span>
+      </span>
+      <span class="approach-count">6</span>
+    </div>
+    <div class="domain-grid" data-group="operations">
+
+      <a class="domain-card" href="/incident-management" style="--accent:#fbbf24">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span class="domain-title" data-i18n="landing.incident">Incident Management</span>
+        <span class="domain-sub">Queue · governance · SLA</span>
+        <span class="domain-desc" data-i18n="landing.incident.d">Détection, qualification, réponse et suivi des incidents.</span>
+      </a>
+
+      <a class="domain-card" href="/incident-sla" style="--accent:#fb923c">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.sla">Incident SLAs</span>
+        <span class="domain-sub">XINCIDENT · ASSET SLA</span>
+        <span class="domain-desc" data-i18n="landing.sla.d">Durée des incidents mesurée face aux SLA définis sur les actifs : analyse des dépassements.</span>
+      </a>
+
+      <a class="domain-card" href="/crisis-management" style="--accent:#fb7185">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span class="domain-title" data-i18n="landing.crisis">Crisis Management</span>
+        <span class="domain-sub">Tabletop exercises · scenarios</span>
+        <span class="domain-desc" data-i18n="landing.crisis.d">Exercices de gestion de crise (tabletop) sur une bibliothèque de scénarios : injects, actions d'amélioration, rapports après-action et score de préparation.</span>
+      </a>
+
+      <a class="domain-card" href="/pentest" style="--accent:#f43f5e">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></span>
+        <span class="domain-title" data-i18n="landing.pentest">Pentesting</span>
+        <span class="domain-sub">Module · AUDIT (Pentest) · Findings</span>
+        <span class="domain-desc" data-i18n="landing.pentest.d">Pentest engagements scoped to assets — run tool connectors, then collect findings and vulnerabilities.</span>
+      </a>
+
+      <a class="domain-card" href="/?db=XTICKET&amp;table=TICKET" style="--accent:#a78bfa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><line x1="13" y1="5" x2="13" y2="7"/><line x1="13" y1="11" x2="13" y2="13"/><line x1="13" y1="17" x2="13" y2="19"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ticketing">Ticketing</span>
+        <span class="domain-sub">XTICKET · TICKET</span>
+        <span class="domain-desc" data-i18n="landing.ticketing.d">Tickets, commentaires, catégories et pièces jointes.</span>
+      </a>
+
+      <a class="domain-card" href="/content" style="--accent:#c084fc">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7l2 2h7v12H4z"/><path d="M12 11v5"/><path d="M9.5 13.5L12 11l2.5 2.5"/></svg></span>
+        <span class="domain-title" data-i18n="landing.content">Content hub</span>
+        <span class="domain-sub">Playbooks · Sigma · VEX</span>
+        <span class="domain-desc" data-i18n="landing.content.d">Share and reuse content as portable files — attack playbooks, the Sigma detection library, and an OpenVEX document.</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Approach 7 · Platform & Integration ── -->
+  <section class="approach" data-group="platform" style="--accent:#2dd4bf">
+    <div class="approach-head">
+      <span class="approach-num">07</span>
+      <span class="approach-titles">
+        <span class="approach-title" data-i18n="landing.approach.platform">Platform &amp; Integration</span>
+        <span class="approach-sub" data-i18n="landing.approach.platform.d">The plumbing — connectors, remote agents and the programmatic API.</span>
+      </span>
+      <span class="approach-count">2</span>
+    </div>
+    <div class="domain-grid" data-group="platform">
+
+      <a class="domain-card" href="/connectors" style="--accent:#2dd4bf">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 1 0 6 6"/><circle cx="12" cy="12" r="2"/><line x1="13.5" y1="10.5" x2="20" y2="4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.xposure">Xposure</span>
+        <span class="domain-sub">Connectors</span>
+        <span class="domain-desc" data-i18n="landing.xposure.d">Gestion de l'exposition : connecteurs (nmap, nuclei, scanners), engagements (ROE) et agents distants.</span>
+      </a>
+
+      <a class="domain-card" href="/api-docs" style="--accent:#5eead4">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+        <span class="domain-title" data-i18n="landing.api">Developer API</span>
+        <span class="domain-sub">REST · API keys · OpenAPI</span>
+        <span class="domain-desc" data-i18n="landing.api.d">API REST programmatique (clés API, OpenAPI) : actifs, incidents, expositions, SLA/RTO et score de risque.</span>
+      </a>
+
+    </div>
+  </section>
+
 </div>
 
 <div class="layout" id="explorer-layout" style="display:none">
