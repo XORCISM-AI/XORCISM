@@ -1,0 +1,25 @@
+{
+  "id": "immunefi",
+  "name": "Immunefi",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Web3 / crypto-focused bug bounty platform Tool: https://immunefi.com. [SCAFFOLD generated from XORCISM.TOOL #1009 by tool_to_connector.py — implement run() in run.py to map Immunefi output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:immunefi",
+  "run": "run.py",
+  "mapping": "immunefi",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Immunefi output file to parse instead of running it live."
+    }
+  ]
+}

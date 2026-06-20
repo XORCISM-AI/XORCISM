@@ -1,0 +1,25 @@
+{
+  "id": "trm-labs",
+  "name": "TRM Labs",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Crypto compliance and investigation platform Tool: https://www.trmlabs.com. [SCAFFOLD generated from XORCISM.TOOL #1195 by tool_to_connector.py — implement run() in run.py to map TRM Labs output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:trm-labs",
+  "run": "run.py",
+  "mapping": "trm-labs",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved TRM Labs output file to parse instead of running it live."
+    }
+  ]
+}

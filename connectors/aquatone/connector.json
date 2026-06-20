@@ -1,0 +1,25 @@
+{
+  "id": "aquatone",
+  "name": "Aquatone",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Visual inspection of websites across hosts (HTTP screenshots, attack-surface flyovers) Tool: https://github.com/michenriksen/aquatone. [SCAFFOLD generated from XORCISM.TOOL #1024 by tool_to_connector.py — implement run() in run.py to map Aquatone output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:aquatone",
+  "run": "run.py",
+  "mapping": "aquatone",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Aquatone output file to parse instead of running it live."
+    }
+  ]
+}

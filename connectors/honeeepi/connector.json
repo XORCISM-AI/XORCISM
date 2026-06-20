@@ -1,0 +1,25 @@
+{
+  "id": "honeeepi",
+  "name": "Honeeepi",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeypot sensor on a Raspberry Pi based on a customized Raspbian OS. Tool: https://redmine.honeynet.org/projects/honeeepi/wiki. [SCAFFOLD generated from XORCISM.TOOL #575 by tool_to_connector.py — implement run() in run.py to map Honeeepi output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeeepi",
+  "run": "run.py",
+  "mapping": "honeeepi",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeeepi output file to parse instead of running it live."
+    }
+  ]
+}

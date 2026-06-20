@@ -1,0 +1,25 @@
+{
+  "id": "metadata2go",
+  "name": "Metadata2Go",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free online metadata extractor for any file Tool: https://www.metadata2go.com. [SCAFFOLD generated from XORCISM.TOOL #1123 by tool_to_connector.py — implement run() in run.py to map Metadata2Go output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:metadata2go",
+  "run": "run.py",
+  "mapping": "metadata2go",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Metadata2Go output file to parse instead of running it live."
+    }
+  ]
+}

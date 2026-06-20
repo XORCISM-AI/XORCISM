@@ -1,0 +1,25 @@
+{
+  "id": "merlin",
+  "name": "Merlin",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Cross-platform HTTP/2 post-exploitation server and agent in Go Tool: https://github.com/Ne0nd0g/merlin. [SCAFFOLD generated from XORCISM.TOOL #940 by tool_to_connector.py — implement run() in run.py to map Merlin output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:merlin",
+  "run": "run.py",
+  "mapping": "merlin",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Merlin output file to parse instead of running it live."
+    }
+  ]
+}

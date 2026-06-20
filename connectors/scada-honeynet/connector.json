@@ -1,0 +1,25 @@
+{
+  "id": "scada-honeynet",
+  "name": "SCADA honeynet",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Building Honeypots for Industrial Networks. Tool: http://scadahoneynet.sourceforge.net. [SCAFFOLD generated from XORCISM.TOOL #428 by tool_to_connector.py — implement run() in run.py to map SCADA honeynet output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:scada-honeynet",
+  "run": "run.py",
+  "mapping": "scada-honeynet",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SCADA honeynet output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "anon-sms",
+  "name": "Anon-SMS",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Anonymous SMS sending Tool: https://github.com/HACK3RY2J/Anon-SMS. [SCAFFOLD generated from XORCISM.TOOL #808 by tool_to_connector.py — implement run() in run.py to map Anon-SMS output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:anon-sms",
+  "run": "run.py",
+  "mapping": "anon-sms",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Anon-SMS output file to parse instead of running it live."
+    }
+  ]
+}

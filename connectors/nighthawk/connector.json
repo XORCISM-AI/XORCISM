@@ -1,0 +1,25 @@
+{
+  "id": "nighthawk",
+  "name": "Nighthawk",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Premium evasive C2 by MDSec (Cobalt Strike alt) Tool: https://www.mdsec.co.uk/nighthawk/. [SCAFFOLD generated from XORCISM.TOOL #942 by tool_to_connector.py — implement run() in run.py to map Nighthawk output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:nighthawk",
+  "run": "run.py",
+  "mapping": "nighthawk",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Nighthawk output file to parse instead of running it live."
+    }
+  ]
+}

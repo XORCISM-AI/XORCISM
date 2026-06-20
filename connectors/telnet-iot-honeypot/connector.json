@@ -1,0 +1,25 @@
+{
+  "id": "telnet-iot-honeypot",
+  "name": "telnet-iot-honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Python telnet honeypot for catching botnet binaries. Tool: https://github.com/Phype/telnet-iot-honeypot. [SCAFFOLD generated from XORCISM.TOOL #502 by tool_to_connector.py — implement run() in run.py to map telnet-iot-honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:telnet-iot-honeypot",
+  "run": "run.py",
+  "mapping": "telnet-iot-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved telnet-iot-honeypot output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "reconftw",
+  "name": "reconFTW",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Full-suite domain recon — subdomain enum, port scan, vuln scan in one pipeline Tool: https://github.com/six2dez/reconftw. [SCAFFOLD generated from XORCISM.TOOL #1161 by tool_to_connector.py — implement run() in run.py to map reconFTW output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:reconftw",
+  "run": "run.py",
+  "mapping": "reconftw",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved reconFTW output file to parse instead of running it live."
+    }
+  ]
+}

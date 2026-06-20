@@ -1,0 +1,25 @@
+{
+  "id": "epstein-exposed",
+  "name": "Epstein Exposed",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Searchable database of 2M+ DOJ Epstein case docs and network graphs Tool: https://epsteinexposed.com. [SCAFFOLD generated from XORCISM.TOOL #1075 by tool_to_connector.py — implement run() in run.py to map Epstein Exposed output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:epstein-exposed",
+  "run": "run.py",
+  "mapping": "epstein-exposed",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Epstein Exposed output file to parse instead of running it live."
+    }
+  ]
+}

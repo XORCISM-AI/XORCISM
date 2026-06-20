@@ -1,0 +1,25 @@
+{
+  "id": "dionaeafr",
+  "name": "DionaeaFR",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Front Web to Dionaea low-interaction honeypot. Tool: https://github.com/rubenespadas/DionaeaFR. [SCAFFOLD generated from XORCISM.TOOL #625 by tool_to_connector.py — implement run() in run.py to map DionaeaFR output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:dionaeafr",
+  "run": "run.py",
+  "mapping": "dionaeafr",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved DionaeaFR output file to parse instead of running it live."
+    }
+  ]
+}

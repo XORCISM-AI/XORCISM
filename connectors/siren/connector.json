@@ -1,0 +1,25 @@
+{
+  "id": "siren",
+  "name": "SIREN",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Semi-Intelligent HoneyPot Network - HoneyNet Intelligent Virtual Environment. Tool: https://github.com/blaverick62/SIREN. [SCAFFOLD generated from XORCISM.TOOL #487 by tool_to_connector.py — implement run() in run.py to map SIREN output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:siren",
+  "run": "run.py",
+  "mapping": "siren",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SIREN output file to parse instead of running it live."
+    }
+  ]
+}

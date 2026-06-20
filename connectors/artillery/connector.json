@@ -1,0 +1,25 @@
+{
+  "id": "artillery",
+  "name": "Artillery",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Open-source blue team tool designed to protect Linux and Windows operating systems through multiple methods. Tool: https://github.com/BinaryDefense/artillery. [SCAFFOLD generated from XORCISM.TOOL #476 by tool_to_connector.py — implement run() in run.py to map Artillery output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:artillery",
+  "run": "run.py",
+  "mapping": "artillery",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Artillery output file to parse instead of running it live."
+    }
+  ]
+}

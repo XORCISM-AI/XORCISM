@@ -1,0 +1,25 @@
+{
+  "id": "iknowyour-dad",
+  "name": "IKnowYour.Dad",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Data breach search engine Tool: https://iknowyour.dad. [SCAFFOLD generated from XORCISM.TOOL #1106 by tool_to_connector.py — implement run() in run.py to map IKnowYour.Dad output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:iknowyour-dad",
+  "run": "run.py",
+  "mapping": "iknowyour-dad",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved IKnowYour.Dad output file to parse instead of running it live."
+    }
+  ]
+}

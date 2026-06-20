@@ -1,0 +1,25 @@
+{
+  "id": "go0r",
+  "name": "go0r",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Simple ssh honeypot in Golang. Tool: https://github.com/fzerorubigd/go0r. [SCAFFOLD generated from XORCISM.TOOL #555 by tool_to_connector.py — implement run() in run.py to map go0r output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:go0r",
+  "run": "run.py",
+  "mapping": "go0r",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved go0r output file to parse instead of running it live."
+    }
+  ]
+}

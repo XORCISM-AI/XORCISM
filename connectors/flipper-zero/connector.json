@@ -1,0 +1,25 @@
+{
+  "id": "flipper-zero",
+  "name": "Flipper Zero",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Multi-tool: RFID, NFC, IR, Sub-GHz, BadUSB Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #893 by tool_to_connector.py — implement run() in run.py to map Flipper Zero output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:flipper-zero",
+  "run": "run.py",
+  "mapping": "flipper-zero",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Flipper Zero output file to parse instead of running it live."
+    }
+  ]
+}

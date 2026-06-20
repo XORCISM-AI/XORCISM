@@ -1,0 +1,25 @@
+{
+  "id": "trace-labs-osint-vm",
+  "name": "Trace Labs OSINT VM",
+  "type": "import",
+  "category": "OSINT",
+  "description": "OSINT-specific VM Tool: https://tracelabs.org/. [SCAFFOLD generated from XORCISM.TOOL #907 by tool_to_connector.py — implement run() in run.py to map Trace Labs OSINT VM output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:trace-labs-osint-vm",
+  "run": "run.py",
+  "mapping": "trace-labs-osint-vm",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Trace Labs OSINT VM output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "fullcontact",
+  "name": "FullContact",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Identity-resolution API and person enrichment Tool: https://www.fullcontact.com. [SCAFFOLD generated from XORCISM.TOOL #1085 by tool_to_connector.py — implement run() in run.py to map FullContact output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:fullcontact",
+  "run": "run.py",
+  "mapping": "fullcontact",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved FullContact output file to parse instead of running it live."
+    }
+  ]
+}

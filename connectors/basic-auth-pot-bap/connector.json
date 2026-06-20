@@ -1,0 +1,25 @@
+{
+  "id": "basic-auth-pot-bap",
+  "name": "basic-auth-pot (bap)",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "HTTP Basic Authentication honeypot. Tool: https://github.com/bjeborn/basic-auth-pot. [SCAFFOLD generated from XORCISM.TOOL #366 by tool_to_connector.py — implement run() in run.py to map basic-auth-pot (bap) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:basic-auth-pot-bap",
+  "run": "run.py",
+  "mapping": "basic-auth-pot-bap",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved basic-auth-pot (bap) output file to parse instead of running it live."
+    }
+  ]
+}

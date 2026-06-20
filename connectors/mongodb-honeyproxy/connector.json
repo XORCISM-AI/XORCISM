@@ -1,0 +1,25 @@
+{
+  "id": "mongodb-honeyproxy",
+  "name": "MongoDB-HoneyProxy",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "A MongoDB honeypot proxy. Tool: https://github.com/Plazmaz/MongoDB-HoneyProxy. [SCAFFOLD generated from XORCISM.TOOL #341 by tool_to_connector.py — implement run() in run.py to map MongoDB-HoneyProxy output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mongodb-honeyproxy",
+  "run": "run.py",
+  "mapping": "mongodb-honeyproxy",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved MongoDB-HoneyProxy output file to parse instead of running it live."
+    }
+  ]
+}

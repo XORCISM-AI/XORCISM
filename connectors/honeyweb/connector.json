@@ -1,0 +1,25 @@
+{
+  "id": "honeyweb",
+  "name": "HoneyWeb",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Web interface created to manage and remotely share Honeyclients resources. Tool: https://code.google.com/archive/p/gsoc-honeyweb/. [SCAFFOLD generated from XORCISM.TOOL #522 by tool_to_connector.py — implement run() in run.py to map HoneyWeb output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeyweb",
+  "run": "run.py",
+  "mapping": "honeyweb",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved HoneyWeb output file to parse instead of running it live."
+    }
+  ]
+}

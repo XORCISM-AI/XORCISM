@@ -1,0 +1,25 @@
+{
+  "id": "vk-page-archive",
+  "name": "VK page archive",
+  "type": "import",
+  "category": "OSINT",
+  "description": "vk.watch/ID/profile Tool: https://vk.watch/ID/profile. [SCAFFOLD generated from XORCISM.TOOL #875 by tool_to_connector.py — implement run() in run.py to map VK page archive output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:vk-page-archive",
+  "run": "run.py",
+  "mapping": "vk-page-archive",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved VK page archive output file to parse instead of running it live."
+    }
+  ]
+}

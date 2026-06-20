@@ -1,0 +1,25 @@
+{
+  "id": "eric-zimmerman-s-tools",
+  "name": "Eric Zimmerman's Tools",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Suite of free Windows DFIR utilities Tool: https://ericzimmerman.github.io. [SCAFFOLD generated from XORCISM.TOOL #973 by tool_to_connector.py — implement run() in run.py to map Eric Zimmerman's Tools output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:eric-zimmerman-s-tools",
+  "run": "run.py",
+  "mapping": "eric-zimmerman-s-tools",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Eric Zimmerman's Tools output file to parse instead of running it live."
+    }
+  ]
+}

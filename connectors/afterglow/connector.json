@@ -1,0 +1,25 @@
+{
+  "id": "afterglow",
+  "name": "Afterglow",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Afterglow (Honeypot). Tool: http://afterglow.sourceforge.net/. [SCAFFOLD generated from XORCISM.TOOL #634 by tool_to_connector.py — implement run() in run.py to map Afterglow output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:afterglow",
+  "run": "run.py",
+  "mapping": "afterglow",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Afterglow output file to parse instead of running it live."
+    }
+  ]
+}

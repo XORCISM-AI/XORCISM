@@ -1,0 +1,25 @@
+{
+  "id": "cymmetria-mazerunner",
+  "name": "Cymmetria Mazerunner",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Leads attackers away from real targets and creates a footprint of the attack. Tool: ttps://cymmetria.com/products/mazerunner/. [SCAFFOLD generated from XORCISM.TOOL #589 by tool_to_connector.py — implement run() in run.py to map Cymmetria Mazerunner output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:cymmetria-mazerunner",
+  "run": "run.py",
+  "mapping": "cymmetria-mazerunner",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Cymmetria Mazerunner output file to parse instead of running it live."
+    }
+  ]
+}

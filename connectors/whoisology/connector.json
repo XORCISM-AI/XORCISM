@@ -1,0 +1,25 @@
+{
+  "id": "whoisology",
+  "name": "Whoisology",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Reverse WHOIS — find domains by registrant Tool: https://whoisology.com. [SCAFFOLD generated from XORCISM.TOOL #1210 by tool_to_connector.py — implement run() in run.py to map Whoisology output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:whoisology",
+  "run": "run.py",
+  "mapping": "whoisology",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Whoisology output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "whiteface-honeypot",
+  "name": "WhiteFace Honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Twisted based honeypot for WhiteFace. Tool: https://github.com/csirtgadgets/csirtg-honeypot. [SCAFFOLD generated from XORCISM.TOOL #420 by tool_to_connector.py — implement run() in run.py to map WhiteFace Honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:whiteface-honeypot",
+  "run": "run.py",
+  "mapping": "whiteface-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved WhiteFace Honeypot output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "udpot-honeypot",
+  "name": "UDPot Honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Simple UDP/DNS honeypot scripts. Tool: https://github.com/jekil/UDPot. [SCAFFOLD generated from XORCISM.TOOL #489 by tool_to_connector.py — implement run() in run.py to map UDPot Honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:udpot-honeypot",
+  "run": "run.py",
+  "mapping": "udpot-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved UDPot Honeypot output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "github-monitor",
+  "name": "github_monitor",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Real-time tracking of GitHub user activity and repo changes Tool: https://github.com/misiektoja/github_monitor. [SCAFFOLD generated from XORCISM.TOOL #1093 by tool_to_connector.py — implement run() in run.py to map github_monitor output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:github-monitor",
+  "run": "run.py",
+  "mapping": "github-monitor",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved github_monitor output file to parse instead of running it live."
+    }
+  ]
+}

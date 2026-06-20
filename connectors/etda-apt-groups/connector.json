@@ -1,0 +1,25 @@
+{
+  "id": "etda-apt-groups",
+  "name": "ETDA APT Groups",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Search threat-actor groups and their tools Tool: https://apt.etda.or.th/cgi-bin/listgroups.cgi. [SCAFFOLD generated from XORCISM.TOOL #1076 by tool_to_connector.py — implement run() in run.py to map ETDA APT Groups output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:etda-apt-groups",
+  "run": "run.py",
+  "mapping": "etda-apt-groups",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved ETDA APT Groups output file to parse instead of running it live."
+    }
+  ]
+}

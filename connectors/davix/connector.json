@@ -1,0 +1,25 @@
+{
+  "id": "davix",
+  "name": "DAVIX",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "The DAVIX Live CD. Tool: https://www.secviz.org/node/89. [SCAFFOLD generated from XORCISM.TOOL #578 by tool_to_connector.py — implement run() in run.py to map DAVIX output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:davix",
+  "run": "run.py",
+  "mapping": "davix",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved DAVIX output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "hackingtool",
+  "name": "Hackingtool",
+  "type": "import",
+  "category": "OSINT",
+  "description": "All-in-one tool (100+ categories) Tool: https://github.com/Z4nzu/hackingtool. [SCAFFOLD generated from XORCISM.TOOL #886 by tool_to_connector.py — implement run() in run.py to map Hackingtool output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:hackingtool",
+  "run": "run.py",
+  "mapping": "hackingtool",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Hackingtool output file to parse instead of running it live."
+    }
+  ]
+}

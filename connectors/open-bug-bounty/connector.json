@@ -1,0 +1,25 @@
+{
+  "id": "open-bug-bounty",
+  "name": "Open Bug Bounty",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free coordinated-disclosure platform Tool: https://www.openbugbounty.org. [SCAFFOLD generated from XORCISM.TOOL #1011 by tool_to_connector.py — implement run() in run.py to map Open Bug Bounty output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:open-bug-bounty",
+  "run": "run.py",
+  "mapping": "open-bug-bounty",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Open Bug Bounty output file to parse instead of running it live."
+    }
+  ]
+}

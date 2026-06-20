@@ -1,0 +1,25 @@
+{
+  "id": "ahmyth-android-rat",
+  "name": "AhMyth Android RAT",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Android remote access tool Tool: https://github.com/AhMyth/AhMyth-Android-RAT. [SCAFFOLD generated from XORCISM.TOOL #831 by tool_to_connector.py — implement run() in run.py to map AhMyth Android RAT output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ahmyth-android-rat",
+  "run": "run.py",
+  "mapping": "ahmyth-android-rat",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved AhMyth Android RAT output file to parse instead of running it live."
+    }
+  ]
+}

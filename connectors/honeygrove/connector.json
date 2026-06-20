@@ -1,0 +1,25 @@
+{
+  "id": "honeygrove",
+  "name": "Honeygrove",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Multi-purpose modular honeypot based on Twisted. Tool: https://github.com/UHH-ISS/honeygrove. [SCAFFOLD generated from XORCISM.TOOL #406 by tool_to_connector.py — implement run() in run.py to map Honeygrove output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeygrove",
+  "run": "run.py",
+  "mapping": "honeygrove",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeygrove output file to parse instead of running it live."
+    }
+  ]
+}

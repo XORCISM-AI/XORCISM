@@ -1,0 +1,25 @@
+{
+  "id": "longitudinal-analysis-of-ssh-cowrie-honeypot-logs",
+  "name": "Longitudinal Analysis of SSH Cowrie Honeypot Logs",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Python based command line tool to analyze cowrie logs over time. Tool: https://github.com/deroux/longitudinal-analysis-cowrie. [SCAFFOLD generated from XORCISM.TOOL #549 by tool_to_connector.py — implement run() in run.py to map Longitudinal Analysis of SSH Cowrie Honeypot Logs output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:longitudinal-analysis-of-ssh-cowrie-honeypot-logs",
+  "run": "run.py",
+  "mapping": "longitudinal-analysis-of-ssh-cowrie-honeypot-logs",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Longitudinal Analysis of SSH Cowrie Honeypot Logs output file to parse instead of running it live."
+    }
+  ]
+}

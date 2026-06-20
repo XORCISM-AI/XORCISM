@@ -1,0 +1,25 @@
+{
+  "id": "root-me",
+  "name": "Root-Me",
+  "type": "import",
+  "category": "OSINT",
+  "description": "500+ challenges and 100+ virtual labs Tool: https://www.root-me.org. [SCAFFOLD generated from XORCISM.TOOL #1000 by tool_to_connector.py — implement run() in run.py to map Root-Me output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:root-me",
+  "run": "run.py",
+  "mapping": "root-me",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Root-Me output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "acra",
+  "name": "Acra",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Effective SQL database protection suite: strong selective encryption, SQL injections prevention, intrusion detection system based on using honeypots/poison records in the database. Tool: https://github.com/cossacklabs/acra. [SCAFFOLD generated from XORCISM.TOOL #336 by tool_to_connector.py — implement run() in run.py to map Acra output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:acra",
+  "run": "run.py",
+  "mapping": "acra",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Acra output file to parse instead of running it live."
+    }
+  ]
+}

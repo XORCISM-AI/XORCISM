@@ -1,0 +1,25 @@
+{
+  "id": "proxmark3",
+  "name": "Proxmark3",
+  "type": "import",
+  "category": "OSINT",
+  "description": "RFID/NFC research & cloning tool Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #895 by tool_to_connector.py — implement run() in run.py to map Proxmark3 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:proxmark3",
+  "run": "run.py",
+  "mapping": "proxmark3",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Proxmark3 output file to parse instead of running it live."
+    }
+  ]
+}

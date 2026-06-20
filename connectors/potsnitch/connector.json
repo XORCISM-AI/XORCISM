@@ -1,0 +1,25 @@
+{
+  "id": "potsnitch",
+  "name": "potsnitch",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeypot detection toolkit with protocol fingerprinting for 25+ honeypot types. Tool: https://github.com/f0rw4rd/potsnitch. [SCAFFOLD generated from XORCISM.TOOL #425 by tool_to_connector.py — implement run() in run.py to map potsnitch output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:potsnitch",
+  "run": "run.py",
+  "mapping": "potsnitch",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved potsnitch output file to parse instead of running it live."
+    }
+  ]
+}

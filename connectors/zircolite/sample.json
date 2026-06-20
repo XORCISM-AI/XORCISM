@@ -1,0 +1,39 @@
+[
+  {
+    "title": "Suspicious PowerShell Encoded Command",
+    "id": "f7b6c3a1-2c0e-4f2a-9a3b-1d2e3f4a5b6c",
+    "description": "Detects suspicious base64-encoded PowerShell command lines often used by attackers to obfuscate payloads.",
+    "sigmafile": "rules/windows/process_creation/proc_creation_win_powershell_encoded.yml",
+    "rule_level": "high",
+    "tags": ["attack.execution", "attack.t1059.001"],
+    "count": 2,
+    "matches": [
+      {"row_id": 1, "Computer": "WIN-DC01", "Channel": "Security", "EventID": 4688, "CommandLine": "powershell.exe -nop -w hidden -enc SQBFAFgA..."},
+      {"row_id": 2, "Computer": "WIN-DC01", "Channel": "Security", "EventID": 4688, "CommandLine": "powershell -e JABjAGwAaQBlAG4AdAA9..."}
+    ]
+  },
+  {
+    "title": "LSASS Memory Access (Credential Dumping)",
+    "id": "06d71506-7beb-4f22-8888-e2e5e2e2e2e2",
+    "description": "Detects process access to LSASS memory consistent with credential-dumping tools such as Mimikatz.",
+    "sigmafile": "rules/windows/builtin/security/win_susp_lsass_access.yml",
+    "rule_level": "critical",
+    "tags": ["attack.credential_access", "attack.t1003.001"],
+    "count": 1,
+    "matches": [
+      {"row_id": 5, "Computer": "WIN-WS07", "Channel": "Security", "EventID": 4656, "ObjectName": "\\Device\\HarddiskVolume2\\Windows\\System32\\lsass.exe", "ProcessName": "C:\\Tools\\m.exe"}
+    ]
+  },
+  {
+    "title": "New Scheduled Task Registered",
+    "id": "92626ddd-1111-2222-3333-444455556666",
+    "description": "A new scheduled task was registered, a common persistence technique.",
+    "sigmafile": "rules/windows/builtin/security/win_security_schtask_creation.yml",
+    "rule_level": "medium",
+    "tags": ["attack.persistence", "attack.t1053.005"],
+    "count": 1,
+    "matches": [
+      {"row_id": 9, "Computer": "WIN-WS07", "Channel": "Security", "EventID": 4698, "TaskName": "\\Microsoft\\Windows\\Updater"}
+    ]
+  }
+]

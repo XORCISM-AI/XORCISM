@@ -1,0 +1,25 @@
+{
+  "id": "fortigate-ssl-vpn-honeypot",
+  "name": "FortiGate SSL-VPN Honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Mimics FortiGate SSL-VPN devices to capture brute-force attempts, symlink exploit probes, and malicious IP telemetry. Tool: https://github.com/PeterGabaldon/Fortigate.VPN-SSL.Honeypot. [SCAFFOLD generated from XORCISM.TOOL #444 by tool_to_connector.py — implement run() in run.py to map FortiGate SSL-VPN Honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:fortigate-ssl-vpn-honeypot",
+  "run": "run.py",
+  "mapping": "fortigate-ssl-vpn-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved FortiGate SSL-VPN Honeypot output file to parse instead of running it live."
+    }
+  ]
+}

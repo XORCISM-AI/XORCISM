@@ -1,0 +1,25 @@
+{
+  "id": "ssrfmap",
+  "name": "SSRFmap",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Automated SSRF detection and exploitation framework Tool: https://github.com/swisskyrepo/SSRFmap. [SCAFFOLD generated from XORCISM.TOOL #948 by tool_to_connector.py — implement run() in run.py to map SSRFmap output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ssrfmap",
+  "run": "run.py",
+  "mapping": "ssrfmap",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SSRFmap output file to parse instead of running it live."
+    }
+  ]
+}

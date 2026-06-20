@@ -1,0 +1,25 @@
+{
+  "id": "imhoneypot",
+  "name": "IMHoneypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "IMHoneypot (Honeypot). Tool: https://github.com/mushorg/imhoneypot. [SCAFFOLD generated from XORCISM.TOOL #535 by tool_to_connector.py — implement run() in run.py to map IMHoneypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:imhoneypot",
+  "run": "run.py",
+  "mapping": "imhoneypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved IMHoneypot output file to parse instead of running it live."
+    }
+  ]
+}

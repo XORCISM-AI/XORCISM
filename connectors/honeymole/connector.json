@@ -1,0 +1,25 @@
+{
+  "id": "honeymole",
+  "name": "Honeymole",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Deploy multiple sensors that redirect traffic to a centralized collection of honeypots. Tool: https://web.archive.org/web/20100326040550/http://www.honeynet.org.pt:80/index.php/HoneyMole. [SCAFFOLD generated from XORCISM.TOOL #457 by tool_to_connector.py — implement run() in run.py to map Honeymole output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeymole",
+  "run": "run.py",
+  "mapping": "honeymole",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeymole output file to parse instead of running it live."
+    }
+  ]
+}

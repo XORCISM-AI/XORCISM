@@ -1,0 +1,25 @@
+{
+  "id": "gospider",
+  "name": "GoSpider",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Fast Go web spider for crawling/audit Tool: https://github.com/jaeles-project/gospider. [SCAFFOLD generated from XORCISM.TOOL #1096 by tool_to_connector.py — implement run() in run.py to map GoSpider output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:gospider",
+  "run": "run.py",
+  "mapping": "gospider",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved GoSpider output file to parse instead of running it live."
+    }
+  ]
+}

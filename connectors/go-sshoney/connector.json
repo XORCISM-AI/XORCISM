@@ -1,0 +1,25 @@
+{
+  "id": "go-sshoney",
+  "name": "go-sshoney",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "SSH Honeypot. Tool: https://github.com/ashmckenzie/go-sshoney. [SCAFFOLD generated from XORCISM.TOOL #554 by tool_to_connector.py — implement run() in run.py to map go-sshoney output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:go-sshoney",
+  "run": "run.py",
+  "mapping": "go-sshoney",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved go-sshoney output file to parse instead of running it live."
+    }
+  ]
+}

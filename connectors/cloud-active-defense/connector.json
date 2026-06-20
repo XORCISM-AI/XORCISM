@@ -1,0 +1,25 @@
+{
+  "id": "cloud-active-defense",
+  "name": "Cloud Active Defense",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Cloud active defense lets you deploy decoys right into your cloud applications, putting adversaries into a dilemma: to hack or not to hack? Tool: https://github.com/SAP/cloud-active-defense?tab=readme-ov-file. [SCAFFOLD generated from XORCISM.TOOL #351 by tool_to_connector.py — implement run() in run.py to map Cloud Active Defense output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:cloud-active-defense",
+  "run": "run.py",
+  "mapping": "cloud-active-defense",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Cloud Active Defense output file to parse instead of running it live."
+    }
+  ]
+}

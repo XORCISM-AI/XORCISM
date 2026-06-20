@@ -1,0 +1,25 @@
+{
+  "id": "urlhaus-abuse-ch",
+  "name": "URLhaus (abuse.ch)",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Database of malicious URLs used for malware distribution Tool: https://urlhaus.abuse.ch. [SCAFFOLD generated from XORCISM.TOOL #1202 by tool_to_connector.py — implement run() in run.py to map URLhaus (abuse.ch) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:urlhaus-abuse-ch",
+  "run": "run.py",
+  "mapping": "urlhaus-abuse-ch",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved URLhaus (abuse.ch) output file to parse instead of running it live."
+    }
+  ]
+}

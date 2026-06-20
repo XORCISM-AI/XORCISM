@@ -1,0 +1,25 @@
+{
+  "id": "torch",
+  "name": "Torch",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Oldest & largest dark web search engine Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #786 by tool_to_connector.py — implement run() in run.py to map Torch output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:torch",
+  "run": "run.py",
+  "mapping": "torch",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Torch output file to parse instead of running it live."
+    }
+  ]
+}

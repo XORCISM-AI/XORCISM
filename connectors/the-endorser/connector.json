@@ -1,0 +1,25 @@
+{
+  "id": "the-endorser",
+  "name": "the-endorser",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Map LinkedIn endorsements/skills to draw out person relationships Tool: https://github.com/eth0izzle/the-endorser. [SCAFFOLD generated from XORCISM.TOOL #1188 by tool_to_connector.py — implement run() in run.py to map the-endorser output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:the-endorser",
+  "run": "run.py",
+  "mapping": "the-endorser",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved the-endorser output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "log4pot",
+  "name": "Log4Pot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "A honeypot for the Log4Shell vulnerability (CVE-2021-44228). Tool: https://github.com/thomaspatzke/Log4Pot. [SCAFFOLD generated from XORCISM.TOOL #437 by tool_to_connector.py — implement run() in run.py to map Log4Pot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:log4pot",
+  "run": "run.py",
+  "mapping": "log4pot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Log4Pot output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "honeyhttpd",
+  "name": "honeyhttpd",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Python-based web server honeypot builder. Tool: https://github.com/bocajspear1/honeyhttpd. [SCAFFOLD generated from XORCISM.TOOL #372 by tool_to_connector.py — implement run() in run.py to map honeyhttpd output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeyhttpd",
+  "run": "run.py",
+  "mapping": "honeyhttpd",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved honeyhttpd output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "honeytrap",
+  "name": "honeytrap",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Advanced Honeypot framework written in Go that can be connected with other honeypot software. Tool: https://github.com/honeytrap/honeytrap. [SCAFFOLD generated from XORCISM.TOOL #404 by tool_to_connector.py — implement run() in run.py to map honeytrap output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeytrap",
+  "run": "run.py",
+  "mapping": "honeytrap",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved honeytrap output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "openflow-honeypot-ofpot",
+  "name": "OpenFlow Honeypot (OFPot)",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Redirects traffic for unused IPs to a honeypot, built on POX. Tool: https://github.com/upa/ofpot. [SCAFFOLD generated from XORCISM.TOOL #441 by tool_to_connector.py — implement run() in run.py to map OpenFlow Honeypot (OFPot) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:openflow-honeypot-ofpot",
+  "run": "run.py",
+  "mapping": "openflow-honeypot-ofpot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OpenFlow Honeypot (OFPot) output file to parse instead of running it live."
+    }
+  ]
+}

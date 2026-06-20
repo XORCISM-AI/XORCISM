@@ -1,0 +1,25 @@
+{
+  "id": "elasticpot",
+  "name": "ElasticPot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "An Elasticsearch Honeypot. Tool: https://gitlab.com/bontchev/elasticpot. [SCAFFOLD generated from XORCISM.TOOL #347 by tool_to_connector.py — implement run() in run.py to map ElasticPot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:elasticpot",
+  "run": "run.py",
+  "mapping": "elasticpot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved ElasticPot output file to parse instead of running it live."
+    }
+  ]
+}

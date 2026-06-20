@@ -1,0 +1,6 @@
+# agentic-security scanner local state — applies to connectors/ and every
+# connector sub-directory (the unanchored pattern matches at any depth).
+.agentic-security/
+
+# explicit form for the immediate connector sub-directories
+*/.agentic-security/

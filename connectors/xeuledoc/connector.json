@@ -1,0 +1,25 @@
+{
+  "id": "xeuledoc",
+  "name": "XeuleDoc",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Fetch info on Google Docs/Sheets/Slides/Drawings without auth Tool: https://pypi.org/project/xeuledoc/. [SCAFFOLD generated from XORCISM.TOOL #1215 by tool_to_connector.py — implement run() in run.py to map XeuleDoc output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:xeuledoc",
+  "run": "run.py",
+  "mapping": "xeuledoc",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved XeuleDoc output file to parse instead of running it live."
+    }
+  ]
+}

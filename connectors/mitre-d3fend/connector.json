@@ -1,0 +1,25 @@
+{
+  "id": "mitre-d3fend",
+  "name": "MITRE D3FEND",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Defensive countermeasure knowledge graph Tool: https://d3fend.mitre.org. [SCAFFOLD generated from XORCISM.TOOL #954 by tool_to_connector.py — implement run() in run.py to map MITRE D3FEND output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mitre-d3fend",
+  "run": "run.py",
+  "mapping": "mitre-d3fend",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved MITRE D3FEND output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "user-agent-switcher",
+  "name": "User-Agent Switcher",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Change browser identity Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #927 by tool_to_connector.py — implement run() in run.py to map User-Agent Switcher output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:user-agent-switcher",
+  "run": "run.py",
+  "mapping": "user-agent-switcher",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved User-Agent Switcher output file to parse instead of running it live."
+    }
+  ]
+}

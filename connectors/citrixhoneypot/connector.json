@@ -1,0 +1,25 @@
+{
+  "id": "citrixhoneypot",
+  "name": "CitrixHoneypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Detect and log CVE-2019-19781 scan and exploitation attempts. Tool: https://github.com/MalwareTech/CitrixHoneypot. [SCAFFOLD generated from XORCISM.TOOL #433 by tool_to_connector.py — implement run() in run.py to map CitrixHoneypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:citrixhoneypot",
+  "run": "run.py",
+  "mapping": "citrixhoneypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved CitrixHoneypot output file to parse instead of running it live."
+    }
+  ]
+}

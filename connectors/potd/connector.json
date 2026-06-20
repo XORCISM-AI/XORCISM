@@ -1,0 +1,25 @@
+{
+  "id": "potd",
+  "name": "potd",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Highly scalable low- to medium-interaction SSH/TCP honeypot designed for OpenWrt/IoT devices leveraging several Linux kernel features, such as namespaces, seccomp and thread capabilities. Tool: https://github.com/lnslbrty/potd. [SCAFFOLD generated from XORCISM.TOOL #499 by tool_to_connector.py — implement run() in run.py to map potd output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:potd",
+  "run": "run.py",
+  "mapping": "potd",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved potd output file to parse instead of running it live."
+    }
+  ]
+}

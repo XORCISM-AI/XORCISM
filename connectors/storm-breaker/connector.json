@@ -1,0 +1,25 @@
+{
+  "id": "storm-breaker",
+  "name": "Storm-Breaker",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Access webcam/mic/location (SE) Tool: https://github.com/ultrasecurity/Storm-Breaker. [SCAFFOLD generated from XORCISM.TOOL #817 by tool_to_connector.py — implement run() in run.py to map Storm-Breaker output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:storm-breaker",
+  "run": "run.py",
+  "mapping": "storm-breaker",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Storm-Breaker output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "honeyd2mysql",
+  "name": "Honeyd2MySQL",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeyd2MySQL (Honeypot). Tool: https://bruteforcelab.com/honeyd2mysql. [SCAFFOLD generated from XORCISM.TOOL #610 by tool_to_connector.py — implement run() in run.py to map Honeyd2MySQL output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeyd2mysql",
+  "run": "run.py",
+  "mapping": "honeyd2mysql",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeyd2MySQL output file to parse instead of running it live."
+    }
+  ]
+}

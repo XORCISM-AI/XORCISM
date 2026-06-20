@@ -1,0 +1,25 @@
+{
+  "id": "suncalc",
+  "name": "SunCalc",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Sun position/time calculator from photos Tool: https://suncalc.org/. [SCAFFOLD generated from XORCISM.TOOL #709 by tool_to_connector.py — implement run() in run.py to map SunCalc output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:suncalc",
+  "run": "run.py",
+  "mapping": "suncalc",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SunCalc output file to parse instead of running it live."
+    }
+  ]
+}

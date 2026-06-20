@@ -1,0 +1,25 @@
+{
+  "id": "cwsandbox-gfi-sandbox",
+  "name": "CWSandbox / GFI Sandbox",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "CWSandbox / GFI Sandbox (Honeypot). Tool: https://www.gfi.com/products-and-solutions/all-products. [SCAFFOLD generated from XORCISM.TOOL #515 by tool_to_connector.py — implement run() in run.py to map CWSandbox / GFI Sandbox output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:cwsandbox-gfi-sandbox",
+  "run": "run.py",
+  "mapping": "cwsandbox-gfi-sandbox",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved CWSandbox / GFI Sandbox output file to parse instead of running it live."
+    }
+  ]
+}

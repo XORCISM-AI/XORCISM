@@ -1,0 +1,25 @@
+{
+  "id": "capture-bat",
+  "name": "Capture BAT",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Capture BAT (Honeypot). Tool: https://www.honeynet.org/node/315. [SCAFFOLD generated from XORCISM.TOOL #577 by tool_to_connector.py — implement run() in run.py to map Capture BAT output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:capture-bat",
+  "run": "run.py",
+  "mapping": "capture-bat",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Capture BAT output file to parse instead of running it live."
+    }
+  ]
+}

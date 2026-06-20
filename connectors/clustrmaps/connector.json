@@ -1,0 +1,25 @@
+{
+  "id": "clustrmaps",
+  "name": "Clustrmaps",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Find people and address information Tool: https://clustrmaps.com. [SCAFFOLD generated from XORCISM.TOOL #1056 by tool_to_connector.py — implement run() in run.py to map Clustrmaps output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:clustrmaps",
+  "run": "run.py",
+  "mapping": "clustrmaps",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Clustrmaps output file to parse instead of running it live."
+    }
+  ]
+}

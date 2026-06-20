@@ -1,0 +1,25 @@
+{
+  "id": "wapot",
+  "name": "WAPot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeypot that can be used to observe traffic directed at home routers. Tool: https://github.com/lcashdol/WAPot. [SCAFFOLD generated from XORCISM.TOOL #456 by tool_to_connector.py — implement run() in run.py to map WAPot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:wapot",
+  "run": "run.py",
+  "mapping": "wapot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved WAPot output file to parse instead of running it live."
+    }
+  ]
+}

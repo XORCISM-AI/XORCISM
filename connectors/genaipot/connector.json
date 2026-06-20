@@ -1,0 +1,25 @@
+{
+  "id": "genaipot",
+  "name": "GenAIPot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "The first A.I based open source honeypot. supports POP3 and SMTP protocols and generates content using A.I based on user description. Tool: https://github.com/ls1911/GenAIPot. [SCAFFOLD generated from XORCISM.TOOL #397 by tool_to_connector.py — implement run() in run.py to map GenAIPot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:genaipot",
+  "run": "run.py",
+  "mapping": "genaipot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved GenAIPot output file to parse instead of running it live."
+    }
+  ]
+}

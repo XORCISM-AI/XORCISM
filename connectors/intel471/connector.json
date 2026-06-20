@@ -1,0 +1,25 @@
+{
+  "id": "intel471",
+  "name": "Intel471",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Premium adversary intelligence and underground monitoring platform Tool: https://intel471.com. [SCAFFOLD generated from XORCISM.TOOL #965 by tool_to_connector.py — implement run() in run.py to map Intel471 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:intel471",
+  "run": "run.py",
+  "mapping": "intel471",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Intel471 output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "spydialer",
+  "name": "SpyDialer",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free reverse phone lookup Tool: https://spydialer.com/. [SCAFFOLD generated from XORCISM.TOOL #688 by tool_to_connector.py — implement run() in run.py to map SpyDialer output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:spydialer",
+  "run": "run.py",
+  "mapping": "spydialer",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SpyDialer output file to parse instead of running it live."
+    }
+  ]
+}

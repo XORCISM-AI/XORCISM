@@ -1,0 +1,25 @@
+{
+  "id": "reddit-investigator",
+  "name": "Reddit Investigator",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Reddit user analysis Tool: https://reddit-user-analyser.netlify.app/. [SCAFFOLD generated from XORCISM.TOOL #749 by tool_to_connector.py — implement run() in run.py to map Reddit Investigator output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:reddit-investigator",
+  "run": "run.py",
+  "mapping": "reddit-investigator",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Reddit Investigator output file to parse instead of running it live."
+    }
+  ]
+}

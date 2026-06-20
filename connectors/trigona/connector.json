@@ -1,0 +1,25 @@
+{
+  "id": "trigona",
+  "name": "Trigona",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Trigona (Honeypot). Tool: https://www.honeynet.org/project/Trigona. [SCAFFOLD generated from XORCISM.TOOL #531 by tool_to_connector.py — implement run() in run.py to map Trigona output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:trigona",
+  "run": "run.py",
+  "mapping": "trigona",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Trigona output file to parse instead of running it live."
+    }
+  ]
+}

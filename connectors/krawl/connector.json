@@ -1,0 +1,25 @@
+{
+  "id": "krawl",
+  "name": "Krawl",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Lightweight deception server and anti‑crawler that deploys realistic fake web applications with low‑hanging vulnerabilities and randomly generated decoy data. Tool: https://github.com/BlessedRebuS/Krawl. [SCAFFOLD generated from XORCISM.TOOL #350 by tool_to_connector.py — implement run() in run.py to map Krawl output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:krawl",
+  "run": "run.py",
+  "mapping": "krawl",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Krawl output file to parse instead of running it live."
+    }
+  ]
+}

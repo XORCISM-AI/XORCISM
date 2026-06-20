@@ -1,0 +1,25 @@
+{
+  "id": "firms",
+  "name": "FIRMS",
+  "type": "import",
+  "category": "OSINT",
+  "description": "NASA fire/thermal hotspots Tool: https://firms.modaps.eosdis.nasa.gov/. [SCAFFOLD generated from XORCISM.TOOL #712 by tool_to_connector.py — implement run() in run.py to map FIRMS output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:firms",
+  "run": "run.py",
+  "mapping": "firms",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved FIRMS output file to parse instead of running it live."
+    }
+  ]
+}

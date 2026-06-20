@@ -1,0 +1,25 @@
+{
+  "id": "anomali-threatstream",
+  "name": "Anomali ThreatStream",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Enterprise threat intel aggregation platform Tool: https://www.anomali.com. [SCAFFOLD generated from XORCISM.TOOL #960 by tool_to_connector.py — implement run() in run.py to map Anomali ThreatStream output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:anomali-threatstream",
+  "run": "run.py",
+  "mapping": "anomali-threatstream",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Anomali ThreatStream output file to parse instead of running it live."
+    }
+  ]
+}

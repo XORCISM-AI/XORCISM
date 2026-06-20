@@ -1,0 +1,25 @@
+{
+  "id": "ssh-honeypot",
+  "name": "ssh-honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Fake sshd that logs IP addresses, usernames, and passwords. Tool: https://github.com/droberson/ssh-honeypot. [SCAFFOLD generated from XORCISM.TOOL #563 by tool_to_connector.py — implement run() in run.py to map ssh-honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ssh-honeypot",
+  "run": "run.py",
+  "mapping": "ssh-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved ssh-honeypot output file to parse instead of running it live."
+    }
+  ]
+}

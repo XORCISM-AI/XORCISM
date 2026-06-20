@@ -1,0 +1,25 @@
+{
+  "id": "tom-s-honeypot",
+  "name": "Tom's Honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Low interaction Python honeypot. Tool: https://github.com/inguardians/toms_honeypot. [SCAFFOLD generated from XORCISM.TOOL #416 by tool_to_connector.py — implement run() in run.py to map Tom's Honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:tom-s-honeypot",
+  "run": "run.py",
+  "mapping": "tom-s-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Tom's Honeypot output file to parse instead of running it live."
+    }
+  ]
+}

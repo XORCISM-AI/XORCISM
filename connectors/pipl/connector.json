@@ -1,0 +1,25 @@
+{
+  "id": "pipl",
+  "name": "Pipl",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Deep people search engine Tool: https://pipl.com/. [SCAFFOLD generated from XORCISM.TOOL #738 by tool_to_connector.py — implement run() in run.py to map Pipl output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:pipl",
+  "run": "run.py",
+  "mapping": "pipl",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Pipl output file to parse instead of running it live."
+    }
+  ]
+}

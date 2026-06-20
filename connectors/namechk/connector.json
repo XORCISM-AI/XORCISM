@@ -1,0 +1,25 @@
+{
+  "id": "namechk",
+  "name": "Namechk",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Username & domain availability checker Tool: https://namechk.com/. [SCAFFOLD generated from XORCISM.TOOL #649 by tool_to_connector.py — implement run() in run.py to map Namechk output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:namechk",
+  "run": "run.py",
+  "mapping": "namechk",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Namechk output file to parse instead of running it live."
+    }
+  ]
+}

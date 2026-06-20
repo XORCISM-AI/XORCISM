@@ -1,0 +1,25 @@
+{
+  "id": "crosslinked",
+  "name": "CrossLinked",
+  "type": "import",
+  "category": "OSINT",
+  "description": "LinkedIn enumeration — generate username lists from LinkedIn profiles Tool: https://pypi.org/project/crosslinked/. [SCAFFOLD generated from XORCISM.TOOL #1061 by tool_to_connector.py — implement run() in run.py to map CrossLinked output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:crosslinked",
+  "run": "run.py",
+  "mapping": "crosslinked",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved CrossLinked output file to parse instead of running it live."
+    }
+  ]
+}

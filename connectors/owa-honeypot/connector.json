@@ -1,0 +1,25 @@
+{
+  "id": "owa-honeypot",
+  "name": "owa-honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "A basic flask based Outlook Web Honey pot. Tool: https://github.com/joda32/owa-honeypot. [SCAFFOLD generated from XORCISM.TOOL #376 by tool_to_connector.py — implement run() in run.py to map owa-honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:owa-honeypot",
+  "run": "run.py",
+  "mapping": "owa-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved owa-honeypot output file to parse instead of running it live."
+    }
+  ]
+}

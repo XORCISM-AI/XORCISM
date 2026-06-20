@@ -1,0 +1,25 @@
+{
+  "id": "modern-honey-network",
+  "name": "Modern Honey Network",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Multi-snort and honeypot sensor management, uses a network of VMs, small footprint SNORT installations, stealthy dionaeas, and a centralized server for management. Tool: https://github.com/threatstream/mhn. [SCAFFOLD generated from XORCISM.TOOL #451 by tool_to_connector.py — implement run() in run.py to map Modern Honey Network output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:modern-honey-network",
+  "run": "run.py",
+  "mapping": "modern-honey-network",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Modern Honey Network output file to parse instead of running it live."
+    }
+  ]
+}

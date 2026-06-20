@@ -1,0 +1,25 @@
+{
+  "id": "kippo2elasticsearch",
+  "name": "Kippo2ElasticSearch",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Python script to transfer data from a Kippo SSH honeypot MySQL database to an ElasticSearch instance (server or cluster). Tool: https://bruteforcelab.com/kippo2elasticsearch. [SCAFFOLD generated from XORCISM.TOOL #462 by tool_to_connector.py — implement run() in run.py to map Kippo2ElasticSearch output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:kippo2elasticsearch",
+  "run": "run.py",
+  "mapping": "kippo2elasticsearch",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Kippo2ElasticSearch output file to parse instead of running it live."
+    }
+  ]
+}

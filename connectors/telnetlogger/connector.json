@@ -1,0 +1,25 @@
+{
+  "id": "telnetlogger",
+  "name": "telnetlogger",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Telnet honeypot designed to track the Mirai botnet. Tool: https://github.com/robertdavidgraham/telnetlogger. [SCAFFOLD generated from XORCISM.TOOL #503 by tool_to_connector.py — implement run() in run.py to map telnetlogger output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:telnetlogger",
+  "run": "run.py",
+  "mapping": "telnetlogger",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved telnetlogger output file to parse instead of running it live."
+    }
+  ]
+}

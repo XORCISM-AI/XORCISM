@@ -1,0 +1,25 @@
+{
+  "id": "fibratus",
+  "name": "Fibratus",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Tool for exploration and tracing of the Windows kernel. Tool: https://github.com/rabbitstack/fibratus. [SCAFFOLD generated from XORCISM.TOOL #459 by tool_to_connector.py — implement run() in run.py to map Fibratus output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:fibratus",
+  "run": "run.py",
+  "mapping": "fibratus",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Fibratus output file to parse instead of running it live."
+    }
+  ]
+}

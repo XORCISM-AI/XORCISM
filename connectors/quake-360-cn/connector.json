@@ -1,0 +1,25 @@
+{
+  "id": "quake-360-cn",
+  "name": "Quake (360.cn)",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Chinese internet asset search engine Tool: https://quake.360.net. [SCAFFOLD generated from XORCISM.TOOL #1159 by tool_to_connector.py — implement run() in run.py to map Quake (360.cn) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:quake-360-cn",
+  "run": "run.py",
+  "mapping": "quake-360-cn",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Quake (360.cn) output file to parse instead of running it live."
+    }
+  ]
+}

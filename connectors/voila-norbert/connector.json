@@ -1,0 +1,25 @@
+{
+  "id": "voila-norbert",
+  "name": "Voila Norbert",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Find anyone's email Tool: https://voilanorbert.com/. [SCAFFOLD generated from XORCISM.TOOL #680 by tool_to_connector.py — implement run() in run.py to map Voila Norbert output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:voila-norbert",
+  "run": "run.py",
+  "mapping": "voila-norbert",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Voila Norbert output file to parse instead of running it live."
+    }
+  ]
+}

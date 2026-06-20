@@ -1,0 +1,25 @@
+{
+  "id": "honeydsum-pl",
+  "name": "Honeydsum.pl",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeydsum.pl (Honeypot). Tool: https://github.com/DataSoft/Honeyd/blob/master/scripts/misc/honeydsum-v0.3/honeydsum.pl. [SCAFFOLD generated from XORCISM.TOOL #612 by tool_to_connector.py — implement run() in run.py to map Honeydsum.pl output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeydsum-pl",
+  "run": "run.py",
+  "mapping": "honeydsum-pl",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeydsum.pl output file to parse instead of running it live."
+    }
+  ]
+}

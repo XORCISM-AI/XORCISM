@@ -1,0 +1,25 @@
+{
+  "id": "netcraft-site-report",
+  "name": "Netcraft Site Report",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Web technology, hosting history, takedown service Tool: https://sitereport.netcraft.com. [SCAFFOLD generated from XORCISM.TOOL #1136 by tool_to_connector.py — implement run() in run.py to map Netcraft Site Report output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:netcraft-site-report",
+  "run": "run.py",
+  "mapping": "netcraft-site-report",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Netcraft Site Report output file to parse instead of running it live."
+    }
+  ]
+}

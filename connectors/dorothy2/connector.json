@@ -1,0 +1,25 @@
+{
+  "id": "dorothy2",
+  "name": "dorothy2",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Malware/botnet analysis framework written in Ruby. Tool: https://github.com/m4rco-/dorothy2. [SCAFFOLD generated from XORCISM.TOOL #618 by tool_to_connector.py — implement run() in run.py to map dorothy2 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:dorothy2",
+  "run": "run.py",
+  "mapping": "dorothy2",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved dorothy2 output file to parse instead of running it live."
+    }
+  ]
+}

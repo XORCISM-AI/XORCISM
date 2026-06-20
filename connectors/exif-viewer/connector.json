@@ -1,0 +1,25 @@
+{
+  "id": "exif-viewer",
+  "name": "EXIF Viewer",
+  "type": "import",
+  "category": "OSINT",
+  "description": "View image metadata Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #926 by tool_to_connector.py — implement run() in run.py to map EXIF Viewer output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:exif-viewer",
+  "run": "run.py",
+  "mapping": "exif-viewer",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved EXIF Viewer output file to parse instead of running it live."
+    }
+  ]
+}

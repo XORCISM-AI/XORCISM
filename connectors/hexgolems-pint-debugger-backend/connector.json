@@ -1,0 +1,25 @@
+{
+  "id": "hexgolems-pint-debugger-backend",
+  "name": "Hexgolems - Pint Debugger Backend",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Debugger backend and LUA wrapper for PIN. Tool: https://github.com/hexgolems/pint. [SCAFFOLD generated from XORCISM.TOOL #467 by tool_to_connector.py — implement run() in run.py to map Hexgolems - Pint Debugger Backend output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:hexgolems-pint-debugger-backend",
+  "run": "run.py",
+  "mapping": "hexgolems-pint-debugger-backend",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Hexgolems - Pint Debugger Backend output file to parse instead of running it live."
+    }
+  ]
+}

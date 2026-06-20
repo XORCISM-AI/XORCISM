@@ -1,0 +1,25 @@
+{
+  "id": "search4faces",
+  "name": "Search4faces",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Face search in VK/OK social networks Tool: https://search4faces.com/. [SCAFFOLD generated from XORCISM.TOOL #734 by tool_to_connector.py — implement run() in run.py to map Search4faces output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:search4faces",
+  "run": "run.py",
+  "mapping": "search4faces",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Search4faces output file to parse instead of running it live."
+    }
+  ]
+}

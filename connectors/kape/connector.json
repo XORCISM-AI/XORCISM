@@ -1,0 +1,25 @@
+{
+  "id": "kape",
+  "name": "KAPE",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Kroll Artifact Parser and Extractor — fast triage collection Tool: https://www.kroll.com/kape. [SCAFFOLD generated from XORCISM.TOOL #976 by tool_to_connector.py — implement run() in run.py to map KAPE output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:kape",
+  "run": "run.py",
+  "mapping": "kape",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved KAPE output file to parse instead of running it live."
+    }
+  ]
+}

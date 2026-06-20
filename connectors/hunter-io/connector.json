@@ -1,0 +1,25 @@
+{
+  "id": "hunter-io",
+  "name": "Hunter.io",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Find professional emails Tool: https://hunter.io/. [SCAFFOLD generated from XORCISM.TOOL #672 by tool_to_connector.py — implement run() in run.py to map Hunter.io output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:hunter-io",
+  "run": "run.py",
+  "mapping": "hunter-io",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Hunter.io output file to parse instead of running it live."
+    }
+  ]
+}

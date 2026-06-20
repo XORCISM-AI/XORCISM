@@ -1,0 +1,25 @@
+{
+  "id": "google-earth-pro",
+  "name": "Google Earth Pro",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Advanced satellite imagery Tool: https://earth.google.com/. [SCAFFOLD generated from XORCISM.TOOL #707 by tool_to_connector.py — implement run() in run.py to map Google Earth Pro output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:google-earth-pro",
+  "run": "run.py",
+  "mapping": "google-earth-pro",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Google Earth Pro output file to parse instead of running it live."
+    }
+  ]
+}

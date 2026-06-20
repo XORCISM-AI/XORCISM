@@ -1,0 +1,25 @@
+{
+  "id": "mysqlpot",
+  "name": "MysqlPot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "A mysql honeypot, still very very early stage. Tool: https://github.com/schmalle/MysqlPot. [SCAFFOLD generated from XORCISM.TOOL #344 by tool_to_connector.py — implement run() in run.py to map MysqlPot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mysqlpot",
+  "run": "run.py",
+  "mapping": "mysqlpot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved MysqlPot output file to parse instead of running it live."
+    }
+  ]
+}

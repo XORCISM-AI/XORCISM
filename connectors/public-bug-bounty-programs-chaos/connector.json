@@ -1,0 +1,25 @@
+{
+  "id": "public-bug-bounty-programs-chaos",
+  "name": "Public Bug Bounty Programs (chaos)",
+  "type": "import",
+  "category": "OSINT",
+  "description": "ProjectDiscovery's free BBH program list Tool: https://chaos.projectdiscovery.io. [SCAFFOLD generated from XORCISM.TOOL #1012 by tool_to_connector.py — implement run() in run.py to map Public Bug Bounty Programs (chaos) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:public-bug-bounty-programs-chaos",
+  "run": "run.py",
+  "mapping": "public-bug-bounty-programs-chaos",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Public Bug Bounty Programs (chaos) output file to parse instead of running it live."
+    }
+  ]
+}

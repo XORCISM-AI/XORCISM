@@ -1,0 +1,25 @@
+{
+  "id": "google-custom-search-api",
+  "name": "Google Custom Search API",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Programmable search Tool: https://developers.google.com/custom-search. [SCAFFOLD generated from XORCISM.TOOL #923 by tool_to_connector.py — implement run() in run.py to map Google Custom Search API output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:google-custom-search-api",
+  "run": "run.py",
+  "mapping": "google-custom-search-api",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Google Custom Search API output file to parse instead of running it live."
+    }
+  ]
+}

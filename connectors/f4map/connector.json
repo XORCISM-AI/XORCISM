@@ -1,0 +1,25 @@
+{
+  "id": "f4map",
+  "name": "F4map",
+  "type": "import",
+  "category": "OSINT",
+  "description": "3D interactive world map Tool: https://demo.f4map.com/. [SCAFFOLD generated from XORCISM.TOOL #716 by tool_to_connector.py — implement run() in run.py to map F4map output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:f4map",
+  "run": "run.py",
+  "mapping": "f4map",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved F4map output file to parse instead of running it live."
+    }
+  ]
+}

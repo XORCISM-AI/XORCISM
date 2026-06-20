@@ -1,0 +1,25 @@
+{
+  "id": "fsociety",
+  "name": "fsociety",
+  "type": "import",
+  "category": "OSINT",
+  "description": "All-in-one hacking pack Tool: https://github.com/Manisso/fsociety. [SCAFFOLD generated from XORCISM.TOOL #884 by tool_to_connector.py — implement run() in run.py to map fsociety output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:fsociety",
+  "run": "run.py",
+  "mapping": "fsociety",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved fsociety output file to parse instead of running it live."
+    }
+  ]
+}

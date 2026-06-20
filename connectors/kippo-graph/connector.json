@@ -1,0 +1,25 @@
+{
+  "id": "kippo-graph",
+  "name": "Kippo-Graph",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Full featured script to visualize statistics from a Kippo SSH honeypot. Tool: https://bruteforcelab.com/kippo-graph. [SCAFFOLD generated from XORCISM.TOOL #642 by tool_to_connector.py — implement run() in run.py to map Kippo-Graph output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:kippo-graph",
+  "run": "run.py",
+  "mapping": "kippo-graph",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Kippo-Graph output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "meg",
+  "name": "meg",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Fetch many paths for many hosts without flooding Tool: https://github.com/tomnomnom/meg. [SCAFFOLD generated from XORCISM.TOOL #1121 by tool_to_connector.py — implement run() in run.py to map meg output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:meg",
+  "run": "run.py",
+  "mapping": "meg",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved meg output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "kojoney",
+  "name": "Kojoney",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Python-based Low interaction honeypot that emulates an SSH server implemented with Twisted Conch. Tool: http://kojoney.sourceforge.net/. [SCAFFOLD generated from XORCISM.TOOL #548 by tool_to_connector.py — implement run() in run.py to map Kojoney output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:kojoney",
+  "run": "run.py",
+  "mapping": "kojoney",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Kojoney output file to parse instead of running it live."
+    }
+  ]
+}

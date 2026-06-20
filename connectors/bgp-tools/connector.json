@@ -1,0 +1,25 @@
+{
+  "id": "bgp-tools",
+  "name": "BGP.tools",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Modern BGP toolkit for network reconnaissance Tool: https://bgp.tools. [SCAFFOLD generated from XORCISM.TOOL #1033 by tool_to_connector.py — implement run() in run.py to map BGP.tools output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:bgp-tools",
+  "run": "run.py",
+  "mapping": "bgp-tools",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved BGP.tools output file to parse instead of running it live."
+    }
+  ]
+}

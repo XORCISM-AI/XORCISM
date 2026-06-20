@@ -1,0 +1,25 @@
+{
+  "id": "usersearch-org",
+  "name": "Usersearch.org",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free social network search Tool: https://usersearch.org/. [SCAFFOLD generated from XORCISM.TOOL #663 by tool_to_connector.py — implement run() in run.py to map Usersearch.org output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:usersearch-org",
+  "run": "run.py",
+  "mapping": "usersearch-org",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Usersearch.org output file to parse instead of running it live."
+    }
+  ]
+}

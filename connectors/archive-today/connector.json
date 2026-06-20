@@ -1,0 +1,25 @@
+{
+  "id": "archive-today",
+  "name": "Archive.today",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Web archive — saves snapshots even when robots.txt blocks Wayback Tool: https://archive.ph. [SCAFFOLD generated from XORCISM.TOOL #1025 by tool_to_connector.py — implement run() in run.py to map Archive.today output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:archive-today",
+  "run": "run.py",
+  "mapping": "archive-today",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Archive.today output file to parse instead of running it live."
+    }
+  ]
+}

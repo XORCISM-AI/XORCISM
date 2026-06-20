@@ -1,0 +1,25 @@
+{
+  "id": "mojeek",
+  "name": "Mojeek",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Independent search engine that doesn't track users Tool: https://www.mojeek.com. [SCAFFOLD generated from XORCISM.TOOL #1129 by tool_to_connector.py — implement run() in run.py to map Mojeek output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mojeek",
+  "run": "run.py",
+  "mapping": "mojeek",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Mojeek output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "honeyport",
+  "name": "Honeyport",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Simple honeyport written in Bash and Python. Tool: https://github.com/securitygeneration/Honeyport. [SCAFFOLD generated from XORCISM.TOOL #407 by tool_to_connector.py — implement run() in run.py to map Honeyport output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeyport",
+  "run": "run.py",
+  "mapping": "honeyport",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Honeyport output file to parse instead of running it live."
+    }
+  ]
+}

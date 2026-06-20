@@ -1,0 +1,25 @@
+{
+  "id": "hacker101",
+  "name": "Hacker101",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free HackerOne course library and CTF Tool: https://www.hacker101.com. [SCAFFOLD generated from XORCISM.TOOL #988 by tool_to_connector.py — implement run() in run.py to map Hacker101 output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:hacker101",
+  "run": "run.py",
+  "mapping": "hacker101",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Hacker101 output file to parse instead of running it live."
+    }
+  ]
+}

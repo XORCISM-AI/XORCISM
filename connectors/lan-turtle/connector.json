@@ -1,0 +1,25 @@
+{
+  "id": "lan-turtle",
+  "name": "LAN Turtle",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Covert network access & MITM Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #899 by tool_to_connector.py — implement run() in run.py to map LAN Turtle output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:lan-turtle",
+  "run": "run.py",
+  "mapping": "lan-turtle",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved LAN Turtle output file to parse instead of running it live."
+    }
+  ]
+}

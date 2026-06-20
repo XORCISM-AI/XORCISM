@@ -1,0 +1,25 @@
+{
+  "id": "heralding",
+  "name": "Heralding",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Credentials catching honeypot. Tool: https://github.com/johnnykv/heralding. [SCAFFOLD generated from XORCISM.TOOL #479 by tool_to_connector.py — implement run() in run.py to map Heralding output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:heralding",
+  "run": "run.py",
+  "mapping": "heralding",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Heralding output file to parse instead of running it live."
+    }
+  ]
+}

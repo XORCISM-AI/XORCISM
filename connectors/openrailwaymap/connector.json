@@ -1,0 +1,25 @@
+{
+  "id": "openrailwaymap",
+  "name": "OpenRailwayMap",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Worldwide rail network map — rolling stock, infrastructure, signals Tool: https://www.openrailwaymap.org. [SCAFFOLD generated from XORCISM.TOOL #1145 by tool_to_connector.py — implement run() in run.py to map OpenRailwayMap output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:openrailwaymap",
+  "run": "run.py",
+  "mapping": "openrailwaymap",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OpenRailwayMap output file to parse instead of running it live."
+    }
+  ]
+}

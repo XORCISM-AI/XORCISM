@@ -1,0 +1,25 @@
+{
+  "id": "unblob",
+  "name": "unblob",
+  "type": "import",
+  "category": "IoT",
+  "description": "Firmware extraction and unpacking framework that recursively carves and decompresses container formats. Tool: https://unblob.org/. [SCAFFOLD generated from XORCISM.TOOL #1221 by tool_to_connector.py — implement run() in run.py to map unblob output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:unblob",
+  "run": "run.py",
+  "mapping": "unblob",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved unblob output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "ahmia",
+  "name": "Ahmia",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Clearnet dark web search Tool: https://ahmia.fi/. [SCAFFOLD generated from XORCISM.TOOL #788 by tool_to_connector.py — implement run() in run.py to map Ahmia output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ahmia",
+  "run": "run.py",
+  "mapping": "ahmia",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Ahmia output file to parse instead of running it live."
+    }
+  ]
+}

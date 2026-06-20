@@ -1,0 +1,25 @@
+{
+  "id": "modpot",
+  "name": "modpot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Modpot is a modular web application honeypot framework and management application written in Golang and making use of gin framework. Tool: https://github.com/referefref/modpot. [SCAFFOLD generated from XORCISM.TOOL #374 by tool_to_connector.py — implement run() in run.py to map modpot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:modpot",
+  "run": "run.py",
+  "mapping": "modpot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved modpot output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "sentrypeer",
+  "name": "SentryPeer",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Protect your SIP Servers from bad actors. Tool: https://github.com/SentryPeer/SentryPeer. [SCAFFOLD generated from XORCISM.TOOL #600 by tool_to_connector.py — implement run() in run.py to map SentryPeer output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:sentrypeer",
+  "run": "run.py",
+  "mapping": "sentrypeer",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SentryPeer output file to parse instead of running it live."
+    }
+  ]
+}

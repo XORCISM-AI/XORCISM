@@ -1,0 +1,25 @@
+{
+  "id": "honeyfs",
+  "name": "honeyfs",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Tool to create artificial file systems for medium/high interaction honeypots. Tool: https://github.com/referefref/honeyfs. [SCAFFOLD generated from XORCISM.TOOL #512 by tool_to_connector.py — implement run() in run.py to map honeyfs output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeyfs",
+  "run": "run.py",
+  "mapping": "honeyfs",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved honeyfs output file to parse instead of running it live."
+    }
+  ]
+}

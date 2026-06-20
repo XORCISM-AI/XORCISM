@@ -1,0 +1,25 @@
+{
+  "id": "wp-smart-honeypot",
+  "name": "wp-smart-honeypot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "WordPress plugin to reduce comment spam with a smarter honeypot. Tool: https://github.com/freak3dot/wp-smart-honeypot. [SCAFFOLD generated from XORCISM.TOOL #386 by tool_to_connector.py — implement run() in run.py to map wp-smart-honeypot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:wp-smart-honeypot",
+  "run": "run.py",
+  "mapping": "wp-smart-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved wp-smart-honeypot output file to parse instead of running it live."
+    }
+  ]
+}

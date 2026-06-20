@@ -1,0 +1,16 @@
+{
+  "id": "hackagent",
+  "name": "HackAgent",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports AI-agent attack-evaluation results from HackAgent (https://github.com/AISecurityLab/hackagent), a security-testing toolkit (Python, Apache-2.0) that probes AI agents for prompt injection, jailbreaking, goal hijacking and tool misuse using AdvPrefix, AutoDAN-Turbo, PAIR, TAP, FlipAttack, BoN, h4rm3l, CipherChat, PAP and Baseline techniques. Import-only: export results to JSON and this connector maps each AI agent under test to an ASSET and every SUCCESSFUL attack to a VULNERABILITY / ASSETVULNERABILITY (ref = HACKAGENT-<category>-<hash>; severity by attack category — jailbreak/prompt-injection/goal-hijack/tool-misuse = high, others = medium). Defensive parser: accepts a results array or a {results|runs|attacks|evaluations:[...]} object; only successful/failed-defence attacks become findings. No secrets and no DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:hackagent",
+  "run": "run.py",
+  "mapping": "hackagent",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a HackAgent results export (JSON) to import." },
+    { "name": "agent", "type": "string", "required": false, "help": "Default asset name for the AI agent under test when a result carries no agent/target name." },
+    { "name": "all", "type": "bool", "required": false, "default": false, "help": "Import every attempt as a finding, not only the successful attacks (default: successful only)." }
+  ]
+}

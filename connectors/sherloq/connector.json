@@ -1,0 +1,25 @@
+{
+  "id": "sherloq",
+  "name": "Sherloq",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Open-source image forensics toolset Tool: https://github.com/GuidoBartoli/sherloq. [SCAFFOLD generated from XORCISM.TOOL #1171 by tool_to_connector.py — implement run() in run.py to map Sherloq output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:sherloq",
+  "run": "run.py",
+  "mapping": "sherloq",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Sherloq output file to parse instead of running it live."
+    }
+  ]
+}

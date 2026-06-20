@@ -1,0 +1,25 @@
+{
+  "id": "virustotal",
+  "name": "VirusTotal",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Analyze suspicious files and URLs to detect types of malware, and automatically share them with the security community. Tool: https://www.virustotal.com/. [SCAFFOLD generated from XORCISM.TOOL #623 by tool_to_connector.py — implement run() in run.py to map VirusTotal output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:virustotal",
+  "run": "run.py",
+  "mapping": "virustotal",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved VirusTotal output file to parse instead of running it live."
+    }
+  ]
+}

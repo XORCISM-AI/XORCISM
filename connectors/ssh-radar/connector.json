@@ -1,0 +1,25 @@
+{
+  "id": "ssh-radar",
+  "name": "SSH-Radar",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Real-time monitoring and visualization of failed SSH login attempts with geolocation and Grafana dashboards. Tool: https://github.com/antonsatt/ssh-radar. [SCAFFOLD generated from XORCISM.TOOL #645 by tool_to_connector.py — implement run() in run.py to map SSH-Radar output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ssh-radar",
+  "run": "run.py",
+  "mapping": "ssh-radar",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SSH-Radar output file to parse instead of running it live."
+    }
+  ]
+}

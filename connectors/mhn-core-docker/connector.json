@@ -1,0 +1,25 @@
+{
+  "id": "mhn-core-docker",
+  "name": "mhn-core-docker",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Core elements of the Modern Honey Network implemented in Docker. Tool: https://github.com/MattCarothers/mhn-core-docker. [SCAFFOLD generated from XORCISM.TOOL #597 by tool_to_connector.py — implement run() in run.py to map mhn-core-docker output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mhn-core-docker",
+  "run": "run.py",
+  "mapping": "mhn-core-docker",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved mhn-core-docker output file to parse instead of running it live."
+    }
+  ]
+}

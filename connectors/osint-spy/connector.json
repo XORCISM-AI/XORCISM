@@ -1,0 +1,25 @@
+{
+  "id": "osint-spy",
+  "name": "OSINT-SPY",
+  "type": "import",
+  "category": "OSINT",
+  "description": "OSINT tool with Tor support Tool: https://github.com/SharadKumar97/OSINT-SPY. [SCAFFOLD generated from XORCISM.TOOL #794 by tool_to_connector.py — implement run() in run.py to map OSINT-SPY output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:osint-spy",
+  "run": "run.py",
+  "mapping": "osint-spy",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OSINT-SPY output file to parse instead of running it live."
+    }
+  ]
+}

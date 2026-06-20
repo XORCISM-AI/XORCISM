@@ -1,0 +1,25 @@
+{
+  "id": "comodo-automated-sandbox",
+  "name": "COMODO automated sandbox",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "COMODO automated sandbox (Honeypot). Tool: https://help.comodo.com/topic-72-1-451-4768-.html. [SCAFFOLD generated from XORCISM.TOOL #614 by tool_to_connector.py — implement run() in run.py to map COMODO automated sandbox output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:comodo-automated-sandbox",
+  "run": "run.py",
+  "mapping": "comodo-automated-sandbox",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved COMODO automated sandbox output file to parse instead of running it live."
+    }
+  ]
+}

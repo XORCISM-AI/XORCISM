@@ -1,0 +1,25 @@
+{
+  "id": "criminal-ip-api",
+  "name": "Criminal IP API",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Threat intelligence Tool: https://www.criminalip.io/developer. [SCAFFOLD generated from XORCISM.TOOL #925 by tool_to_connector.py — implement run() in run.py to map Criminal IP API output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:criminal-ip-api",
+  "run": "run.py",
+  "mapping": "criminal-ip-api",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Criminal IP API output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "email-checker",
+  "name": "Email-Checker",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Email validation tool Tool: https://email-checker.net/. [SCAFFOLD generated from XORCISM.TOOL #679 by tool_to_connector.py — implement run() in run.py to map Email-Checker output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:email-checker",
+  "run": "run.py",
+  "mapping": "email-checker",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Email-Checker output file to parse instead of running it live."
+    }
+  ]
+}

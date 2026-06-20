@@ -1,0 +1,25 @@
+{
+  "id": "canarytokendetector",
+  "name": "canarytokendetector",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Tool for detection and nullification of Thinkst CanaryTokens Tool: https://github.com/referefref/canarytokendetector. [SCAFFOLD generated from XORCISM.TOOL #422 by tool_to_connector.py — implement run() in run.py to map canarytokendetector output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:canarytokendetector",
+  "run": "run.py",
+  "mapping": "canarytokendetector",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved canarytokendetector output file to parse instead of running it live."
+    }
+  ]
+}

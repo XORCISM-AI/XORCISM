@@ -1,0 +1,17 @@
+{
+  "id": "zircolite",
+  "name": "Zircolite",
+  "type": "import",
+  "category": "DFIR",
+  "description": "Imports detections from Zircolite (https://github.com/wagga40/Zircolite), a standalone SIGMA-based detection tool for logs (Windows EVTX/XML/JSONL, Auditd, Sysmon for Linux, CSV, JSON array). Each log source's Computer/host becomes an ASSET and every fired Sigma rule becomes a finding (VULNERABILITY / ASSETVULNERABILITY) with the rule level as severity and the ATT&CK technique(s) embedded in the finding name. Offline mode: import a Zircolite JSON report (`zircolite.py ... -o detected_events.json`). Live mode: if `events` and `ruleset` are set and Zircolite is on the worker (env ZIRCOLITE_PATH, default C:\\tools\\Zircolite\\zircolite.py, else `zircolite` on PATH; optional env ZIRCOLITE_RULESET), runs `zircolite --events <events> --ruleset <ruleset> -o <out>` and parses the result. Non-intrusive local log triage. No secrets. No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:zircolite",
+  "run": "run.py",
+  "mapping": "zircolite",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Zircolite JSON report (`zircolite.py ... -o detected_events.json`) to import." },
+    { "name": "events", "type": "string", "required": false, "help": "Live mode: path to the logs to scan (EVTX/XML/JSONL/Auditd/Sysmon/CSV/JSON file or folder)." },
+    { "name": "ruleset", "type": "string", "required": false, "help": "Live mode: path to the Sigma ruleset (JSON or YAML) Zircolite should use (or set env ZIRCOLITE_RULESET)." },
+    { "name": "host", "type": "string", "required": false, "help": "Default asset name for detections whose log events carry no Computer/host field." }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "ssh-honeypotd",
+  "name": "ssh-honeypotd",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Low-interaction SSH honeypot written in C. Tool: https://github.com/sjinks/ssh-honeypotd. [SCAFFOLD generated from XORCISM.TOOL #564 by tool_to_connector.py — implement run() in run.py to map ssh-honeypotd output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:ssh-honeypotd",
+  "run": "run.py",
+  "mapping": "ssh-honeypotd",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved ssh-honeypotd output file to parse instead of running it live."
+    }
+  ]
+}

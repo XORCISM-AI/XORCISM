@@ -1,0 +1,25 @@
+{
+  "id": "odin",
+  "name": "ODIN",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Search hosts, CVEs, exposed buckets — 10 free searches/day Tool: https://search.odin.io. [SCAFFOLD generated from XORCISM.TOOL #1138 by tool_to_connector.py — implement run() in run.py to map ODIN output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:odin",
+  "run": "run.py",
+  "mapping": "odin",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved ODIN output file to parse instead of running it live."
+    }
+  ]
+}

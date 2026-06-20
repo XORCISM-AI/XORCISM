@@ -1,0 +1,25 @@
+{
+  "id": "mwcollectd",
+  "name": "mwcollectd",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Versatile malware collection daemon, uniting the best features of nepenthes and honeytrap. Tool: https://www.openhub.net/p/mwcollectd. [SCAFFOLD generated from XORCISM.TOOL #498 by tool_to_connector.py — implement run() in run.py to map mwcollectd output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:mwcollectd",
+  "run": "run.py",
+  "mapping": "mwcollectd",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved mwcollectd output file to parse instead of running it live."
+    }
+  ]
+}

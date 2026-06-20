@@ -1,0 +1,25 @@
+{
+  "id": "dockerized-thug",
+  "name": "Dockerized Thug",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Dockerized [Thug](https://github.com/buffer/thug) to analyze malicious web content. Tool: https://hub.docker.com/r/honeynet/thug/. [SCAFFOLD generated from XORCISM.TOOL #593 by tool_to_connector.py — implement run() in run.py to map Dockerized Thug output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:dockerized-thug",
+  "run": "run.py",
+  "mapping": "dockerized-thug",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Dockerized Thug output file to parse instead of running it live."
+    }
+  ]
+}

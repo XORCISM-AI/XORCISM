@@ -1,0 +1,25 @@
+{
+  "id": "maxar",
+  "name": "Maxar",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Commercial satellite imagery Tool: https://maxar.com/. [SCAFFOLD generated from XORCISM.TOOL #715 by tool_to_connector.py — implement run() in run.py to map Maxar output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:maxar",
+  "run": "run.py",
+  "mapping": "maxar",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Maxar output file to parse instead of running it live."
+    }
+  ]
+}

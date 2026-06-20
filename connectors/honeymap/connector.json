@@ -1,0 +1,25 @@
+{
+  "id": "honeymap",
+  "name": "HoneyMap",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Real-time websocket stream of GPS events on a fancy SVG world map. Tool: https://github.com/fw42/honeymap. [SCAFFOLD generated from XORCISM.TOOL #637 by tool_to_connector.py — implement run() in run.py to map HoneyMap output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeymap",
+  "run": "run.py",
+  "mapping": "honeymap",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved HoneyMap output file to parse instead of running it live."
+    }
+  ]
+}

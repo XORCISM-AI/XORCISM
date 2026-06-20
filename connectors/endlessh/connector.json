@@ -1,0 +1,25 @@
+{
+  "id": "endlessh",
+  "name": "endlessh",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "SSH tarpit that slowly sends an endless banner. ([docker image](https://hub.docker.com/r/linuxserver/endlessh)) Tool: https://github.com/skeeto/endlessh. [SCAFFOLD generated from XORCISM.TOOL #541 by tool_to_connector.py — implement run() in run.py to map endlessh output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:endlessh",
+  "run": "run.py",
+  "mapping": "endlessh",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved endlessh output file to parse instead of running it live."
+    }
+  ]
+}

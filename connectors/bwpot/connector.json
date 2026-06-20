@@ -1,0 +1,25 @@
+{
+  "id": "bwpot",
+  "name": "bwpot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Breakable Web applications honeyPot. Tool: https://github.com/graneed/bwpot. [SCAFFOLD generated from XORCISM.TOOL #367 by tool_to_connector.py — implement run() in run.py to map bwpot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:bwpot",
+  "run": "run.py",
+  "mapping": "bwpot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved bwpot output file to parse instead of running it live."
+    }
+  ]
+}

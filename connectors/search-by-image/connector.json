@@ -1,0 +1,25 @@
+{
+  "id": "search-by-image",
+  "name": "Search by Image",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Multi-engine reverse image (browser ext) Tool: n/a. [SCAFFOLD generated from XORCISM.TOOL #727 by tool_to_connector.py — implement run() in run.py to map Search by Image output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:search-by-image",
+  "run": "run.py",
+  "mapping": "search-by-image",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Search by Image output file to parse instead of running it live."
+    }
+  ]
+}

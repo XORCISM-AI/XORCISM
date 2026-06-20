@@ -1,0 +1,25 @@
+{
+  "id": "cia-reading-room",
+  "name": "CIA Reading Room",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Declassified CIA documents Tool: https://www.cia.gov/readingroom. [SCAFFOLD generated from XORCISM.TOOL #779 by tool_to_connector.py — implement run() in run.py to map CIA Reading Room output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:cia-reading-room",
+  "run": "run.py",
+  "mapping": "cia-reading-room",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved CIA Reading Room output file to parse instead of running it live."
+    }
+  ]
+}

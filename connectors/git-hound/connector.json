@@ -1,0 +1,25 @@
+{
+  "id": "git-hound",
+  "name": "git-hound",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Find sensitive data exposed via GitHub code search Tool: https://github.com/tillson/git-hound. [SCAFFOLD generated from XORCISM.TOOL #1092 by tool_to_connector.py — implement run() in run.py to map git-hound output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:git-hound",
+  "run": "run.py",
+  "mapping": "git-hound",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved git-hound output file to parse instead of running it live."
+    }
+  ]
+}

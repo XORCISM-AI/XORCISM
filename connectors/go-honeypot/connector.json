@@ -1,0 +1,25 @@
+{
+  "id": "go-honeypot",
+  "name": "go-HoneyPot",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Honeypot server written in Go. Tool: https://github.com/Mojachieee/go-HoneyPot. [SCAFFOLD generated from XORCISM.TOOL #494 by tool_to_connector.py — implement run() in run.py to map go-HoneyPot output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:go-honeypot",
+  "run": "run.py",
+  "mapping": "go-honeypot",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved go-HoneyPot output file to parse instead of running it live."
+    }
+  ]
+}

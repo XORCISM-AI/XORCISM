@@ -1,0 +1,25 @@
+{
+  "id": "seclists",
+  "name": "SecLists",
+  "type": "import",
+  "category": "OSINT",
+  "description": "The ultimate security wordlist collection Tool: https://github.com/danielmiessler/SecLists. [SCAFFOLD generated from XORCISM.TOOL #890 by tool_to_connector.py — implement run() in run.py to map SecLists output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:seclists",
+  "run": "run.py",
+  "mapping": "seclists",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved SecLists output file to parse instead of running it live."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "rizin",
+  "name": "rizin",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Modern fork of radare2 with cleaner API Tool: https://github.com/rizinorg/rizin. [SCAFFOLD generated from XORCISM.TOOL #981 by tool_to_connector.py — implement run() in run.py to map rizin output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:rizin",
+  "run": "run.py",
+  "mapping": "rizin",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved rizin output file to parse instead of running it live."
+    }
+  ]
+}

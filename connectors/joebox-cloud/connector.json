@@ -1,0 +1,25 @@
+{
+  "id": "joebox-cloud",
+  "name": "Joebox Cloud",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Analyzes the behavior of malicious files including PEs, PDFs, DOCs, PPTs, XLSs, APKs, URLs and MachOs on Windows, Android and Mac OS X for suspicious activities. Tool: https://jbxcloud.joesecurity.org/login. [SCAFFOLD generated from XORCISM.TOOL #622 by tool_to_connector.py — implement run() in run.py to map Joebox Cloud output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:joebox-cloud",
+  "run": "run.py",
+  "mapping": "joebox-cloud",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Joebox Cloud output file to parse instead of running it live."
+    }
+  ]
+}

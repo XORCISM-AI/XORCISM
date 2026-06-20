@@ -1,0 +1,25 @@
+{
+  "id": "apkinspector",
+  "name": "APKinspector",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Powerful GUI tool for analysts to analyze the Android applications. Tool: https://github.com/honeynet/apkinspector/. [SCAFFOLD generated from XORCISM.TOOL #470 by tool_to_connector.py — implement run() in run.py to map APKinspector output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:apkinspector",
+  "run": "run.py",
+  "mapping": "apkinspector",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved APKinspector output file to parse instead of running it live."
+    }
+  ]
+}

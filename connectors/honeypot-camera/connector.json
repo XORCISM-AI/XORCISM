@@ -1,0 +1,25 @@
+{
+  "id": "honeypot-camera",
+  "name": "honeypot-camera",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Observation camera honeypot. Tool: https://github.com/alexbredo/honeypot-camera. [SCAFFOLD generated from XORCISM.TOOL #401 by tool_to_connector.py — implement run() in run.py to map honeypot-camera output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:honeypot-camera",
+  "run": "run.py",
+  "mapping": "honeypot-camera",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved honeypot-camera output file to parse instead of running it live."
+    }
+  ]
+}

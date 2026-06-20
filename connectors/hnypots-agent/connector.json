@@ -1,0 +1,25 @@
+{
+  "id": "hnypots-agent",
+  "name": "hnypots-agent)",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "SSH Server in Go that logs username and password combinations. Tool: https://github.com/joshrendek/hnypots-agent. [SCAFFOLD generated from XORCISM.TOOL #558 by tool_to_connector.py — implement run() in run.py to map hnypots-agent) output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:hnypots-agent",
+  "run": "run.py",
+  "mapping": "hnypots-agent",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved hnypots-agent) output file to parse instead of running it live."
+    }
+  ]
+}

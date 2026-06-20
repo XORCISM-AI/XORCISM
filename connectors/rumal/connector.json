@@ -1,0 +1,25 @@
+{
+  "id": "rumal",
+  "name": "Rumal",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Thug's Rumāl: a Thug's dress and weapon. Tool: https://github.com/thugs-rumal/. [SCAFFOLD generated from XORCISM.TOOL #527 by tool_to_connector.py — implement run() in run.py to map Rumal output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:rumal",
+  "run": "run.py",
+  "mapping": "rumal",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Rumal output file to parse instead of running it live."
+    }
+  ]
+}

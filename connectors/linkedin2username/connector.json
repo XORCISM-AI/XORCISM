@@ -1,0 +1,25 @@
+{
+  "id": "linkedin2username",
+  "name": "linkedin2username",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Generate usernames from a target's LinkedIn employees Tool: https://github.com/initstring/linkedin2username. [SCAFFOLD generated from XORCISM.TOOL #1116 by tool_to_connector.py — implement run() in run.py to map linkedin2username output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:linkedin2username",
+  "run": "run.py",
+  "mapping": "linkedin2username",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved linkedin2username output file to parse instead of running it live."
+    }
+  ]
+}

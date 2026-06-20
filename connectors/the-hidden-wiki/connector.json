@@ -1,0 +1,25 @@
+{
+  "id": "the-hidden-wiki",
+  "name": "The Hidden Wiki",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Curated directory of dark-web sites (mirror-dependent) Tool: https://thehiddenwiki.org. [SCAFFOLD generated from XORCISM.TOOL #1187 by tool_to_connector.py — implement run() in run.py to map The Hidden Wiki output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:the-hidden-wiki",
+  "run": "run.py",
+  "mapping": "the-hidden-wiki",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved The Hidden Wiki output file to parse instead of running it live."
+    }
+  ]
+}

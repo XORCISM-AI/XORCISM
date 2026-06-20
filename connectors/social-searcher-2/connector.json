@@ -1,0 +1,25 @@
+{
+  "id": "social-searcher-2",
+  "name": "Social-Searcher",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Free social media search engine Tool: https://www.social-searcher.com/. [SCAFFOLD generated from XORCISM.TOOL #754 by tool_to_connector.py — implement run() in run.py to map Social-Searcher output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:social-searcher-2",
+  "run": "run.py",
+  "mapping": "social-searcher-2",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Social-Searcher output file to parse instead of running it live."
+    }
+  ]
+}

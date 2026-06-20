@@ -1,0 +1,25 @@
+{
+  "id": "scada-honeynet-2",
+  "name": "scada-honeynet",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Mimics many of the services from a popular PLC and better helps SCADA researchers understand potential risks of exposed control system devices. Tool: http://www.digitalbond.com/blog/2007/07/24/scada-honeynet-article-in-infragard-publication/. [SCAFFOLD generated from XORCISM.TOOL #430 by tool_to_connector.py — implement run() in run.py to map scada-honeynet output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:scada-honeynet-2",
+  "run": "run.py",
+  "mapping": "scada-honeynet-2",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved scada-honeynet output file to parse instead of running it live."
+    }
+  ]
+}

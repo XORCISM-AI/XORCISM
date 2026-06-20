@@ -1,0 +1,25 @@
+{
+  "id": "helix",
+  "name": "Helix",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "K8s API Honeypot with Active Defense Capabilities. Tool: https://github.com/Zeerg/helix-honeypot. [SCAFFOLD generated from XORCISM.TOOL #398 by tool_to_connector.py — implement run() in run.py to map Helix output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:helix",
+  "run": "run.py",
+  "mapping": "helix",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Helix output file to parse instead of running it live."
+    }
+  ]
+}

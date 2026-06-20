@@ -1,0 +1,25 @@
+{
+  "id": "nicb-vincheck",
+  "name": "NICB VINCheck",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Stolen vehicle check Tool: https://www.nicb.org/vincheck. [SCAFFOLD generated from XORCISM.TOOL #857 by tool_to_connector.py — implement run() in run.py to map NICB VINCheck output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:nicb-vincheck",
+  "run": "run.py",
+  "mapping": "nicb-vincheck",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved NICB VINCheck output file to parse instead of running it live."
+    }
+  ]
+}

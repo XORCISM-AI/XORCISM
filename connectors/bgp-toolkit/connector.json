@@ -1,0 +1,25 @@
+{
+  "id": "bgp-toolkit",
+  "name": "BGP Toolkit",
+  "type": "import",
+  "category": "OSINT",
+  "description": "BGP/ASN/IP intelligence Tool: https://bgp.he.net/. [SCAFFOLD generated from XORCISM.TOOL #703 by tool_to_connector.py — implement run() in run.py to map BGP Toolkit output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:bgp-toolkit",
+  "run": "run.py",
+  "mapping": "bgp-toolkit",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved BGP Toolkit output file to parse instead of running it live."
+    }
+  ]
+}

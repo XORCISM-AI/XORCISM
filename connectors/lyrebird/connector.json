@@ -1,0 +1,25 @@
+{
+  "id": "lyrebird",
+  "name": "Lyrebird",
+  "type": "import",
+  "category": "Honeypot",
+  "description": "Modern high-interaction honeypot framework. Tool: https://hub.docker.com/r/lyrebird/honeypot-base/. [SCAFFOLD generated from XORCISM.TOOL #409 by tool_to_connector.py — implement run() in run.py to map Lyrebird output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "intrusive": false,
+  "permission": "connector:lyrebird",
+  "run": "run.py",
+  "mapping": "lyrebird",
+  "parameters": [
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Lyrebird output file to parse instead of running it live."
+    }
+  ]
+}
