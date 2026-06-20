@@ -1,0 +1,20 @@
+{
+  "source": "zettelforge-export",
+  "memories": [
+    {
+      "title": "LockBit affiliate exploiting Citrix Bleed",
+      "text": "A LockBit affiliate exploited CVE-2023-4966 (Citrix Bleed) for initial access (T1190), then used Cobalt Strike and Rclone to stage and exfiltrate data (T1048). C2 observed at 45[.]134[.]20[.]88 and update[.]lockbit-cdn[.]com. Dropper SHA256 d41d8cd98f00b204e9800998ecf8427ed41d8cd98f00b204e9800998ecf8427e.",
+      "author": "tier2-analyst",
+      "date": "2026-06-10"
+    },
+    {
+      "title": "MuddyWater phishing wave",
+      "text": "MuddyWater (aka Static Kitten) ran a phishing wave (T1566.001) dropping a PowerShell backdoor. Persistence via scheduled task (T1053.005). IOC: phish@mail-secure[.]net, hxxps://docs[.]mail-secure[.]net/login. References CVE-2024-30103.",
+      "entities": [
+        {"type": "threat-actor", "value": "MuddyWater"},
+        {"type": "attack-pattern", "value": "T1566.001"},
+        {"type": "vulnerability", "value": "CVE-2024-30103"}
+      ]
+    }
+  ]
+}

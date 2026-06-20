@@ -146,6 +146,22 @@ jamais votre infrastructure.
   publiées ou sans propriétaire, versions manquantes, documents expirés).
   Comprend un socle de **politiques ISO/IEC 42001:2023 (Système de Management de
   l'IA) en anglais et en français**, prêt à charger.
+- **Gestion de crise & exercices de simulation** — menez des **exercices de simulation
+  (tabletop, TTX)** sur une bibliothèque de **scénarios de crise** pré-chargée (rançongiciel,
+  fuite de données, DDoS, menace interne, chaîne d'approvisionnement, compromission cloud,
+  fraude au président). Un exercice est un audit de type *Tabletop Exercise* : ses observations
+  deviennent des **actions d'amélioration** et son **rapport après-action** un document lié ;
+  les scénarios portent des **injects chronométrés** et les exercices suivent les
+  **participants/rôles**. Un clic lance un exercice depuis un scénario (copie de ses injects),
+  et un **score de préparation à la crise** combine complétion des exercices et couverture des
+  scénarios. La worklist remonte les actions en retard, les scénarios jamais exercés et les
+  exercices sans rapport après-action.
+- **Gestion de la configuration** — une vue de gouvernance sur la bibliothèque de
+  contenu de configuration sécurisée (OVAL/SCAP) : les **référentiels de
+  durcissement** (classe « compliance ») sont les éléments de configuration, avec
+  un **score de santé** par référentiel et une worklist (contenu **déprécié**,
+  référentiels **jamais vérifiés par un scan**, statut intérimaire, mapping **CCE**
+  manquant) — vérification alimentée par les scans de l'agent OVAL.
 - **EBIOS Risk Manager** — la méthode ANSSI complète à 5 ateliers (cadrage et
   socle de sécurité, sources de risque, scénarios stratégiques et opérationnels,
   traitement) avec un **mode Express**, des valeurs métier, des biens supports,
@@ -273,7 +289,8 @@ jamais votre infrastructure.
 | ![ATT&CK](docs/screenshots/fr/16_matrix_attack.png)<br>**MITRE ATT&CK** — avec heatmap de couverture BAS | ![D3FEND](docs/screenshots/fr/17_matrix_d3fend.png)<br>**MITRE D3FEND** — matrice défensive | ![A3M](docs/screenshots/fr/18_matrix_a3m.png)<br>**A3M** — Agentic AI Attack Matrix |
 | ![Tableau de bord](docs/screenshots/fr/19_dashboard.png)<br>**Tableau de bord exécutif** — risque, exposition, tendances | ![BIA](docs/screenshots/fr/20_bia_audit.png)<br>**Analyse d'impact métier (BIA)** | ![Graphe STIX](docs/screenshots/fr/21_stix_graph.png)<br>**Graphe STIX** — chasses ↔ techniques ATT&CK |
 | ![Identités & IAM](docs/screenshots/fr/54_identities.png)<br>**Identités & IAM** — inventaire humains + non-humains (NHI), worklist de gouvernance et score de risque | ![SSVC](docs/screenshots/fr/55_ssvc_calculator.png)<br>**SSVC** — calculateur CISA (catégorisation des vulnérabilités : Track / Track\* / Attend / Act) | ![Gestion des incidents](docs/screenshots/fr/56_incidents.png)<br>**Gestion des incidents** — file, worklist de gouvernance, dépassement SLA/RTO et score de priorité |
-| ![Conformité & GRC](docs/screenshots/fr/57_compliance.png)<br>**Conformité & GRC** — inventaire des audits, worklist de remédiation et score de posture | ![Politiques & Documents](docs/screenshots/fr/58_policy_management.png)<br>**Politiques & Documents** — cycle de vie des politiques et registre documentaire, worklist de gouvernance et score par politique (politiques ISO 42001 EN/FR pré-chargées) | |
+| ![Conformité & GRC](docs/screenshots/fr/57_compliance.png)<br>**Conformité & GRC** — inventaire des audits, worklist de remédiation et score de posture | ![Politiques & Documents](docs/screenshots/fr/58_policy_management.png)<br>**Politiques & Documents** — cycle de vie des politiques et registre documentaire, worklist de gouvernance et score par politique (politiques ISO 42001 EN/FR pré-chargées) | ![Gestion de la configuration](docs/screenshots/fr/60_configuration_management.png)<br>**Gestion de la configuration** — bibliothèque de configuration sécurisée (référentiels de durcissement OVAL), couverture de vérification par scan et score de santé par référentiel |
+| ![Défense informée par la menace](docs/screenshots/fr/61_threat_informed_defense.png)<br>**Défense informée par la menace** — par technique ATT&CK, usage des adversaires vs couverture détection (Sigma) / mitigation (D3FEND) / test (Atomic), score de programme pondéré par la menace et worklist priorisée des lacunes | | |
 
 ---
 
@@ -473,6 +490,7 @@ externe** :
 | **Expositions prioritaires** | `/exposure` | Score de fusion exploitabilité & pertinence — liste de travail « corriger en premier » (EPSS+KEV+exploit+CTI+rayon d'impact) |
 | **Chemins d'attaque** | `/attack-path` | Graphe d'accessibilité entrée→joyau (liens sous-réseau + BIA, pondérés par la fusion) + analyse des points d'étranglement |
 | **Couverture de détection** | `/purple-team` | Purple-team : outils de chaîne → ATT&CK → couverture par la bibliothèque Sigma + génération de la règle manquante |
+| **Défense informée par la menace** | `/threat-informed-defense` | Cockpit TID (MITRE) : par technique ATT&CK, usage des adversaires (groupes, ×3 pour la CTI/chasses locales) vs couverture détection (Sigma) / mitigation (D3FEND + ATT&CK) / test (Atomic) → score de programme pondéré par la menace, couverture par tactique et worklist priorisée des lacunes. Bouton **« Construire un plan de validation »** : transforme les techniques non testées les plus menaçantes en un **scénario d'émulation BAS** (injects Atomic Red Team) — le taux de validation et le score remontent. Détecte la **dérive de détection** (une règle qui détectait avant ne détecte plus à la revalidation) → état `D↓` distinct + **alerte alignée Defender** (`XINCIDENT.ALERT`, dédoublonnée). Export **couche MITRE ATT&CK Navigator** (score = prévalence adverse, couleur = statut défensif) ouvrable dans le Navigator officiel |
 | **Impact $ rançongiciel** | `/ransomware` | Rejoue les TTP d'un groupe de rançongiciel → impact $ SLE/ALE, rayon d'impact, contrôles D3FEND |
 | **Assurance des contrôles** | `/assurance` | Conformité prouvée en continu — contrôles évalués en direct depuis la télémétrie, mappés ISO 27001 / NIST CSF |
 | **Veille CTI** | `/cti-watch` | « CTI qui agit » — KEV + rapports recoupés avec l'inventaire + ouverture de ticket en un clic |

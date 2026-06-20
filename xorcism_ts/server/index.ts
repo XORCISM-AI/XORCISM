@@ -39,6 +39,9 @@ import assetsRouter from "./routes/assets";
 import incidentsRouter from "./routes/incidents";
 import complianceRouter from "./routes/compliance";
 import policiesRouter from "./routes/policies";
+import configurationRouter from "./routes/configuration";
+import crisisRouter from "./routes/crisis";
+import tidRouter from "./routes/tid";
 import v1Router from "./routes/v1";
 import apikeysRouter from "./routes/apikeys";
 import webhooksRouter from "./routes/webhooks";
@@ -169,6 +172,9 @@ app.use("/api", assetsRouter); // Asset Management: asset inventory + governance
 app.use("/api", incidentsRouter); // Incident Management: incident inventory + governance worklist
 app.use("/api", complianceRouter); // Compliance Management: audit inventory + findings/policy worklist
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
+app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
+app.use("/api", crisisRouter); // Crisis Management: tabletop-exercise readiness + scenario library + improvement worklist
+app.use("/api", tidRouter); // Threat-Informed Defense: ATT&CK technique coverage (adversary use vs detect/mitigate/test)
 app.use("/api/v1", v1Router); // public REST API v1 (API-key auth, read-only, tenant-scoped)
 app.use("/api", apikeysRouter); // manage your own API keys (session-authenticated)
 app.use("/api", webhooksRouter); // manage outbound webhooks (session-authenticated)
@@ -313,8 +319,17 @@ app.get("/incident-management", pageGuard("/"), (_req: Request, res: Response) =
 app.get("/compliance-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "compliance-management.html"));
 });
+app.get("/crisis-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "crisis-management.html"));
+});
 app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
+});
+app.get("/configuration-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "configuration-management.html"));
+});
+app.get("/threat-informed-defense", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "threat-informed-defense.html"));
 });
 app.get("/oval-scan", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "oval-scan.html"));

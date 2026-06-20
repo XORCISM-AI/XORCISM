@@ -23,7 +23,7 @@ export function buildOpenApi(): Record<string, unknown> {
     openapi: "3.0.3",
     info: {
       title: "XORCISM API",
-      version: "1.0.0",
+      version: "1.1.0-beta.1",
       description:
         "REST API over the XORCISM cyber-exposure platform. Authenticate with an API key " +
         "(`Authorization: Bearer xor_…` or `X-API-Key: xor_…`). A key acts as its owning user and is " +
@@ -142,6 +142,34 @@ export function buildOpenApi(): Record<string, unknown> {
           responses: { "200": ok("PolicyInventory"), ...errors },
         },
       },
+      "/configuration-management": {
+        get: {
+          tags: ["Governance"],
+          summary: "Secure-configuration content library (OVAL hardening baselines) + verification worklist (deprecated / unverified by scan / interim status / no CCE mapping), with a per-baseline health score (scope: configuration:read)",
+          responses: { "200": ok("ConfigurationInventory"), ...errors },
+        },
+      },
+      "/crisis-management": {
+        get: {
+          tags: ["Governance"],
+          summary: "Crisis-management & tabletop-exercise readiness: exercises (inject progress, participants, improvement actions) + the crisis-scenario library + a worklist (overdue actions, scenarios never exercised, no after-action report) and a 0-100 readiness score (scope: crisis:read)",
+          responses: { "200": ok("CrisisInventory"), ...errors },
+        },
+      },
+      "/threat-informed-defense": {
+        get: {
+          tags: ["Governance"],
+          summary: "Threat-Informed Defense scorecard: per ATT&CK technique, adversary use (groups) vs detection (Sigma) / mitigation (D3FEND + ATT&CK) / test (Atomic) coverage, with a prioritised gap worklist and a threat-weighted program score (scope: tid:read)",
+          responses: { "200": ok("TidInventory"), ...errors },
+        },
+      },
+      "/threat-informed-defense/navigator-layer": {
+        get: {
+          tags: ["Governance"],
+          summary: "Export the Threat-Informed Defense program as a MITRE ATT&CK Navigator layer (v4.5 JSON): score = adversary prevalence, colour = defence status (red = false-coverage/exposed, amber = partial, green = covered). Opens in the official ATT&CK Navigator (scope: tid:read)",
+          responses: { "200": { description: "ATT&CK Navigator layer (v4.5)", content: { "application/json": { schema: { type: "object" } } } }, ...errors },
+        },
+      },
     },
     components: {
       securitySchemes: {
@@ -181,6 +209,9 @@ export function buildOpenApi(): Record<string, unknown> {
         IncidentInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "total, open, criticalOpen, breached, unassigned, stale, compromises, mttrHours, byStatus, bySeverity" } } },
         ComplianceInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" } }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "audits, inProgress, completed, completionRate, openFindings, highOpen, overdue, unassigned, policiesReview, bySeverity, byType" } } },
         PolicyInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "policies with lifecycle + governance score" }, documents: { type: "array", items: { type: "object" }, description: "controlled-document register" }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "policies, published, draft, inReview, approved, retired, overdueReview, dueSoon, noOwner, noVersion, documents, expiredDocs, frameworks, byStatus, byFramework, byCategory, byLanguage" } } },
+        ConfigurationInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "compliance/hardening OVAL baselines with a health score" }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "definitions, compliance, patch, vulnerability, inventory, deprecated, accepted, withCce, scannedAssets, complianceFail, passRate, byClass, byStatus" } } },
+        TidInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "ATT&CK techniques: threat (adversary groups) vs detect/mitigate/test pillars + gapScore" }, findings: { type: "array", items: { type: "object" }, description: "prioritised TID gaps" }, summary: { type: "object", description: "techniques, threatRelevant, detected, mitigated, tested, detectRate, mitigateRate, testRate, tidScore, exposed, fullyCovered, byTactic" } } },
+        CrisisInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "tabletop exercises (audits of type Tabletop Exercise): inject progress, participants, improvement actions, score" }, findings: { type: "array", items: { type: "object" }, description: "worklist: overdue improvement actions, scenarios never exercised, exercises with no after-action report" }, scenarios: { type: "array", items: { type: "object" }, description: "crisis-scenario template library (exercised flag, inject count)" }, summary: { type: "object", description: "exercises, planned, completed, completionRate, scenarios, scenariosNeverExercised, scenarioCoverage, openActions, overdueActions, withoutAAR, readinessScore" } } },
         IncidentCreate: {
           type: "object", required: ["name"],
           properties: { name: { type: "string" }, severity: { type: "string" }, status: { type: "string" }, synopsis: { type: "string" }, durationHours: { type: "number" } },

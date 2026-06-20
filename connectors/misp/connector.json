@@ -1,25 +1,16 @@
 {
   "id": "misp",
-  "name": "MISP",
+  "name": "MISP — Threat Intelligence Sharing",
   "type": "import",
-  "category": "Threat Intelligence",
-  "description": "Open-source threat-intelligence sharing platform. Tool: https://www.misp-project.org. [SCAFFOLD generated from XORCISM.TOOL #150 by tool_to_connector.py — implement run() in run.py to map MISP output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "category": "threat-intel",
+  "description": "Pulls events from a MISP instance (open-source threat-intelligence sharing platform, https://www.misp-project.org) via its REST API (/events/restSearch) and imports each event into XTHREAT.INTELEXCHANGE — idempotent by event reference. MITRE ATT&CK techniques (from MISP galaxy clusters and tags), threat-actor / intrusion-set galaxies, malware/tool galaxies, CVE references and an IOC summary (IP / domain / URL / hash / email counts) are extracted as tags, and ATT&CK techniques are cross-linked into INTELEXCHANGEATTACK so they count toward the ATT&CK coverage. Read-only, non-intrusive, Python stdlib only (no PyMISP needed). Live mode needs the worker env vars MISP_URL + MISP_KEY (set MISP_VERIFY_SSL=0 for a self-signed instance, MISP_DAYS for the look-back window). Offline / air-gapped import is possible via the 'file' parameter (a saved /events/restSearch response, a single event export, or a JSON list of events).",
   "intrusive": false,
   "permission": "connector:misp",
   "run": "run.py",
   "mapping": "misp",
   "parameters": [
-    {
-      "name": "target",
-      "type": "string",
-      "required": false,
-      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
-    },
-    {
-      "name": "file",
-      "type": "file",
-      "required": false,
-      "help": "Offline mode: a saved MISP output file to parse instead of running it live."
-    }
+    { "name": "max_items", "type": "int", "required": false, "default": 100, "min": 1, "max": 2000, "help": "Maximum number of MISP events to import (most recent first)." },
+    { "name": "days", "type": "int", "required": false, "default": 30, "min": 1, "max": 3650, "help": "Live mode: look-back window (in days) for published events. Overrides MISP_DAYS." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: import from a saved MISP JSON (a /events/restSearch response, a single /events/view export, or a JSON list of events) instead of querying live. Mainly for testing / air-gapped use." }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "xorcism-ts",
-  "version": "1.0.0",
+  "version": "1.1.0-beta.1",
   "description": "XORCISM Database Explorer - TypeScript/Node.js",
   "main": "dist/server/index.js",
   "engines": {

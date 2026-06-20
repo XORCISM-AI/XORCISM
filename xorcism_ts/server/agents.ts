@@ -39,8 +39,13 @@ export function getAgentDb(): Database.Database {
       IOCID INTEGER PRIMARY KEY AUTOINCREMENT,
       ioc_type TEXT NOT NULL, value TEXT NOT NULL, source TEXT, threat TEXT,
       created_at TEXT, UNIQUE(ioc_type, value));
+    CREATE TABLE IF NOT EXISTS FORENSICTRIAGE(
+      TriageID INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent TEXT, asset_name TEXT, host_os TEXT, collected_at TEXT,
+      summary TEXT, artifacts TEXT, flag_count INTEGER DEFAULT 0, created_at TEXT);
     CREATE INDEX IF NOT EXISTS ix_agentevent_agent ON XAGENTEVENT(agent);
     CREATE INDEX IF NOT EXISTS ix_agentjob_agent ON XAGENTJOB(agent, status);
+    CREATE INDEX IF NOT EXISTS ix_forensictriage_agent ON FORENSICTRIAGE(agent);
   `);
   return db;
 }
@@ -89,6 +94,34 @@ export function listAgentEvents(limit = 100, agent?: string): unknown[] {
   return agent
     ? d.prepare("SELECT * FROM XAGENTEVENT WHERE agent=? ORDER BY EventID DESC LIMIT ?").all(agent, limit)
     : d.prepare("SELECT * FROM XAGENTEVENT ORDER BY EventID DESC LIMIT ?").all(limit);
+}
+
+export interface ForensicBundle {
+  os?: string; collectedAt?: string;
+  summary?: Record<string, unknown>; flags?: { category: string; detail: string; severity?: string }[];
+  artifacts?: Record<string, unknown>;
+}
+/** Persist a forensic-triage bundle posted by the agent (live DFIR snapshot). The full
+ *  artifacts blob + a counts/flags summary are stored in FORENSICTRIAGE; the caller also
+ *  emits a forensic_triage agent event so it surfaces in the events feed. */
+export function storeForensicTriage(agent: string, asset: string | null, bundle: ForensicBundle): { triageId: number; flags: number } {
+  const d = getAgentDb();
+  const flags = Array.isArray(bundle.flags) ? bundle.flags : [];
+  const r = d.prepare(
+    "INSERT INTO FORENSICTRIAGE(agent,asset_name,host_os,collected_at,summary,artifacts,flag_count,created_at) VALUES (?,?,?,?,?,?,?,?)",
+  ).run(agent, asset, bundle.os ?? null, bundle.collectedAt ?? nowSql(),
+    JSON.stringify(bundle.summary ?? {}), JSON.stringify(bundle.artifacts ?? {}), flags.length, nowSql());
+  return { triageId: Number(r.lastInsertRowid), flags: flags.length };
+}
+export function listForensicTriage(limit = 50, agent?: string): unknown[] {
+  const d = getAgentDb();
+  const sel = "TriageID,agent,asset_name,host_os,collected_at,summary,flag_count,created_at"; // omit the big artifacts blob in lists
+  return agent
+    ? d.prepare(`SELECT ${sel} FROM FORENSICTRIAGE WHERE agent=? ORDER BY TriageID DESC LIMIT ?`).all(agent, limit)
+    : d.prepare(`SELECT ${sel} FROM FORENSICTRIAGE ORDER BY TriageID DESC LIMIT ?`).all(limit);
+}
+export function getForensicTriage(id: number): unknown {
+  return getAgentDb().prepare("SELECT * FROM FORENSICTRIAGE WHERE TriageID=?").get(id);
 }
 
 /** "Run a scan" command for an agent (from the ASSET window). */

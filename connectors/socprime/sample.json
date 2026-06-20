@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "id": "a1b2c3d4-1111-2222-3333-444455556666",
+      "url": "https://tdm.socprime.com/tdm/info/credential-dumping-lsass-comsvcs",
+      "sigma": "title: LSASS Memory Dump via comsvcs.dll\nid: a1b2c3d4-1111-2222-3333-444455556666\nstatus: stable\ndescription: Detects credential dumping from LSASS memory using rundll32 and comsvcs.dll MiniDump.\nauthor: SOC Prime Team\ntags:\n  - attack.credential_access\n  - attack.t1003.001\nlogsource:\n  product: windows\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith: '\\rundll32.exe'\n    CommandLine|contains|all:\n      - 'comsvcs.dll'\n      - 'MiniDump'\n  condition: selection\nlevel: critical\n"
+    },
+    {
+      "id": "b2c3d4e5-1111-2222-3333-444455556666",
+      "url": "https://tdm.socprime.com/tdm/info/scheduled-task-persistence",
+      "sigma": "title: Scheduled Task Creation via schtasks\nid: b2c3d4e5-1111-2222-3333-444455556666\nstatus: experimental\ndescription: Detects creation of a scheduled task, frequently abused for persistence.\nauthor: SOC Prime Team\ntags:\n  - attack.persistence\n  - attack.t1053.005\nlogsource:\n  product: windows\n  category: process_creation\ndetection:\n  selection:\n    Image|endswith: '\\schtasks.exe'\n    CommandLine|contains: ' /create '\n  condition: selection\nlevel: medium\n"
+    }
+  ]
+}

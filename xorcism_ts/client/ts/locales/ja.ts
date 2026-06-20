@@ -9,6 +9,8 @@ export const ja: Record<string, string> = {
   "landing.config.d": "OVAL 定義、ハードニング、構成コンプライアンス。",
   "landing.compliance": "コンプライアンス",
   "landing.compliance.d": "監査、指摘事項、証跡、フレームワーク、リスク (GRC)。",
+  "landing.crisis": "危機管理",
+  "landing.crisis.d": "シナリオライブラリに基づく机上演習（テーブルトップ）：インジェクト、改善アクション、事後報告、準備度スコア。",
   "landing.tprm": "TPRM: サードパーティリスク管理",
   "landing.tprm.d": "サードパーティのリスク評価: アンケート (OCIL)、回答、証跡。",
   "landing.vuln": "脆弱性管理",

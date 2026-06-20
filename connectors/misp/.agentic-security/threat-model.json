@@ -1,0 +1,34 @@
+{
+  "entities": [],
+  "boundaries": [],
+  "assets": [],
+  "threats": [
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-295",
+      "family": "crypto-tls-no-verify",
+      "severity": "critical",
+      "file": "run.py",
+      "line": 72,
+      "vuln": "TLS certificate verification disabled — MITM-vulnerable",
+      "finding_id": "crypto-tls-no-verify:run.py:72",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-295",
+      "family": "crypto-tls-no-verify",
+      "severity": "critical",
+      "file": "run.py",
+      "line": 73,
+      "vuln": "TLS certificate verification disabled — MITM-vulnerable",
+      "finding_id": "crypto-tls-no-verify:run.py:73",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": []
+}

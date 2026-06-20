@@ -337,9 +337,14 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
     counts: Dict[str, int] = {}
     if result.get("intel"):
         counts.update(import_threat_intel(result))
+    if result.get("detections") or result.get("sigma"):
+        counts.update(import_sigma_rules(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):
         counts.update(import_findings(result))
-    return counts or import_findings(result)
+    if counts:
+        return counts
+    # nothing matched a specialized mapping → treat as findings (back-compat)
+    return import_findings(result)
 
 
 def _split_tags(s: Optional[str]) -> List[str]:
@@ -437,6 +442,76 @@ def import_threat_intel(result: Dict[str, Any]) -> Dict[str, int]:
             )
             counts["intel_attack_links"] += cur.rowcount
 
+    con.commit()
+    con.close()
+    return counts
+
+
+# SIGMARULE schema (kept in sync with ensureThreatTables() in xorcism_ts/server/db.ts).
+_SIGMA_COLUMNS = {
+    "SigmaRuleID": "INTEGER PRIMARY KEY", "SigmaRuleGUID": "TEXT", "SigmaRuleName": "TEXT",
+    "SigmaRuleDescription": "TEXT", "SigmaYaml": "TEXT", "LogSource": "TEXT", "Level": "TEXT",
+    "Status": "TEXT", "Author": "TEXT", "SigmaReference": "TEXT", "AttackTags": "TEXT",
+    "CreatedDate": "DATE",
+}
+_SIGMA_ATTACK_RE = re.compile(r"\bT\d{4}(?:\.\d{3})?\b")
+
+
+def import_sigma_rules(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import normalized Sigma detection rules into XTHREAT.SIGMARULE (detection content
+    connectors: SOC Prime TDM, SigmaHQ…). Idempotent by SigmaReference (the source URL/id):
+    existing rules are updated, new ones inserted. Each rule item (dict):
+        {"name"/"title", "description", "yaml", "logsource", "level", "status", "author",
+         "reference"/"id" (unique), "attack_tags" (CSV Txxxx; else derived from yaml)}
+    Self-creates/ALTERs the table so it runs against any DB version."""
+    from uuid import uuid4
+
+    items = result.get("detections") or result.get("sigma") or []
+    counts = {"sigma": 0, "sigma_updated": 0}
+    if not items:
+        return counts
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XTHREAT.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cols_sql = ", ".join(f"{n} {t}" for n, t in _SIGMA_COLUMNS.items())
+    cur.execute(f"CREATE TABLE IF NOT EXISTS SIGMARULE ({cols_sql})")
+    existing = {r[1] for r in cur.execute("PRAGMA table_info(SIGMARULE)").fetchall()}
+    for name, typ in _SIGMA_COLUMNS.items():
+        if name not in existing:
+            cur.execute(f"ALTER TABLE SIGMARULE ADD COLUMN {name} {typ.replace(' PRIMARY KEY', '')}")
+    cur.execute("CREATE INDEX IF NOT EXISTS ix_sigmarule_ref ON SIGMARULE(SigmaReference)")
+    src = result.get("source") or "SOC Prime"
+
+    for it in items:
+        ref = it.get("reference") or it.get("id") or it.get("name") or it.get("title")
+        if not ref:
+            continue
+        yaml_text = it.get("yaml") or ""
+        attack = it.get("attack_tags")
+        if not attack and yaml_text:
+            attack = ", ".join(sorted({m.upper() for m in _SIGMA_ATTACK_RE.findall(yaml_text)}))
+        common = (it.get("name") or it.get("title"), it.get("description"), yaml_text,
+                  it.get("logsource"), (it.get("level") or "medium"),
+                  (it.get("status") or "experimental"), (it.get("author") or src),
+                  ref, attack)
+        row = cur.execute("SELECT SigmaRuleID FROM SIGMARULE WHERE SigmaReference=?", (ref,)).fetchone()
+        if row:
+            cur.execute(
+                """UPDATE SIGMARULE SET SigmaRuleName=?, SigmaRuleDescription=?, SigmaYaml=?,
+                     LogSource=?, Level=?, Status=?, Author=?, SigmaReference=?, AttackTags=?
+                   WHERE SigmaRuleID=?""",
+                (*common, row[0]),
+            )
+            counts["sigma_updated"] += 1
+        else:
+            cur.execute(
+                """INSERT INTO SIGMARULE (SigmaRuleName, SigmaRuleDescription, SigmaYaml, LogSource,
+                     Level, Status, Author, SigmaReference, AttackTags, SigmaRuleGUID, CreatedDate)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                (*common, it.get("guid") or str(uuid4()), _now()),
+            )
+            counts["sigma"] += 1
     con.commit()
     con.close()
     return counts

@@ -1,0 +1,64 @@
+{
+  "type": "bundle",
+  "id": "bundle--b1a2c3d4-0001-0002-0003-000405060708",
+  "objects": [
+    {
+      "type": "identity",
+      "id": "identity--aaaa1111-2222-3333-4444-555566667777",
+      "name": "ACME Threat Research",
+      "identity_class": "organization"
+    },
+    {
+      "type": "attack-pattern",
+      "id": "attack-pattern--0e8c1c11-1111-2222-3333-444455556666",
+      "name": "Phishing: Spearphishing Link",
+      "external_references": [
+        { "source_name": "mitre-attack", "external_id": "T1566.002", "url": "https://attack.mitre.org/techniques/T1566/002" }
+      ]
+    },
+    {
+      "type": "attack-pattern",
+      "id": "attack-pattern--1f9d2d22-1111-2222-3333-444455556666",
+      "name": "Command and Scripting Interpreter: PowerShell",
+      "external_references": [
+        { "source_name": "mitre-attack", "external_id": "T1059.001", "url": "https://attack.mitre.org/techniques/T1059/001" }
+      ]
+    },
+    {
+      "type": "intrusion-set",
+      "id": "intrusion-set--2a0e3e33-1111-2222-3333-444455556666",
+      "name": "APT29"
+    },
+    {
+      "type": "malware",
+      "id": "malware--3b1f4f44-1111-2222-3333-444455556666",
+      "name": "WINELOADER",
+      "is_family": true
+    },
+    {
+      "type": "vulnerability",
+      "id": "vulnerability--4c205055-1111-2222-3333-444455556666",
+      "name": "CVE-2024-3400"
+    },
+    {
+      "type": "report",
+      "id": "report--5d316166-1111-2222-3333-444455556666",
+      "name": "APT29 diplomatic phishing wave delivering WINELOADER",
+      "description": "A spearphishing campaign attributed to APT29 used diplomatic-themed lures with malicious links delivering the WINELOADER backdoor via PowerShell, with initial access in some cases via CVE-2024-3400.",
+      "published": "2026-04-30T09:00:00.000Z",
+      "created": "2026-04-30T09:00:00.000Z",
+      "created_by_ref": "identity--aaaa1111-2222-3333-4444-555566667777",
+      "labels": ["apt", "espionage", "tlp:green"],
+      "external_references": [
+        { "source_name": "ACME", "url": "https://acme.example/research/apt29-wineloader" }
+      ],
+      "object_refs": [
+        "attack-pattern--0e8c1c11-1111-2222-3333-444455556666",
+        "attack-pattern--1f9d2d22-1111-2222-3333-444455556666",
+        "intrusion-set--2a0e3e33-1111-2222-3333-444455556666",
+        "malware--3b1f4f44-1111-2222-3333-444455556666",
+        "vulnerability--4c205055-1111-2222-3333-444455556666"
+      ]
+    }
+  ]
+}

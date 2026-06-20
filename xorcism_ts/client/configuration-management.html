@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Configuration Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cf-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .cf-wrap h1{font-size:20px;margin:0 0 2px}
+  .cf-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .cf-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cf-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cf-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cf-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .cf-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cf-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  table.cf{width:100%;border-collapse:collapse;font-size:13px}
+  table.cf th,table.cf td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.cf th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;white-space:nowrap;background:#1e2133;color:#cbd5e1}
+  .st-accepted{background:#14532d;color:#bbf7d0}.st-deprecated{background:#3f1d1d;color:#fca5a5}.st-interim{background:#3b2f1e;color:#fcd34d}
+  .tag{font-size:11px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:5px;padding:1px 6px;margin:1px 3px 1px 0;display:inline-block;color:#fca5a5}
+  .tag-w{background:#3b2f1e;border-color:#78350f;color:#fcd34d}
+  .cname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .ref{font-family:ui-monospace,monospace;font-size:11px;color:#22d3ee}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#34d399}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-High{color:#f87171;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .ok{color:#34d399}
+  .cf-launch{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:13px 16px;margin-bottom:16px;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+  .cf-launch h3{font-size:12px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.5px;flex-basis:100%;margin:0}
+  .cf-launch .fld{display:flex;flex-direction:column;gap:4px}
+  .cf-launch label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .cf-launch select{background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:7px 9px;color:#e2e8f0;font-size:13px;min-width:230px}
+  .cf-launch button{background:#22d3ee;color:#06222a;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer}
+  .cf-launch button:hover{background:#67e8f9}
+  .cf-launch button:disabled{opacity:.5;cursor:not-allowed}
+  .cf-launch .lstat{font-size:12px;color:#94a3b8;flex-basis:100%;margin-top:2px;min-height:16px}
+  .cf-launch .lstat a{color:#22d3ee}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XOVAL&amp;table=OVALDEFINITION">&#128203; OVAL definitions</a>
+  <a href="/oval-scan">&#9889; Scan results</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <span class="spacer"></span>
+  <span class="title">&#9881;&#65039; Configuration Management</span>
+</div>
+
+<div class="cf-wrap">
+  <div>
+    <h1 data-i18n="config.title">Configuration Management</h1>
+    <div class="cf-sub" data-i18n="config.sub">One governance view over the secure-configuration content library — the OVAL/SCAP
+      checks XORCISM holds. The <b>configuration items</b> are the compliance-class <b>hardening baselines</b>; the broader
+      library also carries patch, vulnerability and inventory checks. Each baseline carries a <b>health score</b>; the
+      worklist surfaces the gaps that matter: <b>deprecated</b> content still present, baselines <b>never verified by a
+      scan</b>, <b>interim-status</b> checks, and hardening checks with <b>no CCE</b> reference. Run scans from the
+      <a href="/oval-scan">OVAL agent</a>; browse content under
+      <a href="/?db=XOVAL&amp;table=OVALDEFINITION">OVAL definitions</a>.</div>
+  </div>
+  <div class="cf-launch" id="cf-launch">
+    <h3 data-i18n="config.launch.title">⚡ Launch an OVAL scan</h3>
+    <div class="fld">
+      <label data-i18n="config.launch.type">Scan type</label>
+      <select id="cf-kind">
+        <option value="oval" data-i18n="config.launch.kind.oval">OVAL — secure configuration</option>
+        <option value="full" data-i18n="config.launch.kind.full">Full (inventory + vuln + OVAL + AV + hunt)</option>
+        <option value="inventory" data-i18n="config.launch.kind.inv">Inventory (software → CPE)</option>
+        <option value="vuln" data-i18n="config.launch.kind.vuln">Vulnerability (CVE)</option>
+      </select>
+    </div>
+    <div class="fld" id="cf-class-fld">
+      <label data-i18n="config.launch.class">OVAL class</label>
+      <select id="cf-class">
+        <option value="all" data-i18n="config.launch.class.all">All classes</option>
+        <option value="compliance" data-i18n="config.launch.class.comp">Compliance (hardening)</option>
+        <option value="vulnerability" data-i18n="config.launch.class.vuln">Vulnerability</option>
+        <option value="inventory" data-i18n="config.launch.class.inv">Inventory</option>
+        <option value="patch" data-i18n="config.launch.class.patch">Patch</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label data-i18n="config.launch.target">Target host</label>
+      <select id="cf-target"><option data-i18n="config.launch.loading">Loading…</option></select>
+    </div>
+    <div class="fld">
+      <label data-i18n="config.launch.recur">Recurrence</label>
+      <select id="cf-recur">
+        <option value="once" data-i18n="config.launch.recur.once">Once (now)</option>
+        <option value="hourly" data-i18n="config.launch.recur.hourly">Hourly</option>
+        <option value="daily" data-i18n="config.launch.recur.daily">Daily (02:00)</option>
+        <option value="weekly" data-i18n="config.launch.recur.weekly">Weekly (Mon 03:00)</option>
+        <option value="monthly" data-i18n="config.launch.recur.monthly">Monthly (1st 04:00)</option>
+      </select>
+    </div>
+    <button id="cf-launch-btn" data-i18n="config.launch.go">Launch scan</button>
+    <div class="lstat" id="cf-launch-stat" data-i18n="config.launch.hint">Pick a host (localhost or remote) and a scan type — the enrolled XOR agent runs it at its next check-in; results land in the verification cards below. Set a <b>recurrence</b> to schedule it on a cadence.</div>
+    <div class="lstat" id="cf-sched-list"></div>
+  </div>
+  <div id="cf-body"><div class="muted" style="padding:24px;text-align:center">Building the configuration posture…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/configuration-management.js"></script>
+</body>
+</html>

@@ -9,6 +9,8 @@ export const es: Record<string, string> = {
   "landing.config.d": "Definiciones OVAL, bastionado y cumplimiento de configuración.",
   "landing.compliance": "Cumplimiento",
   "landing.compliance.d": "Auditorías, hallazgos, evidencias, marcos y riesgo (GRC).",
+  "landing.crisis": "Gestión de crisis",
+  "landing.crisis.d": "Ejercicios de gestión de crisis (tabletop) sobre una biblioteca de escenarios: inyecciones, acciones de mejora, informes posteriores y una puntuación de preparación.",
   "landing.tprm": "TPRM: Gestión de riesgos de terceros",
   "landing.tprm.d": "Evaluación de riesgos de terceros: cuestionarios (OCIL), respuestas y evidencias.",
   "landing.vuln": "Gestión de vulnerabilidades",

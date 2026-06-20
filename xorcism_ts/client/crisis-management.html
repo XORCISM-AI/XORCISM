@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Crisis Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cr-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .cr-wrap h1{font-size:20px;margin:0 0 2px}
+  .cr-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .cr-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cr-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cr-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cr-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .cr-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cr-ready{background:linear-gradient(135deg,#3b1322,#13162a)}
+  .cr-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  table.cr{width:100%;border-collapse:collapse;font-size:13px}
+  table.cr th,table.cr td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.cr th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .sev{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .s-critical{background:#7f1d1d;color:#fecaca}.s-high{background:#7c2d12;color:#fed7aa}
+  .s-medium{background:#78350f;color:#fcd34d}.s-low{background:#1e2133;color:#94a3b8}.s-info{background:#1e2133;color:#64748b}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-completed{background:#14532d;color:#bbf7d0}.st-progress{background:#3b2f1e;color:#fcd34d}.st-planned{background:#1e2133;color:#94a3b8}
+  .pill{font-size:11px;border-radius:5px;padding:1px 6px;display:inline-block;margin-right:4px}
+  .p-open{background:#7c2d12;color:#fed7aa}.p-high{background:#7f1d1d;color:#fecaca}.p-clean{background:#14532d;color:#bbf7d0}
+  .p-aar{background:#1e3a5f;color:#bae6fd}.p-noaar{background:#3f1d1d;color:#fca5a5}
+  .tag{font-size:11px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:5px;padding:1px 6px;margin-left:4px;color:#fca5a5}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .prog{height:6px;background:#1e2133;border-radius:4px;overflow:hidden;min-width:80px;margin-top:4px}
+  .prog>span{display:block;height:100%;background:#fb7185}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#34d399}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}.sev-Info{color:#64748b}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .scn{display:flex;gap:10px;flex-wrap:wrap}
+  .scn-card{background:#0f1117;border:1px solid #2d3250;border-radius:9px;padding:10px 12px;min-width:220px;flex:1;max-width:320px}
+  .scn-card .t{font-weight:600;color:#e2e8f0;font-size:13px}
+  .scn-card .m{font-size:11px;color:#94a3b8;margin:3px 0 7px}
+  .scn-run{background:#e11d48;color:#fff;border:none;border-radius:6px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer}
+  .scn-run:hover{background:#fb7185}.scn-run:disabled{opacity:.5;cursor:not-allowed}
+  .scn-done{font-size:11px;color:#34d399;font-weight:600}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=AUDIT">&#127913; Exercises</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=CRISISSCENARIO">&#128220; Scenarios</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/incident-management">&#128680; Incidents</a>
+  <span class="spacer"></span>
+  <span class="title">&#127982; Crisis Management</span>
+</div>
+
+<div class="cr-wrap">
+  <div>
+    <h1>Crisis Management &amp; Tabletop Exercises</h1>
+    <div class="cr-sub">Run and track <b>tabletop exercises (TTX)</b> against a library of <b>crisis scenarios</b>
+      (ransomware, data breach, DDoS, insider, supply-chain&hellip;). Each exercise is an audit of type
+      <i>Tabletop Exercise</i> — so its observations become <b>improvement actions</b> (findings) and its
+      <b>after-action report</b> a linked document. The worklist surfaces what matters: <b>overdue improvement
+      actions</b>, <b>scenarios never exercised</b>, and exercises <b>with no after-action report</b>. A single
+      <b>crisis-readiness score</b> blends exercise completion with scenario coverage. Launch an exercise from any
+      scenario below; manage entries under
+      <a href="/?db=XCOMPLIANCE&amp;table=AUDIT">Exercises</a> /
+      <a href="/?db=XCOMPLIANCE&amp;table=EXERCISEINJECT">Injects</a> /
+      <a href="/?db=XCOMPLIANCE&amp;table=AUDITFINDING">Improvement actions</a>.</div>
+  </div>
+  <div id="cr-body"><div class="muted" style="padding:24px;text-align:center">Building the crisis-readiness picture…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/crisis-management.js"></script>
+</body>
+</html>

@@ -125,6 +125,8 @@ import { assetInventory } from "../assets";
 import { identityInventory } from "../identities";
 import { incidentInventory } from "../incidents";
 import { complianceInventory } from "../compliance";
+import { tidInventory } from "../tid";
+import { crisisInventory } from "../crisis";
 
 // Removes the forbidden columns from a row object (keeps rowid)
 function stripCols(row: Record<string, unknown>, denied: Set<string>): Record<string, unknown> {
@@ -335,12 +337,16 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
   const i = safe(() => identityInventory(tenant).summary);
   const inc = safe(() => incidentInventory(tenant).summary);
   const c = safe(() => complianceInventory(tenant).summary);
+  const t = safe(() => tidInventory(tenant).summary);
+  const cr = safe(() => crisisInventory(tenant).summary);
   res.json({
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
     identities: i && { total: i.total, privileged: i.privileged, orphaned: i.orphaned, mfaGaps: i.mfaGaps },
     incidents: inc && { open: inc.open, criticalOpen: inc.criticalOpen, breached: inc.breached, mttrHours: inc.mttrHours },
     compliance: c && { completionRate: c.completionRate, openFindings: c.openFindings, highOpen: c.highOpen, overdue: c.overdue },
+    tid: t && { tidScore: t.tidScore, detectRate: t.detectRate, mitigateRate: t.mitigateRate, testRate: t.testRate, detectionFailed: t.detectionFailed, detectionRegressed: t.detectionRegressed, exposed: t.exposed, threatRelevant: t.threatRelevant },
+    crisis: cr && { readinessScore: cr.readinessScore, exercises: cr.exercises, completionRate: cr.completionRate, scenarioCoverage: cr.scenarioCoverage, openActions: cr.openActions, overdueActions: cr.overdueActions, scenariosNeverExercised: cr.scenariosNeverExercised },
   });
 });
 

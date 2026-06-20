@@ -779,6 +779,10 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XCOMPLIANCE.QUESTIONFORQUESTIONNAIRE",
   "XCOMPLIANCE.ANSWER",
   "XCOMPLIANCE.ANSWERFORQUESTION",
+  // ── Crisis management / tabletop exercises (multi-tenant isolation) ──
+  "XCOMPLIANCE.CRISISSCENARIO",
+  "XCOMPLIANCE.EXERCISEINJECT",
+  "XCOMPLIANCE.EXERCISEPARTICIPANT",
   // ── Tooling catalogue (multi-tenant isolation) ──
   "XORCISM.TOOL",
   // ── Policy & document management (multi-tenant isolation) ──
@@ -3064,9 +3068,44 @@ export function ensureComplianceDb(): void {
     `);
     ensureGrcSchema(db);
     ensureOcilSchema(db); // OCIL 2.0-compatible questionnaires/questions/answers
+    ensureCrisisSchema(db); // crisis-management: tabletop exercises (AUDIT subtype) + scenarios/injects/participants
   } finally {
     db.close(); // getDb() will reopen the database with its own pragmas
   }
+}
+
+/** Crisis management (hybrid model): a tabletop exercise (TTX) is an AUDIT row with
+ *  AuditType='Tabletop Exercise' (so it reuses AUDITFINDING as exercise observations /
+ *  improvement actions and AUDITDOCUMENT for the after-action report). On top of that:
+ *   - CRISISSCENARIO : a reusable scenario template library (ransomware, breach, DDoS…).
+ *   - EXERCISEINJECT : the timeline of events. A template inject has ScenarioID set and
+ *     AuditID NULL; launching an exercise copies the template's injects with AuditID set.
+ *   - EXERCISEPARTICIPANT : the people/roles taking part in an exercise (by AuditID).
+ *  All tenant-scoped (see TENANT_SCOPED_TABLES); created idempotently at boot. */
+function ensureCrisisSchema(db: Database.Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS CRISISSCENARIO (
+      ScenarioID INTEGER PRIMARY KEY,
+      ScenarioGUID TEXT, ScenarioName TEXT, ScenarioType TEXT, Description TEXT,
+      Severity TEXT, Objectives TEXT, ThreatActor TEXT, AttackTechniques TEXT,
+      Refs TEXT, IsTemplate INTEGER DEFAULT 1, Source TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS EXERCISEINJECT (
+      InjectID INTEGER PRIMARY KEY,
+      InjectGUID TEXT, AuditID INTEGER, ScenarioID INTEGER, StepOrder INTEGER,
+      InjectTime TEXT, Title TEXT, Description TEXT, InjectType TEXT,
+      ExpectedAction TEXT, ActualResponse TEXT, Status TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS EXERCISEPARTICIPANT (
+      ParticipantID INTEGER PRIMARY KEY,
+      ParticipantGUID TEXT, AuditID INTEGER, PersonID INTEGER, ParticipantName TEXT,
+      CrisisRole TEXT, Team TEXT, Attended INTEGER,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_exerciseinject_audit ON EXERCISEINJECT(AuditID);
+    CREATE INDEX IF NOT EXISTS ix_exerciseinject_scenario ON EXERCISEINJECT(ScenarioID);
+    CREATE INDEX IF NOT EXISTS ix_exerciseparticipant_audit ON EXERCISEPARTICIPANT(AuditID);
+    CREATE INDEX IF NOT EXISTS ix_crisisscenario_tenant ON CRISISSCENARIO(TenantID);
+  `);
 }
 
 /**

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat-Informed Defense</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ti-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .ti-wrap h1{font-size:20px;margin:0 0 2px}
+  .ti-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .ti-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .ti-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ti-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ti-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .ti-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ti-score{flex:1.4;min-width:170px;background:linear-gradient(135deg,#1b1430,#13162a);border-color:#4c1d95}
+  .ti-score .val{font-size:40px}
+  .ti-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.ti{width:100%;border-collapse:collapse;font-size:13px}
+  table.ti th,table.ti td{text-align:left;padding:7px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.ti th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .tid{font-family:ui-monospace,monospace;font-size:11px;color:#fca5a5}
+  .pill{font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+  .p-on{background:#14532d;color:#bbf7d0}.p-off{background:#3f1d1d;color:#fca5a5}.p-mid{background:#3b2f1e;color:#fcd34d}
+  .p-fail{background:#7f1d1d;color:#fecaca;border:1px solid #f87171;box-shadow:0 0 6px #f8717155}
+  .p-drift{background:#7c2d12;color:#fed7aa;border:1px solid #fb923c;box-shadow:0 0 7px #fb923c66}
+  .st{font-size:10px;font-weight:700;border-radius:5px;padding:2px 8px;text-transform:uppercase}
+  .st-covered{background:#14532d;color:#bbf7d0}.st-partial{background:#3b2f1e;color:#fcd34d}.st-exposed{background:#7f1d1d;color:#fecaca}
+  .tname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .gap{font-weight:700}.g-hi{color:#f87171}.g-md{color:#fbbf24}.g-lo{color:#34d399}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-High{color:#f87171;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}
+  .findings a{color:#a78bfa}
+  .ti-gen{background:#0e7490;color:#cffafe;border:none;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:600;cursor:pointer;margin-left:5px}
+  .ti-gen:hover{background:#155e75}.ti-gen:disabled{opacity:.5;cursor:default}
+  .ti-gen-done{font-size:11px;color:#34d399;margin-left:5px}.ti-gen-done a{color:#22d3ee}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .bars{display:flex;flex-direction:column;gap:5px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;font-size:12px}
+  .bar-row .tac{color:#cbd5e1}
+  .bar-track{display:flex;height:16px;border-radius:4px;overflow:hidden;background:#0f1117;border:1px solid #1e2133}
+  .bar-seg{height:100%}
+  .leg{font-size:11px;color:#64748b;margin-top:6px}
+  .leg b{color:#cbd5e1}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .ti-plan{background:#d946ef;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  .ti-plan:hover{background:#e879f9}.ti-plan:disabled{opacity:.5;cursor:not-allowed}
+  #ti-plan-stat a{color:#e879f9}
+  .ti-nav-dl{margin-left:auto;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;color:#38bdf8;text-decoration:none;border:1px solid #1e3a5f;border-radius:6px;padding:3px 10px;background:#0b1f33}
+  .ti-nav-dl:hover{background:#10314f;color:#7dd3fc}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XTHREAT&amp;table=ATTACKTECHNIQUE">&#127919; ATT&amp;CK</a>
+  <a href="/purple-team">&#128520; Purple team</a>
+  <a href="/d3fend">&#128737;&#65039; D3FEND</a>
+  <span class="spacer"></span>
+  <span class="title">&#127919; Threat-Informed Defense</span>
+</div>
+
+<div class="ti-wrap">
+  <div>
+    <h1 data-i18n="tid.title">Threat-Informed Defense</h1>
+    <div class="ti-sub" data-i18n="tid.sub">For every MITRE ATT&amp;CK technique, XORCISM scores how much <b>adversaries</b> use it
+      (ecosystem prevalence from ATT&amp;CK groups, boosted by your local CTI &amp; hunts) against whether you
+      <b>detect</b> it (Sigma rules), <b>mitigate</b> it (D3FEND + ATT&amp;CK mitigations) and <b>test</b> it (Atomic Red Team).
+      The result is a single threat-weighted program score and a prioritised gap worklist — the highest-threat techniques
+      with the weakest defence. Close gaps from <a href="/purple-team">Purple team</a> (detection),
+      <a href="/d3fend">D3FEND</a> (mitigation) and the BAS / Atomic tests (validation).</div>
+  </div>
+  <div id="ti-body"><div class="muted" style="padding:24px;text-align:center">Computing threat-informed coverage…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/threat-informed-defense.js"></script>
+</body>
+</html>

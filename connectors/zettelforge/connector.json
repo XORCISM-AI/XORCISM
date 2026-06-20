@@ -1,0 +1,18 @@
+{
+  "id": "zettelforge",
+  "name": "ZettelForge",
+  "type": "import",
+  "category": "threat-intel",
+  "description": "Agentic CTI memory (ZettelForge, https://github.com/rolandpg/zettelforge): extracts and organises threat intelligence from analyst notes and reports so institutional knowledge isn't lost. Each note/report becomes an XTHREAT.INTELEXCHANGE item (idempotent by content reference); ZettelForge's entity extraction surfaces CVEs, MITRE ATT&CK techniques (Txxxx), threat-actor groups with alias resolution (Fancy Bear / Sofacy / STRONTIUM -> APT28), malware/tools and IOCs (IPs, domains, URLs, hashes, emails) as tags, and ATT&CK techniques are cross-linked into INTELEXCHANGEATTACK so they count toward the ATT&CK coverage. When the 'zettelforge' Python package is installed (pip install zettelforge) it is used for LLM-grade NER and the notes are also persisted into ZettelForge's local knowledge graph (data dir ZETTELFORGE_DATA_DIR, default ~/.amem); otherwise a built-in regex+alias extractor (stdlib only, fully offline) is used. Read-only, non-intrusive, no external API keys. Point 'notes' at a file or a directory of markdown/text notes, or use 'file' to import a saved ZettelForge JSON export.",
+  "intrusive": false,
+  "permission": "connector:zettelforge",
+  "run": "run.py",
+  "mapping": "zettelforge",
+  "parameters": [
+    { "name": "notes", "type": "file", "required": false, "help": "Path to a CTI note/report file, or a directory of .md/.txt/.markdown notes (worker-local). Entities are extracted from each and imported into INTELEXCHANGE." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: import a saved ZettelForge JSON export (memories/entities) instead of extracting from notes." },
+    { "name": "author", "type": "string", "required": false, "default": "ZettelForge", "help": "Author/source recorded on the imported intel items." },
+    { "name": "max_items", "type": "int", "required": false, "default": 200, "min": 1, "max": 2000, "help": "Maximum number of notes/items to import." },
+    { "name": "use_zettelforge", "type": "bool", "required": false, "default": true, "help": "Use the installed 'zettelforge' package for entity extraction + knowledge-graph persistence when available (falls back to the built-in regex extractor)." }
+  ]
+}

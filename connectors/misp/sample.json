@@ -1,0 +1,74 @@
+{
+  "response": [
+    {
+      "Event": {
+        "id": "4412",
+        "uuid": "5f8d1b2a-1c3e-4a9b-bb01-aa0102030405",
+        "info": "APT28 spear-phishing campaign targeting government entities",
+        "date": "2026-05-14",
+        "threat_level_id": "1",
+        "Orgc": { "name": "CIRCL" },
+        "Tag": [
+          { "name": "tlp:amber" },
+          { "name": "misp-galaxy:threat-actor=\"Sofacy\"" },
+          { "name": "type:OSINT" }
+        ],
+        "Galaxy": [
+          {
+            "type": "mitre-attack-pattern",
+            "GalaxyCluster": [
+              { "value": "Spearphishing Attachment - T1566.001", "meta": { "external_id": ["T1566.001"] } },
+              { "value": "User Execution - T1204", "meta": { "external_id": ["T1204"] } }
+            ]
+          },
+          {
+            "type": "threat-actor",
+            "GalaxyCluster": [ { "value": "APT28 - Fancy Bear" } ]
+          },
+          {
+            "type": "malware",
+            "GalaxyCluster": [ { "value": "Zebrocy" } ]
+          }
+        ],
+        "Attribute": [
+          { "type": "ip-dst", "value": "203.0.113.44" },
+          { "type": "domain", "value": "secure-update.example.net" },
+          { "type": "sha256", "value": "9f2b3c4d5e6f70819293a4b5c6d7e8f90112233445566778899aabbccddeeff0" },
+          { "type": "vulnerability", "value": "CVE-2024-21413" }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "id": "4413",
+        "uuid": "61aa2233-4455-6677-8899-aabbccddeeff",
+        "info": "LockBit affiliate exploiting Citrix Bleed (CVE-2023-4966)",
+        "date": "2026-05-20",
+        "threat_level_id": "1",
+        "Orgc": { "name": "ACME-CERT" },
+        "Tag": [
+          { "name": "tlp:green" },
+          { "name": "ransomware" }
+        ],
+        "Galaxy": [
+          {
+            "type": "mitre-attack-pattern",
+            "GalaxyCluster": [
+              { "value": "Exploit Public-Facing Application - T1190", "meta": { "external_id": ["T1190"] } },
+              { "value": "Data Encrypted for Impact - T1486", "meta": { "external_id": ["T1486"] } }
+            ]
+          },
+          {
+            "type": "malware",
+            "GalaxyCluster": [ { "value": "LockBit" } ]
+          }
+        ],
+        "Attribute": [
+          { "type": "ip-src", "value": "198.51.100.7" },
+          { "type": "url", "value": "http://lockbit-leak.example.onion/victims" },
+          { "type": "vulnerability", "value": "CVE-2023-4966" }
+        ]
+      }
+    }
+  ]
+}

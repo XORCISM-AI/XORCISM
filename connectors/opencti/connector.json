@@ -1,25 +1,15 @@
 {
   "id": "opencti",
-  "name": "OpenCTI",
+  "name": "OpenCTI — Cyber Threat Intelligence",
   "type": "import",
-  "category": "Threat Intelligence",
-  "description": "Open platform to manage cyber-threat intelligence using STIX2. Tool: https://www.opencti.io. [SCAFFOLD generated from XORCISM.TOOL #151 by tool_to_connector.py — implement run() in run.py to map OpenCTI output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "category": "threat-intel",
+  "description": "Pulls Reports from an OpenCTI platform (open cyber-threat-intelligence platform built on STIX 2.1, https://www.opencti.io) via its GraphQL API and imports each report into XTHREAT.INTELEXCHANGE — idempotent by report reference. The report's contained objects are resolved into tags: MITRE ATT&CK techniques (attack-pattern → x_mitre_id) are cross-linked into INTELEXCHANGEATTACK for ATT&CK coverage; intrusion-sets / threat actors, malware / tools and CVE vulnerabilities become actor / malware / CVE tags; report labels become free tags. Read-only, non-intrusive, Python stdlib only (no pycti SDK needed). Live mode needs the worker env vars OPENCTI_URL + OPENCTI_TOKEN. Offline / air-gapped import is possible via the 'file' parameter — either a STIX 2.1 bundle (a JSON {\"objects\": [...]} export, the universal format) or a saved OpenCTI GraphQL response.",
   "intrusive": false,
   "permission": "connector:opencti",
   "run": "run.py",
   "mapping": "opencti",
   "parameters": [
-    {
-      "name": "target",
-      "type": "string",
-      "required": false,
-      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
-    },
-    {
-      "name": "file",
-      "type": "file",
-      "required": false,
-      "help": "Offline mode: a saved OpenCTI output file to parse instead of running it live."
-    }
+    { "name": "max_items", "type": "int", "required": false, "default": 60, "min": 1, "max": 1000, "help": "Maximum number of OpenCTI reports to import (most recent first)." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: import from a STIX 2.1 bundle (JSON with an 'objects' array) or a saved OpenCTI GraphQL response, instead of querying live. Mainly for testing / air-gapped use." }
   ]
 }

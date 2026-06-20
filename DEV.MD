@@ -169,7 +169,7 @@ build artifacts. `uploads/` holds user-uploaded evidence files.
 | `importers/import_nvd_cve.py` | NVD CVE → XVULNERABILITY (uses `nvd_cache/`). Driven by root `import_nvd_cve.ps1`. |
 | `importers/import_capec.py`, `import_cce.py`, `import_oval.py`, `import_maec.py` | CAPEC / CCE / OVAL / MAEC reference imports (lxml). `capec_latest.xml` is the cached source; `importers/OVALRepo/` is the **vendored upstream OVAL repository** (huge, data only — never hand-edit). |
 | `importers/import_cisa_kev.py`, `import_KEV.py` | CISA Known Exploited Vulnerabilities flags. |
-| `importers/import_controls.py`, `import_iso27001.py`, `import_nist800-53.py` | Compliance frameworks → CONTROL tables. |
+| `importers/import_controls.py`, `import_iso27001.py`, `import_iso42001_controls.py`, `import_nist800-53.py` | Compliance frameworks → CONTROL tables. |
 | `importers/import_threatevent.py`, `import_vulnerabilities.py`, `import_vulnerabilitydomains.py` | Misc threat/vuln seeds. |
 | `parsers/cwe_parser.py` | CWE XML parser. |
 | `providers/provider_nessus.py` | Nessus `.nessus` report parser (legacy provider path). |

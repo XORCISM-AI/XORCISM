@@ -9,6 +9,8 @@ export const zh: Record<string, string> = {
   "landing.config.d": "OVAL 定义、加固与配置合规。",
   "landing.compliance": "合规",
   "landing.compliance.d": "审计、发现项、证据、框架与风险 (GRC)。",
+  "landing.crisis": "危机管理",
+  "landing.crisis.d": "基于场景库的桌面推演演练：注入事件、改进措施、事后报告和准备度评分。",
   "landing.tprm": "TPRM：第三方风险管理",
   "landing.tprm.d": "第三方风险评估：问卷 (OCIL)、回答与证据。",
   "landing.vuln": "漏洞管理",

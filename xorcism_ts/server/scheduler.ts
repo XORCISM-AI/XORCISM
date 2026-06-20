@@ -9,6 +9,7 @@ import {
   listEnabledSchedules, markScheduleRun, createJob, getEngagement, minuteOf, sqlNow,
   Schedule,
 } from "./jobs";
+import { createAgentJob } from "./agents";
 import { cronMatches } from "./cron";
 import { targetInScope } from "./scope";
 import * as xid from "./xid";
@@ -25,6 +26,44 @@ function scopeHost(target: string): string {
 function fireSchedule(s: Schedule, nowMin: string): void {
   // Anti-duplicate: already fired during this minute?
   if (minuteOf(s.last_run_at) === nowMin) return;
+
+  // Threat-Informed Defense auto-re-validation: queue an AGENT emulation job (not a connector
+  // job) so a validation scenario's injects are re-run on a cadence — the agent (opt-in
+  // XOR_ALLOW_EMULATION=1) re-attributes detection and the cockpit's validated/false-coverage
+  // signals refresh without a manual re-run.
+  if (s.connector === "agent-emulate") {
+    let p: { scenarioId?: number; agent?: string } = {};
+    try { p = JSON.parse(s.params || "{}"); } catch { p = {}; }
+    if (!p.scenarioId || !p.agent) {
+      console.warn(`[scheduler] agent-emulate schedule ${s.ScheduleID} ignoré : scenarioId/agent manquant`);
+      return;
+    }
+    const jobId = createAgentJob(String(p.agent), "emulate", { scenarioId: Number(p.scenarioId) }, s.created_by ?? null);
+    markScheduleRun(s.ScheduleID, jobId, sqlNow());
+    xid.addAudit({ userId: s.created_by, action: "schedule_fire", resourceType: "agent",
+      resourceKey: String(p.agent), detail: `re-validate scenario=${p.scenarioId} job=${jobId} cron=${s.cron}` });
+    console.log(`[scheduler] schedule ${s.ScheduleID} (agent-emulate) → agent job ${jobId} (scenario ${p.scenarioId} on ${p.agent})`);
+    return;
+  }
+
+  // Recurring OVAL scan: queue an AGENT OVAL job on a cadence (Configuration Management →
+  // "Schedule recurring scan"). The agent runs OpenSCAP/native OVAL of the chosen class at its
+  // next check-in and posts results to XOVAL — no manual re-trigger needed.
+  if (s.connector === "agent-oval") {
+    let p: { agent?: string; ovalClass?: string } = {};
+    try { p = JSON.parse(s.params || "{}"); } catch { p = {}; }
+    if (!p.agent) {
+      console.warn(`[scheduler] agent-oval schedule ${s.ScheduleID} ignoré : agent manquant`);
+      return;
+    }
+    const oc = p.ovalClass && p.ovalClass !== "all" ? { ovalClass: String(p.ovalClass) } : {};
+    const jobId = createAgentJob(String(p.agent), "oval", oc, s.created_by ?? null);
+    markScheduleRun(s.ScheduleID, jobId, sqlNow());
+    xid.addAudit({ userId: s.created_by, action: "schedule_fire", resourceType: "agent",
+      resourceKey: String(p.agent), detail: `oval class=${p.ovalClass ?? "all"} job=${jobId} cron=${s.cron}` });
+    console.log(`[scheduler] schedule ${s.ScheduleID} (agent-oval) → agent job ${jobId} (oval ${p.ovalClass ?? "all"} on ${p.agent})`);
+    return;
+  }
 
   // Re-validate the scope if the schedule targets something with an engagement.
   if (s.target) {

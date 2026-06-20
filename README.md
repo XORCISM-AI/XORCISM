@@ -126,7 +126,10 @@ your data never leaves your infrastructure.
   **OpenVEX** document (which CVEs affect your products vs false-positive/fixed).
 - **Executive Dashboard** — enterprise risk score, vulnerability breakdown,
   financial value, **risk exposure = risk × value**, asset tag cloud, incident
-  trends (Chart.js).
+  trends (Chart.js), and a **security-posture KPI strip** spanning the governance
+  modules — assets, identities, incidents, compliance, **Threat-Informed Defense**
+  (program score, detection coverage, false-coverage/drift, exposed techniques) and
+  **Crisis Management** (readiness, scenario coverage, improvement actions).
 
 ### 🛡️ Governance, Risk & Compliance (GRC)
 
@@ -140,6 +143,20 @@ your data never leaves your infrastructure.
   score and a worklist of overdue reviews, unpublished/unowned policies, missing
   versions and expired documents. Ships a seedable baseline of **ISO/IEC
   42001:2023 (AI Management System) policies in English & French**.
+- **Crisis Management & Tabletop Exercises** — run **tabletop exercises (TTX)** against a
+  seeded library of **crisis scenarios** (ransomware, data breach, DDoS, insider,
+  supply-chain, cloud account, BEC). A tabletop exercise is an audit of type *Tabletop
+  Exercise*, so its observations become **improvement actions** and its **after-action
+  report** a linked document; on top, scenario templates carry **timed injects** and
+  exercises track **participants/roles**. One click launches an exercise from a scenario
+  (copying its injects), and a **crisis-readiness score** blends exercise completion with
+  scenario coverage. The worklist surfaces overdue actions, scenarios never exercised and
+  exercises with no after-action report.
+- **Configuration Management** — one governance view over the secure-configuration
+  content library (OVAL/SCAP): the compliance-class **hardening baselines** are the
+  configuration items, with a per-baseline **health score** and a worklist of
+  **deprecated** content, baselines **never verified by a scan**, interim-status
+  checks and missing **CCE** mappings — verification fed by the OVAL agent scans.
 - **EBIOS Risk Manager** — the full 5-workshop ANSSI method (framing & security
   baseline, risk sources, strategic & operational scenarios, treatment) with an
   **Express mode**, business values, supporting assets, feared events (DICT),
@@ -210,6 +227,45 @@ your data never leaves your infrastructure.
   rules) — techniques with a rule are "detected", the rest are gaps, and a gap can be
   closed by **generating the missing Sigma rule** (local AI, with a deterministic
   skeleton fallback). Coverage you can defend, not "we own a tool".
+- **Threat-Informed Defense cockpit** (`/threat-informed-defense`) — the capstone that
+  operationalises MITRE's TID loop across the whole platform. For every ATT&CK
+  technique it weighs **adversary use** (ecosystem prevalence from ATT&CK groups,
+  boosted ×3 by your local CTI & hunts) against your three defensive pillars —
+  **detect** (Sigma), **mitigate** (D3FEND + ATT&CK mitigations) and **test** (Atomic
+  Red Team) — and produces a single **threat-weighted program score**, per-tactic
+  kill-chain coverage, and a **prioritised gap worklist** (the highest-threat
+  techniques with the weakest defence, each linking to where you close it). As you
+  import your own CTI (the connectors feed `INTELEXCHANGE → ATT&CK`) the priorities
+  sharpen to *your* threat model. One click **closes the validation gap**: *Build
+  validation plan* turns the top untested high-threat techniques into a scheduled
+  **BAS emulation scenario** (Atomic Red Team injects); *Run on agent* then has the
+  **XOR agent execute** those injects and report real outcomes (Prevented / Executed /
+  Skipped) into `EMULATIONRESULT` — so a technique moves from *test defined* to *test
+  executed/validated*, and the cockpit shows a distinct **executed** rate, not just
+  *defined*. Agent execution is opt-in and safety-gated (only read-only recon is auto-run).
+  The agent then **attributes detection** — correlating each executed inject with the host's
+  telemetry (Defender / Sysmon / PowerShell-ScriptBlock / Security-audit) to record
+  *Detected* / *Logged* / *Executed (ran undetected)*. The cockpit surfaces the sharpest
+  finding of all: a technique whose **Sigma rule exists but whose emulation ran undetected**
+  — **false coverage**, where you *thought* you'd detect it but the test proved the rule
+  never fired. And it closes the loop: every detection gap (no rule, exposed, or false
+  coverage) gets a **✨ draft Sigma** button that **generates a detection rule with the
+  local AI** (deterministic skeleton fallback) and saves it to the library as
+  *experimental* — adding capability you then **re-validate** by re-running the plan, so a
+  draft only graduates to "proven" once the emulation confirms it fires. The draft is
+  **procedure-tuned**: the generator is fed the exact command/telemetry the emulation ran,
+  so the rule detects *that* procedure (e.g. the precise `systeminfo` / `whoami`
+  command-line the test executed) rather than a generic technique guess. And *Schedule
+  weekly* puts the whole thing on a **cadence** — the cron scheduler re-queues the
+  validation emulation on the agent automatically, so drafted detections get re-proven (and
+  regressions caught) without anyone clicking a button. And when a detection that *used* to fire
+  stops firing on a later re-validation, the cockpit flags **detection drift** (a distinct `D↓`
+  state, separate from "never fired") and raises a **Defender-aligned alert** (`XINCIDENT.ALERT`,
+  de-duplicated) the moment the regression is observed — so a silently-broken rule (an edit, a
+  dead log source, a sensor change) pages you instead of rotting unnoticed. The whole program also **exports to a
+  MITRE ATT&CK Navigator layer** (one click, *⬇ ATT&CK Navigator layer*) — score = adversary
+  prevalence, colour = defence status (red = false-coverage/exposed, amber = partial, green =
+  covered) — so it opens straight in the official ATT&CK Navigator.
 - **STIX relationship graph** — interactive graph linking hunts ↔ techniques ↔
   actors; nodes deep-link back to their forms.
 - **Threat Modeling** — STRIDE scope, assets, threats and controls.
@@ -224,8 +280,21 @@ your data never leaves your infrastructure.
   Lacework, Sysdig, Aikido, Burp Suite, Metasploit, Splunk, Elastic Security,
   Microsoft Sentinel, QRadar, SAINT), plus a large **OSINT tool-runner** set. See
   [§ Connectors](#-connectors).
+- **CTI platform connectors** — pull threat intelligence and detection content from
+  **MISP** (events → `INTELEXCHANGE`, galaxies → ATT&CK/actor/malware tags), **OpenCTI**
+  (reports via GraphQL or a STIX 2.1 bundle → `INTELEXCHANGE`) and **SOC Prime**
+  (Sigma detection rules → `SIGMARULE` *and* `INTELEXCHANGE`, boosting the Threat-Informed
+  Defense *detect* pillar). Each works live (API + env credentials) or fully offline (saved
+  export) — stdlib-only, idempotent.
 - **Remote workers** — run connectors on a separate host (e.g. a Kali VM) over a
   worker token; normalized results import centrally.
+- **Recurring agent scans** — schedule OVAL/SCAP scans on a cadence from Configuration
+  Management (hourly/daily/weekly/monthly via `XSCHEDULE`); the scheduler queues an agent
+  job each cycle and the XOR agent runs it at check-in. See the agent [SETUP](agent/SETUP.md).
+- **Live forensics (DFIR triage)** — the XOR agent's `--scan forensics` collects a
+  **read-only** live-response snapshot (processes, network connections, persistence/autoruns,
+  logon sessions, recent files, ARP/DNS/routes, drivers, event-log summary) with conservative
+  triage **flags** → `XAGENT.FORENSICTRIAGE`; collection never modifies the host.
 - **TAXII 2.1 server** — publish/consume STIX feeds.
 - **Local AI (Ollama)** — fully-offline assistants: **"Ask the threat model"**
   (RAG over your XORCISM data), an **intel brief builder**, a
@@ -279,7 +348,7 @@ your data never leaves your infrastructure.
 | ![AI exposure brief](docs/screenshots/45_ai_exposure_brief.png)<br>**AI copilots** — red/blue chain analyst + CISO exposure briefing (local Ollama) | ![Purple-team coverage](docs/screenshots/46_purple_coverage.png)<br>**Purple-team** — chain → ATT&CK detection coverage (Sigma) + rule generation | ![Ransomware $ impact](docs/screenshots/47_ransomware_impact.png)<br>**Ransomware $** — group TTPs → SLE/ALE dollar impact + D3FEND controls | ![Control assurance](docs/screenshots/48_control_assurance.png)<br>**Control assurance** — compliance proven live from telemetry (ISO/NIST) | ![CTI watch](docs/screenshots/49_cti_watch.png)<br>**CTI watch** — KEV/reports matched to your inventory + auto-ticket |
 | ![Surface drift](docs/screenshots/50_surface_drift.png)<br>**Surface drift** — snapshot & diff the external attack surface | ![Content hub](docs/screenshots/51_content_hub.png)<br>**Content hub** — export/import playbooks, Sigma, OpenVEX | ![Identities & IAM](docs/screenshots/54_identities.png)<br>**Identities & IAM** — human + non-human (NHI) inventory, governance worklist & risk score |
 | ![SSVC calculator](docs/screenshots/55_ssvc_calculator.png)<br>**SSVC** — CISA Stakeholder-Specific Vulnerability Categorization calculator (Track / Track\* / Attend / Act) | ![Incident management](docs/screenshots/56_incidents.png)<br>**Incident management** — queue, governance worklist, SLA/RTO breach & priority score | ![Compliance & GRC](docs/screenshots/57_compliance.png)<br>**Compliance & GRC** — audit inventory, remediation worklist & posture score |
-| ![Policies & Documents](docs/screenshots/58_policy_management.png)<br>**Policies & Documents** — policy lifecycle & controlled-document register, governance worklist & per-policy score (ISO 42001 AIMS policies seeded EN/FR) | | |
+| ![Policies & Documents](docs/screenshots/58_policy_management.png)<br>**Policies & Documents** — policy lifecycle & controlled-document register, governance worklist & per-policy score (ISO 42001 AIMS policies seeded EN/FR) | ![Configuration Management](docs/screenshots/60_configuration_management.png)<br>**Configuration Management** — secure-configuration content library (OVAL hardening baselines), scan-verification coverage & per-baseline health score | ![Threat-Informed Defense](docs/screenshots/61_threat_informed_defense.png)<br>**Threat-Informed Defense** — per ATT&CK technique, adversary use vs detect (Sigma) / mitigate (D3FEND) / test (Atomic) coverage, threat-weighted program score & prioritised gap worklist |
 
 ---
 

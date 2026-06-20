@@ -34,18 +34,18 @@ flowchart TB
 
 ## STRIDE threats
 
-### Tampering (25)
+### Tampering (26)
 
 - [medium] **crypto-tls-no-verify** (CWE-295) at `darkwatch-osint/run.py:81` — TLS certificate verification disabled — MITM-vulnerable
 - [medium] **crypto-tls-no-verify** (CWE-295) at `intrigue/run.py:57` — TLS certificate verification disabled — MITM-vulnerable
 - [medium] **crypto-tls-no-verify** (CWE-295) at `rudder/run.py:83` — TLS certificate verification disabled — MITM-vulnerable
 - [medium] **sql-injection** (CWE-89) at `runner.py:216` — SQL Injection — cursor.execute built with string concat / format (Python)
 - [medium] **sql-injection** (CWE-89) at `runner.py:108` — SQL Injection — cursor.execute built with string concat / format (Python)
-- [medium] **sql-injection** (CWE-89) at `runner.py:380` — SQL Injection — cursor.execute built with string concat / format (Python)
-- [medium] **sql-injection** (CWE-89) at `runner.py:384` — SQL Injection — cursor.execute built with string concat / format (Python)
+- [medium] **sql-injection** (CWE-89) at `runner.py:385` — SQL Injection — cursor.execute built with string concat / format (Python)
+- [medium] **sql-injection** (CWE-89) at `runner.py:389` — SQL Injection — cursor.execute built with string concat / format (Python)
 - [medium] **weak-password-hash** (CWE-916) at `scoptix/run.py:120` — Weak Password Hashing — hashlib.md5/sha1 for password without salt
 - [low] **sql-injection** (CWE-89) at `runner.py:55` — SQL Injection (f-string SQL assigned to variable)
-- [low] **sql-injection** (CWE-89) at `runner.py:467` — SQL Injection (f-string SQL assigned to variable)
+- [low] **sql-injection** (CWE-89) at `runner.py:542` — SQL Injection (f-string SQL assigned to variable)
 - [low] **sql-injection** (CWE-89) at `qradar/run.py:44` — SQL Injection (f-string SQL assigned to variable)
 - [low] **toctou-file-existence-permission-check-b** (CWE-367) at `gen_readmes.py:178` — TOCTOU: file existence/permission check before open
 - [low] **toctou-file-existence-permission-check-b** (CWE-367) at `gen_readmes.py:187` — TOCTOU: file existence/permission check before open
@@ -61,18 +61,19 @@ flowchart TB
 - [low] **toctou-file-existence-permission-check-b** (CWE-367) at `theharvester/run.py:40` — TOCTOU: file existence/permission check before open
 - [low] **toctou-file-existence-permission-check-b** (CWE-367) at `trivy/run.py:41` — TOCTOU: file existence/permission check before open
 - [low] **toctou-file-existence-permission-check-b** (CWE-367) at `wpprobe/run.py:52` — TOCTOU: file existence/permission check before open
+- … and 1 more
 
-### Information Disclosure (41)
+### Information Disclosure (43)
 
 - [low] **crypto-weak-hash** (CWE-327) at `darkwatch-osint/run.py:230` — Weak hash algorithm (MD5 / SHA-1 / MD2 / MD4) used
 - [medium] **sql-injection** (CWE-89) at `runner.py:216` — SQL Injection — cursor.execute built with string concat / format (Python)
 - [medium] **sql-injection** (CWE-89) at `runner.py:108` — SQL Injection — cursor.execute built with string concat / format (Python)
-- [medium] **sql-injection** (CWE-89) at `runner.py:380` — SQL Injection — cursor.execute built with string concat / format (Python)
-- [medium] **sql-injection** (CWE-89) at `runner.py:384` — SQL Injection — cursor.execute built with string concat / format (Python)
+- [medium] **sql-injection** (CWE-89) at `runner.py:385` — SQL Injection — cursor.execute built with string concat / format (Python)
+- [medium] **sql-injection** (CWE-89) at `runner.py:389` — SQL Injection — cursor.execute built with string concat / format (Python)
 - [low] **sql-injection** (CWE-89) at `runner.py:55` — SQL Injection (f-string SQL assigned to variable)
-- [low] **sql-injection** (CWE-89) at `runner.py:467` — SQL Injection (f-string SQL assigned to variable)
-- [low] **ssrf** (CWE-918) at `runner.py:816` — SSRF (requests with user-controlled URL)
-- [low] **ssrf** (CWE-918) at `runner.py:842` — SSRF (requests with user-controlled URL)
+- [low] **sql-injection** (CWE-89) at `runner.py:542` — SQL Injection (f-string SQL assigned to variable)
+- [low] **ssrf** (CWE-918) at `runner.py:891` — SSRF (requests with user-controlled URL)
+- [low] **ssrf** (CWE-918) at `runner.py:917` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `aikido/run.py:49` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `aikido/run.py:63` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `burpsuite/run.py:58` — SSRF (requests with user-controlled URL)
@@ -88,13 +89,13 @@ flowchart TB
 - [low] **xxe** (CWE-611) at `nessus/run.py:24` — XXE: xml.etree.ElementTree parses XML without external-entity protections
 - [low] **xxe** (CWE-611) at `nmap/parse_nmap.py:34` — XXE: xml.etree.ElementTree parses XML without external-entity protections
 - [low] **xxe** (CWE-611) at `nmap/parse_nmap.py:35` — XXE: xml.etree.ElementTree parses XML without external-entity protections
-- [low] **xxe** (CWE-611) at `openvas/run.py:33` — XXE: xml.etree.ElementTree parses XML without external-entity protections
-- … and 16 more
+- [low] **xxe** (CWE-611) at `openscap/run.py:40` — XXE: xml.etree.ElementTree parses XML without external-entity protections
+- … and 18 more
 
 ### Elevation of Privilege (19)
 
-- [low] **ssrf** (CWE-918) at `runner.py:816` — SSRF (requests with user-controlled URL)
-- [low] **ssrf** (CWE-918) at `runner.py:842` — SSRF (requests with user-controlled URL)
+- [low] **ssrf** (CWE-918) at `runner.py:891` — SSRF (requests with user-controlled URL)
+- [low] **ssrf** (CWE-918) at `runner.py:917` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `aikido/run.py:49` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `aikido/run.py:63` — SSRF (requests with user-controlled URL)
 - [low] **ssrf** (CWE-918) at `burpsuite/run.py:58` — SSRF (requests with user-controlled URL)
@@ -122,13 +123,13 @@ Severity rollup: **medium**
 - [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:216`
 - [medium] Tampering via sql-injection (CWE-89) — `runner.py:108`
 - [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:108`
-- [medium] Tampering via sql-injection (CWE-89) — `runner.py:380`
-- [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:380`
-- [medium] Tampering via sql-injection (CWE-89) — `runner.py:384`
-- [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:384`
+- [medium] Tampering via sql-injection (CWE-89) — `runner.py:385`
+- [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:385`
+- [medium] Tampering via sql-injection (CWE-89) — `runner.py:389`
+- [medium] Information Disclosure via sql-injection (CWE-89) — `runner.py:389`
 - [low] Tampering via sql-injection (CWE-89) — `runner.py:55`
 - [low] Information Disclosure via sql-injection (CWE-89) — `runner.py:55`
-- [low] Tampering via sql-injection (CWE-89) — `runner.py:467`
-- [low] Information Disclosure via sql-injection (CWE-89) — `runner.py:467`
+- [low] Tampering via sql-injection (CWE-89) — `runner.py:542`
+- [low] Information Disclosure via sql-injection (CWE-89) — `runner.py:542`
 - [low] Tampering via sql-injection (CWE-89) — `qradar/run.py:44`
 - [low] Information Disclosure via sql-injection (CWE-89) — `qradar/run.py:44`

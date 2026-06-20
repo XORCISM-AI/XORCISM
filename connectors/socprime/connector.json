@@ -1,0 +1,16 @@
+{
+  "id": "socprime",
+  "name": "SOC Prime — Detection content (Sigma)",
+  "type": "import",
+  "category": "threat-intel",
+  "description": "Imports detection content (Sigma rules) from SOC Prime's Threat Detection Marketplace / Platform (https://socprime.com) — the world's largest library of curated, behavior-based detections. Each Sigma rule is imported into XTHREAT.SIGMARULE (idempotent by rule reference), where it boosts the Threat-Informed Defense 'detect' pillar and Purple-Team coverage; AND it is recorded as an XTHREAT.INTELEXCHANGE item so the detection shows in the intel feed and its MITRE ATT&CK techniques (from the rule's `tags: attack.tXXXX`) are cross-linked into INTELEXCHANGEATTACK for ATT&CK coverage. Read-only, non-intrusive, Python stdlib only (PyYAML used if installed, else a built-in Sigma field extractor). Live mode needs the worker env var SOCPRIME_API_KEY (and optional SOCPRIME_API_URL). Offline import is supported via the 'file'/'path' parameter — a single Sigma .yml file, a directory of .yml rules, or a JSON list/export of rules.",
+  "intrusive": false,
+  "permission": "connector:socprime",
+  "run": "run.py",
+  "mapping": "socprime",
+  "parameters": [
+    { "name": "path", "type": "file", "required": false, "help": "Offline mode: a Sigma rule file (.yml), a directory of Sigma rules, or a JSON list/export of rules to import. Worker-local." },
+    { "name": "file", "type": "file", "required": false, "help": "Alias of 'path' (a saved SOC Prime / Sigma export JSON)." },
+    { "name": "max_items", "type": "int", "required": false, "default": 200, "min": 1, "max": 5000, "help": "Maximum number of detection rules to import." }
+  ]
+}

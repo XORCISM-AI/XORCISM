@@ -1,0 +1,21 @@
+{
+  "entities": [],
+  "boundaries": [],
+  "assets": [],
+  "threats": [
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-611",
+      "family": "xxe",
+      "severity": "high",
+      "file": "run.py",
+      "line": 40,
+      "vuln": "XXE: xml.etree.ElementTree parses XML without external-entity protections",
+      "finding_id": "xxe:run.py:40:xml.etree.ElementTree",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": []
+}

@@ -85,7 +85,13 @@ const ENUM_COLUMNS: Record<string, string[]> = {
     "Information Disclosure", "Denial of Service", "Elevation of Privilege",
   ],
   // XCOMPLIANCE — audits / findings / reports
-  "AUDIT.AuditType": ["Internal", "External", "Certification", "Surveillance", "Gap Assessment"],
+  "AUDIT.AuditType": ["Internal", "External", "Certification", "Surveillance", "Gap Assessment", "Tabletop Exercise"],
+  // XCOMPLIANCE — crisis management / tabletop exercises
+  "CRISISSCENARIO.ScenarioType": ["Ransomware", "Data Breach", "DDoS", "Insider Threat", "Supply Chain", "Cloud Account Compromise", "Business Email Compromise", "Phishing", "Physical / Environmental", "Third-Party Outage", "Other"],
+  "CRISISSCENARIO.Severity": ["Critical", "High", "Medium", "Low"],
+  "EXERCISEINJECT.InjectType": ["Event", "Decision", "Escalation", "Media", "Technical", "Communication"],
+  "EXERCISEINJECT.Status": ["Template", "Pending", "In progress", "Responded", "Done", "Skipped"],
+  "EXERCISEPARTICIPANT.CrisisRole": ["Incident Commander", "Communications Lead", "Legal / DPO", "HR", "IT / Security Lead", "Executive Sponsor", "Operations", "Scribe / Notetaker", "Observer", "Facilitator"],
   // OCIL — result associated with an answer/choice (ResultType, NIST IR 7692)
   "ANSWERFORQUESTION.Result": ["PASS", "FAIL", "ERROR", "UNKNOWN", "NOT_TESTED", "NOT_APPLICABLE"],
   // THREAT — confidence / reliability levels (qualitative scale)
@@ -277,6 +283,11 @@ interface FkSpec { table: string; idCol: string; labelCol: string; db?: string; 
 
 // Table-specific rules: key "TABLE.Column".
 const FK_COLUMNS: Record<string, FkSpec> = {
+  // Crisis management (XCOMPLIANCE): tabletop-exercise injects/participants ↔ audit / scenario / person
+  "EXERCISEINJECT.AuditID": { db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID", labelCol: "AuditName", distinct: true },
+  "EXERCISEINJECT.ScenarioID": { db: "XCOMPLIANCE", table: "CRISISSCENARIO", idCol: "ScenarioID", labelCol: "ScenarioName", distinct: true },
+  "EXERCISEPARTICIPANT.AuditID": { db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID", labelCol: "AuditName", distinct: true },
+  "EXERCISEPARTICIPANT.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true },
   // Asset financial value history (ASSETFINANCIALVALUE)
   "ASSETFINANCIALVALUE.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName" },
   "ASSETFINANCIALVALUE.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName" },

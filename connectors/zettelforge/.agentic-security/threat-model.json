@@ -1,0 +1,34 @@
+{
+  "entities": [],
+  "boundaries": [],
+  "assets": [],
+  "threats": [
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-367",
+      "family": "toctou-file-existence-permission-check-b",
+      "severity": "medium",
+      "file": "run.py",
+      "line": 254,
+      "vuln": "TOCTOU: file existence/permission check before open",
+      "finding_id": "toctou-fs:run.py:254",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-327",
+      "family": "crypto-weak-hash",
+      "severity": "medium",
+      "file": "run.py",
+      "line": 203,
+      "vuln": "Weak hash algorithm (MD5 / SHA-1 / MD2 / MD4) used",
+      "finding_id": "crypto-weak-hash:run.py:203",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": []
+}

@@ -1,0 +1,24 @@
+title: Suspicious PowerShell Encoded Command Execution
+id: 6e897651-f157-4d8f-aa01-3b1f2c3d4e5f
+status: experimental
+description: Detects PowerShell launched with an encoded command, a common technique used by adversaries to obfuscate malicious payloads.
+author: SOC Prime Team
+references:
+  - https://tdm.socprime.com/tdm/info/suspicious-powershell-encoded-command
+date: 2026/03/01
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.defense_evasion
+  - attack.t1027
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains:
+      - ' -enc '
+      - ' -EncodedCommand '
+  condition: selection
+level: high

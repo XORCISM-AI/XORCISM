@@ -466,6 +466,8 @@ interface Kpis {
   identities: { total: number; privileged: number; orphaned: number; mfaGaps: number } | null;
   incidents: { open: number; criticalOpen: number; breached: number; mttrHours: number | null } | null;
   compliance: { completionRate: number | null; openFindings: number; highOpen: number; overdue: number } | null;
+  tid: { tidScore: number; detectRate: number; mitigateRate: number; testRate: number; detectionFailed: number; detectionRegressed: number; exposed: number; threatRelevant: number } | null;
+  crisis: { readinessScore: number; exercises: number; completionRate: number | null; scenarioCoverage: number; openActions: number; overdueActions: number; scenariosNeverExercised: number } | null;
 }
 const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
 const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
@@ -505,6 +507,17 @@ async function initKpis(): Promise<void> {
   if (k.compliance) {
     tile(k.compliance.completionRate != null ? `${k.compliance.completionRate}%` : null, "Audit completion", "audits completed", "/compliance-management", pctColor(k.compliance.completionRate));
     tile(k.compliance.highOpen, "High findings open", `${k.compliance.openFindings} open · ${k.compliance.overdue} overdue`, "/compliance-management", badColor(k.compliance.highOpen));
+  }
+  if (k.tid) {
+    tile(k.tid.tidScore, "TID program score", "threat-weighted defence", "/threat-informed-defense", pctColor(k.tid.tidScore));
+    tile(`${k.tid.detectRate}%`, "Detection coverage", `${k.tid.threatRelevant} threat-relevant techniques`, "/threat-informed-defense", pctColor(k.tid.detectRate));
+    tile(k.tid.detectionFailed + k.tid.detectionRegressed, "False coverage / drift", "rules that didn't fire", "/threat-informed-defense", badColor(k.tid.detectionFailed + k.tid.detectionRegressed));
+    tile(k.tid.exposed, "Exposed techniques", "high-threat · 0 defence", "/threat-informed-defense", badColor(k.tid.exposed));
+  }
+  if (k.crisis) {
+    tile(k.crisis.readinessScore, "Crisis readiness", "completion × coverage", "/crisis-management", pctColor(k.crisis.readinessScore));
+    tile(`${k.crisis.scenarioCoverage}%`, "Scenario coverage", `${k.crisis.exercises} exercise(s) run`, "/crisis-management", pctColor(k.crisis.scenarioCoverage));
+    tile(k.crisis.openActions, "Improvement actions", `${k.crisis.overdueActions} overdue · ${k.crisis.scenariosNeverExercised} untested scenarios`, "/crisis-management", warnColor(k.crisis.openActions));
   }
   strip.innerHTML = tiles.join("");
 }

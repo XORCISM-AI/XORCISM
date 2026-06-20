@@ -217,9 +217,9 @@
       "family": "sql-injection",
       "severity": "medium",
       "file": "runner.py",
-      "line": 380,
+      "line": 385,
       "vuln": "SQL Injection — cursor.execute built with string concat / format (Python)",
-      "finding_id": "py-struct-cursor-sqli:runner.py:380",
+      "finding_id": "py-struct-cursor-sqli:runner.py:385",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -230,9 +230,9 @@
       "family": "sql-injection",
       "severity": "medium",
       "file": "runner.py",
-      "line": 380,
+      "line": 385,
       "vuln": "SQL Injection — cursor.execute built with string concat / format (Python)",
-      "finding_id": "py-struct-cursor-sqli:runner.py:380",
+      "finding_id": "py-struct-cursor-sqli:runner.py:385",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -243,9 +243,9 @@
       "family": "sql-injection",
       "severity": "medium",
       "file": "runner.py",
-      "line": 384,
+      "line": 389,
       "vuln": "SQL Injection — cursor.execute built with string concat / format (Python)",
-      "finding_id": "py-struct-cursor-sqli:runner.py:384",
+      "finding_id": "py-struct-cursor-sqli:runner.py:389",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -256,9 +256,9 @@
       "family": "sql-injection",
       "severity": "medium",
       "file": "runner.py",
-      "line": 384,
+      "line": 389,
       "vuln": "SQL Injection — cursor.execute built with string concat / format (Python)",
-      "finding_id": "py-struct-cursor-sqli:runner.py:384",
+      "finding_id": "py-struct-cursor-sqli:runner.py:389",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -308,9 +308,9 @@
       "family": "sql-injection",
       "severity": "low",
       "file": "runner.py",
-      "line": 467,
+      "line": 542,
       "vuln": "SQL Injection (f-string SQL assigned to variable)",
-      "finding_id": "sql-injection:runner.py:467:CWE-89",
+      "finding_id": "sql-injection:runner.py:542:CWE-89",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -321,9 +321,9 @@
       "family": "sql-injection",
       "severity": "low",
       "file": "runner.py",
-      "line": 467,
+      "line": 542,
       "vuln": "SQL Injection (f-string SQL assigned to variable)",
-      "finding_id": "sql-injection:runner.py:467:CWE-89",
+      "finding_id": "sql-injection:runner.py:542:CWE-89",
       "affectsAsset": "datastore:default",
       "atEntity": null
     },
@@ -334,9 +334,9 @@
       "family": "ssrf",
       "severity": "low",
       "file": "runner.py",
-      "line": 816,
+      "line": 891,
       "vuln": "SSRF (requests with user-controlled URL)",
-      "finding_id": "ssrf:runner.py:816:CWE-918",
+      "finding_id": "ssrf:runner.py:891:CWE-918",
       "affectsAsset": null,
       "atEntity": null
     },
@@ -347,9 +347,9 @@
       "family": "ssrf",
       "severity": "low",
       "file": "runner.py",
-      "line": 816,
+      "line": 891,
       "vuln": "SSRF (requests with user-controlled URL)",
-      "finding_id": "ssrf:runner.py:816:CWE-918",
+      "finding_id": "ssrf:runner.py:891:CWE-918",
       "affectsAsset": null,
       "atEntity": null
     },
@@ -360,9 +360,9 @@
       "family": "ssrf",
       "severity": "low",
       "file": "runner.py",
-      "line": 842,
+      "line": 917,
       "vuln": "SSRF (requests with user-controlled URL)",
-      "finding_id": "ssrf:runner.py:842:CWE-918",
+      "finding_id": "ssrf:runner.py:917:CWE-918",
       "affectsAsset": null,
       "atEntity": null
     },
@@ -373,9 +373,9 @@
       "family": "ssrf",
       "severity": "low",
       "file": "runner.py",
-      "line": 842,
+      "line": 917,
       "vuln": "SSRF (requests with user-controlled URL)",
-      "finding_id": "ssrf:runner.py:842:CWE-918",
+      "finding_id": "ssrf:runner.py:917:CWE-918",
       "affectsAsset": null,
       "atEntity": null
     },
@@ -701,6 +701,19 @@
       "line": 35,
       "vuln": "XXE: xml.etree.ElementTree parses XML without external-entity protections",
       "finding_id": "xxe:nmap/parse_nmap.py:35:xml.etree.ElementTree",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-611",
+      "family": "xxe",
+      "severity": "low",
+      "file": "openscap/run.py",
+      "line": 40,
+      "vuln": "XXE: xml.etree.ElementTree parses XML without external-entity protections",
+      "finding_id": "xxe:openscap/run.py:40:xml.etree.ElementTree",
       "affectsAsset": null,
       "atEntity": null
     },
@@ -1210,6 +1223,32 @@
       "finding_id": "toctou-fs:wpprobe/run.py:52",
       "affectsAsset": null,
       "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-367",
+      "family": "toctou-file-existence-permission-check-b",
+      "severity": "low",
+      "file": "zettelforge/run.py",
+      "line": 254,
+      "vuln": "TOCTOU: file existence/permission check before open",
+      "finding_id": "toctou-fs:zettelforge/run.py:254",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "I",
+      "strideLabel": "Information Disclosure",
+      "cwe": "CWE-327",
+      "family": "crypto-weak-hash",
+      "severity": "low",
+      "file": "zettelforge/run.py",
+      "line": 203,
+      "vuln": "Weak hash algorithm (MD5 / SHA-1 / MD2 / MD4) used",
+      "finding_id": "crypto-weak-hash:zettelforge/run.py:203",
+      "affectsAsset": null,
+      "atEntity": null
     }
   ],
   "attackTrees": [
@@ -1249,29 +1288,29 @@
           "label": "Tampering via sql-injection (CWE-89)",
           "severity": "medium",
           "file": "runner.py",
-          "line": 380,
-          "finding_id": "py-struct-cursor-sqli:runner.py:380"
+          "line": 385,
+          "finding_id": "py-struct-cursor-sqli:runner.py:385"
         },
         {
           "label": "Information Disclosure via sql-injection (CWE-89)",
           "severity": "medium",
           "file": "runner.py",
-          "line": 380,
-          "finding_id": "py-struct-cursor-sqli:runner.py:380"
+          "line": 385,
+          "finding_id": "py-struct-cursor-sqli:runner.py:385"
         },
         {
           "label": "Tampering via sql-injection (CWE-89)",
           "severity": "medium",
           "file": "runner.py",
-          "line": 384,
-          "finding_id": "py-struct-cursor-sqli:runner.py:384"
+          "line": 389,
+          "finding_id": "py-struct-cursor-sqli:runner.py:389"
         },
         {
           "label": "Information Disclosure via sql-injection (CWE-89)",
           "severity": "medium",
           "file": "runner.py",
-          "line": 384,
-          "finding_id": "py-struct-cursor-sqli:runner.py:384"
+          "line": 389,
+          "finding_id": "py-struct-cursor-sqli:runner.py:389"
         },
         {
           "label": "Tampering via sql-injection (CWE-89)",
@@ -1291,15 +1330,15 @@
           "label": "Tampering via sql-injection (CWE-89)",
           "severity": "low",
           "file": "runner.py",
-          "line": 467,
-          "finding_id": "sql-injection:runner.py:467:CWE-89"
+          "line": 542,
+          "finding_id": "sql-injection:runner.py:542:CWE-89"
         },
         {
           "label": "Information Disclosure via sql-injection (CWE-89)",
           "severity": "low",
           "file": "runner.py",
-          "line": 467,
-          "finding_id": "sql-injection:runner.py:467:CWE-89"
+          "line": 542,
+          "finding_id": "sql-injection:runner.py:542:CWE-89"
         },
         {
           "label": "Tampering via sql-injection (CWE-89)",

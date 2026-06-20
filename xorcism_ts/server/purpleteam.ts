@@ -76,43 +76,70 @@ export function chainCoverage(runId: number): ChainCoverage {
   return { run: { ChainRunID: run.ChainRunID, PlaybookName: run.PlaybookName, SeedTarget: run.SeedTarget }, techniques, stats: { total, covered, gaps: total - covered, coveragePct: total ? Math.round((covered / total) * 100) : 0 } };
 }
 
-function skeletonSigma(id: string, name: string): string {
+/** The emulated procedure + observed telemetry, so a drafted rule is tuned to what the test
+ *  actually did on the endpoint (rather than a generic technique guess). */
+export interface SigmaContext { command?: string; executor?: string; platform?: string; outcome?: string; detectedBy?: string; telemetry?: string }
+
+/** Distinctive command tokens (binary + args), with shell wrappers stripped. */
+function cmdTokens(command: string): string[] {
+  const stripped = command.replace(/^(cmd(\.exe)?\s+\/c\s+|powershell(\.exe)?\s+(-\w+\s+)*(-command\s+)?)/i, "").trim();
+  return stripped.split(/\s+/).map((t) => t.replace(/['"]/g, "")).filter((t) => t.length >= 3 && !/^[-/]/.test(t)).slice(0, 3);
+}
+
+function skeletonSigma(id: string, name: string, ctx?: SigmaContext): string {
   const attackTag = `attack.${id.toLowerCase()}`;
   const tpath = id.replace(/\./, "/");
+  const cmd = (ctx?.command || "").replace(/^#.*$/m, "").trim();
+  const toks = cmd ? cmdTokens(cmd) : [];
+  const isPs = /powershell|pwsh/i.test((ctx?.executor || "") + " " + cmd);
+  const logsource = isPs ? "  product: windows\n  category: ps_script" : "  category: process_creation\n  product: windows";
+  const selection = toks.length
+    ? `    CommandLine|contains|all:\n${toks.map((t) => `      - '${t}'`).join("\n")}`
+    : `    # TODO: define concrete indicators for ${name}\n    CommandLine|contains:\n      - 'CHANGE_ME'`;
+  const desc = cmd
+    ? `Detects the emulated procedure for ${name} (${id}): ${cmd.slice(0, 90)}`
+    : `Auto-generated starter rule to detect ${name}. Tune the selection and log source to your environment.`;
   return `title: Detection for ${name} (${id})
 id: ${randomUUID()}
 status: experimental
-description: Auto-generated starter rule to detect ${name}. Tune the selection and log source to your environment.
+description: ${desc}
 references:
   - https://attack.mitre.org/techniques/${tpath}/
 tags:
   - ${attackTag}
 logsource:
-  category: process_creation
-  product: windows
+${logsource}
 detection:
   selection:
-    # TODO: define concrete indicators for ${name}
-    CommandLine|contains:
-      - 'CHANGE_ME'
+${selection}
   condition: selection
 falsepositives:
   - Legitimate administrative activity
 level: medium`;
 }
 
-/** Draft a Sigma rule for an uncovered technique. AI when available, skeleton otherwise. */
-export async function suggestSigma(techId: string, techName: string): Promise<{ yaml: string; model: string; offline: boolean }> {
-  const skel = skeletonSigma(techId, techName);
+/** Draft a Sigma rule for an uncovered technique. AI when available, skeleton otherwise. When a
+ *  `ctx` (emulated procedure + telemetry) is given, the rule is tuned to detect THAT procedure. */
+export async function suggestSigma(techId: string, techName: string, ctx?: SigmaContext): Promise<{ yaml: string; model: string; offline: boolean; tuned: boolean }> {
+  const tuned = !!(ctx && (ctx.command || ctx.telemetry));
+  const skel = skeletonSigma(techId, techName, ctx);
   const status = await ollamaStatus();
   if (status.reachable) {
-    const sys = "You are a detection engineer. Output ONLY a valid Sigma rule in YAML (no prose, no code fences) that detects the given MITRE ATT&CK technique. Include title, id (a uuid), status: experimental, description, the attack.<techid> tag, a realistic logsource, a detection selection with concrete indicators, condition, falsepositives, and level.";
-    const user = `Technique: ${techId} — ${techName}. Write a Sigma rule to detect it.`;
+    const sys = "You are a detection engineer. Output ONLY a valid Sigma rule in YAML (no prose, no code fences) that detects the given MITRE ATT&CK technique. Include title, id (a uuid), status: experimental, description, the attack.<techid> tag, a realistic logsource, a detection selection with concrete indicators, condition, falsepositives, and level. When an emulated procedure is given, base the selection on its concrete artifacts (the exact process/command-line/registry/event), not a generic variant.";
+    const ctxLine = tuned
+      ? `\n\nIt was emulated on this endpoint with the EXACT procedure below — tune the selection to detect THIS, not a generic variant:`
+        + (ctx!.executor ? `\n- executor: ${ctx!.executor}` : "")
+        + (ctx!.command ? `\n- command: ${ctx!.command.slice(0, 300)}` : "")
+        + (ctx!.platform ? `\n- platform: ${ctx!.platform}` : "")
+        + (ctx!.outcome ? `\n- last emulation outcome: ${ctx!.outcome}${ctx!.detectedBy ? ` (via ${ctx!.detectedBy})` : ""}` : "")
+        + (ctx!.telemetry ? `\n- observed telemetry: ${ctx!.telemetry.slice(0, 200)}` : "")
+      : "";
+    const user = `Technique: ${techId} — ${techName}. Write a Sigma rule to detect it.${ctxLine}`;
     try {
       let yaml = await ollamaChat([{ role: "system", content: sys }, { role: "user", content: user }], 0.2);
       yaml = yaml.replace(/^```ya?ml?\s*/i, "").replace(/```$/m, "").trim();
-      if (/^title:/im.test(yaml)) return { yaml, model: OLLAMA_MODEL, offline: false };
+      if (/^title:/im.test(yaml)) return { yaml, model: OLLAMA_MODEL, offline: false, tuned };
     } catch { /* fall back to skeleton */ }
   }
-  return { yaml: skel, model: status.reachable ? "fallback" : "offline", offline: true };
+  return { yaml: skel, model: status.reachable ? "fallback" : "offline", offline: true, tuned };
 }

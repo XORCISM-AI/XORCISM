@@ -19,9 +19,11 @@ import { Router, Request, Response, NextFunction } from "express";
 import {
   enrollAgent, agentByToken, touchAgent, listAgents, addAgentEvent, listAgentEvents,
   createAgentJob, claimAgentJobs, finishAgentJob, listAgentJobs, listIocs, iocCount, Agent,
+  storeForensicTriage, listForensicTriage, getForensicTriage, ForensicBundle,
 } from "../agents";
 import { createCollectedJob } from "../jobs";
 import { ingestOvalResults, ovalResultsView, findOvalContent, listOvalContent, ovalContentDir, OvalPayload } from "../oval";
+import { scenarioTests, ingestEmulationRun, EmulationResultItem } from "../emulation";
 import { getDb, createNotification } from "../db";
 import * as xid from "../xid";
 import { clientIp } from "../auth";
@@ -142,6 +144,51 @@ agentTokenRouter.get("/agent/intel", tokenAuth, (req: AReq, res: Response) => {
   res.json({ iocs: listIocs() });
 });
 
+// BAS emulation: the agent fetches a scenario's atomic-test injects to execute (safety is
+// enforced agent-side: execution is opt-in and limited to read-only recon), …
+agentTokenRouter.get("/agent/emulation", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  const scenario = Number(req.query.scenario) || 0;
+  if (!scenario) return void res.status(400).json({ error: "scenario requis" });
+  res.json({ scenario, tests: scenarioTests(scenario) });
+});
+// … then posts the per-inject outcomes (Prevented / Executed / Skipped / …) → EMULATIONRUN/RESULT.
+agentTokenRouter.post("/agent/emulation", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  const b = (req.body as { scenario?: unknown; results?: EmulationResultItem[] }) || {};
+  const scenario = Number(b.scenario) || 0;
+  if (!scenario) return void res.status(400).json({ error: "scenario requis" });
+  const asset = req.agent!.asset_name || req.agent!.name;
+  const summary = ingestEmulationRun(scenario, asset, b.results || [], null);
+  addAgentEvent(req.agent!.name, {
+    type: "emulation_run",
+    severity: summary.drift.length ? "critical" : summary.executed > summary.prevented ? "warning" : "info",
+    title: `Emulation #${scenario}: ${summary.stored} inject(s) — ${summary.prevented} prevented / ${summary.executed} executed / ${summary.skipped} skipped`
+      + (summary.drift.length ? ` · ⚠ ${summary.drift.length} detection DRIFT (${summary.drift.join(", ")})` : ""),
+    detail: { runId: summary.runId, score: summary.score, byOutcome: summary.byOutcome, drift: summary.drift },
+  });
+  res.json({ ok: true, ...summary });
+});
+
+// Live forensic triage: the agent posts a read-only DFIR snapshot (processes, network
+// connections, persistence/autoruns, logon sessions, recent files, network artifacts,
+// loaded drivers/modules, event-log summary) + heuristic flags → FORENSICTRIAGE + an event.
+agentTokenRouter.post("/agent/forensics", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  const asset = req.agent!.asset_name || req.agent!.name;
+  const bundle = (req.body || {}) as ForensicBundle;
+  const { triageId, flags } = storeForensicTriage(req.agent!.name, asset, bundle);
+  const counts = (bundle.summary && bundle.summary.counts) as Record<string, number> | undefined;
+  const countTxt = counts ? Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ") : "";
+  addAgentEvent(req.agent!.name, {
+    type: "forensic_triage",
+    severity: flags > 0 ? "warning" : "info",
+    title: `Forensic triage #${triageId}${countTxt ? ` — ${countTxt}` : ""}${flags ? ` · ⚠ ${flags} flag(s)` : ""}`,
+    detail: { triageId, flags: bundle.flags ?? [], counts },
+  });
+  res.json({ ok: true, triageId, flags });
+});
+
 agentTokenRouter.post("/agent/job/:id/result", tokenAuth, (req: AReq, res: Response) => {
   finishAgentJob(Number(req.params.id), String((req.body as { summary?: string }).summary || ""));
   res.json({ ok: true });
@@ -163,6 +210,11 @@ agentAdminRouter.get("/agent-events", (req: Request, res: Response) =>
   res.json(listAgentEvents(Math.min(Number(req.query.limit) || 100, 500), req.query.agent ? String(req.query.agent) : undefined)));
 agentAdminRouter.get("/agent-jobs", (req: Request, res: Response) =>
   res.json(listAgentJobs(req.query.agent ? String(req.query.agent) : undefined)));
+// Forensic triage: list (summaries) or one full bundle (?id=N).
+agentAdminRouter.get("/forensic-triage", (req: Request, res: Response) => {
+  if (req.query.id) return void res.json(getForensicTriage(Number(req.query.id)) ?? null);
+  res.json(listForensicTriage(Math.min(Number(req.query.limit) || 50, 200), req.query.agent ? String(req.query.agent) : undefined));
+});
 
 // XOR agent bulk scan: for each selected ASSET, queues a job on
 // the corresponding agent (match by asset_name or name). Results auto-populated
@@ -210,16 +262,29 @@ agentAdminRouter.post("/agent-bulk-scan", (req: Request, res: Response) => {
   res.json({ queued, noAgent: noAgent.slice(0, 50), kind: k });
 });
 
-// "Launch a scan" from the ASSET window (the agent picks up the job at the next checkin).
+// "Launch a scan" from the ASSET window / Configuration Management (the agent picks up the
+// job at the next check-in). For OVAL scans an optional `ovalClass` restricts the scan to a
+// single OVAL class (compliance / vulnerability / inventory / patch).
 agentAdminRouter.post("/agent-scan", (req: Request, res: Response) => {
-  const { agent, kind } = req.body as { agent?: string; kind?: string };
-  const valid = ["inventory", "vuln", "oval", "av", "hunt", "full"];
+  const { agent, kind, ovalClass, scenarioId } = req.body as { agent?: string; kind?: string; ovalClass?: string; scenarioId?: unknown };
+  const valid = ["inventory", "vuln", "oval", "av", "hunt", "full", "emulate", "forensics"];
   if (!agent) return void res.status(400).json({ error: "agent requis" });
   if (!valid.includes(String(kind))) return void res.status(400).json({ error: "type de scan invalide" });
   // Checks that the agent exists
   if (!listAgents().some((a) => a.name === agent)) return void res.status(404).json({ error: "agent not found for this asset" });
-  const id = createAgentJob(String(agent), String(kind), {}, req.user?.UserID ?? null);
+  const params: Record<string, unknown> = {};
+  // OVAL class filter (only meaningful for oval/full scans).
+  const OVAL_CLASSES = ["compliance", "vulnerability", "inventory", "patch"];
+  const oc = String(ovalClass || "").toLowerCase();
+  if (oc && oc !== "all" && OVAL_CLASSES.includes(oc) && (kind === "oval" || kind === "full")) params.ovalClass = oc;
+  // BAS emulation: the scenario to execute.
+  if (kind === "emulate") {
+    const sid = Number(scenarioId) || 0;
+    if (!sid) return void res.status(400).json({ error: "scenarioId requis pour un scan d'émulation" });
+    params.scenarioId = sid;
+  }
+  const id = createAgentJob(String(agent), String(kind), params, req.user?.UserID ?? null);
   xid.addAudit({ userId: req.user?.UserID ?? null, action: "agent_scan", resourceType: "agent",
-    resourceKey: String(agent), detail: `kind=${kind} job=${id}`, ip: clientIp(req) });
-  res.json({ ok: true, jobId: id });
+    resourceKey: String(agent), detail: `kind=${kind}${params.ovalClass ? ` class=${params.ovalClass}` : ""}${params.scenarioId ? ` scenario=${params.scenarioId}` : ""} job=${id}`, ip: clientIp(req) });
+  res.json({ ok: true, jobId: id, ovalClass: params.ovalClass ?? null, scenarioId: params.scenarioId ?? null });
 });

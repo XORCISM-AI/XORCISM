@@ -1,8 +1,8 @@
-# OpenCTI
+# OpenCTI — Cyber Threat Intelligence
 
-`opencti` · **import** connector · category **Threat Intelligence**
+`opencti` · **import** connector · category **threat-intel**
 
-Open platform to manage cyber-threat intelligence using STIX2. Tool: https://www.opencti.io. [SCAFFOLD generated from XORCISM.TOOL #151 by tool_to_connector.py — implement run() in run.py to map OpenCTI output to the XORCISM findings model {assets, services, cpes, vulns}.]
+Pulls Reports from an OpenCTI platform (open cyber-threat-intelligence platform built on STIX 2.1, https://www.opencti.io) via its GraphQL API and imports each report into XTHREAT.INTELEXCHANGE — idempotent by report reference. The report's contained objects are resolved into tags: MITRE ATT&CK techniques (attack-pattern → x_mitre_id) are cross-linked into INTELEXCHANGEATTACK for ATT&CK coverage; intrusion-sets / threat actors, malware / tools and CVE vulnerabilities become actor / malware / CVE tags; report labels become free tags. Read-only, non-intrusive, Python stdlib only (no pycti SDK needed). Live mode needs the worker env vars OPENCTI_URL + OPENCTI_TOKEN. Offline / air-gapped import is possible via the 'file' parameter — either a STIX 2.1 bundle (a JSON {"objects": [...]} export, the universal format) or a saved OpenCTI GraphQL response.
 
 **Upstream:** https://www.opencti.io
 
@@ -10,8 +10,8 @@ Open platform to manage cyber-threat intelligence using STIX2. Tool: https://www
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| `target` | string | no | — | Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope. |
-| `file` | file | no | — | Offline mode: a saved OpenCTI output file to parse instead of running it live. |
+| `max_items` | int | no | `60` | Maximum number of OpenCTI reports to import (most recent first). (range 1–1000) |
+| `file` | file | no | — | Offline mode: import from a STIX 2.1 bundle (JSON with an 'objects' array) or a saved OpenCTI GraphQL response, instead of querying live. Mainly for testing / air-gapped use. |
 
 ## How it works
 
@@ -19,7 +19,17 @@ This is an **import** connector. `run.py` exposes `run(params, workdir)` and ret
 
 ## Running it
 
-- **From XORCISM** — open **Connectors**, choose *OpenCTI*, fill in the parameters and run it (admin only; this creates a job consumed by the Python worker `connectors/runner.py`). Required permission: `connector:opencti`.
+- **From XORCISM** — open **Connectors**, choose *OpenCTI — Cyber Threat Intelligence*, fill in the parameters and run it (admin only; this creates a job consumed by the Python worker `connectors/runner.py`). Required permission: `connector:opencti`.
+- **Self-test** — parse **and import** the bundled `sample.json` (no live tool):
+
+  ```bash
+  python connectors/runner.py --selftest connectors/opencti/sample.json --connector opencti
+  ```
+  > Note: `--selftest` writes to the database. Use a throwaway `XORCISM_DB_DIR` to avoid touching live data.
+
+## Secrets & configuration
+
+API keys and other secrets are read from the **worker environment** — never entered in the XORCISM UI. See the description above for the exact variable names.
 
 ---
 <sub>Generated from [`connector.json`](connector.json) by `connectors/gen_readmes.py`. Edit the manifest (not this file), then regenerate.</sub>

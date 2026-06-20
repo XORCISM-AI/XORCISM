@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arf:asset-report-collection xmlns:arf="http://scap.nist.gov/schema/asset-reporting-format/1.1">
+  <oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+    <definitions>
+      <definition id="oval:com.ubuntu.jammy:def:202412340" class="vulnerability">
+        <metadata><title>openssl regression</title>
+          <reference source="CVE" ref_id="CVE-2024-1234" ref_url="https://x"/></metadata>
+      </definition>
+      <definition id="oval:org.cpe:def:5" class="inventory">
+        <metadata><title>nginx is installed</title>
+          <reference source="CPE" ref_id="cpe:/a:nginx:nginx:1.18.0"/></metadata>
+      </definition>
+    </definitions>
+  </oval_definitions>
+  <oval_results xmlns="http://oval.mitre.org/XMLSchema/oval-results-5">
+    <oval_system_characteristics xmlns="http://oval.mitre.org/XMLSchema/oval-system-characteristics-5">
+      <system_info><primary_host_name>web-01.acme.com</primary_host_name></system_info>
+    </oval_system_characteristics>
+    <results><system><definitions>
+      <definition definition_id="oval:com.ubuntu.jammy:def:202412340" result="true"/>
+      <definition definition_id="oval:org.cpe:def:5" result="true"/>
+    </definitions></system></results>
+  </oval_results>
+  <Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="xccdf_org.ssgproject.content_benchmark_UBUNTU">
+    <Rule id="xccdf_org.ssgproject.content_rule_sshd_disable_root_login" severity="high">
+      <title>Disable SSH root login</title>
+    </Rule>
+    <TestResult>
+      <rule-result idref="xccdf_org.ssgproject.content_rule_sshd_disable_root_login">
+        <result>fail</result>
+      </rule-result>
+    </TestResult>
+  </Benchmark>
+</arf:asset-report-collection>

@@ -34,7 +34,7 @@ leaked key cannot mint more keys.
 **Scopes & expiry.** Each key holds scopes — the presets **read-only** /
 **read+write**, or fine-grained tokens (`assets:read`, `assets:write`,
 `incidents:read`, `incidents:write`, `exposure:read`, `risk:read`,
-`identities:read`, `compliance:read`, `policies:read`). An endpoint
+`identities:read`, `compliance:read`, `policies:read`, `configuration:read`, `tid:read`). An endpoint
 returns `403` if the key lacks its scope (e.g. `POST /incidents` needs
 `incidents:write`). Rules: `write` grants everything; `read` grants all `*:read`;
 `<res>:write` implies `<res>:read`. Writes are *also* governed by the user's RBAC.
@@ -109,6 +109,10 @@ Management**, **Compliance & GRC** and **Policies & Documents** pages.
 | `GET` | `/incident-management` | `incidents:read` | Incident inventory + response worklist (open critical / SLA-RTO breach / unassigned / stale / compromise) + MTTR |
 | `GET` | `/compliance-management` | `compliance:read` | Audit inventory + remediation worklist (open findings by severity / overdue / unassigned / policies past review) + posture score |
 | `GET` | `/policy-management` | `policies:read` | Policy lifecycle inventory + document register + worklist (overdue reviews / unpublished / unowned / missing version / expired documents) + per-policy governance score |
+| `GET` | `/configuration-management` | `configuration:read` | Secure-configuration content library (OVAL hardening baselines) + verification worklist (deprecated / unverified by scan / interim status / no CCE) + per-baseline health score |
+| `GET` | `/crisis-management` | `crisis:read` | Crisis-management & tabletop-exercise readiness: exercises (inject progress, participants, improvement actions) + the crisis-scenario library + a worklist (overdue actions, scenarios never exercised, no after-action report) + a 0-100 readiness score |
+| `GET` | `/threat-informed-defense` | `tid:read` | Threat-Informed Defense scorecard: per ATT&CK technique, adversary use (groups) vs detect (Sigma) / mitigate (D3FEND + ATT&CK) / test (Atomic) coverage + prioritised gap worklist + a threat-weighted program score |
+| `GET` | `/threat-informed-defense/navigator-layer` | `tid:read` | Export the program as a MITRE ATT&CK Navigator layer (v4.5 JSON): score = adversary prevalence, colour = defence status. Opens in the official ATT&CK Navigator |
 
 Each returns `{ rows, findings, summary }` (policy adds a `documents` array):
 `rows` is the scored inventory, `findings` is the severity-sorted worklist, and

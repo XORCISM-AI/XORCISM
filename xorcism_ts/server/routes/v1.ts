@@ -14,11 +14,14 @@ import { assetInventory } from "../assets";
 import { incidentInventory } from "../incidents";
 import { complianceInventory } from "../compliance";
 import { policyInventory } from "../policies";
+import { configurationInventory } from "../configuration";
+import { tidInventory, tidNavigatorLayer } from "../tid";
+import { crisisInventory } from "../crisis";
 import { buildOpenApi } from "../openapi";
 import { dispatchWebhook } from "../webhook";
 
 const router = Router();
-const VERSION = "1.0.0";
+const VERSION = "1.1.0-beta.1";
 
 const tenantOf = (req: Request): number | null => (req.user!.isSuperAdmin ? null : (req.user!.tenantId ?? null));
 const colset = (dbName: string, table: string): Set<string> => {
@@ -239,6 +242,39 @@ router.get("/policy-management", (req: Request, res: Response) => {
   if (!gate(req, res, "policies:read")) return;
   if (!userCan(req.user!, "read", "XORCISM", "POLICY")) return void res.status(403).json({ error: "forbidden" });
   res.json(policyInventory(tenantOf(req)));
+});
+
+// GET /api/v1/configuration-management — secure-configuration content library (OVAL hardening
+// baselines) + verification worklist (deprecated / unverified / interim status / no CCE).
+router.get("/configuration-management", (req: Request, res: Response) => {
+  if (!gate(req, res, "configuration:read")) return;
+  if (!userCan(req.user!, "read", "XOVAL", "OVALDEFINITION")) return void res.status(403).json({ error: "forbidden" });
+  res.json(configurationInventory(tenantOf(req)));
+});
+
+// GET /api/v1/crisis-management — tabletop-exercise readiness: exercises (inject progress,
+// participants, improvement actions), the scenario library, the worklist + a readiness score.
+router.get("/crisis-management", (req: Request, res: Response) => {
+  if (!gate(req, res, "crisis:read")) return;
+  if (!userCan(req.user!, "read", "XCOMPLIANCE", "AUDIT")) return void res.status(403).json({ error: "forbidden" });
+  res.json(crisisInventory(tenantOf(req)));
+});
+
+// GET /api/v1/threat-informed-defense — ATT&CK technique coverage scorecard (adversary use vs
+// detect / mitigate / test) + prioritised gap worklist + a threat-weighted program score.
+router.get("/threat-informed-defense", (req: Request, res: Response) => {
+  if (!gate(req, res, "tid:read")) return;
+  if (!userCan(req.user!, "read", "XTHREAT", "ATTACKTECHNIQUE")) return void res.status(403).json({ error: "forbidden" });
+  res.json(tidInventory(tenantOf(req)));
+});
+
+// GET /api/v1/threat-informed-defense/navigator-layer — export the program as a MITRE ATT&CK
+// Navigator layer (v4.5 JSON) for visualisation in the official ATT&CK Navigator.
+router.get("/threat-informed-defense/navigator-layer", (req: Request, res: Response) => {
+  if (!gate(req, res, "tid:read")) return;
+  if (!userCan(req.user!, "read", "XTHREAT", "ATTACKTECHNIQUE")) return void res.status(403).json({ error: "forbidden" });
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.send(JSON.stringify(tidNavigatorLayer(tenantOf(req)), null, 2));
 });
 
 export default router;
