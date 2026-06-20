@@ -1,0 +1,38 @@
+{
+  "target": "https://shop.example.com",
+  "findings": [
+    {
+      "title": "SQL injection in product search (id parameter)",
+      "url": "https://shop.example.com/products?id=1",
+      "severity": "critical",
+      "tool": "sqlmap",
+      "description": "Time-based blind SQL injection confirmed; backend MySQL 8.0."
+    },
+    {
+      "title": "Exposed .git directory",
+      "host": "shop.example.com",
+      "severity": "high",
+      "tool": "nuclei",
+      "description": "The /.git/ directory is publicly browsable, leaking source."
+    },
+    {
+      "title": "Apache 2.4.49 path traversal",
+      "host": "shop.example.com",
+      "severity": "high",
+      "tool": "nmap",
+      "cve": "CVE-2021-41773"
+    },
+    {
+      "title": "Weak TLS configuration (TLS 1.0 enabled)",
+      "target": "shop.example.com",
+      "severity": "medium",
+      "tool": "testssl"
+    },
+    {
+      "title": "Directory listing enabled on /uploads",
+      "url": "https://shop.example.com/uploads/",
+      "severity": "low",
+      "tool": "feroxbuster"
+    }
+  ]
+}

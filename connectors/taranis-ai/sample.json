@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "id": "a1b2c3d4-0001",
+      "title": "Active exploitation of CVE-2024-3400 in PAN-OS GlobalProtect",
+      "review": "<p>Multiple vendors report in-the-wild exploitation of <b>CVE-2024-3400</b>, a command-injection flaw in the GlobalProtect feature of PAN-OS. Activity is attributed to a state-aligned cluster tracked as UTA-0218. Technique <code>T1190</code> (Exploit Public-Facing Application) is used for initial access.</p>",
+      "link": "https://unit42.paloaltonetworks.com/cve-2024-3400/",
+      "source": { "name": "Unit 42 Blog" },
+      "published": "2026-06-18T09:30:00Z",
+      "tags": [ { "name": "PAN-OS" }, { "name": "edge-device" }, { "name": "exploitation" } ]
+    },
+    {
+      "id": "a1b2c3d4-0002",
+      "title": "APT29 phishing campaign abuses cloud app consent",
+      "content": "Researchers describe an APT29 (Cozy Bear) campaign using OAuth consent phishing for persistence (T1098.003) and collection. Indicators include several look-alike domains.",
+      "web_url": "https://example.com/apt29-consent-phishing",
+      "source": "Mandiant",
+      "collected": "2026-06-17T22:10:00Z",
+      "tags": [ "phishing", "cloud", "OAuth" ]
+    },
+    {
+      "id": "a1b2c3d4-0003",
+      "title": "LockBit affiliate activity rises against manufacturing",
+      "summary": "A weekly OSINT roundup notes increased LockBit ransomware activity (T1486 Data Encrypted for Impact) targeting manufacturers, alongside FIN7-linked loaders.",
+      "source": { "name": "OSINT Weekly" },
+      "published": "2026-06-16T07:00:00Z",
+      "tags": [ "ransomware", "manufacturing" ]
+    }
+  ],
+  "total_count": 3
+}

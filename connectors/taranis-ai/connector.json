@@ -1,0 +1,15 @@
+{
+  "id": "taranis-ai",
+  "name": "Taranis AI",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports OSINT / threat intelligence from Taranis AI (https://github.com/taranis-ai/taranis-ai), an AI-powered Open-Source Intelligence tool (Python, EUPL-1.2) that collects unstructured news from web/RSS sources, enriches them with NLP/AI, and lets analysts refine them into structured reports. This connector turns Taranis news items / reports into XORCISM threat-intel items in XTHREAT.INTELEXCHANGE — extracting CVE, MITRE ATT&CK and threat-actor tags (idempotent by reference, with ATT&CK cross-links). Offline mode: import a Taranis JSON export (news items / reports) via `file`. Live mode: set env TARANIS_URL (the Taranis Core base URL) and TARANIS_API_KEY (Bearer/JWT) and the connector fetches recent news items from the REST API (best-effort across versions). No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:taranis-ai",
+  "run": "run.py",
+  "mapping": "taranis-ai",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Taranis AI JSON export (news items / reports) to import." },
+    { "name": "max_items", "type": "int", "required": false, "default": 100, "min": 1, "max": 1000, "help": "Live mode: maximum number of news items to fetch from the Taranis API." }
+  ]
+}

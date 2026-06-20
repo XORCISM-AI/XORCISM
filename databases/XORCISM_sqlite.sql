@@ -16312,6 +16312,23 @@ CREATE TABLE "ORGANISATIONRISKSCORE"(
 )
 
 ;
+/****** Object:  Table "TOOLSTAR" (per-user GitHub-style stars on the TOOL catalogue) ******/
+
+;
+CREATE TABLE "TOOLSTAR"(
+	"StarID" INTEGER PRIMARY KEY,
+	"ToolID" INTEGER NOT NULL,
+	"UserID" INTEGER NOT NULL,
+	"CreatedDate" TEXT NULL
+)
+
+;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_toolstar_user_tool ON "TOOLSTAR"("UserID","ToolID")
+
+;
+CREATE INDEX IF NOT EXISTS ix_toolstar_tool ON "TOOLSTAR"("ToolID")
+
+;
 CREATE TABLE "ORGANISATIONSCHEDULE"(
 	"OrganisationScheduleID" INTEGER NOT NULL
 )

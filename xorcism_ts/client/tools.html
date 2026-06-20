@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Tool Catalogue</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tc-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .tc-wrap h1{font-size:20px;margin:0 0 2px}
+  .tc-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:920px}
+  .tc-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .tc-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .tc-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .tc-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  /* toolbar */
+  .tc-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .tc-bar input[type=search],.tc-bar select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 11px;color:#e2e8f0;font-size:13px}
+  .tc-bar input[type=search]{flex:1;min-width:220px}
+  .tc-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#cbd5e1;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 11px;cursor:pointer}
+  .tc-toggle.on{border-color:#f5c518;color:#f5c518}
+  /* category pills */
+  .tc-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;max-height:84px;overflow:auto}
+  .tc-cat{font-size:12px;color:#94a3b8;background:#13162a;border:1px solid #2d3250;border-radius:20px;padding:4px 11px;cursor:pointer;white-space:nowrap}
+  .tc-cat:hover{border-color:#475079;color:#e2e8f0}
+  .tc-cat.on{background:#1e2542;border-color:#7c83fd;color:#c7ccff}
+  .tc-cat .n{color:#64748b;margin-left:5px}
+  /* grid */
+  .tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .tool{display:flex;flex-direction:column;background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:14px 15px;min-height:96px}
+  .tool .top{display:flex;align-items:flex-start;gap:10px}
+  .tool .nm{font-weight:700;font-size:14px;color:#e2e8f0;line-height:1.25;flex:1;word-break:break-word}
+  .tool .nm a{color:#e2e8f0;text-decoration:none}.tool .nm a:hover{color:#a5b4fc;text-decoration:underline}
+  .tool .cat{font-size:11px;color:#94a3b8;margin-top:2px}
+  .tool .desc{font-size:12px;color:#94a3b8;line-height:1.45;margin-top:8px;flex:1;
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .tool .foot{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .star{display:inline-flex;align-items:center;gap:5px;background:#0f1117;border:1px solid #2d3250;border-radius:8px;
+    padding:4px 10px;font-size:12px;color:#cbd5e1;cursor:pointer;font-weight:600;user-select:none;transition:all .12s}
+  .star:hover{border-color:#f5c518}
+  .star .ic{font-size:14px;line-height:1}
+  .star.on{border-color:#f5c518;color:#f5c518;background:#211d07}
+  .star.on .ic{color:#f5c518}
+  .star .ct{font-variant-numeric:tabular-nums}
+  .ext{font-size:11px;color:#64748b;text-decoration:none}.ext:hover{color:#a5b4fc}
+  .muted{color:#64748b}
+  .tc-more{display:flex;justify-content:center;margin:18px 0}
+  .tc-more button{background:#1e2542;border:1px solid #2d3250;border-radius:8px;color:#cbd5e1;font-size:13px;font-weight:600;padding:9px 22px;cursor:pointer}
+  .tc-more button:hover{border-color:#7c83fd;color:#c7ccff}.tc-more button:disabled{opacity:.5;cursor:default}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XORCISM&amp;table=TOOL">&#128295; TOOL table</a>
+  <a href="/connectors">&#128268; Connectors</a>
+  <span class="spacer"></span>
+  <span class="title">&#11088; Tool Catalogue</span>
+</div>
+
+<div class="tc-wrap">
+  <div>
+    <h1>Tool Catalogue</h1>
+    <div class="tc-sub">Browse XORCISM's security-tool catalogue, and <b>&#11088; star</b> the ones your team relies on
+      — like on GitHub. Stars are personal; the count next to each tool is the total across all users.
+      Sort by <b>most starred</b> to surface what the community trusts.</div>
+  </div>
+  <div id="tc-body"><div class="muted" style="padding:24px;text-align:center">Loading the catalogue&hellip;</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/tools.js"></script>
+</body>
+</html>

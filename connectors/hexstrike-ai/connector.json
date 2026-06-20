@@ -1,0 +1,15 @@
+{
+  "id": "hexstrike-ai",
+  "name": "HexStrike AI",
+  "type": "import",
+  "category": "Exploitation",
+  "description": "Imports findings from HexStrike AI (https://github.com/0x4m4/hexstrike-ai), an MCP server (Python, MIT) that lets AI agents (Claude, GPT, Copilot…) autonomously run 150+ offensive security tools across recon, web, network, auth/password, binary RE, cloud/container and CTF/forensics for automated pentesting, vulnerability discovery and bug-bounty. Import-only: export a run's findings/vulnerability cards to JSON and this connector maps each to an XORCISM finding — the affected target/host/URL becomes an ASSET and each issue a VULNERABILITY / ASSETVULNERABILITY (ref = CVE when referenced, else HEXSTRIKE-<hash>; severity from the finding's risk level). Defensive parser: accepts a findings array or a {findings|vulnerabilities|results|cards|issues:[...]} object. No secrets and no DB access in run.py (worker-safe). NOTE: run HexStrike AI itself only against systems you are authorized to test.",
+  "intrusive": false,
+  "permission": "connector:hexstrike-ai",
+  "run": "run.py",
+  "mapping": "hexstrike-ai",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a HexStrike AI findings export (JSON) to import." },
+    { "name": "target", "type": "string", "required": false, "help": "Default asset name for findings whose record carries no target/host/URL." }
+  ]
+}

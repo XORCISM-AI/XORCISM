@@ -231,6 +231,25 @@ export function ensureOrganisationRiskScoreTable(): void {
   CREATE INDEX IF NOT EXISTS ix_organisationriskscore_org ON "ORGANISATIONRISKSCORE"("OrganisationID");`);
 }
 
+/**
+ * XORCISM.TOOLSTAR — per-user "stars" (favorites) on the TOOL catalogue, GitHub-style.
+ * One row per (UserID, ToolID); a tool's star count is COUNT(*) across all users (global,
+ * like GitHub — NOT tenant-scoped). UserID references the XID user (no cross-DB FK).
+ * Created idempotently at boot; same DDL in databases/XORCISM_sqlite.sql for fresh installs.
+ */
+export function ensureToolStarTable(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`CREATE TABLE IF NOT EXISTS "TOOLSTAR" (
+    "StarID" INTEGER PRIMARY KEY,
+    "ToolID" INTEGER NOT NULL,
+    "UserID" INTEGER NOT NULL,
+    "CreatedDate" TEXT
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS ux_toolstar_user_tool ON "TOOLSTAR"("UserID","ToolID");
+  CREATE INDEX IF NOT EXISTS ix_toolstar_tool ON "TOOLSTAR"("ToolID");`);
+}
+
 export function listDatabases(): string[] {
   return fs
     .readdirSync(DB_DIR)

@@ -45,6 +45,7 @@ import fairmamRouter from "./routes/fairmam";
 import riskRegisterRouter from "./routes/riskregister";
 import pqcmmRouter from "./routes/pqcmm";
 import scaRouter from "./routes/sca";
+import toolsRouter from "./routes/tools";
 import tidRouter from "./routes/tid";
 import v1Router from "./routes/v1";
 import apikeysRouter from "./routes/apikeys";
@@ -75,7 +76,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -182,6 +183,7 @@ app.use("/api", fairmamRouter); // FAIR-MAM: materiality assessment (loss-magnit
 app.use("/api", riskRegisterRouter); // Risk Register: inherent→residual posture + treatment worklist (CRQ/FAIR ALE)
 app.use("/api", pqcmmRouter); // PQCMM: post-quantum-crypto maturity assessment (quantum-readiness posture)
 app.use("/api", scaRouter); // SCA / SBOM: software composition analysis, CycloneDX/SPDX import-export + graph
+app.use("/api", toolsRouter); // TOOL catalogue + GitHub-style stars (/tools)
 app.use("/api", tidRouter); // Threat-Informed Defense: ATT&CK technique coverage (adversary use vs detect/mitigate/test)
 app.use("/api/v1", v1Router); // public REST API v1 (API-key auth, read-only, tenant-scoped)
 app.use("/api", apikeysRouter); // manage your own API keys (session-authenticated)
@@ -342,6 +344,9 @@ app.get("/pqcmm", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/sca", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "sca.html"));
 });
+app.get("/tools", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "tools.html"));
+});
 app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
 });
@@ -418,6 +423,7 @@ ensureEbiosTables(); // EBIOS Risk Manager (ANSSI) in XCOMPLIANCE: reuses RISKAS
 ensureFairMamTables(); // FAIR-MAM materiality assessment model: FAIRMAMCATEGORY taxonomy + FAIRMAMASSESSMENT/LINEITEM
 ensurePqcmmTables(); // PQCMM post-quantum-crypto maturity model: PQCMMLEVEL taxonomy + PQCMMASSESSMENT
 ensureScaTables(); // SCA / SBOM: SBOM + enriched COMPONENT + COMPONENTDEPENDENCY (CycloneDX/SPDX over CPE inventory)
+ensureToolStarTable(); // XORCISM.TOOLSTAR — per-user GitHub-style stars on the TOOL catalogue
 ensureTenantColumns(); // adds TenantID to the operational tables (best-effort)
 getJobDb(); // creates the job-queue schema (XJOB.db) if needed
 seedData(); // pre-inserts reference data (e.g. VOCABULARY "XORCISM") — idempotent

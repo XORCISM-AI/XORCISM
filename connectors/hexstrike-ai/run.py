@@ -1,0 +1,108 @@
+"""run.py — XORCISM connector: HexStrike AI findings -> assets + findings.
+
+HexStrike AI (https://github.com/0x4m4/hexstrike-ai) is an MCP server that drives AI
+agents to autonomously run 150+ offensive security tools. Export a run's findings /
+vulnerability cards to JSON; this connector maps each to an XORCISM finding: the affected
+target/host/URL -> ASSET, the issue -> VULNERABILITY / ASSETVULNERABILITY (ref = CVE if
+referenced else HEXSTRIKE-<hash>, severity from the finding's risk level).
+
+Defensive: accepts a findings array, or a {findings|vulnerabilities|results|cards|issues:[...]}
+object (and a few nested shapes). No DB access (worker-safe).
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+from typing import Any, Dict, List
+from urllib.parse import urlparse
+
+_SEV = {"critical": "critical", "crit": "critical", "high": "high", "medium": "medium",
+        "med": "medium", "moderate": "medium", "low": "low", "info": "info",
+        "informational": "info", "information": "info", "none": "info"}
+_CVE = re.compile(r"CVE-\d{4}-\d{4,7}", re.I)
+
+
+def run(params: Dict[str, Any], workdir: str) -> Dict[str, Any]:
+    if not params.get("file"):
+        raise RuntimeError("hexstrike-ai: provide a 'file' (HexStrike AI findings JSON export)")
+    with open(params["file"], "r", encoding="utf-8", errors="replace") as fh:
+        data = json.load(fh)
+    return _parse(data, str(params.get("target") or params.get("project") or "").strip())
+
+
+def _find_list(data: Any) -> List[Dict[str, Any]]:
+    if isinstance(data, list):
+        return [x for x in data if isinstance(x, dict)]
+    if isinstance(data, dict):
+        for k in ("findings", "vulnerabilities", "vulns", "results", "cards",
+                  "vulnerability_cards", "issues", "data", "items"):
+            v = data.get(k)
+            if isinstance(v, list):
+                return [x for x in v if isinstance(x, dict)]
+        for v in data.values():            # nested e.g. {report:{findings:[...]}}
+            if isinstance(v, dict):
+                got = _find_list(v)
+                if got:
+                    return got
+    return []
+
+
+def _first(d: Dict[str, Any], keys, default: str = "") -> str:
+    for k in keys:
+        v = d.get(k)
+        if v not in (None, "", [], {}):
+            return str(v).strip()
+    return default
+
+
+def _target_of(f: Dict[str, Any], fallback: str) -> str:
+    raw = _first(f, ("target", "host", "hostname", "asset", "affected", "endpoint", "url", "ip", "address"))
+    if not raw:
+        return fallback
+    if "://" in raw or raw.startswith("www."):
+        try:
+            h = urlparse(raw if "://" in raw else "http://" + raw).hostname
+            if h:
+                return h
+        except Exception:
+            pass
+    return raw
+
+
+def _parse(data: Any, default_target: str) -> Dict[str, Any]:
+    items = _find_list(data)
+    fallback = default_target or "hexstrike-target"
+    assets: Dict[str, Dict[str, Any]] = {}
+    vulns: List[Dict[str, Any]] = []
+    seen: set = set()
+
+    for f in items:
+        title = _first(f, ("title", "name", "vulnerability", "finding", "issue", "rule", "summary", "type"), "Finding")
+        target = _target_of(f, fallback)
+        sev = _SEV.get(_first(f, ("severity", "risk", "risk_level", "riskLevel", "level", "impact")).lower(), "medium")
+        blob = " ".join(str(f.get(k, "")) for k in ("cve", "cves", "references", "title", "name", "description", "id"))
+        cve = _CVE.search(blob)
+        ref = cve.group(0).upper() if cve else "HEXSTRIKE-" + hashlib.sha1(f"{title}|{target}".encode("utf-8")).hexdigest()[:12]
+        tool = _first(f, ("tool", "scanner", "source", "engine"))
+        name = f"{title}{(' [' + tool + ']') if tool else ''}"
+        key = (target, ref)
+        if key in seen:
+            continue
+        seen.add(key)
+        assets.setdefault(target, {"hostname": target, "key": target})
+        vulns.append({"asset": target, "ref": ref, "name": name[:300], "severity": sev})
+
+    return {"project": fallback, "assets": list(assets.values()), "services": [], "cpes": [], "vulns": vulns}
+
+
+if __name__ == "__main__":
+    import tempfile
+    ap = argparse.ArgumentParser(description="HexStrike AI import (dry run)")
+    ap.add_argument("--file", required=True)
+    ap.add_argument("--target", default="")
+    a = ap.parse_args()
+    res = run({"file": a.file, "target": a.target}, tempfile.mkdtemp())
+    print(json.dumps(res, indent=2, ensure_ascii=False))
+    print(f"\n[hexstrike-ai] {len(res['assets'])} asset(s), {len(res['vulns'])} finding(s)", flush=True)
