@@ -41,6 +41,8 @@ import complianceRouter from "./routes/compliance";
 import policiesRouter from "./routes/policies";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
+import fairmamRouter from "./routes/fairmam";
+import riskRegisterRouter from "./routes/riskregister";
 import tidRouter from "./routes/tid";
 import v1Router from "./routes/v1";
 import apikeysRouter from "./routes/apikeys";
@@ -71,7 +73,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -174,6 +176,8 @@ app.use("/api", complianceRouter); // Compliance Management: audit inventory + f
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
 app.use("/api", crisisRouter); // Crisis Management: tabletop-exercise readiness + scenario library + improvement worklist
+app.use("/api", fairmamRouter); // FAIR-MAM: materiality assessment (loss-magnitude decomposition + verdict)
+app.use("/api", riskRegisterRouter); // Risk Register: inherent→residual posture + treatment worklist (CRQ/FAIR ALE)
 app.use("/api", tidRouter); // Threat-Informed Defense: ATT&CK technique coverage (adversary use vs detect/mitigate/test)
 app.use("/api/v1", v1Router); // public REST API v1 (API-key auth, read-only, tenant-scoped)
 app.use("/api", apikeysRouter); // manage your own API keys (session-authenticated)
@@ -322,6 +326,12 @@ app.get("/compliance-management", pageGuard("/"), (_req: Request, res: Response)
 app.get("/crisis-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "crisis-management.html"));
 });
+app.get("/fair-mam", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "fair-mam.html"));
+});
+app.get("/risk-register", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "risk-register.html"));
+});
 app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
 });
@@ -387,12 +397,15 @@ ensureOpenctiColumns(); // adapts the XTHREAT tables to OpenCTI properties (Conf
 ensureEmulationTables(); // adversary emulation / validation (BAS) module: EMULATION*/ATOMICTEST
 ensureAssetColumns(); // adds ASSET.BusinessValue (and future core ASSET fields) if missing
 ensureIdentityTables(); // IAM registry: XORCISM.IDENTITY + IDENTITYPERSON (human + non-human identities)
+ensureToolDocumentTable(); // XORCISM.TOOLDOCUMENT — TOOL ↔ DOCUMENT link table (provenance/validity/confidence)
+ensureOrganisationRiskScoreTable(); // XORCISM.ORGANISATIONRISKSCORE — per-organisation risk-score history
 ensureOvalScanTables(); // OVAL scan results: extend XOVAL.OVALRESULTS into per-asset verdicts + seed result enum
 ensureSlaColumns(); // ASSET.SLAResponseHours/SLAResolutionHours + INCIDENT.Duration (SLA breach view)
 ensureVulnerabilityColumns(); // adds VULNERABILITY.EPSS (Exploit Prediction Scoring System) if missing
 ensureGrcColumns(); // advanced GRC: CRQ/FAIR (risk register), findings workflow, policy lifecycle
 ensureBugBountyTables(); // Bug Bounty program management (XVULNERABILITY): BUGBOUNTY*
 ensureEbiosTables(); // EBIOS Risk Manager (ANSSI) in XCOMPLIANCE: reuses RISKASSESSMENT/RISKSCENARIO + EBIOS* tables
+ensureFairMamTables(); // FAIR-MAM materiality assessment model: FAIRMAMCATEGORY taxonomy + FAIRMAMASSESSMENT/LINEITEM
 ensureTenantColumns(); // adds TenantID to the operational tables (best-effort)
 getJobDb(); // creates the job-queue schema (XJOB.db) if needed
 seedData(); // pre-inserts reference data (e.g. VOCABULARY "XORCISM") — idempotent

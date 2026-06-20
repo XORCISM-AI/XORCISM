@@ -71,6 +71,15 @@ forensics, and the metrics to watch it all from one dashboard.
   the full OVAL result algebra.
 
 **Governance & content**
+- **Risk Register** governance page (`/risk-register`, scope `risk:read`) — inherent → current →
+  residual posture, treatment/owner/review and CRQ/FAIR ALE per risk, a treatment worklist
+  (untreated high/critical residual, accepted-without-justification, overdue reviews, treatments
+  past target, unowned) and a residual-posture score; mirrors the asset/identity/compliance family.
+- **FAIR-MAM Materiality** (`/fair-mam`, scope `fairmam:read`) — the FAIR Institute's Materiality
+  Assessment Model: an interactive calculator decomposes a cyber loss event's single-loss magnitude
+  across the 10 standardized cost categories (PERT min/most-likely/max), splits primary vs secondary
+  (and first- vs third-party) loss, and renders a materiality verdict against a threshold. Extends
+  the CRQ/FAIR figures on the risk register.
 - Governance pages for **Policy** (`policies:read`) and **Configuration Management**
   (`configuration:read`), mirroring the asset/identity/incident/compliance family.
 - Seeded **ISO/IEC 42001:2023 (AI Management System)** policies in English & French, plus its

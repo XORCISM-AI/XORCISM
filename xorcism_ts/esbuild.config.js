@@ -40,6 +40,8 @@ const entryPoints = [
   "client/ts/policy-management.ts",
   "client/ts/configuration-management.ts",
   "client/ts/crisis-management.ts",
+  "client/ts/fair-mam.ts",
+  "client/ts/risk-register.ts",
   "client/ts/threat-informed-defense.ts",
   "client/ts/oval-scan.ts",
   "client/ts/api-keys.ts",

@@ -459,6 +459,129 @@ async function initTagCloud(): Promise<void> {
   }
 }
 
+// EnterpriseRiskScore over time (ORGANISATIONRISKSCORE) — line chart with a selectable period.
+let riskHistChart: any = null;
+async function initRiskHistory(): Promise<void> {
+  const sel = document.getElementById("riskhist-period") as HTMLSelectElement | null;
+  const run = async (): Promise<void> => {
+    const days = sel ? Number(sel.value) : 90;
+    let d: { organisationId: number | null; current: number | null; points: { date: string; score: number }[] };
+    try { const r = await fetch(`/api/dashboard/risk-history?days=${days}`); if (!r.ok) throw new Error(String(r.status)); d = await r.json(); }
+    catch (e) { $("riskhist-stats").textContent = t("dash.loadError") + " " + e; return; }
+    if (riskHistChart) { riskHistChart.destroy(); riskHistChart = null; }
+    if (!d.points || !d.points.length) {
+      $("riskhist-empty").style.display = "";
+      $("riskhist-stats").textContent = d.current != null ? `${t("dash.current")}: ${d.current.toLocaleString()}` : "";
+      return;
+    }
+    $("riskhist-empty").style.display = "none";
+    const last = d.points[d.points.length - 1].score, first = d.points[0].score, delta = Math.round(last - first);
+    $("riskhist-stats").textContent = `${d.points.length} ${t("dash.pointsUnit")} · ${t("dash.current")}: ${Math.round(last).toLocaleString()}` + (d.points.length > 1 ? ` (${delta >= 0 ? "+" : ""}${delta.toLocaleString()})` : "");
+    if (typeof Chart === "undefined") return;
+    riskHistChart = new Chart(($("riskhist-chart") as HTMLCanvasElement).getContext("2d"), {
+      type: "line",
+      data: { labels: d.points.map((p) => p.date), datasets: [{ label: t("dash.riskScore"), data: d.points.map((p) => Math.round(p.score)), borderColor: "#f87171", backgroundColor: "rgba(248,113,113,.12)", pointBackgroundColor: "#f87171", tension: 0.25, fill: true, pointRadius: d.points.length > 60 ? 0 : 3, borderWidth: 2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.parsed.y.toLocaleString()}` } } },
+        scales: { x: { ticks: { color: "#94a3b8", maxTicksLimit: 12, autoSkip: true }, grid: { color: "#1e2133" } }, y: { beginAtZero: true, ticks: { color: "#94a3b8" }, grid: { color: "#1e2133" } } },
+      },
+    });
+  };
+  if (sel) sel.onchange = () => void run();
+  await run();
+}
+
+// Enterprise-risk breakdown — horizontal bar of the signed contributors to the RiskScore.
+async function initRiskBreakdown(): Promise<void> {
+  let d: { total: number; drivers: { key: string; label: string; value: number }[] };
+  try { const r = await fetch("/api/dashboard/risk-breakdown"); if (!r.ok) throw new Error(String(r.status)); d = await r.json(); }
+  catch { return; }
+  if (!d.drivers || !d.drivers.length) { $("risk-breakdown-empty").style.display = ""; return; }
+  if (typeof Chart === "undefined") return;
+  const driverColor = (k: string, v: number): string =>
+    v < 0 ? "#34d399" : k === "incidents" ? "#f87171" : k === "riskRegister" ? "#fb923c" : k === "compliance" ? "#fbbf24" : "#7c83fd";
+  new Chart(($("risk-breakdown-chart") as HTMLCanvasElement).getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: d.drivers.map((x) => x.label),
+      datasets: [{ data: d.drivers.map((x) => x.value), backgroundColor: d.drivers.map((x) => driverColor(x.key, x.value)), borderRadius: 4, maxBarThickness: 30 }],
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: `${t("dash.riskTotal")}: ${d.total.toLocaleString()}`, color: "#cbd5e1", font: { size: 13 } },
+        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.parsed.x > 0 ? "+" : ""}${ctx.parsed.x} ${t("dash.riskPoints")}` } },
+      },
+      scales: { x: { ticks: { color: "#94a3b8" }, grid: { color: "#1e2133" } }, y: { ticks: { color: "#cbd5e1" }, grid: { display: false } } },
+    },
+  });
+}
+
+// Security-program maturity radar — the "higher = better" program scores (0-100).
+async function initPostureRadar(): Promise<void> {
+  let k: any;
+  try { const r = await fetch("/api/dashboard/kpis"); if (!r.ok) throw new Error(String(r.status)); k = await r.json(); }
+  catch { return; }
+  const axes = [
+    { label: "Detection", value: k.tid?.detectRate },
+    { label: "Mitigation", value: k.tid?.mitigateRate },
+    { label: "Validation", value: k.tid?.testRate },
+    { label: "Compliance", value: k.compliance?.completionRate },
+    { label: "Crisis readiness", value: k.crisis?.readinessScore },
+    { label: "Risk treated", value: k.risk?.treatedRate },
+  ].filter((a) => a.value != null && Number.isFinite(Number(a.value)));
+  if (axes.length < 3) { $("radar-empty").style.display = ""; return; }
+  $("radar-stats").textContent = `${axes.length} ${t("dash.programs")}`;
+  if (typeof Chart === "undefined") return;
+  new Chart(($("radar-chart") as HTMLCanvasElement).getContext("2d"), {
+    type: "radar",
+    data: { labels: axes.map((a) => a.label), datasets: [{ label: t("dash.maturityPct"), data: axes.map((a) => Number(a.value)), backgroundColor: "rgba(124,131,253,.2)", borderColor: "#7c83fd", pointBackgroundColor: "#7c83fd", borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#94a3b8" } }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.label}: ${ctx.parsed.r}%` } } },
+      scales: { r: { min: 0, max: 100, ticks: { color: "#64748b", backdropColor: "transparent", stepSize: 20 }, grid: { color: "#1e2133" }, angleLines: { color: "#1e2133" }, pointLabels: { color: "#cbd5e1", font: { size: 12 } } } },
+    },
+  });
+}
+
+// Risk heatmap — open risk-register entries on a 5×5 probability × impact grid (bubble = count,
+// colour = risk zone). Vanilla Chart.js bubble chart (no extra plugin).
+async function initRiskHeatmap(): Promise<void> {
+  let d: { grid: { p: number; i: number; count: number; refs: string[] }[]; total: number; placed: number };
+  try { const r = await fetch("/api/dashboard/risk-heatmap"); if (!r.ok) throw new Error(String(r.status)); d = await r.json(); }
+  catch { return; }
+  if (!d.grid || !d.grid.length) {
+    $("heatmap-empty").style.display = "";
+    $("heatmap-stats").textContent = d && d.total ? `${d.total} ${t("dash.risksUnit")}` : "";
+    return;
+  }
+  $("heatmap-stats").textContent = `${d.placed}/${d.total} ${t("dash.risksPlaced")}`;
+  if (typeof Chart === "undefined") return;
+  const zone = (p: number, i: number): string => { const s = p * i; return s >= 20 ? "#ef4444" : s >= 12 ? "#fb923c" : s >= 6 ? "#fbbf24" : "#22c55e"; };
+  const maxC = Math.max(...d.grid.map((g) => g.count));
+  const pts = d.grid.map((g) => ({ x: g.p, y: g.i, r: 12 + (maxC > 1 ? (g.count / maxC) * 22 : 8), c: g.count, refs: g.refs, col: zone(g.p, g.i) }));
+  new Chart(($("heatmap-chart") as HTMLCanvasElement).getContext("2d"), {
+    type: "bubble",
+    data: { datasets: [{ data: pts, backgroundColor: pts.map((p) => p.col + "cc"), borderColor: pts.map((p) => p.col), borderWidth: 1.5 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: (ctx: any) => { const p = pts[ctx.dataIndex]; return ` ${t("dash.prob")} ${p.x} × ${t("dash.impact")} ${p.y}: ${p.c} ${t("dash.risksUnit")}`; },
+          afterLabel: (ctx: any) => pts[ctx.dataIndex].refs.join(", "),
+        } },
+      },
+      scales: {
+        x: { min: 0.5, max: 5.5, title: { display: true, text: t("dash.probability"), color: "#94a3b8" }, ticks: { stepSize: 1, color: "#94a3b8", callback: (v: any) => (v >= 1 && v <= 5 ? v : "") }, grid: { color: "#1e2133" } },
+        y: { min: 0.5, max: 5.5, title: { display: true, text: t("dash.impactAxis"), color: "#94a3b8" }, ticks: { stepSize: 1, color: "#94a3b8", callback: (v: any) => (v >= 1 && v <= 5 ? v : "") }, grid: { color: "#1e2133" } },
+      },
+    },
+  });
+}
+
 // Security-posture KPI strip — aggregates the governance module summaries.
 interface Kpis {
   riskScore: number | null;
@@ -468,6 +591,7 @@ interface Kpis {
   compliance: { completionRate: number | null; openFindings: number; highOpen: number; overdue: number } | null;
   tid: { tidScore: number; detectRate: number; mitigateRate: number; testRate: number; detectionFailed: number; detectionRegressed: number; exposed: number; threatRelevant: number } | null;
   crisis: { readinessScore: number; exercises: number; completionRate: number | null; scenarioCoverage: number; openActions: number; overdueActions: number; scenariosNeverExercised: number } | null;
+  risk: { riskScore: number; open: number; highCritical: number; untreated: number; overdueReview: number; treatedRate: number | null; totalALE: number; currency: string } | null;
 }
 const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
 const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
@@ -508,6 +632,12 @@ async function initKpis(): Promise<void> {
     tile(k.compliance.completionRate != null ? `${k.compliance.completionRate}%` : null, "Audit completion", "audits completed", "/compliance-management", pctColor(k.compliance.completionRate));
     tile(k.compliance.highOpen, "High findings open", `${k.compliance.openFindings} open · ${k.compliance.overdue} overdue`, "/compliance-management", badColor(k.compliance.highOpen));
   }
+  if (k.risk) {
+    const money = (n: number): string => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: k.risk!.currency || "EUR", maximumFractionDigits: 0, notation: "compact" }).format(n); } catch { return String(n); } };
+    tile(k.risk.riskScore, "Residual risk posture", `${k.risk.open} open risks`, "/risk-register", k.risk.riskScore >= 60 ? "#f87171" : k.risk.riskScore >= 35 ? "#fbbf24" : "#34d399");
+    tile(k.risk.untreated, "Untreated risks", "high/critical · no plan", "/risk-register", badColor(k.risk.untreated));
+    tile(k.risk.totalALE ? money(k.risk.totalALE) : "—", "Annualized exposure", "open risks · FAIR ALE", "/risk-register", "#f43f5e");
+  }
   if (k.tid) {
     tile(k.tid.tidScore, "TID program score", "threat-weighted defence", "/threat-informed-defense", pctColor(k.tid.tidScore));
     tile(`${k.tid.detectRate}%`, "Detection coverage", `${k.tid.threatRelevant} threat-relevant techniques`, "/threat-informed-defense", pctColor(k.tid.detectRate));
@@ -525,7 +655,11 @@ async function initKpis(): Promise<void> {
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
   initKpis();
+  initRiskHistory();
   initRiskScore();
+  initRiskBreakdown();
+  initPostureRadar();
+  initRiskHeatmap();
   initVuln();
   initFinancial();
   initRiskExposure();

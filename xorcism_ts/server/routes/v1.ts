@@ -17,6 +17,8 @@ import { policyInventory } from "../policies";
 import { configurationInventory } from "../configuration";
 import { tidInventory, tidNavigatorLayer } from "../tid";
 import { crisisInventory } from "../crisis";
+import { fairMamInventory } from "../fairmam";
+import { riskRegisterInventory } from "../riskregister";
 import { buildOpenApi } from "../openapi";
 import { dispatchWebhook } from "../webhook";
 
@@ -258,6 +260,22 @@ router.get("/crisis-management", (req: Request, res: Response) => {
   if (!gate(req, res, "crisis:read")) return;
   if (!userCan(req.user!, "read", "XCOMPLIANCE", "AUDIT")) return void res.status(403).json({ error: "forbidden" });
   res.json(crisisInventory(tenantOf(req)));
+});
+
+// GET /api/v1/fair-mam — FAIR-MAM materiality: the cost-category taxonomy + saved assessments
+// with computed single-loss totals (PERT), primary/secondary split and a materiality verdict.
+router.get("/fair-mam", (req: Request, res: Response) => {
+  if (!gate(req, res, "fairmam:read")) return;
+  if (!userCan(req.user!, "read", "XCOMPLIANCE", "RISKREGISTERENTRY")) return void res.status(403).json({ error: "forbidden" });
+  res.json(fairMamInventory(tenantOf(req)));
+});
+
+// GET /api/v1/risk-register — risk register inventory (inherent→residual posture, treatment,
+// CRQ/FAIR ALE) + a prioritised treatment worklist + a residual-posture score.
+router.get("/risk-register", (req: Request, res: Response) => {
+  if (!gate(req, res, "risk:read")) return;
+  if (!userCan(req.user!, "read", "XCOMPLIANCE", "RISKREGISTERENTRY")) return void res.status(403).json({ error: "forbidden" });
+  res.json(riskRegisterInventory(tenantOf(req)));
 });
 
 // GET /api/v1/threat-informed-defense — ATT&CK technique coverage scorecard (adversary use vs

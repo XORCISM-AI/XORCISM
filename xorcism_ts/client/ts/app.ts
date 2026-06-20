@@ -96,6 +96,8 @@ const ENUM_COLUMNS: Record<string, string[]> = {
   "ANSWERFORQUESTION.Result": ["PASS", "FAIL", "ERROR", "UNKNOWN", "NOT_TESTED", "NOT_APPLICABLE"],
   // THREAT — confidence / reliability levels (qualitative scale)
   "THREAT.ConfidenceLevel": ["Very Low", "Low", "Moderate", "High", "Very High"],
+  // TOOLDOCUMENT — confidence of the tool↔document association
+  "TOOLDOCUMENT.ConfidenceLevel": ["Very Low", "Low", "Moderate", "High", "Very High"],
   "THREAT.TrustLevel": ["Very Low", "Low", "Moderate", "High", "Very High"],
 };
 
@@ -283,6 +285,13 @@ interface FkSpec { table: string; idCol: string; labelCol: string; db?: string; 
 
 // Table-specific rules: key "TABLE.Column".
 const FK_COLUMNS: Record<string, FkSpec> = {
+  // TOOLDOCUMENT (XORCISM): a TOOL ↔ DOCUMENT link with provenance + confidence reason.
+  "TOOLDOCUMENT.ToolID": { db: "XORCISM", table: "TOOL", idCol: "ToolID", labelCol: "ToolName", distinct: true },
+  "TOOLDOCUMENT.DocumentID": { db: "XORCISM", table: "DOCUMENT", idCol: "DocumentID", labelCol: "DocumentName", distinct: true },
+  "TOOLDOCUMENT.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true },
+  "TOOLDOCUMENT.ConfidenceReasonID": { db: "XORCISM", table: "CONFIDENCEREASON", idCol: "ConfidenceReasonID", labelCol: "ConfidenceReasonName", distinct: true },
+  // ORGANISATIONRISKSCORE (XORCISM): per-organisation risk-score history.
+  "ORGANISATIONRISKSCORE.OrganisationID": { db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", labelCol: "OrganisationName", distinct: true },
   // Crisis management (XCOMPLIANCE): tabletop-exercise injects/participants ↔ audit / scenario / person
   "EXERCISEINJECT.AuditID": { db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID", labelCol: "AuditName", distinct: true },
   "EXERCISEINJECT.ScenarioID": { db: "XCOMPLIANCE", table: "CRISISSCENARIO", idCol: "ScenarioID", labelCol: "ScenarioName", distinct: true },

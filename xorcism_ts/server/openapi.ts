@@ -156,6 +156,20 @@ export function buildOpenApi(): Record<string, unknown> {
           responses: { "200": ok("CrisisInventory"), ...errors },
         },
       },
+      "/risk-register": {
+        get: {
+          tags: ["Governance"],
+          summary: "Risk register inventory + treatment worklist: each risk's inherent → current → residual level, treatment strategy/owner/review and its CRQ/FAIR Annualized Loss Expectancy, with a worklist (untreated high/critical residual, accepted-without-justification, overdue reviews, treatments past target, unowned) and a residual-posture score (scope: risk:read)",
+          responses: { "200": ok("RiskRegisterInventory"), ...errors },
+        },
+      },
+      "/fair-mam": {
+        get: {
+          tags: ["Governance"],
+          summary: "FAIR-MAM materiality: the FAIR Materiality Assessment Model cost-category taxonomy (10 categories, primary/secondary loss) + saved assessments with the computed single-loss magnitude (PERT), primary/secondary split and a materiality verdict (scope: fairmam:read)",
+          responses: { "200": ok("FairMamInventory"), ...errors },
+        },
+      },
       "/threat-informed-defense": {
         get: {
           tags: ["Governance"],
@@ -212,6 +226,8 @@ export function buildOpenApi(): Record<string, unknown> {
         ConfigurationInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "compliance/hardening OVAL baselines with a health score" }, findings: { type: "array", items: { type: "object" } }, summary: { type: "object", description: "definitions, compliance, patch, vulnerability, inventory, deprecated, accepted, withCce, scannedAssets, complianceFail, passRate, byClass, byStatus" } } },
         TidInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "ATT&CK techniques: threat (adversary groups) vs detect/mitigate/test pillars + gapScore" }, findings: { type: "array", items: { type: "object" }, description: "prioritised TID gaps" }, summary: { type: "object", description: "techniques, threatRelevant, detected, mitigated, tested, detectRate, mitigateRate, testRate, tidScore, exposed, fullyCovered, byTactic" } } },
         CrisisInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "tabletop exercises (audits of type Tabletop Exercise): inject progress, participants, improvement actions, score" }, findings: { type: "array", items: { type: "object" }, description: "worklist: overdue improvement actions, scenarios never exercised, exercises with no after-action report" }, scenarios: { type: "array", items: { type: "object" }, description: "crisis-scenario template library (exercised flag, inject count)" }, summary: { type: "object", description: "exercises, planned, completed, completionRate, scenarios, scenariosNeverExercised, scenarioCoverage, openActions, overdueActions, withoutAAR, readinessScore" } } },
+        RiskRegisterInventory: { type: "object", properties: { rows: { type: "array", items: { type: "object" }, description: "risk register entries: ref, title, inherent/current/residual level, treatment, owner, ALE, review, priority score" }, findings: { type: "array", items: { type: "object" }, description: "treatment worklist: untreated high/critical residual, accepted-without-justification, overdue review, treatment past target, no owner" }, summary: { type: "object", description: "risks, open, treatedRate, highCritical, untreated, accepted, overdueReview, quantified, totalALE, byLevel/byTreatment/byCategory, riskScore" } } },
+        FairMamInventory: { type: "object", properties: { categories: { type: "array", items: { type: "object" }, description: "FAIR-MAM cost-category taxonomy (code, name, parent, lossType primary/secondary, party first/third-party)" }, assessments: { type: "array", items: { type: "object" }, description: "saved assessments: total (PERT single-loss), primary/secondary, firstParty/thirdParty, threshold, ratio, determination" }, summary: { type: "object", description: "assessments, material, approaching, largestExposure, totalExposure, currency, avgPrimaryShare" } } },
         IncidentCreate: {
           type: "object", required: ["name"],
           properties: { name: { type: "string" }, severity: { type: "string" }, status: { type: "string" }, synopsis: { type: "string" }, durationHours: { type: "number" } },

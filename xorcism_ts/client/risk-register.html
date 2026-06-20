@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Risk Register</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .rr-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .rr-wrap h1{font-size:20px;margin:0 0 2px}
+  .rr-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .rr-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .rr-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .rr-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .rr-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .rr-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .rr-score{background:linear-gradient(135deg,#3b1322,#13162a)}
+  .rr-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  table.rr{width:100%;border-collapse:collapse;font-size:13px}
+  table.rr th,table.rr td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.rr th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.rr td.num,table.rr th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .lvl{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .lvl-0{background:#7f1d1d;color:#fecaca}.lvl-1{background:#7c2d12;color:#fed7aa}
+  .lvl-2{background:#78350f;color:#fcd34d}.lvl-3{background:#1e3a2e;color:#86efac}.lvl-4{background:#1e2133;color:#94a3b8}.lvl-5{background:#1e2133;color:#64748b}
+  .arrow{color:#64748b;margin:0 4px}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-open{background:#3b2f1e;color:#fcd34d}.st-closed{background:#14532d;color:#bbf7d0}
+  .tr{font-size:11px;border-radius:5px;padding:1px 7px;background:#1e2133;color:#cbd5e1}
+  .tag{font-size:11px;background:#3f1d1d;border:1px solid #7f1d1d;border-radius:5px;padding:1px 6px;margin-left:4px;color:#fca5a5}
+  .rname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#34d399}
+  .findings{list-style:none;margin:0;padding:0}
+  .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}.sev-Info{color:#64748b}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=RISKREGISTERENTRY">&#128221; Risk entries</a>
+  <a href="/fair-mam">&#129518; FAIR-MAM</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/exposure">&#127919; Exposure</a>
+  <span class="spacer"></span>
+  <span class="title">&#128202; Risk Register</span>
+</div>
+
+<div class="rr-wrap">
+  <div>
+    <h1>Risk Register</h1>
+    <div class="rr-sub">One governance view over the risk register — every risk's
+      <b>inherent &rarr; current &rarr; residual</b> level, its <b>treatment</b> (strategy, plan, owner,
+      review) and its <b>CRQ/FAIR</b> quantification (<i>Annualized Loss Expectancy</i>). Each risk carries
+      a 0-100 priority score; the worklist surfaces the gaps that matter: <b>high/critical residual risks
+      left untreated</b>, risks <b>accepted without justification</b>, <b>overdue reviews</b>, treatments
+      <b>past their target date</b>, and <b>unowned</b> risks. Manage entries under
+      <a href="/?db=XCOMPLIANCE&amp;table=RISKREGISTERENTRY">Risk entries</a>; decompose a loss with
+      <a href="/fair-mam">FAIR-MAM</a>.</div>
+  </div>
+  <div id="rr-body"><div class="muted" style="padding:24px;text-align:center">Building the risk posture…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/risk-register.js"></script>
+</body>
+</html>

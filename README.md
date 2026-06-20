@@ -124,12 +124,14 @@ your data never leaves your infrastructure.
 - **Content hub** — `/content` shares/reuses content as portable files: **attack
   playbooks** (import community recipes), the **Sigma rule bundle**, and an
   **OpenVEX** document (which CVEs affect your products vs false-positive/fixed).
-- **Executive Dashboard** — enterprise risk score, vulnerability breakdown,
-  financial value, **risk exposure = risk × value**, asset tag cloud, incident
-  trends (Chart.js), and a **security-posture KPI strip** spanning the governance
-  modules — assets, identities, incidents, compliance, **Threat-Informed Defense**
-  (program score, detection coverage, false-coverage/drift, exposed techniques) and
-  **Crisis Management** (readiness, scenario coverage, improvement actions).
+- **Executive Dashboard** — a holistic **Enterprise RiskScore** (asset hygiene + open
+  risk-register residual + live incidents + compliance debt − assurance credits) shown with a
+  **contributor breakdown**, a **security-program maturity radar** (detection / mitigation /
+  validation / compliance / crisis-readiness / risk-treated), a **risk heatmap** (residual
+  probability × impact), vulnerability breakdown, financial value, **risk exposure = risk ×
+  value**, asset tag cloud and incident trends (Chart.js) — plus a **security-posture KPI strip**
+  spanning the governance modules (assets, identities, incidents, compliance, risk register,
+  **Threat-Informed Defense** and **Crisis Management**).
 
 ### 🛡️ Governance, Risk & Compliance (GRC)
 
@@ -152,6 +154,20 @@ your data never leaves your infrastructure.
   (copying its injects), and a **crisis-readiness score** blends exercise completion with
   scenario coverage. The worklist surfaces overdue actions, scenarios never exercised and
   exercises with no after-action report.
+- **Risk Register** — one governance view over the risk register: every risk's
+  **inherent → current → residual** level, its **treatment** (strategy, plan, owner, review) and
+  its **CRQ/FAIR** quantification (*Annualized Loss Expectancy*), with a 0-100 priority score per
+  risk and a worklist of the gaps that matter — **high/critical residual risks left untreated**,
+  risks **accepted without justification**, **overdue reviews**, treatments **past their target
+  date**, and **unowned** risks. Mirrors the asset/identity/compliance governance pages.
+- **FAIR-MAM Materiality** — the FAIR Institute's **Materiality Assessment Model**: decompose a
+  cyber loss event's single-loss magnitude across the **10 standardized cost categories**
+  (incident response, cyber extortion, business interruption, asset restoration, privacy/security
+  liability, network-security liability, communications & media, regulatory, PCI, reputation),
+  each estimated as a **PERT** range (min / most-likely / max). An interactive calculator computes
+  the expected single-loss, the **primary vs secondary** (and first- vs third-party) split, and a
+  **materiality verdict** against your threshold (e.g. an SEC materiality figure) — the detailed
+  breakdown of the risk register's *Single Loss Expectancy*.
 - **Configuration Management** — one governance view over the secure-configuration
   content library (OVAL/SCAP): the compliance-class **hardening baselines** are the
   configuration items, with a per-baseline **health score** and a worklist of

@@ -116,17 +116,20 @@ import {
   addThreatModelThreat,
   getThreatControls,
   setThreatControls,
+  getDb,
 } from "../db";
 import { userCan, clientIp, deniedFields } from "../auth";
 import * as xid from "../xid";
 import { tr } from "../i18n";
-import { computeEnterpriseRiskScore } from "../riskscore";
+import { computeEnterpriseRiskScore, enterpriseRiskBreakdown, recordOrganisationRiskScore, organisationRiskHistory } from "../riskscore";
+import { levelInfo } from "../riskregister";
 import { assetInventory } from "../assets";
 import { identityInventory } from "../identities";
 import { incidentInventory } from "../incidents";
 import { complianceInventory } from "../compliance";
 import { tidInventory } from "../tid";
 import { crisisInventory } from "../crisis";
+import { riskRegisterInventory } from "../riskregister";
 
 // Removes the forbidden columns from a row object (keeps rowid)
 function stripCols(row: Record<string, unknown>, denied: Set<string>): Record<string, unknown> {
@@ -339,6 +342,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
   const c = safe(() => complianceInventory(tenant).summary);
   const t = safe(() => tidInventory(tenant).summary);
   const cr = safe(() => crisisInventory(tenant).summary);
+  const rr = safe(() => riskRegisterInventory(tenant).summary);
   res.json({
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
@@ -347,7 +351,65 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
     compliance: c && { completionRate: c.completionRate, openFindings: c.openFindings, highOpen: c.highOpen, overdue: c.overdue },
     tid: t && { tidScore: t.tidScore, detectRate: t.detectRate, mitigateRate: t.mitigateRate, testRate: t.testRate, detectionFailed: t.detectionFailed, detectionRegressed: t.detectionRegressed, exposed: t.exposed, threatRelevant: t.threatRelevant },
     crisis: cr && { readinessScore: cr.readinessScore, exercises: cr.exercises, completionRate: cr.completionRate, scenarioCoverage: cr.scenarioCoverage, openActions: cr.openActions, overdueActions: cr.overdueActions, scenariosNeverExercised: cr.scenariosNeverExercised },
+    risk: rr && { riskScore: rr.riskScore, open: rr.open, highCritical: rr.highCritical, untreated: rr.untreated, overdueReview: rr.overdueReview, treatedRate: rr.treatedRate, totalALE: rr.totalALE, currency: rr.currency },
   });
+});
+
+// GET /api/dashboard/risk-history?days=90 — the EnterpriseRiskScore over time for the current
+// user's organisation (XORCISM.ORGANISATIONRISKSCORE). Records today's value on load (upsert by
+// org+day), then returns the daily series since (today − days); days=0 → all history.
+router.get("/dashboard/risk-history", (req: Request, res: Response) => {
+  const user = req.user!;
+  const organisationId = resolveUserOrganisationId({ UserID: user.UserID, Email: user.Email, TenantID: user.tenantId ?? undefined });
+  const days = Math.max(0, Math.min(3650, Number(req.query.days) || 90));
+  if (organisationId == null) return void res.json({ organisationId: null, current: null, days, points: [] });
+  const tenant = user.isSuperAdmin ? null : (user.tenantId ?? null);
+  const current = recordOrganisationRiskScore(organisationId, tenant);   // record on dashboard load
+  const since = days > 0 ? new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10) : null;
+  res.json({ organisationId, current, days, points: organisationRiskHistory(organisationId, since) });
+});
+
+// GET /api/dashboard/risk-breakdown — the EnterpriseRiskScore + its signed contributors
+// (asset hygiene / risk register / open incidents / compliance debt / assurance credits).
+router.get("/dashboard/risk-breakdown", (req: Request, res: Response) => {
+  const tenant = req.user!.isSuperAdmin ? null : (req.user!.tenantId ?? null);
+  res.json(enterpriseRiskBreakdown(tenant));
+});
+
+// GET /api/dashboard/risk-heatmap — a 5×5 probability × impact grid of open risk-register entries
+// (by residual position; falls back to current/inherent, else the residual level on the diagonal).
+router.get("/dashboard/risk-heatmap", (req: Request, res: Response) => {
+  const tenant = req.user!.isSuperAdmin ? null : (req.user!.tenantId ?? null);
+  const cc = getDb("XCOMPLIANCE");
+  const out = { grid: [] as { p: number; i: number; count: number; refs: string[] }[], total: 0, placed: 0 };
+  try {
+    if (!cc.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='RISKREGISTERENTRY'").get()) return void res.json(out);
+    const rc = new Set((cc.prepare(`PRAGMA table_info("RISKREGISTERENTRY")`).all() as { name: string }[]).map((c) => c.name));
+    const tw = tenant != null && rc.has("TenantID") ? `WHERE TenantID = ${tenant}` : "";
+    const rows = cc.prepare(`SELECT * FROM RISKREGISTERENTRY ${tw}`).all() as Record<string, unknown>[];
+    const cell = new Map<string, { p: number; i: number; count: number; refs: string[] }>();
+    const CLOSED = /closed|clos[eé]|resolv|done|accepted|fixed|termin|ferm/i;
+    const to5 = (v: unknown): number | null => { const n = Number(v); if (!Number.isFinite(n) || n <= 0) return null; return n <= 5 ? Math.max(1, Math.round(n)) : Math.max(1, Math.min(5, Math.round(n / 5))); };
+    for (const e of rows) {
+      out.total++;
+      if (CLOSED.test(String(e.Status ?? "")) || e.ClosedDate) continue;
+      // probability/impact from residual → current → inherent
+      let p = to5(e.ResidualProbability) ?? to5(e.CurrentProbability) ?? to5(e.InherentProbability);
+      let im = to5(e.ResidualImpact) ?? to5(e.CurrentImpact) ?? to5(e.InherentImpact);
+      if (p == null || im == null) {              // no numeric prob/impact → place by residual level on the diagonal
+        const rk = levelInfo(e.ResidualRiskLevel ?? e.CurrentRiskLevel ?? e.InherentRiskLevel, null, null).rank;
+        if (rk === 5) continue;                   // unrated → not placed
+        const d = 5 - rk;                          // rank 0(crit)→5, 4(very-low)→1
+        p = p ?? d; im = im ?? d;
+      }
+      const key = `${p}:${im}`;
+      const c = cell.get(key) ?? { p, i: im, count: 0, refs: [] };
+      c.count++; if (c.refs.length < 8) c.refs.push(String(e.Ref ?? `R-${e.RiskRegisterEntryID}`));
+      cell.set(key, c); out.placed++;
+    }
+    out.grid = [...cell.values()];
+  } catch { /* empty grid */ }
+  res.json(out);
 });
 
 // GET /api/dashboard/tag-cloud — cloud of active ASSETTAG tags (scoped to the tenant)

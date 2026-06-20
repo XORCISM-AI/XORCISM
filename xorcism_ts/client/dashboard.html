@@ -28,15 +28,55 @@
   <div class="kpi-sec" data-i18n="dash.kpiTitle">Security posture — key indicators</div>
   <div class="kpi-strip" id="kpi-strip"></div>
 
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" data-i18n="dash.riskHistory">EnterpriseRiskScore dans le temps</span>
+      <span class="btn-row">
+        <select id="riskhist-period" style="background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:6px 9px;color:#e2e8f0;font-size:13px">
+          <option value="30" data-i18n="dash.period1m">1 mois</option>
+          <option value="90" selected data-i18n="dash.period3m">3 mois</option>
+          <option value="180" data-i18n="dash.period6m">6 mois</option>
+          <option value="365" data-i18n="dash.period1y">1 an</option>
+          <option value="0" data-i18n="dash.periodAll">Tout</option>
+        </select>
+        <span class="statusbar" id="riskhist-stats"></span>
+      </span>
+    </div>
+    <div style="position:relative;height:48vh;min-height:300px"><canvas id="riskhist-chart"></canvas></div>
+    <div class="empty" id="riskhist-empty" style="display:none" data-i18n="dash.riskHistNone">Pas encore d'historique &mdash; le score est enregistr&eacute; au chargement du tableau de bord et toutes les heures.</div>
+  </div>
+
   <div class="card" id="risk-card">
     <div class="card-header">
       <span class="card-title" data-i18n="dash.riskScore">Enterprise RiskScore</span>
       <span class="statusbar" id="risk-stats"></span>
     </div>
-    <div style="display:flex;align-items:baseline;gap:16px;padding:10px 4px 4px">
-      <span id="risk-score-value" style="font-size:60px;font-weight:800;line-height:1;color:#94a3b8">&mdash;</span>
-      <span id="risk-score-note" style="font-size:13px;color:#64748b" data-i18n="dash.riskScoreNote">recalcul&eacute; toutes les 30&nbsp;s</span>
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:10px 4px 4px">
+      <div style="min-width:190px">
+        <div id="risk-score-value" style="font-size:60px;font-weight:800;line-height:1;color:#94a3b8">&mdash;</div>
+        <div id="risk-score-note" style="font-size:12px;color:#64748b;margin-top:4px" data-i18n="dash.riskScoreNote">recalcul&eacute; toutes les 30&nbsp;s</div>
+      </div>
+      <div style="flex:1;min-width:320px;position:relative;height:200px"><canvas id="risk-breakdown-chart"></canvas></div>
     </div>
+    <div class="empty" id="risk-breakdown-empty" style="display:none" data-i18n="dash.riskBreakdownNone">Aucun contributeur de risque (ajoutez des actifs, risques, incidents ou constats).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" data-i18n="dash.posture">Maturit&eacute; du programme de s&eacute;curit&eacute;</span>
+      <span class="statusbar" id="radar-stats"></span>
+    </div>
+    <div style="position:relative;height:54vh;min-height:360px"><canvas id="radar-chart"></canvas></div>
+    <div class="empty" id="radar-empty" style="display:none" data-i18n="dash.postureNone">Aucun score de programme disponible.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" data-i18n="dash.heatmap">Cartographie des risques (probabilit&eacute; &times; impact)</span>
+      <span class="statusbar" id="heatmap-stats"></span>
+    </div>
+    <div style="position:relative;height:62vh;min-height:400px"><canvas id="heatmap-chart"></canvas></div>
+    <div class="empty" id="heatmap-empty" style="display:none" data-i18n="dash.heatmapNone">Aucun risque ouvert positionnable (probabilit&eacute;/impact ou niveau r&eacute;siduel requis).</div>
   </div>
 
   <div class="card">

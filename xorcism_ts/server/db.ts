@@ -187,6 +187,50 @@ export function seedTools(): void {
   }
 }
 
+/**
+ * XORCISM.TOOLDOCUMENT — link table associating a TOOL with a DOCUMENT, carrying the
+ * provenance (PersonID who linked it), a validity window (ValidFrom/ValidUntil) and a
+ * confidence level/reason. Created idempotently at boot so existing installs gain it; the
+ * same DDL lives in databases/XORCISM_sqlite.sql for fresh installs. Non-tenant-scoped
+ * (mirrors the global TOOL catalogue reference).
+ */
+export function ensureToolDocumentTable(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`CREATE TABLE IF NOT EXISTS "TOOLDOCUMENT" (
+    "ToolDocumentID" INTEGER PRIMARY KEY,
+    "ToolDocumentGUID" TEXT,
+    "ToolID" INTEGER,
+    "DocumentID" INTEGER,
+    "CreatedDate" DATE,
+    "PersonID" INTEGER,
+    "ValidFrom" DATE,
+    "ValidUntil" DATE,
+    "ConfidenceLevel" TEXT,
+    "ConfidenceReasonID" INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS ix_tooldocument_tool ON "TOOLDOCUMENT"("ToolID");
+  CREATE INDEX IF NOT EXISTS ix_tooldocument_document ON "TOOLDOCUMENT"("DocumentID");`);
+}
+
+/**
+ * XORCISM.ORGANISATIONRISKSCORE — per-organisation risk-score history (one row per recorded
+ * value over time), the organisation-level analogue of RISKSCORE (per-tenant) and ASSETRISKSCORE
+ * (per-asset). Created idempotently at boot so existing installs gain it; the same DDL lives in
+ * databases/XORCISM_sqlite.sql for fresh installs.
+ */
+export function ensureOrganisationRiskScoreTable(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`CREATE TABLE IF NOT EXISTS "ORGANISATIONRISKSCORE" (
+    "EnterpriseRiskScoreID" INTEGER PRIMARY KEY,
+    "CreatedDate" DATE,
+    "OrganisationID" INTEGER,
+    "RiskScore" REAL
+  );
+  CREATE INDEX IF NOT EXISTS ix_organisationriskscore_org ON "ORGANISATIONRISKSCORE"("OrganisationID");`);
+}
+
 export function listDatabases(): string[] {
   return fs
     .readdirSync(DB_DIR)
@@ -783,6 +827,9 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XCOMPLIANCE.CRISISSCENARIO",
   "XCOMPLIANCE.EXERCISEINJECT",
   "XCOMPLIANCE.EXERCISEPARTICIPANT",
+  // ── FAIR-MAM materiality assessments (multi-tenant isolation; FAIRMAMCATEGORY is global reference) ──
+  "XCOMPLIANCE.FAIRMAMASSESSMENT",
+  "XCOMPLIANCE.FAIRMAMLINEITEM",
   // ── Tooling catalogue (multi-tenant isolation) ──
   "XORCISM.TOOL",
   // ── Policy & document management (multi-tenant isolation) ──
@@ -4404,6 +4451,81 @@ export function ensureEbiosTables(): void {
     ScenarioType: "TEXT", RiskSourceID: "INTEGER", FearedEventID: "INTEGER",
     StakeholderID: "INTEGER", Likelihood: "INTEGER", Severity: "INTEGER", AttackPath: "TEXT",
   });
+}
+
+/**
+ * FAIR-MAM — the FAIR Institute's Materiality Assessment Model. Decomposes a cyber loss event's
+ * magnitude into 10 standardized cost categories (with sub-categories), classified by FAIR loss
+ * form (primary / secondary) and party (first-party / third-party). Extends the existing CRQ/FAIR
+ * on XCOMPLIANCE.RISKREGISTERENTRY (PrimaryLoss/SecondaryLoss/SingleLossExpectancy) with the
+ * detailed breakdown + a materiality determination. Created idempotently at boot:
+ *   FAIRMAMCATEGORY  — the reference taxonomy (global, seeded once; like the TOOL catalogue)
+ *   FAIRMAMASSESSMENT — a materiality assessment (tenant-scoped)
+ *   FAIRMAMLINEITEM  — per-category min/most-likely/max loss estimate (PERT) (tenant-scoped)
+ */
+export function ensureFairMamTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XCOMPLIANCE"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS FAIRMAMCATEGORY (
+      CategoryID INTEGER PRIMARY KEY, Code TEXT, Name TEXT, ParentCode TEXT,
+      LossType TEXT, Party TEXT, Description TEXT, SortOrder INTEGER, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS FAIRMAMASSESSMENT (
+      AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, Name TEXT, ScenarioRef TEXT,
+      RiskRegisterEntryID INTEGER, IncidentID INTEGER, Currency TEXT,
+      MaterialityThreshold REAL, RevenueBasis REAL, Status TEXT, Determination TEXT,
+      PersonID INTEGER, CreatedDate TEXT, ValidFrom TEXT, ValidUntil TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS FAIRMAMLINEITEM (
+      LineItemID INTEGER PRIMARY KEY, AssessmentID INTEGER, CategoryID INTEGER,
+      Minimum REAL, MostLikely REAL, Maximum REAL, Notes TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_fairmamlineitem_assessment ON FAIRMAMLINEITEM(AssessmentID);
+    CREATE INDEX IF NOT EXISTS ix_fairmamassessment_tenant ON FAIRMAMASSESSMENT(TenantID);
+  `);
+
+  // Seed the FAIR-MAM taxonomy once (idempotent: only when empty). 10 primary categories
+  // (P##) + sub-categories, FAIR loss form + party classification.
+  if ((db.prepare("SELECT COUNT(*) AS c FROM FAIRMAMCATEGORY").get() as { c: number }).c > 0) return;
+  type Cat = [code: string, name: string, parent: string | null, loss: "primary" | "secondary", party: "first-party" | "third-party", desc: string];
+  const TAX: Cat[] = [
+    // ── Primary loss (first-party, direct) ──
+    ["IR", "Incident Response", null, "primary", "first-party", "Costs to detect, investigate, contain and manage the event."],
+    ["IR.FOR", "Forensics & Investigation", "IR", "primary", "first-party", "Internal/external DFIR, root-cause analysis."],
+    ["IR.LEG", "Legal Counsel (Breach Coach)", "IR", "primary", "first-party", "Privileged legal guidance through the response."],
+    ["IR.NOT", "Notification & Call Center", "IR", "primary", "first-party", "Notifying affected parties + inbound support."],
+    ["IR.MON", "Credit / Identity Monitoring", "IR", "primary", "first-party", "Monitoring/protection services for affected individuals."],
+    ["IR.PR", "Public Relations / Crisis Comms", "IR", "primary", "first-party", "Managing public and stakeholder communications."],
+    ["EXT", "Cyber Extortion", null, "primary", "first-party", "Ransom and the cost of responding to extortion."],
+    ["EXT.RAN", "Ransom Payment", "EXT", "primary", "first-party", "The extortion payment itself (where made)."],
+    ["EXT.NEG", "Negotiation & Recovery Services", "EXT", "primary", "first-party", "Specialist negotiation, decryption, recovery."],
+    ["BI", "Business Interruption", null, "primary", "first-party", "Lost income and added cost while operations are degraded."],
+    ["BI.INC", "Lost Net Income", "BI", "primary", "first-party", "Profit lost during the period of impairment."],
+    ["BI.EXP", "Extra Expense", "BI", "primary", "first-party", "Added cost to keep operating / accelerate recovery."],
+    ["BI.DEP", "Dependent / Contingent BI", "BI", "primary", "first-party", "Interruption via a third party you depend on."],
+    ["DAR", "Digital Asset Restoration", null, "primary", "first-party", "Restoring or recreating damaged data and systems."],
+    ["DAR.DATA", "Data Recreation", "DAR", "primary", "first-party", "Re-creating lost or corrupted data."],
+    ["DAR.SYS", "Software / System Restoration", "DAR", "primary", "first-party", "Rebuilding/replacing systems and software."],
+    // ── Secondary loss (third-party / stakeholder reactions) ──
+    ["PSL", "Information Privacy & Security Liability", null, "secondary", "third-party", "Third-party claims for privacy/security failures."],
+    ["PSL.DEF", "Defense Costs", "PSL", "secondary", "third-party", "Cost to defend privacy/security litigation."],
+    ["PSL.SET", "Settlements / Judgments", "PSL", "secondary", "third-party", "Class-action settlements, judgments."],
+    ["NSL", "Network Security Liability", null, "secondary", "third-party", "Liability for harm to third parties (malware spread, DoS, unauthorized access)."],
+    ["CML", "Communications & Media Liability", null, "secondary", "third-party", "Defamation, IP/copyright infringement in content."],
+    ["REG", "Regulatory Defense & Penalties", null, "secondary", "third-party", "Regulatory investigations, defense and fines."],
+    ["REG.DEF", "Regulatory Defense", "REG", "secondary", "third-party", "Cost to respond to/defend regulatory inquiries."],
+    ["REG.FIN", "Fines & Penalties", "REG", "secondary", "third-party", "GDPR / HIPAA / state-AG / SEC penalties."],
+    ["PCI", "PCI Fines, Expenses & Costs", null, "secondary", "third-party", "Card-brand fines, assessments and reissuance."],
+    ["PCI.FIN", "Card-Brand Fines", "PCI", "secondary", "third-party", "Fines levied by the card networks."],
+    ["PCI.ASM", "Assessments & Reissuance", "PCI", "secondary", "third-party", "Operational reimbursement + card reissuance."],
+    ["REP", "Reputation Damage", null, "secondary", "first-party", "Lost future value from damaged stakeholder trust."],
+    ["REP.CHU", "Customer Churn / Lost Revenue", "REP", "secondary", "first-party", "Customers lost and future revenue forgone."],
+    ["REP.CAP", "Increased Cost of Capital / Brand", "REP", "secondary", "first-party", "Higher financing cost, brand impairment."],
+  ];
+  const ins = db.prepare(
+    `INSERT INTO FAIRMAMCATEGORY (CategoryID, Code, Name, ParentCode, LossType, Party, Description, SortOrder)
+     VALUES (?,?,?,?,?,?,?,?)`);
+  const tx = db.transaction(() => { TAX.forEach((c, i) => ins.run(i + 1, c[0], c[1], c[2], c[3], c[4], c[5], i + 1)); });
+  tx();
+  console.log(`[seed] XCOMPLIANCE.FAIRMAMCATEGORY ← ${TAX.length} FAIR-MAM categories`);
 }
 
 /**

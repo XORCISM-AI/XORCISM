@@ -8504,7 +8504,12 @@ CREATE TABLE "DOCUMENT"(
 	BLOB TEXT NULL,
 	"ValidFromDate" TEXT NULL,
 	"ValidUntilDate" TEXT NULL,
-	"isEncrypted" INTEGER NULL
+	"isEncrypted" INTEGER NULL,
+	"DocumentName" TEXT NULL,
+	"DocumentDescription" TEXT NULL,
+	"DocumentURL" TEXT NULL,
+	"Category" TEXT NULL,
+	"Author" TEXT NULL
 )
 
 ;
@@ -16237,6 +16242,16 @@ CREATE TABLE "ORGANISATIONPROJECT"(
 /****** Object:  Table "ORGANISATIONSCHEDULE"    Script Date: 04/03/2015 19:59:09 ******/
 
 ;
+
+;
+/****** Object:  Table "ORGANISATIONRISKSCORE"    Script Date: 06/20/2026 00:00:00 ******/
+
+CREATE TABLE "ORGANISATIONRISKSCORE"(
+	"EnterpriseRiskScoreID" INTEGER NOT NULL,
+	"CreatedDate" DATE NULL,
+	"OrganisationID" INTEGER NULL,
+	"RiskScore" REAL NULL
+)
 
 ;
 CREATE TABLE "ORGANISATIONSCHEDULE"(
@@ -24330,6 +24345,22 @@ CREATE TABLE "TOOL"(
 	"TrustLevelID" INTEGER NULL,
 	"ReliabilityID" INTEGER NULL,
 	"isEncrypted" INTEGER NULL
+)
+
+;
+/****** Object:  Table "TOOLDOCUMENT"    Script Date: 06/20/2026 00:00:00 ******/
+
+CREATE TABLE "TOOLDOCUMENT"(
+	"ToolDocumentID" INTEGER NOT NULL,
+	"ToolDocumentGUID" TEXT NULL,
+	"ToolID" INTEGER NULL,
+	"DocumentID" INTEGER NULL,
+	"CreatedDate" DATE NULL,
+	"PersonID" INTEGER NULL,
+	"ValidFrom" DATE NULL,
+	"ValidUntil" DATE NULL,
+	"ConfidenceLevel" TEXT NULL,
+	"ConfidenceReasonID" INTEGER NULL
 )
 
 ;

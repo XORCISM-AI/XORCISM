@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — FAIR-MAM Materiality</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .fm-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .fm-wrap h1{font-size:20px;margin:0 0 2px}
+  .fm-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:980px}
+  .fm-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .fm-card{flex:1;min-width:130px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .fm-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .fm-card .val{font-size:24px;font-weight:700;margin-top:3px}
+  .fm-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .fm-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  /* calculator */
+  .fm-calc{background:#11152a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px}
+  .fm-meta{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+  .fm-fld{display:flex;flex-direction:column;gap:4px}
+  .fm-fld label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .fm-fld input,.fm-fld select{background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:7px 9px;color:#e2e8f0;font-size:13px}
+  table.fm{width:100%;border-collapse:collapse;font-size:13px}
+  table.fm th,table.fm td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.fm th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.fm td.num,table.fm th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .fm-grp td{background:#0e1322;color:#cbd5e1;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  .fm-grp .pp{font-size:10px;font-weight:600;border-radius:4px;padding:1px 6px;margin-left:8px}
+  .pp-primary{background:#0e3a2e;color:#6ee7b7}.pp-secondary{background:#3a2a0e;color:#fcd34d}
+  .fm-in{width:96px;background:#0f1117;border:1px solid #2d3250;border-radius:5px;padding:4px 6px;color:#e2e8f0;font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
+  .fm-in:focus{border-color:#34d399;outline:none}
+  .fm-exp{color:#34d399;font-weight:600}
+  .cat-name{color:#e2e8f0}.cat-d{color:#64748b;font-size:11px}
+  /* totals + verdict */
+  .fm-tot{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #2d3250}
+  .fm-tot .big{font-size:26px;font-weight:800}
+  .fm-split{font-size:12px;color:#94a3b8}
+  .fm-verdict{font-size:13px;font-weight:700;border-radius:7px;padding:5px 12px}
+  .v-material{background:#7f1d1d;color:#fecaca}.v-approaching{background:#78350f;color:#fcd34d}
+  .v-not{background:#14532d;color:#bbf7d0}.v-unassessed{background:#1e2133;color:#94a3b8}
+  .fm-save{background:#10b981;color:#04231a;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto}
+  .fm-save:hover{background:#34d399}.fm-save:disabled{opacity:.5;cursor:not-allowed}
+  .fm-stat{font-size:12px;color:#94a3b8;flex-basis:100%;margin-top:4px}
+  .fm-stat a{color:#34d399}
+  /* saved assessments */
+  table.fa{width:100%;border-collapse:collapse;font-size:13px}
+  table.fa th,table.fa td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133}
+  table.fa th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.fa td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .det{font-size:11px;font-weight:600;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .det-Material{background:#7f1d1d;color:#fecaca}.det-Approaching{background:#78350f;color:#fcd34d}
+  .det-Not.material,.det-Notmaterial{background:#14532d;color:#bbf7d0}.det-Unassessed{background:#1e2133;color:#94a3b8}
+  .muted{color:#64748b}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=RISKREGISTERENTRY">&#128202; Risk register</a>
+  <a href="/ransomware">&#128176; Ransomware $</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <span class="spacer"></span>
+  <span class="title">&#129518; FAIR-MAM Materiality</span>
+</div>
+
+<div class="fm-wrap">
+  <div>
+    <h1>FAIR-MAM &mdash; Materiality Assessment</h1>
+    <div class="fm-sub">Decompose a cyber loss event's magnitude using the FAIR Institute's
+      <b>Materiality Assessment Model</b>: estimate each of the 10 standardized cost categories as a
+      <b>PERT</b> range (minimum / most-likely / maximum), and XORCISM computes the expected single-loss
+      magnitude, the <b>primary vs secondary</b> (and first- vs third-party) split, and a
+      <b>materiality verdict</b> against your threshold. Complements the CRQ/FAIR figures on the
+      <a href="/?db=XCOMPLIANCE&amp;table=RISKREGISTERENTRY">risk register</a> (this is the detailed
+      breakdown of <i>Single Loss Expectancy</i>).</div>
+  </div>
+  <div id="fm-body"><div class="muted" style="padding:24px;text-align:center">Loading the FAIR-MAM model…</div></div>
+</div>
+
+<script src="/js/session-ui.js"></script>
+<script src="/js/fair-mam.js"></script>
+</body>
+</html>
