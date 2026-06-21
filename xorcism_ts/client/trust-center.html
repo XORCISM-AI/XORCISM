@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Trust Center</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tc-wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .tc-wrap h1{font-size:20px;margin:0 0 2px}
+  .tc-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:920px}
+  .tc-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:15px;color:#e2e8f0}
+  label{display:block;font-size:12px;color:#94a3b8;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px}
+  input,textarea,select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  textarea{min-height:70px;resize:vertical}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .chk{display:flex;align-items:center;gap:7px;font-size:13px;color:#cbd5e1;margin-top:10px}
+  .chk input{width:auto}
+  .btn-save{background:#22c55e;color:#04140a;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}.btn-save:hover{background:#4ade80}
+  .btn-2nd{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:8px;font-size:12px;padding:7px 11px;cursor:pointer}
+  .pubrow{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .pubrow code{background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:5px 9px;font-size:12px;color:#7c83fd;flex:1;overflow:hidden;text-overflow:ellipsis}
+  .kv{display:flex;gap:8px;margin-bottom:6px}.kv input{flex:1}
+  .kv .rm{background:none;border:1px solid #2d3250;border-radius:6px;color:#f87171;cursor:pointer;padding:2px 8px}
+  .stat{background:#0f1117;border:1px solid #232842;border-radius:9px;padding:10px 12px;margin-bottom:8px}
+  .stat .v{font-size:24px;font-weight:700;color:#e2e8f0}.stat .l{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .err{color:#f87171;font-size:12px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management">&#9989; Compliance</a>
+  <a href="/control-management">&#128737; Controls</a>
+  <span class="spacer"></span>
+  <span class="title">&#128737; Trust Center</span>
+</div>
+<div class="tc-wrap">
+  <h1>Trust Center</h1>
+  <div class="tc-sub">Publish a <b>Drata-style public security-posture page</b> driven by live XORCISM data —
+    NIST 800-53 control coverage, compliance frameworks, monitoring uptime and policies. Share the
+    read-only link with customers and prospects. Only <b>aggregate</b> posture is published — never asset,
+    control or finding detail.</div>
+  <div id="tc-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/trust-center.js"></script>
+</body>
+</html>

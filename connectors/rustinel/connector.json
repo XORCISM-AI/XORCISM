@@ -1,0 +1,25 @@
+{
+  "id": "rustinel",
+  "name": "Rustinel",
+  "type": "import",
+  "category": "Endpoint",
+  "description": "Open-source cross-platform endpoint detection engine (EDR). Collects native host telemetry via ETW (Windows), eBPF (Linux) and Endpoint Security (macOS), normalizes it into a shared event model, and evaluates it against Sigma rules, YARA signatures and atomic IOCs — emitting ECS-compatible NDJSON alerts for SIEM pipelines. Tool: https://github.com/Karib0u/rustinel. This connector parses Rustinel's ECS NDJSON alert log (logs/alerts.json.<date>) and maps each detection to a finding on the originating host asset.",
+  "intrusive": false,
+  "permission": "connector:rustinel",
+  "run": "run.py",
+  "mapping": "rustinel",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "file",
+      "required": true,
+      "help": "Rustinel ECS NDJSON alert log to parse (e.g. logs/alerts.json.2026-06-21). One JSON alert per line."
+    },
+    {
+      "name": "project",
+      "type": "string",
+      "required": false,
+      "help": "Optional host/asset name override. By default each alert's host.name is used as the asset, so a single file can fan out to several hosts."
+    }
+  ]
+}

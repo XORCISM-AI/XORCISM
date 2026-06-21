@@ -1,0 +1,16 @@
+{
+  "id": "grafana",
+  "name": "Grafana",
+  "type": "import",
+  "category": "Monitoring",
+  "description": "Grafana — observability & alerting. Imports Grafana datasource health + alert rules as XORCISM Asset Monitoring monitors (MONITORINGCHECK) and firing alerts as incidents (MONITORINGINCIDENT). Offline: a JSON export ({monitors,monitoring_incidents} or Grafana-native {datasources,alert_rules,alerts}). Live: set GRAFANA_URL + GRAFANA_TOKEN (service-account / API key, Bearer). Tool: https://github.com/grafana/grafana.",
+  "intrusive": false,
+  "permission": "connector:grafana",
+  "run": "run.py",
+  "mapping": "grafana",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export (normalized monitors/incidents, or Grafana datasources/alert-rules/alerts)." },
+    { "name": "base", "type": "string", "required": false, "help": "Grafana base URL (https://grafana.example.com). Overrides GRAFANA_URL. Live needs GRAFANA_TOKEN." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum monitors to import." }
+  ]
+}

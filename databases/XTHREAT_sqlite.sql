@@ -1217,6 +1217,15 @@ CREATE TABLE IF NOT EXISTS SIGMARULE (
   SigmaReference TEXT, AttackTags TEXT,
   SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT,
   CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+-- YARA detection rules (malware classification). YaraSource = the full rule text.
+CREATE TABLE IF NOT EXISTS YARARULE (
+  YaraRuleID INTEGER PRIMARY KEY,
+  YaraRuleGUID TEXT, YaraRuleName TEXT, YaraRuleDescription TEXT,
+  YaraSource TEXT, Namespace TEXT, Tags TEXT, Meta TEXT, Author TEXT,
+  YaraReference TEXT, AttackTags TEXT, StringCount INTEGER, Status TEXT,
+  CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+CREATE INDEX IF NOT EXISTS ix_yararule_ref ON YARARULE(YaraReference);
+CREATE INDEX IF NOT EXISTS ix_yararule_name ON YARARULE(YaraRuleName);
 CREATE TABLE IF NOT EXISTS HUNTATTACK (
   HuntAttackID INTEGER PRIMARY KEY, HuntID INTEGER, AttackID TEXT,
   AttackTechniqueID INTEGER, CreatedDate DATE, UNIQUE(HuntID, AttackID));

@@ -1,0 +1,18 @@
+{
+  "services": [
+    {"id": "svc-01", "name": "Customer portal", "type": "http", "url": "https://portal.example.com", "status": "UP", "uptime": 99.98, "response_time": 142, "last_checked": "2026-06-21T08:00:00Z"},
+    {"id": "svc-02", "name": "Payments API", "type": "http", "url": "https://api.pay.example.com/health", "status": "DOWN", "uptime": 97.4, "response_time": 0},
+    {"id": "svc-03", "name": "DNS resolver", "type": "dns", "host": "ns1.example.com", "status": "WARNING", "uptime": 99.1, "response_time": 320},
+    {"id": "svc-04", "name": "DB TCP", "type": "tcp", "host": "db.internal:5432", "status": "UP", "uptime": 100, "response_time": 8}
+  ],
+  "servers": [
+    {"id": "srv-01", "name": "web-prod-01", "ip": "10.0.1.10", "status": "UP", "uptime": 99.99, "cpu": 34, "ram": 61, "disk": 72}
+  ],
+  "ssl_certificates": [
+    {"id": "ssl-01", "domain": "portal.example.com", "issuer": "Let's Encrypt", "valid_till": "2026-07-05", "status": "UP"},
+    {"id": "ssl-02", "domain": "old.example.com", "issuer": "DigiCert", "valid_till": "2026-06-25", "status": "WARNING"}
+  ],
+  "incident": [
+    {"id": "inc-01", "title": "Payments API outage", "service_id": "svc-02", "status": "DOWN", "severity": "Critical", "started_at": "2026-06-21T07:42:00Z"}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "tenable-ot",
+  "name": "Tenable OT Security",
+  "type": "import",
+  "category": "OT/IoT",
+  "description": "Tenable OT Security (formerly Tenable.ot / Indegy) OT vulnerability management & asset inventory. Parses an exported assets + findings report (JSON or CSV) and maps each OT asset to an ASSET and each finding/CVE to a vulnerability on that asset. Tool: https://www.tenable.com/products/tenable-ot-security. Offline export parser (live API via TENABLE_OT_URL + access/secret keys is a future enhancement).",
+  "intrusive": false,
+  "permission": "connector:tenable-ot",
+  "run": "run.py",
+  "mapping": "tenable-ot",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "file",
+      "required": true,
+      "help": "Tenable OT export to parse: JSON ({assets:[…], findings:[…]} or a list) or a CSV of assets or of findings (auto-detected by columns)."
+    },
+    {
+      "name": "project",
+      "type": "string",
+      "required": false,
+      "help": "Optional asset-name override applied to all findings (otherwise each asset's name / IP is used)."
+    }
+  ]
+}

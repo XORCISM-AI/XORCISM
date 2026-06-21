@@ -1,0 +1,17 @@
+{
+  "id": "servicenow-grc",
+  "name": "ServiceNow GRC",
+  "type": "import",
+  "category": "GRC",
+  "description": "ServiceNow GRC / IRM — policies, controls and documents from the Now Platform. Imports GRC policy + document records into the XORCISM controlled-document register (XCOMPLIANCE.DOCUMENT) via the Table API. Offline: a JSON export. Live: set SERVICENOW_INSTANCE (e.g. acme = acme.service-now.com) + SERVICENOW_USER + SERVICENOW_PASSWORD (Basic auth). Tool: https://www.servicenow.com.",
+  "intrusive": false,
+  "permission": "connector:servicenow-grc",
+  "run": "run.py",
+  "mapping": "servicenow-grc",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of ServiceNow GRC records." },
+    { "name": "base", "type": "string", "required": false, "help": "Instance base URL (https://<inst>.service-now.com). Overrides SERVICENOW_INSTANCE. Live needs SERVICENOW_USER + SERVICENOW_PASSWORD." },
+    { "name": "tables", "type": "string", "required": false, "help": "Comma-separated GRC tables to pull (default sn_grc_policy,sn_grc_document)." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum records per table." }
+  ]
+}

@@ -1,89 +1,146 @@
-# XOR — Agent endpoint (EDR amélioré) pour XORCISM
+# XOR — Endpoint agent (enhanced EDR) for XORCISM
 
-Agent **multi-OS** (Windows / macOS / Linux) en **Python pur (stdlib uniquement)** :
-copiez `xor_agent.py` sur l'endpoint, enrôlez-le, c'est tout.
+**Cross-OS** agent (Windows / macOS / Linux) in **pure Python (stdlib only)**:
+copy `xor_agent.py` to the endpoint, enroll it, done.
 
-## Capacités
-| Fonction | Détail |
+## Capabilities
+| Function | Detail |
 |---|---|
-| **Enrôlement → ASSET** | l'endpoint s'enregistre auprès de XORCISM et devient un ASSET (hostname). |
-| **Inventaire logiciel → CPE** | Windows (registre), Linux (`dpkg`/`rpm`), macOS (`system_profiler`) → CPE liés à l'asset (`CPEFORASSET`). |
-| **Vulnérabilités → ASSETVULNERABILITY** | corrélation CPE→CVE côté serveur (base NVD) → liens asset↔CVE. |
-| **Configuration / conformité (OVAL/SCAP)** | OpenSCAP (`oscap`) si présent (Linux **et Windows** — build 1.3.x) ; **sur Windows sans oscap, évaluateur OVAL natif intégré** (registre, fichiers, famille OS, variables d'environnement, WMI) — durcissement, conformité et vulnérabilités. Sinon, contrôles intégrés (pare-feu, BitLocker, SSH…). |
-| **Antivirus** | ClamAV (`clamscan`/`clamdscan`) si installé → détections remontées. |
-| **Threat hunting** | récupère les **IOC** (threat intel) du serveur et les chasse localement (process, connexions réseau, fichiers, hashes). |
-| **Scan à la demande** | exécute les scans **« Launch a scan »** déclenchés depuis la fenêtre ASSET de XORCISM (au prochain check-in). |
+| **Enrollment → ASSET** | the endpoint registers with XORCISM and becomes an ASSET (hostname). |
+| **Software inventory → CPE** | Windows (registry), Linux (`dpkg`/`rpm`), macOS (`system_profiler`) → CPEs linked to the asset (`CPEFORASSET`). |
+| **Vulnerabilities → ASSETVULNERABILITY** | server-side CPE→CVE correlation (NVD database) → asset↔CVE links. |
+| **Configuration / compliance (OVAL/SCAP)** | OpenSCAP (`oscap`) when present (Linux **and Windows** — 1.3.x build); **on Windows without oscap, a built-in native OVAL evaluator** (registry, files, OS family, environment variables, WMI) — hardening, compliance and vulnerabilities. Otherwise, built-in checks (firewall, BitLocker, SSH…). |
+| **Antivirus** | ClamAV (`clamscan`/`clamdscan`) when installed → detections reported. |
+| **Threat hunting** | pulls the **IOCs** (threat intel) from the server and hunts them locally (processes, network connections, files, hashes). |
+| **BAS emulation + detection attribution** | executes a Threat-Informed Defense **validation plan** (`--scan emulate --scenario N`): runs the scenario's Atomic Red Team injects, then **correlates each executed inject with the host's detection telemetry** (Defender threats / Defender, Sysmon, PowerShell-ScriptBlock & Security-4688 event logs) in the post-inject window → outcome **Detected** / **Logged** / **Executed** (ran undetected — a visibility gap) / **Prevented** / **Skipped**, with the source in `DetectedBy` → `EMULATIONRUN`/`EMULATIONRESULT`. **Opt-in** (`XOR_ALLOW_EMULATION=1`) and **safety-gated**: only read-only recon commands are auto-run; writes / persistence / downloads / credential-dumping / exec-chains are reported `Skipped` for manual execution. |
+| **Advanced forensics (live DFIR triage)** | `--scan forensics` collects a **read-only live-response snapshot** of the host — running processes (path / command line / parent), network connections (with PID & state), persistence (registry autoruns / scheduled tasks / services / cron / systemd), logon sessions & users, recently-modified files in key dirs, network artifacts (ARP / DNS cache / routes), loaded drivers / kernel modules and an event-log summary (failed logons, system errors). Cross-OS, stdlib-only, bounded; collection **never modifies the host**. Conservative heuristics raise triage **flags** (a process or autorun running from a temp dir, a failed-logon spike) → `XAGENT.FORENSICTRIAGE` + a `forensic_triage` event. |
+| **Rustinel EDR bridge (kernel-level ETW/eBPF detection)** | `--scan rustinel` **tails** the alert log of [**Rustinel**](https://github.com/Karib0u/rustinel) — an open-source cross-platform EDR sensor that collects native telemetry via **ETW** (Windows), **eBPF** (Linux) and **Endpoint Security** (macOS) and matches it against **Sigma** rules, **YARA** signatures and **atomic IOCs**, writing **ECS-compatible NDJSON** alerts. The agent reads Rustinel's `logs/alerts.json.<date>` and ships each new alert to XORCISM as a `rustinel_alert` **event** (severity from the Sigma level; rule id / engine / process / host / MITRE technique in the detail). This is the **kernel-level "native ETW/eBPF core"** from the roadmap below — delivered by *integrating* Rustinel rather than reimplementing it. **Read-only** (the agent only reads alert files; it never controls the sensor) and a **per-file byte cursor** (persisted in the conf) forwards only *new* alerts across log rotations. Graceful no-op when Rustinel isn't installed. |
+| **YARA scanning (malware classification)** | `--scan yara` runs the local **YARA** engine against a path using rules from XORCISM's **YARARULE store** (served at `/api/agent/yara-rules`) or a local rules file (`XOR_YARA_RULES`), and reports each match as a `yara_match` **event**. Targets default to temp + Downloads (override with `XOR_YARA_TARGET`). Read-only, bounded; a graceful no-op when the `yara` binary or rules are absent. |
+| **On-demand scan** | runs the **"Launch a scan"** scans triggered from the XORCISM ASSET window (at the next check-in). |
 
 ## Threat intelligence (IOC)
-Les IOC servis aux agents proviennent de la CTI XORCISM et sont chargés dans
-`XAGENT.XIOC` par [`connectors/import_iocs.py`](../connectors/import_iocs.py) :
-- **STIX 2.1** (fichiers importés / reçus sur le serveur **TAXII**, dossier `stix/`),
-- **AlienVault OTX** et autres **connecteurs/feeds CTI** (`--otx-key` / `OTX_API_KEY`),
-- (extensible) objets de la base **XTHREAT**.
+The IOCs served to agents come from XORCISM's CTI and are loaded into
+`XAGENT.XIOC` by [`connectors/import_iocs.py`](../connectors/import_iocs.py):
+- **STIX 2.1** (files imported / received on the **TAXII** server, `stix/` folder),
+- **AlienVault OTX** and other **CTI connectors/feeds** (`--otx-key` / `OTX_API_KEY`),
+- (extensible) objects from the **XTHREAT** database.
 
 ```bash
-python connectors/import_iocs.py --stix-dir stix            # depuis STIX/TAXII
-python connectors/import_iocs.py --otx-key $OTX_API_KEY     # depuis AlienVault OTX
+python connectors/import_iocs.py --stix-dir stix            # from STIX/TAXII
+python connectors/import_iocs.py --otx-key $OTX_API_KEY     # from AlienVault OTX
 ```
 
-## Scan de configuration (OVAL / SCAP)
-Le scan `oval` évalue un contenu **OVAL/SCAP** et remonte des verdicts classés
+## Configuration scan (OVAL / SCAP)
+The `oval` scan evaluates **OVAL/SCAP** content and reports classified verdicts
 (*compliance* / *vulnerability* / *inventory* / *patch*) → `XOVAL.OVALRESULTS`
-(+ `ASSETVULNERABILITY`/`CPEFORASSET`), visibles sur la page **Configuration Management**.
+(+ `ASSETVULNERABILITY`/`CPEFORASSET`), surfaced on the **Configuration Management** page.
 
-Trois moteurs, choisis automatiquement :
-1. **OpenSCAP `oscap`** s'il est présent — Linux **comme Windows** (l'installeur
-   OpenSCAP 1.3.x fournit `oscap.exe` avec les sondes Windows : registre, fichiers…).
-2. **Évaluateur OVAL natif** (intégré, sans dépendance) sur **Windows sans oscap** :
-   parse les définitions OVAL et les évalue contre le système (registre via `winreg`,
-   fichiers, famille OS, variables d'environnement, WMI), avec l'algèbre de résultats OVAL.
-   Forcer ce moteur même si oscap est présent : `XOR_OVAL_NATIVE=1` (utile si la
-   couverture des sondes oscap Windows est incomplète). *Les datastreams XCCDF ne sont
-   pas encore évalués nativement — ils nécessitent oscap.*
-3. **Contrôles intégrés** portables en dernier recours (pare-feu, BitLocker/FileVault, SSH).
+Three engines, selected automatically:
+1. **OpenSCAP `oscap`** when present — Linux **and Windows alike** (the OpenSCAP 1.3.x
+   installer ships `oscap.exe` with the Windows probes: registry, files…).
+2. **Native OVAL evaluator** (built-in, no dependency) on **Windows without oscap**:
+   parses the OVAL definitions and evaluates them against the system (registry via
+   `winreg`, files, OS family, environment variables, WMI), with the OVAL result algebra.
+   Force this engine even when oscap is present: `XOR_OVAL_NATIVE=1` (useful when oscap's
+   Windows probe coverage is incomplete). *XCCDF datastreams are not yet evaluated
+   natively — they require oscap.*
+3. **Built-in checks**, portable, as a last resort (firewall, BitLocker/FileVault, SSH).
 
-Le **contenu OVAL** provient (dans l'ordre) de `XOR_OVAL_CONTENT` (fichier local) →
-du serveur XORCISM (`/api/agent/oval-content`, alimenté par
-`importers/fetch_oval_content.py`) → `XOR_OVAL_URL` → flux distro (Linux).
+The **OVAL content** comes (in order) from `XOR_OVAL_CONTENT` (local file) →
+the XORCISM server (`/api/agent/oval-content`, fed by
+`importers/fetch_oval_content.py`) → `XOR_OVAL_URL` → distro feed (Linux).
+
+An OVAL scan evaluates every class in the content by default; restrict it to a single
+class with `--oval-class` (or, from the **Configuration Management** page, the *OVAL class*
+selector — which queues the scan with that class on the chosen host):
 
 ```bash
-python xor_agent.py --scan oval                      # scan de configuration/conformité
-XOR_OVAL_NATIVE=1 python xor_agent.py --scan oval     # Windows : forcer l'évaluateur natif
+python xor_agent.py --scan oval                              # all classes in the content
+python xor_agent.py --scan oval --oval-class compliance      # hardening only
+python xor_agent.py --scan oval --oval-class vulnerability   # CVE checks only
+XOR_OVAL_NATIVE=1 python xor_agent.py --scan oval            # Windows: force the native evaluator
 XOR_OVAL_CONTENT=C:\path\win-cis.oval.xml python xor_agent.py --scan oval
 ```
 
-## Démarrage rapide (endpoint)
+## Rustinel EDR bridge (kernel-level detection)
+
+The agent's own detection is **poll-based** (it samples `tasklist`/`ps`, `netstat`, the registry…
+at scan time). [**Rustinel**](https://github.com/Karib0u/rustinel) is a continuous **kernel-level**
+sensor (ETW / eBPF / Endpoint Security) that matches live telemetry against **Sigma**, **YARA** and
+**IOC** engines and writes ECS NDJSON alerts. Running both gives XORCISM the best of each: deploy
+Rustinel as the always-on sensor, and let the XOR agent forward its detections.
+
 ```bash
-# 1) Enrôlement (le serveur peut exiger une clé : XOR_ENROLL_KEY)
+python xor_agent.py --scan rustinel        # forward new Rustinel alerts as events (also part of --scan full)
+XOR_RUSTINEL_GLOB="/var/log/rustinel/alerts.json*" python xor_agent.py --scan rustinel
+```
+
+- **Discovery** — by default the agent looks in the usual Rustinel install locations
+  (`C:\Program Files\Rustinel\logs\…`, `/var/log/rustinel/…`, `/opt/rustinel/logs/…`, …). Override
+  with **`XOR_RUSTINEL_GLOB`** (one or more glob patterns, `os.pathsep`-separated).
+- **Mapping** — each ECS alert → a `rustinel_alert` event: severity from the Sigma `rule.level`
+  (`critical`/`high`/`medium`/`low`/`info`), with `rule.id`, the matching engine (sigma/yara/ioc),
+  `process`, `host` and the MITRE `threat.technique.id` carried in the detail.
+- **Exactly-once tailing** — a per-file byte **cursor** is stored in `xor_agent.conf`
+  (`rustinel_offsets`), so each run forwards only alerts written since the last run, and a rotated/
+  truncated file restarts cleanly. The forward is **read-only** — the agent never controls Rustinel.
+- **Graceful** — if no alert file is found, the scan is a no-op (it just reports that Rustinel
+  isn't installed). `--scan full` includes this step, so a routine full scan also drains new alerts.
+
+## YARA scanning (malware classification)
+
+XORCISM is the source of YARA rules: the **YARARULE store** (`XTHREAT.YARARULE`) is populated
+by [`import_yara.py`](../xorcism_python/importers/import_yara.py) or the **yara connector**, and
+served to agents at `GET /api/agent/yara-rules`. `--scan yara` pulls those rules, runs the local
+`yara` binary against the host, and reports matches as `yara_match` events:
+
+```bash
+python xor_agent.py --scan yara                                  # rules from XORCISM, scan default paths
+XOR_YARA_RULES=/opt/rules/malware.yar python xor_agent.py --scan yara   # use a local rules file
+XOR_YARA_TARGET="/srv:/home" python xor_agent.py --scan yara            # custom scan targets
+```
+
+- **Rules** — `XOR_YARA_RULES` (a local `.yar`/`.yara` file) wins; otherwise the agent fetches the
+  YARARULE store from XORCISM and writes it to a temp file. No rules ⇒ nothing to scan.
+- **Targets** — `XOR_YARA_TARGET` (`os.pathsep`-separated) or the defaults (temp + Downloads).
+- **Requirement** — the `yara` binary on `PATH`. Not installed ⇒ graceful no-op. Read-only; the
+  scan never modifies files. **Part of `--scan full`** (no-op when `yara`/rules are absent); the
+  default targets keep it light — point `XOR_YARA_TARGET` at a broader path for a deep sweep.
+
+## Quick start (endpoint)
+```bash
+# 1) Enrollment (the server may require a key: XOR_ENROLL_KEY)
 python xor_agent.py --server https://xorcism.example:9292 --enroll [--enroll-key KEY] [--insecure]
 
 # 2) Scans
-python xor_agent.py --scan full          # inventaire + vuln + conformité + AV + hunt
-python xor_agent.py --inventory          # inventaire seul
-python xor_agent.py --once               # un check-in (exécute les scans demandés depuis l'ASSET)
+python xor_agent.py --scan full          # inventory + vuln + compliance + AV + hunt + Rustinel + YARA
+python xor_agent.py --inventory          # inventory only
+python xor_agent.py --once               # one check-in (runs the scans requested from the ASSET)
 
-# 3) Démon (check-in périodique)
+# 3) Daemon (periodic check-in)
 python xor_agent.py --run --interval 300
 ```
-Le token est stocké dans `xor_agent.conf` (à côté du script).
+The token is stored in `xor_agent.conf` (next to the script).
 
-## Côté serveur XORCISM
-- API agent (jeton) : `/api/agent/{enroll,checkin,inventory,vulnerabilities,events,match,intel}`.
-- Les remontées d'inventaire/vuln passent par le **pipeline d'import** existant
-  (`runner.py` → `import_findings`) : lancez le runner local pour ingérer
+## XORCISM server side
+- Agent API (token): `/api/agent/{enroll,checkin,inventory,vulnerabilities,events,match,intel}`.
+- Inventory/vuln reports go through the existing **import pipeline**
+  (`runner.py` → `import_findings`): run the local runner to ingest
   (`python connectors/runner.py`).
-- UI : fenêtre **ASSET → « XOR agent — launch a scan »** ; agents/événements via
+- UI: **ASSET window → "XOR agent — launch a scan"**; agents/events via
   `/api/agents`, `/api/agent-events`.
 
-## Déploiement en service
-- **Linux** : voir `install/xor-agent.service` (systemd).
-- **macOS** : voir `install/com.xorcism.xor.plist` (launchd).
-- **Windows** : Planificateur de tâches (au démarrage) ou NSSM pour un service.
-- **Binaire autonome** : `pyinstaller --onefile xor_agent.py` produit un exécutable
-  par OS (aucune dépendance Python requise sur la cible).
+## Deploying as a service
+- **Linux**: see `install/xor-agent.service` (systemd).
+- **macOS**: see `install/com.xorcism.xor.plist` (launchd).
+- **Windows**: Task Scheduler (at startup) or NSSM for a service.
+- **Standalone binary**: `pyinstaller --onefile xor_agent.py` produces a per-OS
+  executable (no Python dependency required on the target).
 
-## Périmètre & feuille de route
-Cet agent fournit une **détection basée hôte** (télémétrie + IOC) et l'intégration
-complète à XORCISM. Pour un EDR « temps réel » de niveau noyau (hooks ETW/eBPF,
-blocage de process, isolation réseau), prévoir un cœur natif (Go/Rust) — l'API
-serveur et le modèle d'événements ci-dessus sont conçus pour l'accueillir.
+## Scope & roadmap
+This agent provides **host-based detection** (telemetry + IOC) and full integration
+with XORCISM. For kernel-level "real-time" detection (ETW/eBPF hooks), the **Rustinel EDR
+bridge** above now covers it — the agent forwards Rustinel's ETW/eBPF/ESF Sigma/YARA/IOC
+alerts as XORCISM events, so you get a native kernel sensor without a custom core. Still on
+the roadmap for a self-contained native agent: **active response** (process blocking,
+network isolation, anti-tamper) — the server API and event model are designed to host it.

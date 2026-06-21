@@ -3,7 +3,7 @@
   "name": "YARA",
   "type": "import",
   "category": "Malware Analysis",
-  "description": "Pattern-matching engine to identify and classify malware. Tool: https://github.com/VirusTotal/yara. [SCAFFOLD generated from XORCISM.TOOL #120 by tool_to_connector.py — implement run() in run.py to map YARA output to the XORCISM findings model {assets, services, cpes, vulns}.]",
+  "description": "Pattern-matching engine to identify and classify malware. Tool: https://github.com/VirusTotal/yara. This connector scans a path with YARA and maps each match to a finding on the host asset; if a rules file is supplied, the rules are also imported into XTHREAT.YARARULE (the YARA rule store browsable in the explorer and served to XOR agents).",
   "intrusive": false,
   "permission": "connector:yara",
   "run": "run.py",
@@ -11,15 +11,27 @@
   "parameters": [
     {
       "name": "target",
-      "type": "string",
+      "type": "target",
       "required": false,
-      "help": "Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope."
+      "help": "Live mode: a file or directory path to scan with YARA (engagement scope enforced). Requires the yara binary on the worker PATH and a 'rules' file."
+    },
+    {
+      "name": "rules",
+      "type": "file",
+      "required": false,
+      "help": "YARA rules file (.yar/.yara) — used to scan (live mode) AND imported into the YARARULE store."
     },
     {
       "name": "file",
       "type": "file",
       "required": false,
-      "help": "Offline mode: a saved YARA output file to parse instead of running it live."
+      "help": "Offline mode: a saved YARA scan output to parse instead of running the tool (default `rule  /path` lines)."
+    },
+    {
+      "name": "host",
+      "type": "string",
+      "required": false,
+      "help": "Asset name to attach the match findings to (defaults to the worker hostname)."
     }
   ]
 }

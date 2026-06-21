@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Security Investment Advisor</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .iv-wrap{max-width:1200px;margin:0 auto;padding:18px}
+  .iv-wrap h1{font-size:20px;margin:0 0 2px}
+  .iv-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .iv-grid{display:grid;grid-template-columns:380px 1fr;gap:18px}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 10px;font-size:15px;color:#e2e8f0}
+  label{display:block;font-size:12px;color:#94a3b8;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px}
+  input,textarea,select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  textarea{min-height:60px;resize:vertical}
+  input[type=range]{padding:0}
+  .stat{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .stat .l{color:#94a3b8}.stat .v{color:#e2e8f0;font-weight:600}
+  .big{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  .bigcard{flex:1;min-width:140px;background:#0f1117;border:1px solid #232842;border-radius:10px;padding:14px}
+  .bigcard .v{font-size:26px;font-weight:800}.bigcard .l{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .bar{height:10px;background:#0f1117;border-radius:6px;overflow:hidden;display:flex;margin:4px 0 2px}
+  .arrow{font-size:13px;color:#cbd5e1;margin:4px 0}.arrow b{color:#34d399}
+  .warn{background:#78350f22;border:1px solid #78350f;color:#fcd34d;border-radius:8px;padding:8px 11px;font-size:12.5px;margin-top:8px}
+  .rec{white-space:pre-wrap;font-size:13.5px;line-height:1.6;color:#e2e8f0;background:#0f1117;border:1px solid #232842;border-radius:9px;padding:14px}
+  .btn-go{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}.btn-go:hover{background:#9aa0ff}
+  .btn-ai{background:#22c55e;color:#04140a;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}.btn-ai:hover{background:#4ade80}
+  .muted{color:#64748b}.chip{font-size:11px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:2px 8px;color:#cbd5e1}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/exposure">&#127919; Exposure</a>
+  <a href="/risk-register">&#128202; Risk register</a>
+  <span class="spacer"></span>
+  <span class="title">&#128176; Investment Advisor</span>
+</div>
+<div class="iv-wrap">
+  <h1>Agentic Security Investment Advisor</h1>
+  <div class="iv-sub">Stop justifying spend with industry averages. <b>Simulate a proposed investment against your
+    own live posture</b> — see the measurable Enterprise-Risk reduction, the annualized loss avoided (FAIR/CRQ),
+    redundancy with controls you already have, and a board-ready recommendation from your <b>local AI</b>.
+    Ask "what if we deploy EDR?" and get an evidence-based answer before you commit.</div>
+  <div id="iv-body"><div class="muted" style="padding:24px;text-align:center">Loading your posture…</div></div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/investment-advisor.js"></script>
+</body>
+</html>

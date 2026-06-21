@@ -299,6 +299,25 @@ export function createSchedule(opts: {
   return Number(info.lastInsertRowid);
 }
 
+/**
+ * Seed (once, idempotently) a recurring schedule that runs the NVD CVE importer every hour.
+ * It is handled specially by the scheduler (which spawns the Python importer with --recent-only
+ * — an incremental NVD pull). Visible/pausable on the Connectors page like any schedule.
+ * Set XOR_CVE_IMPORT=0 to seed it disabled. Returns the ScheduleID (existing or new).
+ */
+export function ensureCveSchedule(): number {
+  const db = getJobDb();
+  const existing = db.prepare("SELECT ScheduleID FROM XSCHEDULE WHERE connector = 'import-nvd-cve' LIMIT 1").get() as { ScheduleID: number } | undefined;
+  if (existing) return existing.ScheduleID;
+  const enabled = process.env.XOR_CVE_IMPORT === "0" ? 0 : 1;
+  const info = db.prepare(
+    `INSERT INTO XSCHEDULE (connector, params, target, engagement_id, worker, cron, enabled, created_at, created_by)
+     VALUES ('import-nvd-cve', '{"recentOnly":true}', NULL, NULL, NULL, '0 * * * *', ?, ?, NULL)`
+  ).run(enabled, nowSql());
+  console.log(`[scheduler] seeded hourly NVD CVE import schedule #${info.lastInsertRowid} (cron '0 * * * *', enabled=${enabled})`);
+  return Number(info.lastInsertRowid);
+}
+
 export function listSchedules(userId?: number): Schedule[] {
   if (userId != null) {
     return getJobDb()

@@ -36,6 +36,24 @@
   .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}.sev-Info{color:#64748b}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
   .legend{font-size:11px;color:#64748b;margin-top:12px}
+  /* New-audit modal */
+  .cm-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .cm-modal-bg.open{display:flex}
+  .cm-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:22px 24px}
+  .cm-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .cm-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .cm-modal .fld{margin-bottom:13px}
+  .cm-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .cm-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .cm-modal label .req{color:#f87171}
+  .cm-modal input,.cm-modal select,.cm-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .cm-modal input:focus,.cm-modal select:focus,.cm-modal textarea:focus{outline:none;border-color:#7c83fd}
+  .cm-modal textarea{resize:vertical;min-height:60px}
+  .cm-modal .hint{font-size:11px;color:#64748b;margin-top:4px}
+  .cm-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .cm-err{color:#f87171;font-size:12px;min-height:16px}
+  .btn-newaudit{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}
+  .btn-newaudit:hover{background:#9aa0ff}
 </style>
 </head>
 <body>
@@ -50,8 +68,11 @@
 </div>
 
 <div class="cp-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Compliance &amp; GRC</h1>
+    <button class="btn-newaudit" id="cm-new">+ New audit</button>
+  </div>
   <div>
-    <h1>Compliance &amp; GRC</h1>
     <div class="cp-sub">One governance view over the audit programme — audits, findings and policy lifecycle.
       Each audit carries its <b>findings posture</b> and a 0-100 score; the worklist surfaces the gaps that
       matter: <b>high/critical open findings</b>, <b>overdue remediation</b>, <b>unassigned</b> findings or
@@ -63,6 +84,77 @@
   <div id="cp-body"><div class="muted" style="padding:24px;text-align:center">Building the compliance posture…</div></div>
 </div>
 
+<!-- Guided "new audit" modal -->
+<div class="cm-modal-bg" id="cm-modal">
+  <div class="cm-modal">
+    <h3>New audit</h3>
+    <p class="lead">Create an audit / GRC engagement with a guided form. The type drives how it's used elsewhere (compliance audit, pentest, tabletop exercise…); add findings afterward.</p>
+    <div class="fld">
+      <label>Name <span class="req">*</span></label>
+      <input id="cm-f-name" type="text" placeholder="e.g. 2026 ISO 27001 surveillance audit" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Type</label>
+        <select id="cm-f-type">
+          <option value="Compliance">Compliance audit</option>
+          <option value="Internal">Internal audit</option>
+          <option value="External">External audit</option>
+          <option value="Certification">Certification</option>
+          <option value="Vendor assessment">Vendor assessment (TPRM)</option>
+          <option value="Pentest">Pentest</option>
+          <option value="Tabletop">Tabletop exercise</option>
+          <option value="Gap assessment">Gap assessment</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Framework / category</label>
+        <input id="cm-f-category" list="cm-frameworks" placeholder="e.g. ISO 27001" maxlength="120" autocomplete="off">
+        <datalist id="cm-frameworks">
+          <option>ISO 27001</option><option>ISO 42001</option><option>SOC 2</option><option>NIST CSF</option>
+          <option>NIST 800-53</option><option>CIS Controls</option><option>PCI DSS</option><option>HIPAA</option>
+          <option>GDPR</option><option>NIS2</option><option>DORA</option><option>CRA</option>
+        </datalist>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Status</label>
+        <select id="cm-f-status">
+          <option value="Planned">Planned</option>
+          <option value="In progress">In progress</option>
+          <option value="Fieldwork">Fieldwork</option>
+          <option value="In review">In review</option>
+          <option value="Completed">Completed</option>
+          <option value="Closed">Closed</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Auditor (optional)</label>
+        <input id="cm-f-auditor" type="text" placeholder="Firm or person" maxlength="200" autocomplete="off">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Start date</label><input id="cm-f-date" type="date"></div>
+      <div class="fld"><label>Closure date (optional)</label><input id="cm-f-closure" type="date"></div>
+    </div>
+    <div class="fld">
+      <label>Scope (optional)</label>
+      <textarea id="cm-f-scope" placeholder="Systems, locations, controls, period in scope…" maxlength="2000"></textarea>
+    </div>
+    <div class="fld">
+      <label>Description (optional)</label>
+      <textarea id="cm-f-desc" maxlength="4000"></textarea>
+    </div>
+    <div class="cm-modal-foot">
+      <span class="cm-err" id="cm-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="cm-cancel">Cancel</button>
+      <button class="btn-newaudit" id="cm-create">Create audit</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
 <script src="/js/session-ui.js"></script>
 <script src="/js/compliance-management.js"></script>
 </body>

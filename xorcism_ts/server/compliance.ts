@@ -7,6 +7,7 @@
  * policy lifecycle (XORCISM.POLICY past its review date). Audits get a 0-100 posture
  * score from their open findings. Read-only; CRUD stays in the schema-driven explorer.
  */
+import { randomUUID } from "crypto";
 import { getDb } from "./db";
 
 export interface AuditRow {
@@ -176,4 +177,39 @@ export function complianceInventory(tenant: number | null): ComplianceInventory 
       bySeverity, byStatus, byType,
     },
   };
+}
+
+/**
+ * Create an AUDIT from a guided form — the friendly path that replaces the raw explorer insert.
+ * AUDIT is the shared GRC engagement record (compliance audit, internal/external, pentest,
+ * vendor assessment, tabletop exercise, certification…); Type/Category drive how it's used by the
+ * other modules. Column-aware INSERT + GUID + tenant. AuditID is a real INTEGER PRIMARY KEY.
+ */
+export function createAudit(
+  p: { name: string; type?: string; category?: string; status?: string; auditor?: string;
+       scope?: string; description?: string; date?: string; closureDate?: string },
+  tenant: number | null,
+): { id: number } {
+  const db = getDb("XCOMPLIANCE");
+  const ac = cols("XCOMPLIANCE", "AUDIT");
+  if (!ac.size) throw new Error("AUDIT table not available");
+  const now = new Date().toISOString();
+  const candidate: Record<string, unknown> = {
+    AuditGUID: randomUUID(),
+    AuditName: (p.name || "Untitled audit").slice(0, 300),
+    AuditType: p.type ? String(p.type).slice(0, 80) : null,
+    AuditCategory: p.category ? String(p.category).slice(0, 120) : null,
+    AuditStatus: (p.status || "Planned").slice(0, 60),
+    AuditorName: p.auditor ? String(p.auditor).slice(0, 200) : null,
+    AuditScope: p.scope ? String(p.scope).slice(0, 2000) : null,
+    AuditDescription: p.description ? String(p.description).slice(0, 4000) : null,
+    AuditDate: p.date || now.slice(0, 10),
+    AuditClosureDate: p.closureDate || null,
+    CreatedDate: now,
+    TenantID: tenant,
+  };
+  const keys = Object.keys(candidate).filter((k) => ac.has(k));
+  const sql = `INSERT INTO AUDIT (${keys.map((k) => `"${k}"`).join(", ")}) VALUES (${keys.map(() => "?").join(", ")})`;
+  const r = db.prepare(sql).run(...keys.map((k) => candidate[k]));
+  return { id: Number(r.lastInsertRowid) };
 }

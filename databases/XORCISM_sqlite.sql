@@ -2483,7 +2483,7 @@ CREATE TABLE "aspnet_WebEvent_Events"(
 
 ;
 CREATE TABLE "ASSET"(
-	"AssetID" INTEGER NOT NULL,
+	"AssetID" INTEGER PRIMARY KEY,
 	"AssetGUID" TEXT NULL,
 	"AssetName" TEXT NULL,
 	"AssetDescription" TEXT NULL,
@@ -26632,5 +26632,68 @@ CREATE TABLE IF NOT EXISTS "IDENTITYPERSON" (
   "TenantID" INTEGER);
 CREATE INDEX IF NOT EXISTS ix_identityperson_identity ON "IDENTITYPERSON"("IdentityID");
 CREATE INDEX IF NOT EXISTS ix_identityperson_person ON "IDENTITYPERSON"("PersonID");
+
+-- NIST SP 800-53 control management (ensureControlImplementationTables, control53.ts).
+-- Baseline membership + rich text on the (shared) 800-53 catalogue rows — global NIST facts, filled
+-- by import_nist80053_baselines.py (baselines) and import_nist80053_details.py (statement/guidance…).
+ALTER TABLE "CONTROL" ADD COLUMN "BaselineLow" INTEGER;
+ALTER TABLE "CONTROL" ADD COLUMN "BaselineModerate" INTEGER;
+ALTER TABLE "CONTROL" ADD COLUMN "BaselineHigh" INTEGER;
+ALTER TABLE "CONTROL" ADD COLUMN "BaselinePrivacy" INTEGER;
+ALTER TABLE "CONTROL" ADD COLUMN "Statement" TEXT;
+ALTER TABLE "CONTROL" ADD COLUMN "Guidance" TEXT;
+ALTER TABLE "CONTROL" ADD COLUMN "Params" TEXT;
+ALTER TABLE "CONTROL" ADD COLUMN "RelatedControls" TEXT;
+-- Per-tenant implementation status + SP 800-53A assessment of an 800-53 control (one per control per tenant).
+CREATE TABLE IF NOT EXISTS "CONTROLIMPLEMENTATION" (
+  "ControlImplementationID" INTEGER PRIMARY KEY,
+  "ControlImplementationGUID" TEXT,
+  "ControlID" INTEGER,
+  "Status" TEXT,
+  "Responsibility" TEXT,
+  "Narrative" TEXT,
+  "OwnerPersonID" INTEGER,
+  "TargetDate" DATE,
+  "LastReviewedDate" TEXT,
+  "AssessmentResult" TEXT,
+  "AssessedDate" TEXT,
+  "AssessorPersonID" INTEGER,
+  "AssessmentRemarks" TEXT,
+  "CreatedDate" TEXT,
+  "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_ctrlimpl_control ON "CONTROLIMPLEMENTATION"("ControlID");
+CREATE INDEX IF NOT EXISTS ix_ctrlimpl_tenant ON "CONTROLIMPLEMENTATION"("TenantID");
+-- Crosswalk: an 800-53 control mapped to another framework object (ATT&CK technique, D3FEND, CSF…).
+-- Global reference facts, filled by import_attack_80053_mappings.py.
+CREATE TABLE IF NOT EXISTS "CONTROLMAPPING" (
+  "MappingID" INTEGER PRIMARY KEY,
+  "MappingGUID" TEXT,
+  "ControlID" INTEGER,
+  "Framework" TEXT,
+  "ExternalID" TEXT,
+  "ExternalName" TEXT,
+  "Relationship" TEXT,
+  "Source" TEXT,
+  "CreatedDate" TEXT);
+CREATE INDEX IF NOT EXISTS ix_ctrlmap_control ON "CONTROLMAPPING"("ControlID");
+CREATE INDEX IF NOT EXISTS ix_ctrlmap_fw ON "CONTROLMAPPING"("Framework");
+-- Plan of Action & Milestones — a control deficiency tracked to closure (per tenant).
+CREATE TABLE IF NOT EXISTS "CONTROLPOAM" (
+  "PoamID" INTEGER PRIMARY KEY,
+  "PoamGUID" TEXT,
+  "ControlID" INTEGER,
+  "Title" TEXT,
+  "WeaknessDescription" TEXT,
+  "Severity" TEXT,
+  "Status" TEXT,
+  "RemediationPlan" TEXT,
+  "Milestones" TEXT,
+  "OwnerPersonID" INTEGER,
+  "ScheduledCompletionDate" DATE,
+  "ActualCompletionDate" DATE,
+  "CreatedDate" TEXT,
+  "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_ctrlpoam_control ON "CONTROLPOAM"("ControlID");
+CREATE INDEX IF NOT EXISTS ix_ctrlpoam_tenant ON "CONTROLPOAM"("TenantID");
 
 COMMIT;

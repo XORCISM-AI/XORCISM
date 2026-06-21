@@ -1,0 +1,15 @@
+{
+  "id": "upwind",
+  "name": "Upwind",
+  "type": "import",
+  "category": "Cloud Security",
+  "description": "Imports cloud-security findings from Upwind (https://www.upwind.io), a runtime-powered CNAPP (cloud-native application protection: vulnerabilities, misconfigurations, runtime threats, identity & posture). Each affected cloud resource / host / image becomes an ASSET and every finding a VULNERABILITY / ASSETVULNERABILITY (ref = CVE when present, else UPWIND-<hash>; severity from the finding's risk level). Offline mode: export findings to JSON and import via `file` (accepts a findings array or a {findings|vulnerabilities|issues|results|data:[...]} object). Live mode: set env UPWIND_API_URL + UPWIND_CLIENT_ID + UPWIND_CLIENT_SECRET (OAuth2 client-credentials, best-effort) to pull findings from the API. No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:upwind",
+  "run": "run.py",
+  "mapping": "upwind",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to an Upwind findings export (JSON) to import." },
+    { "name": "project", "type": "string", "required": false, "help": "Default asset name for findings whose record carries no resource/host/image." }
+  ]
+}

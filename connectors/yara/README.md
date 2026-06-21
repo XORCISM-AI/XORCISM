@@ -2,7 +2,7 @@
 
 `yara` · **import** connector · category **Malware Analysis**
 
-Pattern-matching engine to identify and classify malware. Tool: https://github.com/VirusTotal/yara. [SCAFFOLD generated from XORCISM.TOOL #120 by tool_to_connector.py — implement run() in run.py to map YARA output to the XORCISM findings model {assets, services, cpes, vulns}.]
+Pattern-matching engine to identify and classify malware. Tool: https://github.com/VirusTotal/yara. This connector scans a path with YARA and maps each match to a finding on the host asset; if a rules file is supplied, the rules are also imported into XTHREAT.YARARULE (the YARA rule store browsable in the explorer and served to XOR agents).
 
 **Upstream:** https://github.com/VirusTotal/yara
 
@@ -10,8 +10,10 @@ Pattern-matching engine to identify and classify malware. Tool: https://github.c
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| `target` | string | no | — | Host, URL or path the tool acts on. When implementing, consider type 'target' or 'url' so the runner enforces the engagement scope. |
-| `file` | file | no | — | Offline mode: a saved YARA output file to parse instead of running it live. |
+| `target` | target | no | — | Live mode: a file or directory path to scan with YARA (engagement scope enforced). Requires the yara binary on the worker PATH and a 'rules' file. |
+| `rules` | file | no | — | YARA rules file (.yar/.yara) — used to scan (live mode) AND imported into the YARARULE store. |
+| `file` | file | no | — | Offline mode: a saved YARA scan output to parse instead of running the tool (default `rule /path` lines). |
+| `host` | string | no | — | Asset name to attach the match findings to (defaults to the worker hostname). |
 
 ## How it works
 
@@ -20,6 +22,12 @@ This is an **import** connector. `run.py` exposes `run(params, workdir)` and ret
 ## Running it
 
 - **From XORCISM** — open **Connectors**, choose *YARA*, fill in the parameters and run it (admin only; this creates a job consumed by the Python worker `connectors/runner.py`). Required permission: `connector:yara`.
+- **Self-test** — parse **and import** the bundled `sample.txt` (no live tool):
+
+  ```bash
+  python connectors/runner.py --selftest connectors/yara/sample.txt --connector yara
+  ```
+  > Note: `--selftest` writes to the database. Use a throwaway `XORCISM_DB_DIR` to avoid touching live data.
 
 ---
 <sub>Generated from [`connector.json`](connector.json) by `connectors/gen_readmes.py`. Edit the manifest (not this file), then regenerate.</sub>

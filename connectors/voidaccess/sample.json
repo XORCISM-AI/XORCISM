@@ -1,0 +1,34 @@
+{
+  "query": "acme corp data breach",
+  "findings": [
+    {
+      "id": "va-0001",
+      "title": "Alleged Acme Corp database for sale on a Tor forum",
+      "content": "A threat actor advertises a 2.3M-record database allegedly exfiltrated from Acme Corp, referencing exploitation of CVE-2024-3400. Sample rows posted.",
+      "onion": "http://exampleforum3xyz.onion/thread/8821",
+      "source": "DarkForum (Tor)",
+      "found_at": "2026-06-19T11:20:00Z",
+      "entities": {
+        "cve": ["CVE-2024-3400"],
+        "threat_actors": ["FIN7"],
+        "domains": ["acme-corp.com", "acme-login.com"],
+        "ips": ["203.0.113.44"],
+        "emails": ["a@acme-corp.com", "b@acme-corp.com", "c@acme-corp.com"],
+        "wallets": ["bc1qexamplewallet000"],
+        "hashes": ["44d88612fea8a8f36de82e1278abb02f"]
+      }
+    },
+    {
+      "id": "va-0002",
+      "title": "Ransomware leak-site post mentions manufacturing victim",
+      "content": "A LockBit-style leak site lists a new victim and threatens publication; post references T1486 (Data Encrypted for Impact). APT29 tooling reuse suspected.",
+      "url": "https://example-leaksite.onion/victims/42",
+      "source": "Leak site",
+      "found_at": "2026-06-18T08:00:00Z",
+      "entities": {
+        "threat_actors": ["APT29"],
+        "domains": ["victim-manufacturing.com"]
+      }
+    }
+  ]
+}

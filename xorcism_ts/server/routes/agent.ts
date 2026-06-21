@@ -144,6 +144,22 @@ agentTokenRouter.get("/agent/intel", tokenAuth, (req: AReq, res: Response) => {
   res.json({ iocs: listIocs() });
 });
 
+// YARA rules served to agents (the XTHREAT.YARARULE store). The agent writes them to a
+// temp .yar file and scans with the local `yara` binary, posting matches back as events.
+agentTokenRouter.get("/agent/yara-rules", tokenAuth, (req: AReq, res: Response) => {
+  touchAgent(req.agent!.name);
+  let rules: { name: string; source: string }[] = [];
+  try {
+    const db = getDb("XTHREAT");
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='YARARULE'").get()) {
+      rules = db.prepare(
+        "SELECT YaraRuleName AS name, YaraSource AS source FROM YARARULE WHERE YaraSource IS NOT NULL AND TRIM(YaraSource) <> '' LIMIT 5000"
+      ).all() as { name: string; source: string }[];
+    }
+  } catch { /* YARARULE absent on this deployment */ }
+  res.json({ count: rules.length, rules });
+});
+
 // BAS emulation: the agent fetches a scenario's atomic-test injects to execute (safety is
 // enforced agent-side: execution is opt-in and limited to read-only recon), …
 agentTokenRouter.get("/agent/emulation", tokenAuth, (req: AReq, res: Response) => {
@@ -225,7 +241,7 @@ agentAdminRouter.post("/agent-bulk-scan", (req: Request, res: Response) => {
     ? assetIds.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0).slice(0, 1000)
     : [];
   if (!ids.length) return void res.status(400).json({ error: "Aucun actif sélectionné" });
-  const k = ["inventory", "vuln", "oval", "av", "hunt", "full"].includes(String(kind)) ? String(kind) : "full";
+  const k = ["inventory", "vuln", "oval", "av", "hunt", "rustinel", "yara", "full"].includes(String(kind)) ? String(kind) : "full";
 
   const db = getDb("XORCISM");
   const ph = ids.map(() => "?").join(",");
@@ -267,7 +283,7 @@ agentAdminRouter.post("/agent-bulk-scan", (req: Request, res: Response) => {
 // single OVAL class (compliance / vulnerability / inventory / patch).
 agentAdminRouter.post("/agent-scan", (req: Request, res: Response) => {
   const { agent, kind, ovalClass, scenarioId } = req.body as { agent?: string; kind?: string; ovalClass?: string; scenarioId?: unknown };
-  const valid = ["inventory", "vuln", "oval", "av", "hunt", "full", "emulate", "forensics"];
+  const valid = ["inventory", "vuln", "oval", "av", "hunt", "full", "emulate", "forensics", "rustinel", "yara"];
   if (!agent) return void res.status(400).json({ error: "agent requis" });
   if (!valid.includes(String(kind))) return void res.status(400).json({ error: "type de scan invalide" });
   // Checks that the agent exists

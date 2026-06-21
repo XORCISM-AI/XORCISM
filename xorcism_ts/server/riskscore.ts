@@ -58,6 +58,7 @@ export interface RiskComponents {
   vulnerabilities: number; // +5/vuln + KEV/Exploited/EasilyExploitable/TotalControl
   assetFactors: number;    // criticality × exposure + encryption + financial value
   hardening: number;       // −10 if hardened (ASSETOVALDEFINITION)
+  patch: number;           // +15/overdue patch (ASSETVULNERABILITY past its remediation TargetDate)
   threats: number;
   findings: number;
   incidents: number;
@@ -81,7 +82,7 @@ export class AssetRiskScoreCalculator {
       .get(assetId) as Record<string, unknown> | undefined;
 
     const c: RiskComponents = {
-      vulnerabilities: 0, assetFactors: 0, hardening: 0,
+      vulnerabilities: 0, assetFactors: 0, hardening: 0, patch: 0,
       threats: 0, findings: 0, incidents: 0, training: 0, total: 0,
     };
     if (!asset) return c;
@@ -124,6 +125,22 @@ export class AssetRiskScoreCalculator {
       const fv = num(asset.FinancialValue);
       if (asset.FinancialValue != null && fv !== 0) c.assetFactors += 0.01 * fv;
     }
+
+    // — Patch posture: +15 per unpatched ASSETVULNERABILITY past its remediation TargetDate
+    //   (the Patch Management SLA is breached). Column-aware: only if PatchStatus/TargetDate exist. —
+    try {
+      const avc = new Set((xo.prepare(`PRAGMA table_info("ASSETVULNERABILITY")`).all() as { name: string }[]).map((x) => x.name));
+      if (avc.has("PatchStatus") && avc.has("TargetDate")) {
+        // 'Unpatched' contains the substring 'patched' → match exact terminal states, don't LIKE '%patched%'.
+        const overdue = (xo.prepare(
+          'SELECT COUNT(*) n FROM "ASSETVULNERABILITY" WHERE AssetID = ? ' +
+          "AND COALESCE(CAST(AssetVulnerabilityStatusID AS INTEGER),0) = 0 " +
+          "AND LOWER(COALESCE(PatchStatus,'')) NOT IN ('patched','applied','installed','fixed','remediated','resolved','done') " +
+          "AND TargetDate IS NOT NULL AND TRIM(TargetDate) <> '' AND substr(TargetDate,1,10) < ?"
+        ).get(assetId, d) as { n: number }).n;
+        c.patch += num(overdue) * 15;
+      }
+    } catch { /* patch columns absent */ }
 
     // — Hardening: −10 if ≥ 1 OVAL definition applied/patched/hardened/compliant —
     const hardened = xo
@@ -181,7 +198,7 @@ export class AssetRiskScoreCalculator {
     }
 
     const raw =
-      c.vulnerabilities + c.assetFactors + c.hardening +
+      c.vulnerabilities + c.assetFactors + c.hardening + c.patch +
       c.threats + c.findings + c.incidents + c.training;
     // Business value (1–5) amplifies the threat-driven score as an impact factor
     // (risk = threat × impact). Unset/0 → ×1 (unchanged); BV1→×1.0 … BV5→×2.0.
@@ -268,13 +285,13 @@ const SEV_WEIGHT = (s: string): number => {
 
 export interface EnterpriseRiskBreakdown {
   total: number;
-  assets: number; riskRegister: number; incidents: number; compliance: number; credits: number;
+  assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number;
   drivers: { key: string; label: string; value: number }[];   // signed contributors (for charts)
 }
 
 /** Full enterprise-risk breakdown for a tenant (the score + its signed contributors). */
 export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRiskBreakdown {
-  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, credits: 0, drivers: [] };
+  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, drivers: [] };
   if (tenantId == null) return empty;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -346,6 +363,22 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
     }
   } catch { /* no findings */ }
 
+  // — PATCH: overdue patches across the tenant's assets (Patch Management SLA breaches) —
+  let patch = 0;
+  try {
+    const avc = new Set((xo.prepare(`PRAGMA table_info("ASSETVULNERABILITY")`).all() as { name: string }[]).map((c) => c.name));
+    const ac = new Set((xo.prepare(`PRAGMA table_info("ASSET")`).all() as { name: string }[]).map((c) => c.name));
+    if (avc.has("PatchStatus") && avc.has("TargetDate") && ac.has("TenantID")) {
+      const n = num((xo.prepare(
+        'SELECT COUNT(*) n FROM "ASSETVULNERABILITY" av JOIN "ASSET" a ON a.AssetID = av.AssetID ' +
+        "WHERE a.TenantID = ? AND COALESCE(CAST(av.AssetVulnerabilityStatusID AS INTEGER),0) = 0 " +
+        "AND LOWER(COALESCE(av.PatchStatus,'')) NOT IN ('patched','applied','installed','fixed','remediated','resolved','done') " +
+        "AND av.TargetDate IS NOT NULL AND TRIM(av.TargetDate) <> '' AND substr(av.TargetDate,1,10) < ?"
+      ).get(tenantId, today) as { n: number }).n);
+      patch = Math.min(80, n * 4);
+    }
+  } catch { /* no patch columns */ }
+
   // — CREDITS (negative): finished audits, trainings, audit-completion rate —
   let credits = 0;
   try {
@@ -359,14 +392,15 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
     credits += num(tr.n) * -0.5;
   } catch { /* no trainings */ }
 
-  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + credits));
+  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits));
   return {
-    total, assets: Math.round(assets), riskRegister, incidents, compliance, credits: Math.round(credits),
+    total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits),
     drivers: [
       { key: "assets", label: "Asset hygiene", value: Math.round(assets) },
       { key: "riskRegister", label: "Risk register", value: riskRegister },
       { key: "incidents", label: "Open incidents", value: incidents },
       { key: "compliance", label: "Compliance debt", value: compliance },
+      { key: "patch", label: "Overdue patches", value: patch },
       { key: "credits", label: "Assurance credits", value: Math.round(credits) },
     ].filter((d) => d.value !== 0),
   };

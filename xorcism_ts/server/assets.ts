@@ -9,8 +9,10 @@
  * carrying KEV/critical vulnerabilities, missing controls/BIA, PII at risk, and stale or
  * end-of-life assets — each with a 0-100 risk score.
  *
- * Read-only; ASSET CRUD stays in the schema-driven explorer.
+ * Read-only inventory; a guided createAsset() backs the "New asset" modal (the friendly
+ * path replacing the raw explorer insert). Full ASSET CRUD stays in the schema-driven explorer.
  */
+import { randomUUID } from "crypto";
 import { getDb } from "./db";
 
 export interface AssetRow {
@@ -67,7 +69,7 @@ function cols(dbName: string, table: string): Set<string> {
   try { return new Set((getDb(dbName).prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)); }
   catch { return new Set(); }
 }
-function truthy(v: unknown): boolean { return v === 1 || v === "1" || v === true || String(v ?? "").toLowerCase() === "true"; }
+function truthy(v: unknown): boolean { return v === 1 || v === "1" || v === true || Number(v) === 1 || String(v ?? "").toLowerCase() === "true"; }
 function num(v: unknown): number | null { const n = Number(v); return Number.isFinite(n) && v !== null && v !== "" ? n : null; }
 const d10 = (v: unknown): string | null => (v ? String(v).slice(0, 10) : null);
 function daysSince(date: string | null): number | null {
@@ -209,4 +211,58 @@ export function assetInventory(tenant: number | null): AssetInventory {
       byCriticality, byEnvironment,
     },
   };
+}
+
+/**
+ * Create an ASSET from a guided form — the friendly path that replaces dumping the user into the
+ * raw explorer insert (mirrors the Risk Register / Compliance guided creates). Column-aware INSERT
+ * (only writes columns the table actually has) + GUID + tenant. AssetID is a real INTEGER PRIMARY
+ * KEY (lastInsertRowid works). The governance worklist (assetInventory) surfaces the new asset
+ * immediately and flags it (e.g. owner-less, Internet-facing crown jewel) so it lands on the radar.
+ */
+export function createAsset(
+  p: { name: string; description?: string; criticality?: string; os?: string; hostname?: string;
+       ip?: string; environment?: string; publicFacing?: boolean; businessValue?: string;
+       financialValue?: number | null; currency?: string; hostPii?: boolean;
+       ownerPersonId?: number | null; notes?: string },
+  tenant: number | null,
+): { id: number } {
+  const db = getDb("XORCISM");
+  const ac = cols("XORCISM", "ASSET");
+  if (!ac.size) throw new Error("ASSET table not available");
+  const now = new Date().toISOString();
+  const env = (p.environment || "").toLowerCase();
+  // Legacy quirk: ASSET.AssetID is INTEGER NOT NULL but NOT a PRIMARY KEY, so SQLite won't
+  // auto-assign it (same as CPE/CPEFORASSET/COMPONENT) → allocate MAX+1 explicitly.
+  const nextId = (db.prepare("SELECT COALESCE(MAX(AssetID),0)+1 AS n FROM ASSET").get() as { n: number }).n;
+  const candidate: Record<string, unknown> = {
+    AssetID: nextId,
+    AssetGUID: randomUUID(),
+    AssetName: (p.name || "Untitled asset").slice(0, 300),
+    AssetDescription: p.description ? String(p.description).slice(0, 4000) : null,
+    AssetCriticalityLevel: p.criticality ? String(p.criticality).slice(0, 60) : null,
+    OSName: p.os ? String(p.os).slice(0, 200) : null,
+    hostname: p.hostname ? String(p.hostname).slice(0, 255) : null,
+    ipaddressIPv4: p.ip ? String(p.ip).slice(0, 45) : null,
+    // environment is modelled by flags on ASSET (cloud / virtual / managedbythirdparty)
+    cloud: env === "cloud" ? 1 : 0,
+    virtual: env === "virtual" ? 1 : 0,
+    managedbythirdparty: env === "third-party" || env === "thirdparty" ? 1 : 0,
+    PublicFacing: p.publicFacing ? 1 : 0,
+    BusinessValue: p.businessValue ? String(p.businessValue).slice(0, 60) : null,
+    FinancialValue: p.financialValue ?? null,
+    Currency: p.currency ? String(p.currency).slice(0, 10) : null,
+    HostPII: p.hostPii ? 1 : 0,
+    PersonID: p.ownerPersonId ?? null,
+    notes: p.notes ? String(p.notes).slice(0, 4000) : null,
+    Enabled: 1,
+    CreatedDate: now,
+    ValidFromDate: now,
+    LastCheckedDate: now,
+    TenantID: tenant,
+  };
+  const keys = Object.keys(candidate).filter((k) => ac.has(k));
+  const sql = `INSERT INTO ASSET (${keys.map((k) => `"${k}"`).join(", ")}) VALUES (${keys.map(() => "?").join(", ")})`;
+  const r = db.prepare(sql).run(...keys.map((k) => candidate[k]));
+  return { id: Number(r.lastInsertRowid) };
 }

@@ -1,0 +1,37 @@
+{
+  "id": "entra-id",
+  "name": "Microsoft Entra ID",
+  "type": "import",
+  "category": "Cloud Security",
+  "description": "Microsoft 365 / Entra ID (Azure AD) identity & device sync via the Microsoft Graph API. Collects and synchronizes users (human identities), service principals & managed identities (non-human identities / NHI) and registered devices (assets) into XORCISM (IDENTITY + ASSET). App-only auth (OAuth2 client credentials) — secrets from the worker environment: ENTRA_TENANT_ID, ENTRA_CLIENT_ID, ENTRA_CLIENT_SECRET. Requires the application permissions User.Read.All, Application.Read.All and Device.Read.All. Microsoft Graph: https://learn.microsoft.com/graph/overview.",
+  "intrusive": false,
+  "permission": "connector:entra-id",
+  "run": "run.py",
+  "mapping": "entra-id",
+  "parameters": [
+    {
+      "name": "tenant",
+      "type": "string",
+      "required": false,
+      "help": "Entra tenant id (GUID) or primary domain. Overrides ENTRA_TENANT_ID."
+    },
+    {
+      "name": "include",
+      "type": "string",
+      "required": false,
+      "help": "Comma-separated object types to sync: users, servicePrincipals, devices (default: all three)."
+    },
+    {
+      "name": "max_items",
+      "type": "number",
+      "required": false,
+      "help": "Maximum objects to pull per type (default 1000)."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved Microsoft Graph JSON export to parse instead of calling the API. Accepts {users:[],servicePrincipals:[],devices:[]} or raw Graph {value:[...]} arrays."
+    }
+  ]
+}

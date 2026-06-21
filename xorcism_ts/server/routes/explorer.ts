@@ -89,6 +89,8 @@ import {
   setCpeTags,
   getCweTags,
   setCweTags,
+  getControlTags,
+  setControlTags,
   resolveUserOrganisationId,
   harvestEmailAddress,
   setupFirstRunNeeded,
@@ -105,6 +107,10 @@ import {
   getTprmDashboard,
   getEbiosDashboard,
   createRiskAssessment,
+  getNist80030Dashboard,
+  createNist80030Assessment,
+  getThreatModelDashboard,
+  createThreatModel,
   threatAgentCategoryOptions,
   getThreatAgentCategory,
   setThreatAgentCategory,
@@ -132,6 +138,7 @@ import { tidInventory } from "../tid";
 import { crisisInventory } from "../crisis";
 import { riskRegisterInventory } from "../riskregister";
 import { pqcmmInventory } from "../pqcmm";
+import { patchInventory } from "../patchmgmt";
 
 // Removes the forbidden columns from a row object (keeps rowid)
 function stripCols(row: Record<string, unknown>, denied: Set<string>): Record<string, unknown> {
@@ -346,6 +353,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
   const cr = safe(() => crisisInventory(tenant).summary);
   const rr = safe(() => riskRegisterInventory(tenant).summary);
   const pq = safe(() => pqcmmInventory(tenant).summary);
+  const pm = safe(() => patchInventory(tenant).summary);
   res.json({
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
@@ -356,6 +364,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
     crisis: cr && { readinessScore: cr.readinessScore, exercises: cr.exercises, completionRate: cr.completionRate, scenarioCoverage: cr.scenarioCoverage, openActions: cr.openActions, overdueActions: cr.overdueActions, scenariosNeverExercised: cr.scenariosNeverExercised },
     risk: rr && { riskScore: rr.riskScore, open: rr.open, highCritical: rr.highCritical, untreated: rr.untreated, overdueReview: rr.overdueReview, treatedRate: rr.treatedRate, totalALE: rr.totalALE, currency: rr.currency },
     pqcmm: pq && pq.assessments ? { maturityScore: pq.maturityScore, assessments: pq.assessments, quantumVulnerable: pq.quantumVulnerable, productionReady: pq.productionReady, managed: pq.managed } : null,
+    patch: pm && pm.instances ? { coverage: pm.coverage, overdue: pm.overdue, kevUnpatched: pm.kevUnpatched, unpatched: pm.unpatched, instances: pm.instances, mttr: pm.mttr } : null,
   });
 });
 
@@ -764,6 +773,71 @@ router.post("/ebios/assessment", (req: Request, res: Response) => {
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
 });
 
+// GET /api/nist-800-30/dashboard — NIST SP 800-30 risk-assessment dashboard
+router.get("/nist-800-30/dashboard", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XCOMPLIANCE", "RISKASSESSMENT"))
+    return deny(req, res, "read", "XCOMPLIANCE", "RISKASSESSMENT");
+  const tenant = req.user?.isSuperAdmin ? null : (req.user?.tenantId ?? null);
+  try { res.json(getNist80030Dashboard(tenant)); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// POST /api/nist-800-30/assessment — guided creation of a NIST SP 800-30 risk assessment
+router.post("/nist-800-30/assessment", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "create", "XCOMPLIANCE", "RISKASSESSMENT"))
+    return deny(req, res, "create", "XCOMPLIANCE", "RISKASSESSMENT");
+  const b = (req.body || {}) as Record<string, unknown>;
+  const name = String(b.name ?? "").trim();
+  if (!name) return void res.status(400).json({ error: "name required" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try {
+    const out = createNist80030Assessment({
+      name,
+      description: b.description ? String(b.description) : undefined,
+      status: b.status ? String(b.status) : undefined,
+      authorPersonId: b.authorPersonId != null && String(b.authorPersonId) !== "" ? Number(b.authorPersonId) : null,
+      date: b.date ? String(b.date) : undefined,
+    }, tenant);
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "risk_assessment_create", resourceType: "RISKASSESSMENT",
+      resourceKey: String(out.id), detail: `name="${name}" methodology="NIST SP 800-30"`, ip: clientIp(req) });
+    res.json({ ok: true, ...out });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// GET /api/threat-model/dashboard — threat-modeling dashboard (models + threat/asset/control counts)
+router.get("/threat-model/dashboard", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XORCISM", "THREATMODEL")) return deny(req, res, "read", "XORCISM", "THREATMODEL");
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try { res.json(getThreatModelDashboard(tenant)); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// POST /api/threat-model — guided creation of a THREATMODEL
+router.post("/threat-model", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "create", "XORCISM", "THREATMODEL")) return deny(req, res, "create", "XORCISM", "THREATMODEL");
+  const b = (req.body || {}) as Record<string, unknown>;
+  const name = String(b.name ?? "").trim();
+  if (!name) return void res.status(400).json({ error: "name required" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try {
+    const out = createThreatModel({
+      name,
+      description: b.description ? String(b.description) : undefined,
+      methodology: b.methodology ? String(b.methodology) : undefined,
+      status: b.status ? String(b.status) : undefined,
+      scope: b.scope ? String(b.scope) : undefined,
+      riskLevel: b.riskLevel ? String(b.riskLevel) : undefined,
+      owner: b.owner ? String(b.owner) : undefined,
+    }, tenant);
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "threat_model_create", resourceType: "THREATMODEL",
+      resourceKey: String(out.id), detail: `name="${name}" methodology="${String(b.methodology || "STRIDE")}"`, ip: clientIp(req) });
+    res.json({ ok: true, ...out });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
 // GET /api/a3m/matrix — A3M matrix (Agentic AI Attack Matrix): tactics → AAT techniques
 router.get("/a3m/matrix", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XTHREAT", "A3MTECHNIQUE"))
@@ -1159,6 +1233,27 @@ router.put("/cwe-tags", (req: Request, res: Response) => {
   setCweTags(Number(cweId), tags.map((t) => String(t)));
   xid.addAudit({ userId: req.user!.UserID, action: "cwe_tags", resourceType: "table",
     resourceKey: "XORCISM.CWETAG", detail: `cwe=${cweId} n=${tags.length}`, ip: clientIp(req) });
+  res.json({ ok: true });
+});
+
+// GET /api/control-tags?controlId=N — tags of a CONTROL (CONTROLTAG)
+router.get("/control-tags", (req: Request, res: Response) => {
+  const cid = Number(req.query.controlId);
+  if (!cid) return void res.status(400).json({ error: "controlId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "CONTROL")) return deny(req, res, "read", "XORCISM", "CONTROL");
+  res.json(getControlTags(cid));
+});
+
+// PUT /api/control-tags { controlId, tags:[...] } — replaces the tags
+router.put("/control-tags", (req: Request, res: Response) => {
+  const { controlId, tags } = req.body as { controlId: number; tags: unknown[] };
+  if (!controlId || !Array.isArray(tags))
+    return void res.status(400).json({ error: "controlId et tags[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "CONTROL") && !userCan(req.user, "create", "XORCISM", "CONTROL"))
+    return deny(req, res, "update", "XORCISM", "CONTROL");
+  setControlTags(Number(controlId), tags.map((t) => String(t)));
+  xid.addAudit({ userId: req.user!.UserID, action: "control_tags", resourceType: "table",
+    resourceKey: "XORCISM.CONTROLTAG", detail: `control=${controlId} n=${tags.length}`, ip: clientIp(req) });
   res.json({ ok: true });
 });
 

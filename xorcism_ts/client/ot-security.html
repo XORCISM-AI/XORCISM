@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — OT Security</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ot-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .ot-wrap h1{font-size:20px;margin:0 0 2px}
+  .ot-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:980px}
+  .ot-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .ot-card{flex:1;min-width:115px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ot-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ot-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .ot-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ot-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.ot{width:100%;border-collapse:collapse;font-size:13px}
+  table.ot th,table.ot td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.ot th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-done{background:#14532d;color:#bbf7d0}.st-prog{background:#3b2f1e;color:#fcd34d}.st-plan{background:#1e2133;color:#94a3b8}
+  .chip{font-size:11px;border-radius:5px;padding:1px 7px;background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;margin-right:4px;white-space:nowrap;display:inline-block}
+  .tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#0c2a3a;color:#7dd3fc;border:1px solid #155e75;margin-right:3px;text-transform:uppercase}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c;font-weight:700}.sev-Medium{color:#fbbf24}.sev-Low{color:#94a3b8}.sev-Info{color:#64748b}
+  .score{font-weight:700}.s-hi{color:#f87171}.s-md{color:#fbbf24}.s-lo{color:#34d399}
+  .sl{font-size:11px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .sl-ok{background:#14532d;color:#bbf7d0}.sl-gap{background:#7c2d12;color:#fed7aa}
+  .ref{display:flex;gap:14px;flex-wrap:wrap}
+  .ref .col{flex:1;min-width:250px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ref h4{margin:0 0 6px;font-size:12px;color:#cbd5e1;text-transform:uppercase;letter-spacing:.4px}
+  .ref ul{margin:0;padding-left:16px;font-size:12px;color:#94a3b8;line-height:1.55}
+  .ref b{color:#e2e8f0}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .ot-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .ot-modal-bg.open{display:flex}
+  .ot-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:22px 24px}
+  .ot-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .ot-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .ot-modal .fld{margin-bottom:13px}
+  .ot-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .ot-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .ot-modal label .req{color:#f87171}
+  .ot-modal input,.ot-modal select,.ot-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .ot-modal input:focus,.ot-modal select:focus,.ot-modal textarea:focus{outline:none;border-color:#7c83fd}
+  .ot-modal textarea{resize:vertical;min-height:54px}
+  .ot-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .ot-err{color:#f87171;font-size:12px;min-height:16px}
+  .btn-new{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}
+  .btn-new:hover{background:#9aa0ff}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=REFERENCECONTROL">&#128209; Requirements</a>
+  <span class="spacer"></span>
+  <span class="title">&#127981; OT / ICS Security</span>
+</div>
+
+<div class="ot-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">OT / ICS / SCADA / IoT Security</h1>
+    <button class="btn-new" id="ot-new">+ New OT assessment</button>
+  </div>
+  <div class="ot-sub">Govern the security of your <b>operational technology</b> — ICS / SCADA / DCS / PLC / IoT — against
+    <b>IEC 62443</b> and <b>NIST SP 800-82</b>. Each assessment is recorded as an AUDIT (type <i>OT Security</i>),
+    so its findings, remediation and report reuse the audit workflow. OT assets are the ones tagged
+    <span class="tag">ot</span><span class="tag">ics</span><span class="tag">scada</span><span class="tag">iot</span>… ;
+    IEC 62443 <b>zones &amp; conduits</b> carry target/achieved <b>Security Levels (SL 1-4)</b>, and the seeded
+    requirement catalogues (62443-3-3 FR1-7 / NIST 800-82) back the assessments.</div>
+  <div id="ot-body"><div class="muted" style="padding:24px;text-align:center">Building the OT security posture…</div></div>
+</div>
+
+<!-- Guided "new OT assessment" modal -->
+<div class="ot-modal-bg" id="ot-modal">
+  <div class="ot-modal">
+    <h3>New OT security assessment</h3>
+    <p class="lead">Create an OT/ICS security assessment against a standard. It is recorded as an AUDIT
+      (type <b>OT Security</b>); add findings, zones &amp; conduits afterward.</p>
+    <div class="fld">
+      <label>Name <span class="req">*</span></label>
+      <input id="ot-f-name" type="text" placeholder="e.g. 2026 Plant-A ICS 62443-3-3 assessment" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Standard</label>
+        <select id="ot-f-standard">
+          <option value="IEC 62443-3-3">IEC 62443-3-3 (system requirements)</option>
+          <option value="IEC 62443-4-2">IEC 62443-4-2 (component requirements)</option>
+          <option value="IEC 62443-2-1">IEC 62443-2-1 (CSMS / program)</option>
+          <option value="NIST SP 800-82 Rev 3">NIST SP 800-82 Rev 3 (OT guide)</option>
+          <option value="NIST CSF (OT profile)">NIST CSF (OT profile)</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Status</label>
+        <select id="ot-f-status">
+          <option value="Planned">Planned</option>
+          <option value="Scoping">Scoping</option>
+          <option value="In progress">In progress</option>
+          <option value="Fieldwork">Fieldwork</option>
+          <option value="In review">In review</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Assessor (optional)</label><input id="ot-f-auditor" type="text" placeholder="Firm or person" maxlength="200" autocomplete="off"></div>
+      <div class="fld"><label>Date</label><input id="ot-f-date" type="date"></div>
+    </div>
+    <div class="fld">
+      <label>Scope (optional)</label>
+      <textarea id="ot-f-scope" placeholder="Sites / zones / control systems / Purdue levels in scope…" maxlength="2000"></textarea>
+    </div>
+    <div class="fld">
+      <label>Description (optional)</label>
+      <textarea id="ot-f-desc" maxlength="4000"></textarea>
+    </div>
+    <div class="ot-modal-foot">
+      <span class="ot-err" id="ot-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="ot-cancel">Cancel</button>
+      <button class="btn-new" id="ot-create">Create assessment</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/ot-security.js"></script>
+</body>
+</html>

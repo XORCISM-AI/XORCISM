@@ -1,0 +1,5 @@
+SUSP_PowerShell_Encoded /home/lab/artifacts/run.ps1
+Mimikatz_Memory /home/lab/artifacts/m.exe
+EICAR_Test_File /home/lab/downloads/eicar.com
+SUSP_PowerShell_Encoded /home/lab/artifacts/stage2.ps1
+Webshell_Generic_PHP /var/www/html/uploads/x.php

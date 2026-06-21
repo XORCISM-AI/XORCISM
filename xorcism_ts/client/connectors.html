@@ -45,9 +45,16 @@
 <div class="cn-layout">
   <div class="cn-col" style="max-width:340px">
     <div class="cn-card">
-      <h3 data-i18n="conn.available">Connecteurs disponibles</h3>
+      <h3><span data-i18n="conn.available">Connecteurs disponibles</span> <span id="cn-count" class="meta" style="font-weight:400"></span></h3>
       <input id="cn-search" type="search" data-i18n-placeholder="conn.search" placeholder="Search a connector…"
-        style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:6px 10px;margin-bottom:8px">
+        style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:6px 10px;margin-bottom:6px">
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <select id="cn-cat" style="flex:1;min-width:0;font-size:11px;padding:5px 7px"><option value="" data-i18n="conn.allCats">Toutes catégories</option></select>
+        <select id="cn-type" style="flex:1;min-width:0;font-size:11px;padding:5px 7px"><option value="" data-i18n="conn.allTypes">Tous les types</option></select>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin:0 0 8px;cursor:pointer">
+        <input type="checkbox" id="cn-intr" style="width:auto"> <span data-i18n="conn.intrusiveOnly">Intrusifs uniquement</span>
+      </label>
       <div id="cn-list"></div>
     </div>
   </div>

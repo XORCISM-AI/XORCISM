@@ -1,0 +1,16 @@
+{
+  "id": "stixify",
+  "name": "Stixify",
+  "type": "import",
+  "category": "CTI",
+  "description": "Stixify (dogesec) — extracts STIX 2.1 intelligence from threat reports/PDFs. Imports Stixify reports (and the ATT&CK techniques referenced in their extracted objects) into XORCISM threat intelligence (XTHREAT.INTELEXCHANGE). Offline: a JSON export of reports / a STIX bundle. Live: set STIXIFY_API_KEY (API-KEY header) and optionally STIXIFY_BASE (default https://api.stixify.com). API: https://api.stixify.com/schema/swagger-ui/.",
+  "intrusive": false,
+  "permission": "connector:stixify",
+  "run": "run.py",
+  "mapping": "stixify",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of Stixify reports or a STIX bundle ({objects:[…]})." },
+    { "name": "base", "type": "string", "required": false, "help": "Stixify API base (default https://api.stixify.com). Live mode needs STIXIFY_API_KEY in the worker env." },
+    { "name": "max_items", "type": "int", "required": false, "default": 200, "help": "Maximum reports to import." }
+  ]
+}

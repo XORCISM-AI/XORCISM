@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — NIST SP 800-30</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .n3-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .n3-wrap h1{font-size:20px;margin:0 0 2px}
+  .n3-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .n3-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .n3-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .n3-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .n3-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .n3-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .n3-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.n3{width:100%;border-collapse:collapse;font-size:13px}
+  table.n3 th,table.n3 td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.n3 th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;background:#1e2133;color:#cbd5e1;white-space:nowrap}
+  .st-done{background:#14532d;color:#bbf7d0}.st-prog{background:#3b2f1e;color:#fcd34d}.st-draft{background:#1e2133;color:#94a3b8}
+  .chip{font-size:11px;border-radius:5px;padding:1px 7px;background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;margin-right:4px;white-space:nowrap}
+  /* risk levels 1..5 = Very Low / Low / Moderate / High / Very High */
+  .rl{font-size:11px;font-weight:700;border-radius:5px;padding:2px 8px;white-space:nowrap}
+  .rl1{background:#1e293b;color:#94a3b8}.rl2{background:#14532d;color:#bbf7d0}.rl3{background:#78350f;color:#fcd34d}
+  .rl4{background:#7c2d12;color:#fed7aa}.rl5{background:#7f1d1d;color:#fecaca}
+  /* 800-30 risk matrix */
+  .mx{border-collapse:collapse;font-size:11px;margin-top:6px}
+  .mx th,.mx td{border:1px solid #2d3250;padding:6px 9px;text-align:center}
+  .mx th{color:#94a3b8;background:#0f1117;font-weight:600}
+  .mx caption{caption-side:top;text-align:left;color:#64748b;font-size:11px;margin-bottom:5px}
+  .ref{display:flex;gap:14px;flex-wrap:wrap}
+  .ref .col{flex:1;min-width:240px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ref h4{margin:0 0 6px;font-size:12px;color:#cbd5e1;text-transform:uppercase;letter-spacing:.4px}
+  .ref ul{margin:0;padding-left:16px;font-size:12px;color:#94a3b8;line-height:1.55}
+  .ref b{color:#e2e8f0}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  /* New-assessment modal */
+  .n3-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .n3-modal-bg.open{display:flex}
+  .n3-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:560px;max-width:100%;padding:22px 24px}
+  .n3-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .n3-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .n3-modal .fld{margin-bottom:13px}
+  .n3-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .n3-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .n3-modal label .req{color:#f87171}
+  .n3-modal input,.n3-modal select,.n3-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .n3-modal input:focus,.n3-modal select:focus,.n3-modal textarea:focus{outline:none;border-color:#7c83fd}
+  .n3-modal textarea{resize:vertical;min-height:60px}
+  .n3-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .n3-err{color:#f87171;font-size:12px;min-height:16px}
+  .btn-new{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}
+  .btn-new:hover{background:#9aa0ff}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/ebios">&#127919; EBIOS RM</a>
+  <a href="/risk-register">&#128202; Risk Register</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=RISKASSESSMENT">&#128203; Assessments</a>
+  <span class="spacer"></span>
+  <span class="title">&#128737;&#65039; NIST SP 800-30</span>
+</div>
+
+<div class="n3-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">NIST SP 800-30 — Risk Assessment</h1>
+    <button class="btn-new" id="n3-new">+ New assessment</button>
+  </div>
+  <div class="n3-sub">Conduct cyber risk assessments using <b>NIST SP 800-30 Rev.1</b> (Guide for Conducting Risk
+    Assessments) — the US federal counterpart of EBIOS RM. Each assessment identifies <b>threat sources</b>
+    (adversarial &amp; non-adversarial), the <b>threat events</b> they can initiate, the <b>vulnerabilities and
+    predisposing conditions</b> they exploit, and determines <b>risk</b> as <i>overall likelihood × level of
+    impact</i> on the 800-30 semi-quantitative scale (Very&nbsp;Low → Very&nbsp;High). Manage the entities under the
+    explorer; this is the cockpit.</div>
+  <div id="n3-body"><div class="muted" style="padding:24px;text-align:center">Loading the 800-30 assessments…</div></div>
+</div>
+
+<!-- Guided "new assessment" modal -->
+<div class="n3-modal-bg" id="n3-modal">
+  <div class="n3-modal">
+    <h3>New NIST SP 800-30 risk assessment</h3>
+    <p class="lead">Create a 800-30 risk assessment. It is recorded as a RISKASSESSMENT with methodology
+      <b>NIST SP 800-30</b>; then add its threat sources, threat events, vulnerabilities and risks.</p>
+    <div class="fld">
+      <label>Name <span class="req">*</span></label>
+      <input id="n3-f-name" type="text" placeholder="e.g. 2026 enterprise information-system risk assessment" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Status</label>
+        <select id="n3-f-status">
+          <option value="Draft">Draft</option>
+          <option value="Scoping">Scoping</option>
+          <option value="In progress">In progress</option>
+          <option value="In review">In review</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div class="fld"><label>Date</label><input id="n3-f-date" type="date"></div>
+    </div>
+    <div class="fld">
+      <label>Risk assessor (optional)</label>
+      <select id="n3-f-author"><option value="">—</option></select>
+    </div>
+    <div class="fld">
+      <label>Scope / purpose (optional)</label>
+      <textarea id="n3-f-desc" placeholder="System(s) and boundary, purpose, assumptions and constraints (800-30 step 1: Prepare)…" maxlength="4000"></textarea>
+    </div>
+    <div class="n3-modal-foot">
+      <span class="n3-err" id="n3-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="n3-cancel">Cancel</button>
+      <button class="btn-new" id="n3-create">Create assessment</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/nist-800-30.js"></script>
+</body>
+</html>

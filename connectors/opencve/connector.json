@@ -1,0 +1,76 @@
+{
+  "id": "opencve",
+  "name": "OpenCVE",
+  "type": "import",
+  "category": "Threat Intelligence",
+  "description": "OpenCVE — CVE monitoring & alerting platform (self-hosted or app.opencve.io). Pulls CVEs from the OpenCVE REST API (filtered by vendor / product / keyword / CVSS severity / tag) and imports them as vulnerabilities (XVULNERABILITY). Tool: https://www.opencve.io. Auth from the worker environment: OPENCVE_API_TOKEN (Bearer org token) OR OPENCVE_USERNAME + OPENCVE_PASSWORD (Basic, legacy v1); base URL via OPENCVE_URL or the 'base' parameter.",
+  "intrusive": false,
+  "permission": "connector:opencve",
+  "run": "run.py",
+  "mapping": "opencve",
+  "parameters": [
+    {
+      "name": "base",
+      "type": "string",
+      "required": false,
+      "help": "OpenCVE base URL (e.g. https://app.opencve.io or your self-hosted instance). Overrides OPENCVE_URL. Default: https://app.opencve.io."
+    },
+    {
+      "name": "vendor",
+      "type": "string",
+      "required": false,
+      "help": "Filter CVEs by vendor name (OpenCVE slug, e.g. 'microsoft')."
+    },
+    {
+      "name": "product",
+      "type": "string",
+      "required": false,
+      "help": "Filter CVEs by product name (used with vendor)."
+    },
+    {
+      "name": "search",
+      "type": "string",
+      "required": false,
+      "help": "Keyword filter on CVE id or description."
+    },
+    {
+      "name": "cvss",
+      "type": "enum",
+      "required": false,
+      "values": ["", "low", "medium", "high", "critical"],
+      "help": "Filter by CVSS 3.1 severity. When set, it also sets each imported finding's severity."
+    },
+    {
+      "name": "tag",
+      "type": "string",
+      "required": false,
+      "help": "Filter by an OpenCVE user tag."
+    },
+    {
+      "name": "details",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "help": "Fetch each CVE's detail to populate the exact CVSS score & CWE (one extra request per CVE — slower; bounded by max_items)."
+    },
+    {
+      "name": "max_items",
+      "type": "int",
+      "required": false,
+      "default": 200,
+      "help": "Maximum CVEs to import (paginated)."
+    },
+    {
+      "name": "project",
+      "type": "string",
+      "required": false,
+      "help": "Optional asset name to attach the CVEs to (creates ASSETVULNERABILITY links). Omit to only enrich the CVE database."
+    },
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline mode: a saved OpenCVE JSON response to parse instead of calling the API ({results:[...]}, a bare list, or a single CVE)."
+    }
+  ]
+}

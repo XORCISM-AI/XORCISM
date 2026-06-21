@@ -1938,6 +1938,52 @@ export function setAssetTags(assetId: number, tags: string[]): void {
   tx();
 }
 
+// Tags of a CONTROL (CONTROLTAG, linked by ControlID). The pre-existing CONTROLTAG is the legacy
+// TagID-only shape (label resolved via the XORCISM.TAG referential); we also add a `Tag` text column
+// (like ASSETTAG) and prefer it when present. Column-aware so it runs on legacy + fresh schemas.
+export function getControlTags(controlId: number): string[] {
+  const db = getDb("XORCISM");
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROLTAG'").get()) return [];
+  const cols = new Set((db.prepare(`PRAGMA table_info("CONTROLTAG")`).all() as { name: string }[]).map((c) => c.name));
+  if (cols.has("Tag")) {
+    return (db.prepare("SELECT Tag FROM CONTROLTAG WHERE ControlID = ? AND Tag IS NOT NULL AND Tag <> '' ORDER BY ControlTagID")
+      .all(controlId) as { Tag: string }[]).map((r) => r.Tag);
+  }
+  const ids = (db.prepare("SELECT TagID FROM CONTROLTAG WHERE ControlID = ? AND TagID IS NOT NULL ORDER BY ControlTagID").all(controlId) as { TagID: number }[]).map((r) => r.TagID);
+  if (!ids.length) return [];
+  const ph = ids.map(() => "?").join(",");
+  const map = new Map((db.prepare(`SELECT TagID, TagValue FROM TAG WHERE TagID IN (${ph})`).all(...ids) as { TagID: number; TagValue: string }[]).map((r) => [r.TagID, r.TagValue]));
+  return ids.map((id) => map.get(id)).filter((v): v is string => !!v);
+}
+export function setControlTags(controlId: number, tags: string[]): void {
+  const db = getDb("XORCISM");
+  db.exec(`CREATE TABLE IF NOT EXISTS CONTROLTAG (
+             ControlTagID INTEGER PRIMARY KEY, ControlID INTEGER, TagID INTEGER, Tag TEXT,
+             CreatedDate TEXT, ValidFrom DATE, ValidUntil DATE, PersonID INTEGER);
+           CREATE INDEX IF NOT EXISTS ix_controltag_control ON CONTROLTAG(ControlID);`);
+  const cols = new Set((db.prepare(`PRAGMA table_info("CONTROLTAG")`).all() as { name: string }[]).map((c) => c.name));
+  if (!cols.has("Tag")) { db.exec(`ALTER TABLE "CONTROLTAG" ADD COLUMN "Tag" TEXT`); cols.add("Tag"); }
+  const ts = nowTs();
+  const today = new Date().toISOString().slice(0, 10);
+  const clean = cleanTagList(tags);
+  const tagIds = clean.map((t) => getOrCreateTag(t));
+  const dateCol = cols.has("ValidFrom") ? "ValidFrom" : (cols.has("ValidFromDate") ? "ValidFromDate" : null);
+  const insCols = ["ControlTagID", "ControlID", "TagID", "Tag", "CreatedDate"].filter((c) => cols.has(c));
+  if (dateCol) insCols.push(dateCol);
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM CONTROLTAG WHERE ControlID = ?").run(controlId);
+    let maxId = (db.prepare("SELECT COALESCE(MAX(ControlTagID),0) AS m FROM CONTROLTAG").get() as { m: number }).m;
+    const ins = db.prepare(`INSERT INTO CONTROLTAG (${insCols.map((c) => `"${c}"`).join(",")}) VALUES (${insCols.map(() => "?").join(",")})`);
+    clean.forEach((tg, i) => {
+      maxId++;
+      const v: Record<string, unknown> = { ControlTagID: maxId, ControlID: controlId, TagID: tagIds[i] || null, Tag: tg, CreatedDate: ts };
+      if (dateCol) v[dateCol] = today;
+      ins.run(...insCols.map((c) => v[c]));
+    });
+  });
+  tx();
+}
+
 // Tags of a VULNERABILITY (legacy VULNERABILITYTAG table: TagID only, no
 // text column → the label is resolved via the XORCISM.TAG referential, in 2
 // cross-database queries).
@@ -3627,6 +3673,17 @@ export function ensureThreatTables(): void {
       SigmaReference TEXT, AttackTags TEXT,
       SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT,
       CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+    -- YARA detection rules (malware classification). YaraSource = the full rule text; the
+    -- store is the "support" side of YARA in XORCISM (browsable in the explorer, served to
+    -- agents at /api/agent/yara-rules, imported by import_yara.py / the yara connector).
+    CREATE TABLE IF NOT EXISTS YARARULE (
+      YaraRuleID INTEGER PRIMARY KEY,
+      YaraRuleGUID TEXT, YaraRuleName TEXT, YaraRuleDescription TEXT,
+      YaraSource TEXT, Namespace TEXT, Tags TEXT, Meta TEXT, Author TEXT,
+      YaraReference TEXT, AttackTags TEXT, StringCount INTEGER, Status TEXT,
+      CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+    CREATE INDEX IF NOT EXISTS ix_yararule_ref ON YARARULE(YaraReference);
+    CREATE INDEX IF NOT EXISTS ix_yararule_name ON YARARULE(YaraRuleName);
     -- HUNT ↔ ATT&CK techniques links (derived from HUNT.AttackTags) and HUNT ↔ IOC.
     CREATE TABLE IF NOT EXISTS HUNTATTACK (
       HuntAttackID INTEGER PRIMARY KEY, HuntID INTEGER, AttackID TEXT,
@@ -4245,6 +4302,49 @@ export function ensureAssetColumns(): void {
 }
 
 /**
+ * Make XORCISM.ASSET.AssetID a real INTEGER PRIMARY KEY. The legacy table ships AssetID as
+ * `INTEGER NOT NULL` WITHOUT a primary key, so it is not a rowid alias and SQLite won't
+ * auto-assign it on INSERT (the "NOT NULL constraint failed: ASSET.AssetID" quirk shared with
+ * CPE/CPEFORASSET/COMPONENT). SQLite can't add a PK via ALTER, so this rebuilds the table:
+ * recreate ASSET with the same columns (AssetID → PRIMARY KEY), copy all rows, drop, rename and
+ * recreate the indexes — inside one transaction. Idempotent: a no-op once AssetID is already a PK.
+ * Must run AFTER ensureAssetColumns() so the rebuilt table includes every added column.
+ */
+export function ensureAssetPrimaryKey(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  const info = db.prepare(`PRAGMA table_info("ASSET")`).all() as { name: string; pk: number }[];
+  if (!info.length) return;                                   // table absent
+  if (info.some((c) => c.name === "AssetID" && c.pk > 0)) return; // already a PK → done
+  const ddl = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='ASSET'").get() as { sql: string } | undefined;
+  if (!ddl?.sql) return;
+  const idx = (db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name='ASSET' AND sql IS NOT NULL").all() as { sql: string }[]).map((r) => r.sql);
+  const newSql = ddl.sql
+    .replace(/CREATE TABLE\s+"?ASSET"?/i, 'CREATE TABLE "ASSET_pkmig"')
+    .replace(/"AssetID"\s+INTEGER\s+NOT\s+NULL\s*,/i, '"AssetID" INTEGER PRIMARY KEY,');
+  if (!newSql.includes("ASSET_pkmig") || !/"AssetID"\s+INTEGER\s+PRIMARY\s+KEY/i.test(newSql)) {
+    console.warn("[db] ensureAssetPrimaryKey: could not transform ASSET DDL — left unchanged");
+    return;
+  }
+  db.pragma("foreign_keys = OFF");
+  try {
+    const rebuild = db.transaction(() => {
+      db.exec(newSql);
+      db.exec('INSERT INTO "ASSET_pkmig" SELECT * FROM "ASSET"');
+      db.exec('DROP TABLE "ASSET"');
+      db.exec('ALTER TABLE "ASSET_pkmig" RENAME TO "ASSET"');
+      for (const i of idx) db.exec(i);
+    });
+    rebuild();
+    console.log("[db] ASSET.AssetID is now a PRIMARY KEY (table rebuilt, data preserved)");
+  } catch (e) {
+    console.warn(`[db] ensureAssetPrimaryKey failed: ${(e as Error).message}`);
+  } finally {
+    db.pragma("foreign_keys = ON");
+  }
+}
+
+/**
  * OVAL scan results — the XOR agent's OpenSCAP (`oscap oval eval`) verdicts.
  * The native OVAL "results" model tables (XOVAL.OVALRESULTS / OVALRESULTSTYPE) are
  * skeletal EF scaffolds (no asset/definition granularity), so we EXTEND OVALRESULTS
@@ -4406,6 +4506,7 @@ export function ensureGrcColumns(): void {
     Status: "TEXT", Category: "TEXT", DocumentType: "TEXT", Classification: "TEXT",
     Framework: "TEXT", Language: "TEXT", PolicyReference: "TEXT", RelatedPolicyID: "INTEGER",
     OwnerPersonID: "INTEGER", ReviewDate: "DATE",
+    ExternalID: "TEXT", Source: "TEXT", TenantID: "INTEGER",  // GRC connector imports (Vanta/Drata/…)
   });
   // TPRM — third-party assessment via questionnaire (QUESTIONNAIREFORORGANISATION).
   addCols("XCOMPLIANCE", "QUESTIONNAIREFORORGANISATION", {
@@ -4726,6 +4827,404 @@ export function createRiskAssessment(
   };
   const keys = Object.keys(candidate).filter((k) => cols.has(k));
   const sql = `INSERT INTO RISKASSESSMENT (${keys.map((k) => `"${k}"`).join(", ")}) VALUES (${keys.map(() => "?").join(", ")})`;
+  const r = db.prepare(sql).run(...keys.map((k) => candidate[k]));
+  return { id: Number(r.lastInsertRowid) };
+}
+
+/**
+ * NIST SP 800-30 (Guide for Conducting Risk Assessments) — the US federal counterpart of
+ * EBIOS RM, integrated the same way: REUSE the existing risk base
+ *   - RISKASSESSMENT = the 800-30 risk assessment (Methodology='NIST SP 800-30').
+ * + 800-30-specific entities (Rev.1 model, Appendix D-H tasks):
+ *   NIST80030THREATSOURCE — threat sources (adversarial: capability/intent/targeting;
+ *       non-adversarial: range of effects), Appendix D.
+ *   NIST80030THREATEVENT  — threat events a source can initiate + likelihood of initiation,
+ *       Appendix E.
+ *   NIST80030VULNERABILITY— vulnerabilities & predisposing conditions (severity, pervasiveness),
+ *       Appendix F.
+ *   NIST80030RISK         — the determined risks: threat event × vulnerability → overall
+ *       likelihood × impact → risk level (Appendix I, Table I-2), + risk response.
+ * Levels are the 800-30 semi-quantitative scale 1..5 = Very Low / Low / Moderate / High / Very
+ * High. Idempotent (CREATE IF NOT EXISTS); called at boot.
+ */
+export function ensureNist80030Tables(): void {
+  ensureEbiosTables(); // guarantees RISKASSESSMENT.Methodology exists (shared marker column)
+  const db = getDb("XCOMPLIANCE");
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS NIST80030THREATSOURCE (
+      ThreatSourceID INTEGER PRIMARY KEY, ThreatSourceGUID TEXT,
+      RiskAssessmentID INTEGER, Name TEXT, SourceType TEXT, Category TEXT,
+      Capability INTEGER, Intent INTEGER, Targeting INTEGER, RangeOfEffects TEXT,
+      Relevance INTEGER, Description TEXT, CreatedDate TEXT, TenantID INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS NIST80030THREATEVENT (
+      ThreatEventID INTEGER PRIMARY KEY, ThreatEventGUID TEXT,
+      RiskAssessmentID INTEGER, ThreatSourceID INTEGER, Name TEXT, Description TEXT,
+      Relevance TEXT, LikelihoodInitiation INTEGER, CreatedDate TEXT, TenantID INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS NIST80030VULNERABILITY (
+      NistVulnID INTEGER PRIMARY KEY, NistVulnGUID TEXT,
+      RiskAssessmentID INTEGER, Name TEXT, Description TEXT, PredisposingCondition TEXT,
+      Severity INTEGER, Pervasiveness INTEGER, AssetID INTEGER, CreatedDate TEXT, TenantID INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS NIST80030RISK (
+      RiskID INTEGER PRIMARY KEY, RiskGUID TEXT,
+      RiskAssessmentID INTEGER, Name TEXT, Description TEXT,
+      ThreatSourceID INTEGER, ThreatEventID INTEGER, NistVulnID INTEGER,
+      LikelihoodInitiation INTEGER, LikelihoodImpact INTEGER, OverallLikelihood INTEGER,
+      ImpactLevel INTEGER, RiskLevel INTEGER, RiskResponse TEXT, Notes TEXT,
+      CreatedDate TEXT, TenantID INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS ix_n30src_ra ON NIST80030THREATSOURCE(RiskAssessmentID);
+    CREATE INDEX IF NOT EXISTS ix_n30evt_ra ON NIST80030THREATEVENT(RiskAssessmentID);
+    CREATE INDEX IF NOT EXISTS ix_n30vuln_ra ON NIST80030VULNERABILITY(RiskAssessmentID);
+    CREATE INDEX IF NOT EXISTS ix_n30risk_ra ON NIST80030RISK(RiskAssessmentID);
+  `);
+}
+
+// NIST SP 800-30 Rev.1, Appendix I, Table I-2 — Level of Risk (combination of overall
+// likelihood [rows] and level of impact [cols]); scale 1..5 = VL/L/M/H/VH. Returns 1..5.
+const NIST_RISK_MATRIX: Record<number, number[]> = {
+  5: [1, 2, 3, 4, 5], // likelihood Very High
+  4: [1, 2, 3, 4, 5], // High
+  3: [1, 2, 3, 3, 4], // Moderate
+  2: [1, 2, 2, 2, 3], // Low
+  1: [1, 1, 1, 2, 2], // Very Low
+};
+export function nistRiskLevel(overallLikelihood: number, impact: number): number {
+  const l = Math.min(5, Math.max(1, Math.round(overallLikelihood)));
+  const i = Math.min(5, Math.max(1, Math.round(impact)));
+  return NIST_RISK_MATRIX[l][i - 1];
+}
+
+/**
+ * NIST SP 800-30 dashboard: every 800-30 assessment (RISKASSESSMENT marked 'NIST SP 800-30')
+ * with, per assessment, the count of threat sources / threat events / vulnerabilities / risks,
+ * the highest risk level and the distribution of risks by level — plus global stats. The
+ * friendly home for 800-30 (the EBIOS-RM counterpart) replacing the raw explorer grid.
+ */
+export function getNist80030Dashboard(tenant: number | null): { assessments: Record<string, unknown>[]; stats: Record<string, unknown> } {
+  const db = getDb("XCOMPLIANCE");
+  const has = (t: string): boolean => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t);
+  if (!has("RISKASSESSMENT")) return { assessments: [], stats: { total: 0 } };
+  const tw = tenant != null ? `AND COALESCE(TenantID,${tenant})=${tenant}` : "";
+  const rows = db.prepare(
+    `SELECT RiskAssessmentID AS id, Name AS name, Description AS description, Status AS status, Date AS date
+     FROM RISKASSESSMENT WHERE COALESCE(Methodology,'') LIKE 'NIST SP 800-30%' ${tw}
+     ORDER BY RiskAssessmentID DESC`
+  ).all() as Record<string, any>[];
+  const cnt = (table: string, id: number): number => has(table)
+    ? (db.prepare(`SELECT COUNT(*) c FROM "${table}" WHERE RiskAssessmentID=?`).get(id) as { c: number }).c : 0;
+  const out = rows.map((s) => {
+    const counts = {
+      threatSources: cnt("NIST80030THREATSOURCE", s.id),
+      threatEvents: cnt("NIST80030THREATEVENT", s.id),
+      vulnerabilities: cnt("NIST80030VULNERABILITY", s.id),
+      risks: cnt("NIST80030RISK", s.id),
+    };
+    const byLevel: Record<number, number> = {};
+    let maxRisk = 0;
+    if (has("NIST80030RISK")) {
+      for (const r of db.prepare("SELECT COALESCE(RiskLevel,0) lvl, COUNT(*) c FROM NIST80030RISK WHERE RiskAssessmentID=? GROUP BY RiskLevel").all(s.id) as { lvl: number; c: number }[]) {
+        if (r.lvl > 0) byLevel[r.lvl] = r.c;
+        if (r.lvl > maxRisk) maxRisk = r.lvl;
+      }
+    }
+    return { ...s, counts, byLevel, maxRisk };
+  });
+  const sum = (f: (s: any) => number): number => out.reduce((n, s) => n + f(s), 0);
+  const stats = {
+    total: out.length,
+    threatSources: sum((s) => s.counts.threatSources),
+    threatEvents: sum((s) => s.counts.threatEvents),
+    vulnerabilities: sum((s) => s.counts.vulnerabilities),
+    risks: sum((s) => s.counts.risks),
+    highRisks: out.reduce((n, s) => n + Object.entries(s.byLevel as Record<string, number>).reduce((m, [lvl, c]) => m + (Number(lvl) >= 4 ? c : 0), 0), 0),
+  };
+  return { assessments: out, stats };
+}
+
+/**
+ * Create a NIST SP 800-30 risk assessment from a guided form (the 800-30 counterpart of the
+ * EBIOS guided create). Forces Methodology='NIST SP 800-30' so it surfaces on the 800-30
+ * dashboard; reuses createRiskAssessment (column-aware INSERT + GUID + tenant). Ensures the
+ * 800-30 entity tables exist so the assessment can be populated afterward.
+ */
+export function createNist80030Assessment(
+  p: { name: string; description?: string; status?: string; authorPersonId?: number | null; date?: string },
+  tenant: number | null,
+): { id: number } {
+  ensureNist80030Tables();
+  return createRiskAssessment({
+    name: p.name, description: p.description, methodology: "NIST SP 800-30",
+    status: p.status, authorPersonId: p.authorPersonId ?? null, date: p.date,
+  }, tenant);
+}
+
+/**
+ * Asset Monitoring — uptime / health / SSL monitoring of assets (inspired by CheckCle). Native
+ * monitors live in XORCISM (asset-linked); the checkcle connector imports CheckCle's services /
+ * servers / SSL certificates / incidents into the same tables. Created idempotently at boot:
+ *   MONITORINGCHECK    — a monitor on an asset (type http/ping/tcp/dns/ssl/server + current status,
+ *                        uptime %, response time, SSL expiry).
+ *   MONITORINGINCIDENT — an up/down incident (open when ResolvedAt is NULL).
+ */
+export function ensureMonitoringTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS MONITORINGCHECK (
+      CheckID INTEGER PRIMARY KEY, CheckGUID TEXT, AssetID INTEGER, Name TEXT,
+      CheckType TEXT, Target TEXT, IntervalSeconds INTEGER, CronExpression TEXT, Enabled INTEGER DEFAULT 1,
+      Status TEXT, UptimePercent REAL, ResponseTimeMs INTEGER, LastCheckedAt TEXT, LastStatusChange TEXT,
+      SSLExpiryDate DATE, SSLIssuer TEXT, OwnerPersonID INTEGER, Source TEXT, ExternalID TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS MONITORINGINCIDENT (
+      IncidentID INTEGER PRIMARY KEY, IncidentGUID TEXT, CheckID INTEGER, AssetID INTEGER,
+      Title TEXT, Status TEXT, Severity TEXT, StartedAt TEXT, ResolvedAt TEXT, DurationMinutes INTEGER,
+      Description TEXT, Source TEXT, ExternalID TEXT, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_moncheck_asset ON MONITORINGCHECK(AssetID);
+    CREATE INDEX IF NOT EXISTS ix_moncheck_status ON MONITORINGCHECK(Status);
+    CREATE INDEX IF NOT EXISTS ix_moninc_check ON MONITORINGINCIDENT(CheckID);
+  `);
+  // CronExpression on pre-existing MONITORINGCHECK tables (optional cron periodicity per monitor).
+  if (!new Set((db.prepare(`PRAGMA table_info("MONITORINGCHECK")`).all() as { name: string }[]).map((c) => c.name)).has("CronExpression"))
+    db.exec(`ALTER TABLE "MONITORINGCHECK" ADD COLUMN "CronExpression" TEXT`);
+}
+
+/**
+ * NIST SP 800-53 control management — the per-tenant implementation/status layer over the
+ * already-imported 800-53 Rev 5 catalogue (XORCISM.CONTROL, VocabularyID=7, ~1196 controls).
+ * The catalogue stays read-only (a shared reference); each tenant records ONE implementation
+ * status per control here (org-wide). Also ensures the 800-53 baseline-membership columns on
+ * CONTROL (Low/Moderate/High/Privacy), populated by import_nist80053_baselines.py — added here
+ * defensively so the management page never crashes when the importer hasn't been run yet.
+ * Called at boot.
+ */
+export function ensureControlImplementationTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS CONTROLIMPLEMENTATION (
+      ControlImplementationID INTEGER PRIMARY KEY, ControlImplementationGUID TEXT,
+      ControlID INTEGER, Status TEXT, Responsibility TEXT, Narrative TEXT,
+      OwnerPersonID INTEGER, TargetDate DATE, LastReviewedDate TEXT,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_ctrlimpl_control ON CONTROLIMPLEMENTATION(ControlID);
+    CREATE INDEX IF NOT EXISTS ix_ctrlimpl_tenant ON CONTROLIMPLEMENTATION(TenantID);
+    -- Crosswalks: an 800-53 control mapped to another framework object (ATT&CK technique, D3FEND, CSF…).
+    -- Global reference facts (no tenant), filled by import_attack_80053_mappings.py et al.
+    CREATE TABLE IF NOT EXISTS CONTROLMAPPING (
+      MappingID INTEGER PRIMARY KEY, MappingGUID TEXT, ControlID INTEGER, Framework TEXT,
+      ExternalID TEXT, ExternalName TEXT, Relationship TEXT, Source TEXT, CreatedDate TEXT);
+    CREATE INDEX IF NOT EXISTS ix_ctrlmap_control ON CONTROLMAPPING(ControlID);
+    CREATE INDEX IF NOT EXISTS ix_ctrlmap_fw ON CONTROLMAPPING(Framework);
+    -- Plan of Action & Milestones — a control deficiency tracked to closure (per tenant).
+    CREATE TABLE IF NOT EXISTS CONTROLPOAM (
+      PoamID INTEGER PRIMARY KEY, PoamGUID TEXT, ControlID INTEGER, Title TEXT, WeaknessDescription TEXT,
+      Severity TEXT, Status TEXT, RemediationPlan TEXT, Milestones TEXT, OwnerPersonID INTEGER,
+      ScheduledCompletionDate DATE, ActualCompletionDate DATE, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_ctrlpoam_control ON CONTROLPOAM(ControlID);
+    CREATE INDEX IF NOT EXISTS ix_ctrlpoam_tenant ON CONTROLPOAM(TenantID);
+    -- Free-text tags on a control (mirrors ASSETTAG), for the CONTROL form tag-picker.
+    CREATE TABLE IF NOT EXISTS CONTROLTAG (
+      ControlTagID INTEGER PRIMARY KEY, ControlID INTEGER, TagID INTEGER, Tag TEXT,
+      CreatedDate TEXT, ValidFrom DATE, ValidUntil DATE, PersonID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_controltag_control ON CONTROLTAG(ControlID);
+  `);
+  // 800-53 baseline membership + rich control text live on the (shared) catalogue rows — global NIST facts.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROL'").get()) {
+    const have = new Set((db.prepare(`PRAGMA table_info("CONTROL")`).all() as { name: string }[]).map((c) => c.name));
+    const ctrlCols: Record<string, string> = {
+      BaselineLow: "INTEGER", BaselineModerate: "INTEGER", BaselineHigh: "INTEGER", BaselinePrivacy: "INTEGER",
+      Statement: "TEXT", Guidance: "TEXT", Params: "TEXT", RelatedControls: "TEXT",
+    };
+    for (const [col, type] of Object.entries(ctrlCols)) if (!have.has(col)) db.exec(`ALTER TABLE "CONTROL" ADD COLUMN "${col}" ${type}`);
+  }
+  // Per-tenant assessment (SP 800-53A) lives alongside the implementation record.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROLIMPLEMENTATION'").get()) {
+    const have = new Set((db.prepare(`PRAGMA table_info("CONTROLIMPLEMENTATION")`).all() as { name: string }[]).map((c) => c.name));
+    const a: Record<string, string> = { AssessmentResult: "TEXT", AssessedDate: "TEXT", AssessorPersonID: "INTEGER", AssessmentRemarks: "TEXT" };
+    for (const [col, type] of Object.entries(a)) if (!have.has(col)) db.exec(`ALTER TABLE "CONTROLIMPLEMENTATION" ADD COLUMN "${col}" ${type}`);
+  }
+  // Free-text Tag column on the (legacy, TagID-only) CONTROLTAG, for the CONTROL form tag-picker.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROLTAG'").get() &&
+      !new Set((db.prepare(`PRAGMA table_info("CONTROLTAG")`).all() as { name: string }[]).map((c) => c.name)).has("Tag"))
+    db.exec(`ALTER TABLE "CONTROLTAG" ADD COLUMN "Tag" TEXT`);
+}
+
+/**
+ * CIS Benchmarks — consensus secure-configuration baselines (under Configuration Management), kept in
+ * XOVAL alongside the OVAL/SCAP content. CISBENCHMARK = a benchmark (e.g. "CIS Ubuntu 22.04 LTS v2.0.0"),
+ * CISBENCHMARKRECOMMENDATION = its recommendations (numbered, L1/L2), CISBENCHMARKRESULT = per-asset
+ * pass/fail from a CIS-CAT scan. Catalogue seeded by import_cis_benchmarks.py; results via CIS-CAT import
+ * / the cis-cat connector. Called at boot.
+ */
+export function ensureCisBenchmarkTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XOVAL"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS CISBENCHMARK (
+      BenchmarkID INTEGER PRIMARY KEY, BenchmarkGUID TEXT, Name TEXT, Version TEXT, Platform TEXT,
+      Category TEXT, Source TEXT, ExternalID TEXT, RecommendationCount INTEGER, CreatedDate TEXT);
+    CREATE TABLE IF NOT EXISTS CISBENCHMARKRECOMMENDATION (
+      RecommendationID INTEGER PRIMARY KEY, RecommendationGUID TEXT, BenchmarkID INTEGER, Number TEXT,
+      Title TEXT, Level TEXT, Section TEXT, Description TEXT, Remediation TEXT, AssessmentType TEXT,
+      ExternalID TEXT, CreatedDate TEXT);
+    CREATE TABLE IF NOT EXISTS CISBENCHMARKRESULT (
+      ResultID INTEGER PRIMARY KEY, ResultGUID TEXT, BenchmarkID INTEGER, RecommendationID INTEGER,
+      RecommendationNumber TEXT, AssetID INTEGER, Result TEXT, Severity TEXT, CheckedAt TEXT,
+      Source TEXT, ExternalID TEXT, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_cisrec_benchmark ON CISBENCHMARKRECOMMENDATION(BenchmarkID);
+    CREATE INDEX IF NOT EXISTS ix_cisres_benchmark ON CISBENCHMARKRESULT(BenchmarkID);
+    CREATE INDEX IF NOT EXISTS ix_cisres_asset ON CISBENCHMARKRESULT(AssetID);
+  `);
+}
+
+/**
+ * Trust Center — a Drata-style public-facing security posture page, driven by live data, with a
+ * shareable read-only view at /trust/<slug>. One config row per tenant (XCOMPLIANCE.TRUSTCENTER):
+ * slug, enabled, branding, sub-processors + published frameworks (JSON), and which live panels to
+ * show. The public view only ever exposes aggregate posture (coverage %, framework status, uptime) —
+ * never asset/control detail. Called at boot.
+ */
+export function ensureTrustCenterTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XCOMPLIANCE"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS TRUSTCENTER (
+      TrustCenterID INTEGER PRIMARY KEY, TenantID INTEGER, Slug TEXT, Enabled INTEGER DEFAULT 0,
+      CompanyName TEXT, Title TEXT, Intro TEXT, ContactEmail TEXT, Subprocessors TEXT, Frameworks TEXT,
+      ShowControls INTEGER DEFAULT 1, ShowUptime INTEGER DEFAULT 1, ShowPolicies INTEGER DEFAULT 1,
+      UpdatedAt TEXT, CreatedDate TEXT);
+    CREATE INDEX IF NOT EXISTS ix_trustcenter_slug ON TRUSTCENTER(Slug);
+    CREATE INDEX IF NOT EXISTS ix_trustcenter_tenant ON TRUSTCENTER(TenantID);
+  `);
+}
+
+/**
+ * Patch Management — make patch status, SLAs and remediation plans first-class on the EXISTING
+ * vulnerability-remediation model (no new core tables). Patch status is per-asset-vulnerability
+ * (you patch a CVE on a given asset), so it lives on ASSETVULNERABILITY; the remediation plan
+ * reuses the legacy ASSETVULNERABILITYREMEDIATION. Idempotent ALTERs (the legacy tables ship thin):
+ *   ASSETVULNERABILITY            += PatchStatus / PatchedDate / TargetDate / RemediationOwnerPersonID / Priority
+ *   ASSETVULNERABILITYREMEDIATION += Status / RemediationType / TargetDate / Priority / TenantID
+ * Called at boot.
+ */
+export function ensurePatchTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  const add = (table: string, want: Record<string, string>): void => {
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table)) return;
+    const have = new Set((db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name));
+    for (const [n, t] of Object.entries(want)) if (!have.has(n)) db.exec(`ALTER TABLE "${table}" ADD COLUMN "${n}" ${t}`);
+  };
+  add("ASSETVULNERABILITY", {
+    PatchStatus: "TEXT", PatchedDate: "DATE", TargetDate: "DATE", RemediationOwnerPersonID: "INTEGER", Priority: "TEXT",
+  });
+  add("ASSETVULNERABILITYREMEDIATION", {
+    Status: "TEXT", RemediationType: "TEXT", TargetDate: "DATE", Priority: "TEXT", TenantID: "INTEGER",
+  });
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETVULNERABILITYREMEDIATION'").get()) {
+    db.exec("CREATE INDEX IF NOT EXISTS ix_avr_av ON ASSETVULNERABILITYREMEDIATION(AssetVulnerabilityID);");
+  }
+}
+
+/**
+ * OT / ICS / SCADA / IoT Security — IEC 62443 & NIST SP 800-82 assessments. OT assessments REUSE
+ * XCOMPLIANCE.AUDIT (AuditType='OT Security', AuditCategory = the standard) + AUDITFINDING, exactly
+ * like Compliance / Crisis Management — no AUDIT change needed. This adds the IEC 62443 structural
+ * entities (created idempotently at boot; **phased** — the schema is in place now, the UI fleshes it
+ * out over time): zones & conduits with target/achieved/capable Security Levels (SL 1-4) and Purdue
+ * levels, and a zone↔asset link. OT assets themselves are identified by ASSETTAG tags (ot/ics/scada/iot).
+ */
+export function ensureOtSecurityTables(): void {
+  let db: Database.Database;
+  try { db = getDb("XCOMPLIANCE"); } catch { return; }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS OTZONE (
+      ZoneID INTEGER PRIMARY KEY, ZoneGUID TEXT, AuditID INTEGER, Name TEXT, Description TEXT,
+      PurdueLevel TEXT, Criticality TEXT,
+      SecurityLevelTarget INTEGER, SecurityLevelAchieved INTEGER, SecurityLevelCapability INTEGER,
+      AssetCount INTEGER, Status TEXT, CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS OTCONDUIT (
+      ConduitID INTEGER PRIMARY KEY, ConduitGUID TEXT, AuditID INTEGER, Name TEXT, Description TEXT,
+      FromZoneID INTEGER, ToZoneID INTEGER, Protocols TEXT,
+      SecurityLevelTarget INTEGER, SecurityLevelAchieved INTEGER, CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS OTZONEASSET (
+      ZoneAssetID INTEGER PRIMARY KEY, ZoneID INTEGER, AssetID INTEGER, CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_otzone_audit ON OTZONE(AuditID);
+    CREATE INDEX IF NOT EXISTS ix_otconduit_audit ON OTCONDUIT(AuditID);
+    CREATE INDEX IF NOT EXISTS ix_otzoneasset_zone ON OTZONEASSET(ZoneID);
+  `);
+}
+
+/**
+ * Threat-modeling dashboard: every THREATMODEL (scope, methodology, status, risk) with, per model,
+ * the count of in-scope assets (THREATMODELASSET), identified threats (THREATMODELTHREAT), open
+ * threats and mitigations (THREATMODELCONTROL via the model's threats). Tenant-visible (own +
+ * legacy NULL; super-admin = all). The friendly home replacing the raw THREATMODEL explorer grid.
+ */
+export function getThreatModelDashboard(tenant: number | null): { models: Record<string, unknown>[]; stats: Record<string, unknown> } {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return { models: [], stats: { total: 0 } }; }
+  const has = (t: string): boolean => !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t);
+  if (!has("THREATMODEL")) return { models: [], stats: { total: 0 } };
+  const vis = tenant != null ? `WHERE (TenantID = ${tenant} OR TenantID IS NULL)` : "";
+  const models = db.prepare(
+    `SELECT ThreatModelID AS id, ThreatModelName AS name, Description AS description, Methodology AS methodology,
+            Status AS status, Scope AS scope, RiskLevel AS riskLevel, Owner AS owner, CreatedDate AS createdDate
+     FROM THREATMODEL ${vis} ORDER BY ThreatModelID DESC`,
+  ).all() as Record<string, any>[];
+  const cnt = (table: string, id: number): number =>
+    has(table) ? (db.prepare(`SELECT COUNT(*) c FROM "${table}" WHERE ThreatModelID=?`).get(id) as { c: number }).c : 0;
+  const CLOSED = /closed|mitigat|resolv|accepted|done|ferm/i;
+  const out = models.map((m) => {
+    const threats = has("THREATMODELTHREAT")
+      ? (db.prepare("SELECT Status FROM THREATMODELTHREAT WHERE ThreatModelID=?").all(m.id) as { Status: string }[]) : [];
+    const openThreats = threats.filter((t) => !CLOSED.test(String(t.Status ?? ""))).length;
+    const mitigations = has("THREATMODELCONTROL") && has("THREATMODELTHREAT")
+      ? (db.prepare(`SELECT COUNT(*) c FROM THREATMODELCONTROL c JOIN THREATMODELTHREAT t ON t.ThreatModelThreatID = c.ThreatModelThreatID WHERE t.ThreatModelID=?`).get(m.id) as { c: number }).c : 0;
+    return { ...m, counts: { assets: cnt("THREATMODELASSET", m.id), threats: threats.length, openThreats, mitigations } };
+  });
+  const sum = (f: (m: any) => number): number => out.reduce((n, m) => n + f(m), 0);
+  return {
+    models: out,
+    stats: {
+      total: out.length,
+      threats: sum((m) => m.counts.threats),
+      openThreats: sum((m) => m.counts.openThreats),
+      mitigations: sum((m) => m.counts.mitigations),
+    },
+  };
+}
+
+/**
+ * Create a THREATMODEL from a guided form — the friendly path that replaces the raw explorer
+ * insert (and sidesteps the phantom-PK link-panel trap, since child links are added after save).
+ * Column-aware INSERT + GUID + tenant. ThreatModelID is a real INTEGER PRIMARY KEY.
+ */
+export function createThreatModel(
+  p: { name: string; description?: string; methodology?: string; status?: string; scope?: string; riskLevel?: string; owner?: string },
+  tenant: number | null,
+): { id: number } {
+  const db = getDb("XORCISM");
+  const cols = new Set((db.prepare(`PRAGMA table_info("THREATMODEL")`).all() as { name: string }[]).map((c) => c.name));
+  const now = new Date().toISOString();
+  const candidate: Record<string, unknown> = {
+    ThreatModelGUID: randomUUID(),
+    ThreatModelName: (p.name || "Untitled threat model").slice(0, 300),
+    Description: p.description ? String(p.description).slice(0, 4000) : null,
+    Methodology: (p.methodology || "STRIDE").slice(0, 80),
+    Status: (p.status || "Draft").slice(0, 60),
+    Scope: p.scope ? String(p.scope).slice(0, 2000) : null,
+    RiskLevel: p.riskLevel ? String(p.riskLevel).slice(0, 40) : null,
+    Owner: p.owner ? String(p.owner).slice(0, 200) : null,
+    CreatedDate: now,
+    TenantID: tenant,
+  };
+  const keys = Object.keys(candidate).filter((k) => cols.has(k));
+  const sql = `INSERT INTO THREATMODEL (${keys.map((k) => `"${k}"`).join(", ")}) VALUES (${keys.map(() => "?").join(", ")})`;
   const r = db.prepare(sql).run(...keys.map((k) => candidate[k]));
   return { id: Number(r.lastInsertRowid) };
 }

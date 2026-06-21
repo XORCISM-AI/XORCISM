@@ -1,0 +1,15 @@
+{
+  "id": "voidaccess",
+  "name": "VoidAccess",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports dark-web OSINT / threat intelligence from VoidAccess (https://github.com/KatrielMoses/voidaccess), a self-hosted dark-web OSINT platform (Python, MIT) — a free alternative to Recorded Future / DarkOwl / Flare. It runs autonomous investigations across Tor search engines and clearnet sources, extracts entities (CVEs, threat actors, domains, IPs, emails, hashes, crypto wallets, paste links) and builds relationship graphs. This connector turns a VoidAccess investigation/findings export (JSON) into XORCISM threat-intel items in XTHREAT.INTELEXCHANGE — each finding becomes an intel item with CVE / MITRE ATT&CK / threat-actor tags and an indicator summary (idempotent by reference, with ATT&CK cross-links). Import-only via `file` (its REST API *triggers* live dark-web crawls, which is intentionally NOT exposed here). VoidAccess can also export STIX 2.1 bundles and MISP JSON events, which you can import via the opencti / misp connectors. Privacy: emails / wallets / hashes are summarised as counts, not dumped verbatim. No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:voidaccess",
+  "run": "run.py",
+  "mapping": "voidaccess",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a VoidAccess investigation/findings export (JSON) to import." },
+    { "name": "max_items", "type": "int", "required": false, "default": 200, "min": 1, "max": 2000, "help": "Maximum number of findings to import." }
+  ]
+}

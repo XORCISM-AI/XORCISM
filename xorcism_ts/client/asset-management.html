@@ -38,6 +38,25 @@
   .findings{list-style:none;margin:0;padding:0}
   .findings li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
   .legend{font-size:11px;color:#64748b;margin-top:12px}
+  /* New-asset modal */
+  .am-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .am-modal-bg.open{display:flex}
+  .am-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:22px 24px}
+  .am-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .am-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .am-modal .fld{margin-bottom:13px}
+  .am-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .am-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .am-modal label .req{color:#f87171}
+  .am-modal input,.am-modal select,.am-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .am-modal input:focus,.am-modal select:focus,.am-modal textarea:focus{outline:none;border-color:#7c83fd}
+  .am-modal textarea{resize:vertical;min-height:54px}
+  .am-modal .ck{display:flex;align-items:center;gap:7px;font-size:12px;color:#cbd5e1;text-transform:none;letter-spacing:0}
+  .am-modal .ck input{width:auto}
+  .am-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .am-err{color:#f87171;font-size:12px;min-height:16px}
+  .btn-newasset{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}
+  .btn-newasset:hover{background:#9aa0ff}
 </style>
 </head>
 <body>
@@ -53,8 +72,12 @@
 </div>
 
 <div class="am-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Asset Management</h1>
+    <button class="btn btn-ghost btn-sm" id="am-match" title="Link recent CVEs to assets by technology (CPE + tags) and notify">↻ Match CVEs</button>
+    <button class="btn-newasset" id="am-new">+ New asset</button>
+  </div>
   <div>
-    <h1>Asset Management</h1>
     <div class="am-sub">One governance view over your asset estate — ownership, exposure, backup posture,
       control &amp; BIA coverage, and open vulnerability load (KEV / critical). Each asset is checked for
       the hygiene gaps that matter: <b>crown jewels exposed to the Internet</b>, <b>critical assets with no
@@ -65,6 +88,63 @@
   <div id="am-body"><div class="muted" style="padding:24px;text-align:center">Building the inventory…</div></div>
 </div>
 
+<!-- Guided "new asset" modal -->
+<div class="am-modal-bg" id="am-modal">
+  <div class="am-modal">
+    <h3>New asset</h3>
+    <p class="lead">Register an asset with a guided form. It joins the inventory immediately and the governance
+      worklist flags it (owner-less, Internet-facing crown jewel, no backup…). Add the rest under the explorer.</p>
+    <div class="fld">
+      <label>Name <span class="req">*</span></label>
+      <input id="am-f-name" type="text" placeholder="e.g. prod-db-01 / Customer Portal" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Criticality</label>
+        <select id="am-f-crit">
+          <option value="">—</option>
+          <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Environment</label>
+        <select id="am-f-env">
+          <option value="">On-premises</option>
+          <option value="cloud">Cloud</option>
+          <option value="virtual">Virtual</option>
+          <option value="third-party">Third-party</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Operating system</label><input id="am-f-os" type="text" placeholder="e.g. Ubuntu 22.04 / Windows Server 2022" maxlength="200" autocomplete="off"></div>
+      <div class="fld"><label>Owner (optional)</label><select id="am-f-owner"><option value="">—</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Hostname (optional)</label><input id="am-f-host" type="text" maxlength="255" autocomplete="off"></div>
+      <div class="fld"><label>IPv4 (optional)</label><input id="am-f-ip" type="text" placeholder="10.0.0.10" maxlength="45" autocomplete="off"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Business value (optional)</label><input id="am-f-bv" type="text" placeholder="e.g. Revenue-critical" maxlength="60" autocomplete="off"></div>
+      <div class="fld"><label>Financial value (optional)</label><input id="am-f-fv" type="number" min="0" step="1000" placeholder="250000"></div>
+    </div>
+    <div class="fld" style="display:flex;gap:18px;margin-top:2px">
+      <label class="ck"><input type="checkbox" id="am-f-public"> Internet-facing</label>
+      <label class="ck"><input type="checkbox" id="am-f-pii"> Hosts PII</label>
+    </div>
+    <div class="fld">
+      <label>Notes (optional)</label>
+      <textarea id="am-f-notes" maxlength="2000"></textarea>
+    </div>
+    <div class="am-modal-foot">
+      <span class="am-err" id="am-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="am-cancel">Cancel</button>
+      <button class="btn-newasset" id="am-create">Create asset</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
 <script src="/js/session-ui.js"></script>
 <script src="/js/asset-management.js"></script>
 </body>

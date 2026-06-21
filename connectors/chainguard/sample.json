@@ -1,0 +1,17 @@
+{
+  "source": { "type": "image", "target": { "userInput": "cgr.dev/chainguard/nginx:latest" } },
+  "matches": [
+    {
+      "vulnerability": { "id": "CVE-2023-44487", "severity": "High", "fix": { "versions": ["1.25.3-r1"] } },
+      "artifact": { "name": "nginx", "version": "1.25.2-r0", "purl": "pkg:apk/wolfi/nginx@1.25.2-r0" }
+    },
+    {
+      "vulnerability": { "id": "CVE-2024-2961", "severity": "Medium" },
+      "artifact": { "name": "glibc", "version": "2.39-r0", "purl": "pkg:apk/wolfi/glibc@2.39-r0" }
+    },
+    {
+      "vulnerability": { "id": "GHSA-xxxx-yyyy-zzzz", "severity": "Low" },
+      "artifact": { "name": "libcurl", "version": "8.5.0-r0" }
+    }
+  ]
+}

@@ -15,6 +15,11 @@ Capacités :
   • Antivirus (ClamAV `clamscan`/`clamdscan` si présent).
   • Threat hunting : récupère les IOC (threat intel : XTHREAT, connecteurs CTI, feeds,
     STIX/TAXII) et les chasse localement (process, connexions, fichiers, hashes).
+  • Pont EDR Rustinel : lit (tail) les alertes ECS NDJSON du capteur Rustinel
+    (ETW/eBPF/ESF + Sigma/YARA/IOC) et les remonte à XORCISM en événements — détection
+    noyau sans réécrire de cœur natif (lecture seule, curseur par fichier).
+  • Scan YARA : exécute le binaire `yara` local avec les règles du dépôt YARARULE de
+    XORCISM (ou XOR_YARA_RULES) et remonte chaque correspondance en événement.
   • Boucle de check-in : exécute les scans « lancés » depuis la fenêtre ASSET de XORCISM.
 
 Usage :
@@ -50,7 +55,7 @@ try:
     import winreg as _winreg  # Windows-only; used by the native OVAL evaluator
 except Exception:
     _winreg = None
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Console Windows : la sortie par défaut (cp1252) ne sait pas encoder « → » ni
 # les accents → on force UTF-8 (errors=replace) pour éviter tout UnicodeEncodeError.
@@ -81,7 +86,7 @@ if getattr(sys, "frozen", False):
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONF = os.path.join(HERE, "xor_agent.conf")
-AGENT_VERSION = "1.0.0"
+AGENT_VERSION = "1.1.0"
 
 
 # ── Configuration ──────────────────────────────────────────────────────────────
@@ -1025,10 +1030,14 @@ class _WinOval:
         return r
 
 
-def evaluate_oval_windows(content_path, limit=20000):
+def evaluate_oval_windows(content_path, limit=20000, oval_class=None):
     """Evaluate a Windows OVAL definitions document natively (no oscap). Returns the same
     item list `/api/agent/oval` expects: {definition_id, class, result, title, severity,
-    cves, cpes}."""
+    cves, cpes}. `oval_class` (compliance/vulnerability/inventory/patch) restricts evaluation
+    to a single class; None / "all" evaluates every class."""
+    oc = (oval_class or "").strip().lower()
+    if oc in ("all", "any"):
+        oc = ""
     try:
         root = ET.parse(content_path).getroot()
     except Exception as e:
@@ -1037,6 +1046,8 @@ def evaluate_oval_windows(content_path, limit=20000):
     ev = _WinOval(root)
     out = []
     for did, el in ev.defs.items():
+        if oc and (el.get("class", "").lower() != oc):
+            continue  # skip other classes (faster + honours the filter)
         title = ""; cves = []; cpes = []; sev = ""
         for sub in el.iter():
             t = _ns(sub.tag)
@@ -1202,6 +1213,564 @@ def _running_exe_paths():
     return paths
 
 
+# ── BAS atomic-test execution (opt-in, read-only recon ONLY) ─────────────────────
+# Executing attacker procedures on an endpoint is sensitive: emulation runs only when the
+# operator opts in (XOR_ALLOW_EMULATION=1), and even then ONLY commands on a conservative
+# read-only-recon allowlist are run. Everything else (writes, persistence, downloads,
+# credential dumping, exec chains, anything with shell metacharacters) is reported as
+# "Skipped" for manual execution — the agent never auto-runs destructive injects.
+_EMU_SAFE = [
+    r"^whoami(\s+/[a-z]+)?$", r"^hostname$", r"^systeminfo$", r"^ver$", r"^ipconfig(\s+/all)?$",
+    r"^getmac$", r"^arp\s+-a$", r"^route\s+print$", r"^tasklist$", r"^klist$",
+    r"^(query\s+user|quser)$", r"^net\s+(config|view|accounts|user|group|localgroup|share|session|time)$",
+    r"^nltest\s+/dclist:?\S*$", r"^id$", r"^uname(\s+-[a-z]+)*$", r"^sw_vers$", r"^w$", r"^last$",
+    r"^env$", r"^printenv$", r"^ifconfig$", r"^ip\s+(addr|a|route|r)$", r"^netstat(\s+-[a-z]+)*$",
+    r"^ps(\s+-[a-zA-Z]+)*$", r"^cat\s+/etc/(os-release|hostname|passwd)$", r"^nslookup\s+[a-z0-9.\-]+$",
+]
+_EMU_DENY = re.compile(
+    r"[;&|><`$]|/add\b|/del\b|/create\b|\badd\b|\bdel(ete)?\b|\brm\b|reg\s+add|new-|set-|remove-|"
+    r"invoke-|iex|downloadstring|-enc\b|-e\b|curl|wget|ncat|\bnc\b|base64|format|schtasks|rundll32|mimikatz",
+    re.I,
+)
+
+
+def _emu_is_safe(command, executor):
+    c = re.sub(r"(?i)^cmd(\.exe)?\s+/c\s+", "", (command or "").strip())
+    if not c or c.startswith("#") or _EMU_DENY.search(c):
+        return False
+    cl = c.lower()
+    return any(re.match(p, cl) for p in _EMU_SAFE)
+
+
+def _emu_exec(test):
+    """Execute one atomic test if it is a safe read-only recon command. Returns (outcome, notes).
+    Outcomes: Executed (ran, not prevented) / Prevented (blocked) / Skipped (manual/unsafe) / Error."""
+    command = (test.get("command") or "").strip()
+    executor = (test.get("executor") or "").lower()
+    host = platform.system().lower()
+    want = (test.get("platform") or "").lower()
+    plat_ok = (not want) or ("multi" in want) or ("cross" in want) \
+        or ("windows" in want and host == "windows") \
+        or (("linux" in want or "unix" in want) and host == "linux") \
+        or (("macos" in want or "darwin" in want or "osx" in want) and host == "darwin")
+    if not plat_ok:
+        return "Skipped", f"platform mismatch (test={want or 'n/a'}, host={host})"
+    if executor in ("manual", "") or command.startswith("#"):
+        return "Skipped", "manual inject — run by hand and record the outcome"
+    if not _emu_is_safe(command, executor):
+        return "Skipped", "not auto-run (only read-only recon is executed automatically) — run manually"
+    try:
+        if executor == "powershell":
+            cmd = ["powershell", "-NoProfile", "-NonInteractive", "-Command", command]
+        elif executor in ("command_prompt", "cmd"):
+            cmd = ["cmd", "/c", re.sub(r"(?i)^cmd(\.exe)?\s+/c\s+", "", command)]
+        elif executor in ("sh", "bash"):
+            cmd = [executor, "-c", command]
+        else:
+            return "Skipped", f"unsupported executor '{executor}'"
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        out = ((r.stdout or "") + (r.stderr or "")).strip()
+        if r.returncode != 0 and re.search(r"access is denied|blocked|not permitted|virus|defender|quarantin", out, re.I):
+            return "Prevented", out[:300]
+        if r.returncode == 0:
+            return "Executed", (out[:300] or "ran (no output)")
+        return "Error", (out[:300] or f"exit {r.returncode}")
+    except subprocess.TimeoutExpired:
+        return "Error", "timeout"
+    except FileNotFoundError:
+        return "Skipped", f"executor '{executor}' unavailable on host"
+    except Exception as e:  # noqa: BLE001
+        return "Error", str(e)[:200]
+
+
+# ── Detection attribution (did the executed inject actually fire a detection?) ──────
+# After an inject runs, query the host's security telemetry in the post-inject window to
+# upgrade the outcome from "Executed" (ran, no detection seen — a visibility gap) to
+# "Logged" (telemetry captured it) or "Detected" (a security product alerted). Best-effort
+# and read-only; honest by design — benign recon on an unconfigured host stays "Executed".
+def _emu_detect_parse(line):
+    """Parse the telemetry probe's verdict line 'Outcome|Source' → (outcome, source)."""
+    line = (line or "").strip()
+    if "|" in line:
+        oc, src = line.split("|", 1)
+        oc = oc.strip()
+        if oc in ("Detected", "Logged", "Prevented", "Alerted"):
+            return oc, src.strip()
+    return None, None
+
+
+def _emu_keyword(command):
+    c = re.sub(r"(?i)^(cmd(\.exe)?\s+/c\s+|powershell(\.exe)?\s+(-\w+\s+)*-command\s+|powershell(\.exe)?\s+)", "", (command or "").strip())
+    toks = c.split()
+    return re.sub(r"[^A-Za-z0-9_.\-]", "", toks[0]) if toks else ""
+
+
+def _emu_detect(start_dt, test):
+    """Correlate an executed inject with local detection telemetry. Returns (outcome, source)
+    or (None, None). Windows: Defender threats / Defender + Sysmon + PowerShell-ScriptBlock +
+    Security-4688 event logs. Linux/macOS: journald/auditd best-effort."""
+    kw = _emu_keyword(test.get("command"))
+    if not kw:
+        return None, None
+    if platform.system() == "Windows":
+        s = start_dt.strftime("%Y-%m-%dT%H:%M:%S")
+        ps = (
+            "$ErrorActionPreference='SilentlyContinue';"
+            f"$t=[datetime]::ParseExact('{s}','yyyy-MM-ddTHH:mm:ss',$null);$kw='{kw}';$r=@();"
+            "if(Get-MpThreatDetection|?{$_.InitialDetectionTime -ge $t}){$r+='Detected|Microsoft Defender'};"
+            "try{if(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational';Id=1116,1117;StartTime=$t} -MaxEvents 1 -EA Stop){$r+='Detected|Microsoft Defender (1116/1117)'}}catch{};"
+            "try{if(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational';Id=1;StartTime=$t} -EA Stop|?{$_.Message -match $kw}|select -First 1){$r+='Logged|Sysmon (process create, EID1)'}}catch{};"
+            "try{if(Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PowerShell/Operational';Id=4104;StartTime=$t} -EA Stop|?{$_.Message -match $kw}|select -First 1){$r+='Logged|PowerShell ScriptBlock (4104)'}}catch{};"
+            "try{if(Get-WinEvent -FilterHashtable @{LogName='Security';Id=4688;StartTime=$t} -EA Stop|?{$_.Message -match $kw}|select -First 1){$r+='Logged|Security audit (process create, 4688)'}}catch{};"
+            "if($r){($r|Sort-Object -Unique)[0]}else{'none'}"
+        )
+        try:
+            r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], capture_output=True, text=True, timeout=50)
+            lines = [l for l in (r.stdout or "").splitlines() if l.strip()]
+            return _emu_detect_parse(lines[-1]) if lines else (None, None)
+        except Exception:  # noqa: BLE001
+            return None, None
+    # Linux / macOS — best-effort journald/auditd scan in the window
+    try:
+        since = start_dt.strftime("%Y-%m-%d %H:%M:%S")
+        r = subprocess.run(["journalctl", "--since", since, "--no-pager"], capture_output=True, text=True, timeout=20)
+        if re.search(re.escape(kw), r.stdout or ""):
+            return "Logged", "journald"
+    except Exception:  # noqa: BLE001
+        pass
+    return None, None
+
+
+# ── Advanced forensics (live DFIR triage) ────────────────────────────────────────
+# A read-only "live response" snapshot of forensically-relevant host state: running
+# processes (path/cmdline/parent), network connections (with PID/state), persistence
+# (autoruns / scheduled tasks / services / cron / systemd), logon sessions & users,
+# recently-modified files in key dirs, network artifacts (ARP / DNS cache / routes),
+# loaded drivers/kernel modules and an event-log summary. Cross-OS, stdlib-only, bounded,
+# every collector wrapped — collection NEVER modifies the host. Conservative heuristics add
+# triage "flags" (process/autorun from a temp dir, failed-logon spike).
+_FZ_PROC, _FZ_CONN, _FZ_TASK, _FZ_FILE, _FZ_MOD = 500, 500, 300, 200, 400
+_SUSP_DIRS = ("\\temp\\", "\\tmp\\", "\\appdata\\local\\temp", "\\downloads\\",
+              "/tmp/", "/var/tmp/", "/dev/shm/")
+_RECENT_DIRS_WIN = ["TEMP", "TMP"]
+_FLAGS = []  # collected during a triage run
+
+
+def _is_susp_path(p):
+    p = (p or "").lower()
+    return any(s in p for s in _SUSP_DIRS)
+
+
+def _run_text(cmd, timeout=30):
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.stdout or ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _fz_processes():
+    out = []
+    if platform.system() == "Windows":
+        txt = _run_text(["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                         "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,Path,CommandLine | ConvertTo-Json -Compress"], 60)
+        try:
+            data = json.loads(txt) if txt.strip() else []
+            if isinstance(data, dict):
+                data = [data]
+            for p in data[:_FZ_PROC]:
+                path = p.get("Path") or ""
+                out.append({"pid": p.get("ProcessId"), "ppid": p.get("ParentProcessId"),
+                            "name": p.get("Name"), "path": path,
+                            "cmdline": (p.get("CommandLine") or "")[:500]})
+        except Exception:  # noqa: BLE001
+            pass
+    else:
+        txt = _run_text(["ps", "-eo", "pid,ppid,user,comm,args"], 30)
+        for line in txt.splitlines()[1:][:_FZ_PROC]:
+            parts = line.split(None, 4)
+            if len(parts) >= 5:
+                out.append({"pid": parts[0], "ppid": parts[1], "user": parts[2],
+                            "name": parts[3], "path": "", "cmdline": parts[4][:500]})
+    for p in out:
+        if _is_susp_path(p.get("path") or p.get("cmdline")):
+            _FLAGS.append({"category": "process", "severity": "warning",
+                           "detail": f"process from temp/unusual path: {p.get('name')} (pid {p.get('pid')}) {p.get('path') or p.get('cmdline')[:120]}"})
+    return out
+
+
+def _fz_connections():
+    out = []
+    if platform.system() == "Windows":
+        txt = _run_text(["netstat", "-ano"], 30)
+        import re as _re
+        for line in txt.splitlines():
+            m = _re.match(r"\s*(TCP|UDP)\s+(\S+)\s+(\S+)\s+(\S+)?\s*(\d+)?\s*$", line)
+            if m:
+                out.append({"proto": m.group(1), "local": m.group(2), "remote": m.group(3),
+                            "state": (m.group(4) or "").strip(), "pid": m.group(5)})
+            if len(out) >= _FZ_CONN:
+                break
+    else:
+        txt = _run_text(["ss", "-tunap"], 20) or _run_text(["netstat", "-tunap"], 20)
+        for line in txt.splitlines()[1:]:
+            cols = line.split()
+            if len(cols) >= 5:
+                out.append({"proto": cols[0], "state": cols[1] if len(cols) > 5 else "",
+                            "local": cols[-3] if len(cols) >= 3 else "", "remote": cols[-2] if len(cols) >= 2 else "",
+                            "proc": cols[-1][:120]})
+            if len(out) >= _FZ_CONN:
+                break
+    return out
+
+
+def _fz_autoruns():
+    out = []
+    if platform.system() == "Windows":
+        try:
+            import winreg  # type: ignore
+            keys = [(winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Run"),
+                    (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\RunOnce"),
+                    (winreg.HKEY_LOCAL_MACHINE, r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run"),
+                    (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run"),
+                    (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\RunOnce")]
+            for hive, sub in keys:
+                hive_name = "HKLM" if hive == winreg.HKEY_LOCAL_MACHINE else "HKCU"
+                try:
+                    h = winreg.OpenKey(hive, sub)
+                except OSError:
+                    continue
+                i = 0
+                while True:
+                    try:
+                        name, val, _ = winreg.EnumValue(h, i)
+                    except OSError:
+                        break
+                    out.append({"location": f"{hive_name}\\{sub}", "name": name, "command": str(val)[:300]})
+                    i += 1
+                winreg.CloseKey(h)
+        except Exception:  # noqa: BLE001
+            pass
+    else:
+        out += [{"location": "crontab", "name": "", "command": l[:300]}
+                for l in _run_text(["crontab", "-l"], 10).splitlines() if l.strip() and not l.startswith("#")]
+        en = _run_text(["systemctl", "list-unit-files", "--type=service", "--state=enabled", "--no-pager", "--no-legend"], 15)
+        out += [{"location": "systemd", "name": l.split()[0], "command": "enabled"} for l in en.splitlines()[:60] if l.split()]
+    for a in out:
+        if _is_susp_path(a.get("command")):
+            _FLAGS.append({"category": "autorun", "severity": "warning",
+                           "detail": f"autorun from temp/unusual path: {a.get('name')} → {a.get('command')[:120]}"})
+    return out
+
+
+def _fz_scheduled_tasks():
+    if platform.system() != "Windows":
+        return []
+    out = []
+    txt = _run_text(["schtasks", "/query", "/fo", "csv", "/nh"], 40)
+    for line in txt.splitlines():
+        parts = [p.strip('"') for p in line.split('","')]
+        if parts and parts[0]:
+            name = parts[0].strip('"')
+            if name.startswith("\\Microsoft\\"):  # built-ins: keep but de-prioritise count
+                continue
+            out.append({"name": name, "next_run": parts[1] if len(parts) > 1 else "",
+                        "status": parts[2] if len(parts) > 2 else ""})
+        if len(out) >= _FZ_TASK:
+            break
+    return out
+
+
+def _fz_services():
+    if platform.system() != "Windows":
+        return []
+    txt = _run_text(["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                     "Get-Service | Where-Object {$_.Status -eq 'Running'} | Select-Object Name,DisplayName | ConvertTo-Json -Compress"], 40)
+    try:
+        data = json.loads(txt) if txt.strip() else []
+        if isinstance(data, dict):
+            data = [data]
+        return [{"name": s.get("Name"), "display": s.get("DisplayName")} for s in data[:300]]
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _fz_logons():
+    out = {"sessions": [], "recent": []}
+    if platform.system() == "Windows":
+        out["sessions"] = [l.strip() for l in _run_text(["query", "user"], 15).splitlines()[1:] if l.strip()][:30]
+    else:
+        out["sessions"] = [l.strip() for l in _run_text(["who"], 10).splitlines() if l.strip()][:30]
+        out["recent"] = [l.strip() for l in _run_text(["last", "-n", "15"], 10).splitlines() if l.strip() and "wtmp" not in l][:15]
+    return out
+
+
+def _fz_recent_files():
+    import time as _t
+    out, cutoff = [], _t.time() - 7 * 86400
+    dirs = []
+    if platform.system() == "Windows":
+        for ev in _RECENT_DIRS_WIN:
+            if os.environ.get(ev):
+                dirs.append(os.environ[ev])
+        up = os.environ.get("USERPROFILE", "")
+        if up:
+            dirs += [os.path.join(up, "Downloads"), os.path.join(up, "Desktop"),
+                     os.path.join(up, r"AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup")]
+    else:
+        home = os.path.expanduser("~")
+        dirs += ["/tmp", "/var/tmp", os.path.join(home, "Downloads")]
+    for d in dirs:
+        try:
+            for entry in os.scandir(d):
+                if not entry.is_file():
+                    continue
+                st = entry.stat()
+                if st.st_mtime >= cutoff:
+                    out.append({"path": entry.path, "size": st.st_size,
+                                "mtime": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")})
+                if len(out) >= _FZ_FILE:
+                    return out
+        except Exception:  # noqa: BLE001
+            continue
+    return out
+
+
+def _fz_network_artifacts():
+    art = {"arp": [], "dns": [], "routes": []}
+    art["arp"] = [l.strip() for l in _run_text(["arp", "-a"], 15).splitlines() if l.strip()][:200]
+    if platform.system() == "Windows":
+        dns = _run_text(["ipconfig", "/displaydns"], 20)
+        art["dns"] = [l.strip()[len("Record Name . . . . . :"):].strip() for l in dns.splitlines()
+                      if "Record Name" in l][:200]
+        art["routes"] = [l.strip() for l in _run_text(["route", "print", "-4"], 15).splitlines() if l.strip()][:80]
+    else:
+        art["routes"] = [l.strip() for l in (_run_text(["ip", "route"], 10) or _run_text(["netstat", "-rn"], 10)).splitlines() if l.strip()][:80]
+    return art
+
+
+def _fz_modules():
+    if platform.system() == "Windows":
+        out = []
+        for line in _run_text(["driverquery", "/fo", "csv", "/nh"], 40).splitlines():
+            parts = [p.strip('"') for p in line.split('","')]
+            if parts and parts[0]:
+                out.append({"name": parts[0].strip('"'), "type": parts[1] if len(parts) > 1 else ""})
+            if len(out) >= _FZ_MOD:
+                break
+        return out
+    return [l.split()[0] for l in _run_text(["lsmod"], 10).splitlines()[1:][:_FZ_MOD] if l.split()]
+
+
+def _fz_eventlog():
+    out = {}
+    if platform.system() == "Windows":
+        ps = ("$e=@{};"
+              "try{$e['failed_logons_24h']=(Get-WinEvent -FilterHashtable @{LogName='Security';Id=4625;StartTime=(Get-Date).AddDays(-1)} -ErrorAction SilentlyContinue).Count}catch{};"
+              "try{$e['system_errors_24h']=(Get-WinEvent -FilterHashtable @{LogName='System';Level=2;StartTime=(Get-Date).AddDays(-1)} -ErrorAction SilentlyContinue).Count}catch{};"
+              "$e|ConvertTo-Json -Compress")
+        try:
+            out = json.loads(_run_text(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], 50) or "{}")
+        except Exception:  # noqa: BLE001
+            out = {}
+    else:
+        errs = _run_text(["journalctl", "-p", "err", "--since", "24 hours ago", "--no-pager", "-q"], 20)
+        out = {"journal_errors_24h": len([l for l in errs.splitlines() if l.strip()])}
+    fl = out.get("failed_logons_24h")
+    if isinstance(fl, int) and fl >= 20:
+        _FLAGS.append({"category": "auth", "severity": "warning",
+                       "detail": f"failed-logon spike: {fl} failed logons (event 4625) in the last 24h"})
+    return out
+
+
+def forensic_triage():
+    """Collect a read-only live-forensics triage bundle of the host."""
+    global _FLAGS
+    _FLAGS = []
+    art = {
+        "processes": _fz_processes(),
+        "connections": _fz_connections(),
+        "autoruns": _fz_autoruns(),
+        "scheduled_tasks": _fz_scheduled_tasks(),
+        "services": _fz_services(),
+        "logons": _fz_logons(),
+        "recent_files": _fz_recent_files(),
+        "network": _fz_network_artifacts(),
+        "modules": _fz_modules(),
+        "event_log": _fz_eventlog(),
+    }
+    counts = {k: (len(v) if isinstance(v, list) else (sum(len(x) for x in v.values() if isinstance(x, list)) if isinstance(v, dict) else 1))
+              for k, v in art.items()}
+    return {
+        "os": f"{platform.system()} {platform.release()}",
+        "collectedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "summary": {"counts": counts, "host": platform.node()},
+        "flags": list(_FLAGS),
+        "artifacts": art,
+    }
+
+
+# ── Rustinel EDR bridge (kernel-level ETW / eBPF / ESF detection) ─────────────────
+# Rustinel (https://github.com/Karib0u/rustinel) is an open-source cross-platform EDR
+# sensor: it collects native telemetry via ETW (Windows), eBPF (Linux) and Endpoint
+# Security (macOS), evaluates it against Sigma rules, YARA signatures and atomic IOCs, and
+# writes ECS-compatible NDJSON alerts to logs/alerts.json.<date>. This bridge gives the XOR
+# agent genuine kernel-level detection — the "native ETW/eBPF core" from the roadmap —
+# without reimplementing it: the agent simply *tails* Rustinel's alert files and ships the
+# new alerts to XORCISM as events. Read-only: the agent never controls or configures the
+# sensor. A per-file byte cursor (persisted in the conf) makes each run forward only new
+# alerts — nothing is shipped twice, nothing is missed across log rotations.
+_RUSTINEL_GLOBS_WIN = [
+    r"C:\Program Files\Rustinel\logs\alerts.json*",
+    r"C:\ProgramData\Rustinel\logs\alerts.json*",
+    r"C:\Rustinel\logs\alerts.json*",
+]
+_RUSTINEL_GLOBS_NIX = [
+    "/var/log/rustinel/alerts.json*",
+    "/opt/rustinel/logs/alerts.json*",
+    "/usr/local/rustinel/logs/alerts.json*",
+    os.path.expanduser("~/rustinel/logs/alerts.json*"),
+]
+# Sigma rule levels (also surfaced via ECS event.severity / log.level) → event severity.
+_RUSTINEL_SEV = {"critical": "critical", "high": "high", "medium": "medium",
+                 "low": "low", "informational": "info", "info": "info"}
+
+
+def _rustinel_globs():
+    """Glob patterns for Rustinel's ECS NDJSON alert files (env override wins)."""
+    env = os.environ.get("XOR_RUSTINEL_GLOB")
+    if env:
+        return [g.strip() for g in env.split(os.pathsep) if g.strip()]
+    return list(_RUSTINEL_GLOBS_WIN if platform.system() == "Windows" else _RUSTINEL_GLOBS_NIX)
+
+
+def _ecs_get(d, *paths):
+    """Read a value from an ECS record by dotted path, trying a flat dotted key first
+    (ECS may be emitted nested {rule:{name}} or flattened {'rule.name':…})."""
+    for path in paths:
+        if path in d and not isinstance(d[path], (dict, list)):
+            return d[path]
+        cur = d
+        ok = True
+        for k in path.split("."):
+            if isinstance(cur, dict) and k in cur:
+                cur = cur[k]
+            else:
+                ok = False
+                break
+        if ok and cur not in (None, "", {}, []):
+            return cur
+    return None
+
+
+def _rustinel_alert_to_event(rec):
+    """Map one Rustinel ECS NDJSON alert → a XORCISM agent event payload."""
+    rule_name = str(_ecs_get(rec, "rule.name", "rule.description", "message") or "Rustinel detection")
+    rule_id = _ecs_get(rec, "rule.id", "rule.uuid")
+    level = str(_ecs_get(rec, "rule.level", "log.level") or "").lower()
+    sev = _RUSTINEL_SEV.get(level, "high")
+    engine = _ecs_get(rec, "rule.ruleset", "rule.category", "event.module")
+    proc = _ecs_get(rec, "process.name", "process.executable", "process.command_line")
+    host = _ecs_get(rec, "host.name", "host.hostname", "agent.name")
+    technique = _ecs_get(rec, "threat.technique.id")
+    indicator = _ecs_get(rec, "file.hash.sha256", "process.hash.sha256", "destination.ip", "file.path")
+    detail = {k: v for k, v in {
+        "ts": _ecs_get(rec, "@timestamp", "event.created"),
+        "rule": rule_name, "ruleId": rule_id, "level": level or None, "engine": engine,
+        "action": _ecs_get(rec, "event.action"), "process": proc, "host": host,
+        "technique": technique, "indicator": indicator,
+    }.items() if v}
+    return {"type": "rustinel_alert", "severity": sev, "title": f"Rustinel: {rule_name[:160]}", "detail": detail}
+
+
+def rustinel_collect(offsets, limit=500):
+    """Tail Rustinel's ECS NDJSON alert files past the stored per-file byte offsets. Returns
+    (events, new_offsets, files). Bounded by `limit`; advances a file's cursor only over the
+    lines actually consumed, so the next run resumes exactly where this one stopped."""
+    events = []
+    new_offsets = dict(offsets or {})
+    files = []
+    for pattern in _rustinel_globs():
+        files += glob.glob(pattern)
+    files = sorted(set(files))
+    for path in files:
+        if len(events) >= limit:
+            break
+        try:
+            start = int((offsets or {}).get(path, 0))
+            if start > os.path.getsize(path):   # file rotated / truncated → restart
+                start = 0
+            with open(path, "r", encoding="utf-8", errors="replace") as fh:
+                fh.seek(start)
+                while len(events) < limit:
+                    line = fh.readline()
+                    if not line:
+                        break
+                    new_offsets[path] = fh.tell()
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except Exception:
+                        continue  # partial/last line of a file being written → skip
+                    if isinstance(rec, dict):
+                        events.append(_rustinel_alert_to_event(rec))
+        except Exception as e:  # noqa: BLE001
+            print(f"[rustinel] {path}: {e}", file=sys.stderr)
+    return events, new_offsets, files
+
+
+# ── YARA scanning (malware classification) ───────────────────────────────────────
+# The agent runs the local `yara` binary against a path using rules from XORCISM's YARARULE
+# store (served at /api/agent/yara-rules) or a local rules file (XOR_YARA_RULES), and reports
+# each match as an event. Read-only; bounded; a graceful no-op when `yara` or rules are absent.
+_YARA_MATCH = re.compile(r"^([A-Za-z_]\w*)\s+(?:\[[^\]]*\]\s+)?(\S.*)$")
+
+
+def _yara_exe():
+    if subprocess.run(["where" if platform.system() == "Windows" else "which", "yara"],
+                      capture_output=True).returncode == 0:
+        return "yara"
+    return None
+
+
+def _yara_targets():
+    """Paths to scan (env override, else conservative defaults: temp + Downloads)."""
+    env = os.environ.get("XOR_YARA_TARGET")
+    if env:
+        return [t for t in env.split(os.pathsep) if t]
+    if platform.system() == "Windows":
+        return [p for p in (os.environ.get("TEMP"),
+                            os.path.join(os.environ.get("USERPROFILE", ""), "Downloads")) if p]
+    return [p for p in ("/tmp", "/var/tmp", os.path.expanduser("~/Downloads")) if os.path.isdir(p)]
+
+
+def yara_scan(rules_path, targets, timeout=1800):
+    """Run `yara -r -w <rules> <target>` for each target; return matches (rule + file)."""
+    exe = _yara_exe()
+    if not exe:
+        return {"available": False, "matches": []}
+    matches = []
+    for tgt in targets:
+        if not os.path.exists(tgt):
+            continue
+        try:
+            r = subprocess.run([exe, "-r", "-w", rules_path, tgt], capture_output=True, text=True, timeout=timeout)
+        except Exception:  # noqa: BLE001
+            continue
+        for line in (r.stdout or "").splitlines():
+            line = line.rstrip()
+            if not line or line.startswith("0x"):  # `-s` string-detail lines aren't matches
+                continue
+            m = _YARA_MATCH.match(line)
+            if m and m.group(2).strip():
+                matches.append({"rule": m.group(1), "file": m.group(2).strip()})
+            if len(matches) >= 1000:
+                return {"available": True, "matches": matches}
+    return {"available": True, "matches": matches}
+
+
 # ── Orchestration agent ──────────────────────────────────────────────────────────
 class XorAgent:
     def __init__(self, conf, conf_path):
@@ -1248,11 +1817,17 @@ class XorAgent:
         print(f"[vuln] {len(vulns)} CVE corrélées → ASSETVULNERABILITY ({st})")
         return len(vulns)
 
-    def do_oval(self):
+    def do_oval(self, oval_class=None):
         """Real OVAL evaluation against distro/SSG/Windows content; posts the classified
         verdicts to /api/agent/oval (→ OVALRESULTS + ASSETVULNERABILITY/CPE). Uses OpenSCAP
         `oscap` when present (Linux), the native Python OVAL evaluator on Windows (no oscap
-        build exists there), and falls back to the built-in config checks otherwise."""
+        build exists there), and falls back to the built-in config checks otherwise.
+
+        `oval_class` (compliance / vulnerability / inventory / patch) restricts the scan to
+        a single OVAL class; None / "all" evaluates every class in the content."""
+        oc = (oval_class or "").strip().lower()
+        if oc in ("all", "any", ""):
+            oc = ""
         workdir = tempfile.mkdtemp(prefix="xor-oval-")
         try:
             rel = _os_release()
@@ -1282,18 +1857,28 @@ class XorAgent:
                     results = os.path.join(workdir, "oval-results.xml")
                     _tolerant_run(["oscap", "oval", "eval", "--results", results, content], timeout=1800)
                     items = parse_oval_results(results, content) if os.path.exists(results) else []
+                if oc:  # oscap evaluated every class — keep only the requested one
+                    items = [it for it in items if str(it.get("class", "")).lower() == oc]
             elif native_win:
                 # Windows without (usable) oscap → evaluate the OVAL definitions natively
                 # (registry / file / family / env / WMI). Datastreams (XCCDF) aren't supported
-                # natively yet — those still need oscap.
+                # natively yet — those still need oscap. The class filter is applied at parse time.
                 engine = "native-oval-win"
-                items = evaluate_oval_windows(content)
-            if items and engine:
-                st, d = self._post("/api/agent/oval", {"engine": engine, "content": cid,
+                items = evaluate_oval_windows(content, oval_class=oc or None)
+            # Post when we have verdicts, or when a class was explicitly requested (record an
+            # empty scan honouring the filter rather than falling back to all-compliance checks).
+            if engine and (items or oc):
+                label = cid + (f" [{oc}]" if oc else "")
+                st, d = self._post("/api/agent/oval", {"engine": engine, "content": label,
                                                        "system": self.si, "results": items})
-                print(f"[oval] {len(items)} verdicts via {engine} ({cid}) → "
+                print(f"[oval] {len(items)} verdicts via {engine} ({label}) → "
                       f"{d.get('vulnerabilities', 0)} CVE, conformité {d.get('compliance')} ({st})")
                 return len(items)
+            # A non-compliance class was requested but no OVAL content covered it → nothing to do
+            # (the built-in checks are compliance-only).
+            if oc and oc != "compliance":
+                print(f"[oval] aucun contenu OVAL de classe « {oc} » disponible — rien à évaluer")
+                return 0
             # fallback: portable built-in config/compliance checks
             checks = _builtin_compliance()
             items = [{"definition_id": c["id"], "class": "compliance",
@@ -1332,17 +1917,137 @@ class XorAgent:
         print(f"[hunt] {len(iocs)} IOC évalués, {len(hits)} hit(s)")
         return len(hits)
 
-    def run_scan(self, kind):
+    def do_emulate(self, scenario_id):
+        """Execute a BAS emulation scenario's atomic-test injects and post outcomes to
+        /api/agent/emulation (→ EMULATIONRUN/EMULATIONRESULT). Closes the Threat-Informed
+        Defense loop: techniques go from 'test defined' to 'test executed / validated'.
+        Execution is opt-in (XOR_ALLOW_EMULATION=1) and limited to read-only recon — see _emu_exec."""
+        if not scenario_id:
+            print("[emulate] aucun scenarioId — rien à exécuter", file=sys.stderr)
+            return 0
+        st, d = self._get(f"/api/agent/emulation?scenario={int(scenario_id)}")
+        if st != 200:
+            print(f"[emulate] récupération scénario {scenario_id} : {st} {d.get('error')}", file=sys.stderr)
+            return 0
+        tests = d.get("tests", [])
+        allow = os.environ.get("XOR_ALLOW_EMULATION") == "1"
+        results = []
+        for t in tests:
+            detected_by = None
+            if not allow:
+                outcome, notes = "Skipped", "execution disabled — set XOR_ALLOW_EMULATION=1 to run the safe injects"
+            else:
+                start = datetime.now(timezone.utc) - timedelta(seconds=2)
+                outcome, notes = _emu_exec(t)
+                cu = (t.get("cleanup") or "").strip()
+                if outcome == "Executed" and cu and not cu.startswith("#") and _emu_is_safe(cu, t.get("executor")):
+                    try:
+                        _emu_exec({"command": cu, "executor": t.get("executor"), "platform": t.get("platform")})
+                    except Exception:  # noqa: BLE001
+                        pass
+                # detection attribution: did the executed inject actually fire a detection?
+                if outcome == "Executed":
+                    det, src = _emu_detect(start, t)
+                    if det:
+                        outcome, detected_by = det, src
+                        notes = (f"{notes} | detected via {src}")[:300]
+                    else:
+                        notes = (f"{notes} | ran undetected (no local detection telemetry)")[:300]
+            results.append({"atomicTestId": t.get("atomicTestId"), "attackId": t.get("attackId"),
+                            "outcome": outcome, "detectedBy": detected_by, "notes": notes})
+        st, d = self._post("/api/agent/emulation", {"scenario": int(scenario_id), "results": results})
+        nprev = sum(1 for r in results if r["outcome"] == "Prevented")
+        nexec = sum(1 for r in results if r["outcome"] == "Executed")
+        nskip = sum(1 for r in results if r["outcome"] == "Skipped")
+        print(f"[emulate] scénario {scenario_id} : {len(results)} inject(s) → {nprev} prevented / {nexec} executed / {nskip} skipped (run #{d.get('runId')}, {st})")
+        return len(results)
+
+    def do_forensics(self):
+        """Collect a read-only live-forensics triage snapshot and post it to
+        /api/agent/forensics (→ FORENSICTRIAGE + a forensic_triage event). Collection never
+        modifies the host; conservative heuristics raise triage flags (temp-path processes /
+        autoruns, failed-logon spikes)."""
+        bundle = forensic_triage()
+        st, d = self._post("/api/agent/forensics", bundle)
+        counts = bundle["summary"]["counts"]
+        nflags = len(bundle["flags"])
+        print(f"[forensics] triage collected ({counts.get('processes',0)} proc / {counts.get('connections',0)} conn / "
+              f"{counts.get('autoruns',0)} autoruns), {nflags} flag(s) → triage #{d.get('triageId')} ({st})")
+        return nflags
+
+    def do_rustinel(self):
+        """Bridge: tail Rustinel's ECS NDJSON detection alerts (kernel-level ETW/eBPF/ESF +
+        Sigma/YARA/IOC) and ship the new ones to XORCISM as events (/api/agent/events). The
+        agent only *reads* Rustinel's alert files — it never controls the sensor. A per-file
+        byte cursor is persisted in the conf so each run forwards only new alerts. A graceful
+        no-op when Rustinel isn't installed (no alert file found)."""
+        offsets = self.conf.get("rustinel_offsets", {})
+        events, new_offsets, files = rustinel_collect(offsets)
+        if not files:
+            print("[rustinel] no Rustinel alert file found "
+                  "(install the sensor or set XOR_RUSTINEL_GLOB) — nothing to forward")
+            return 0
+        for i in range(0, len(events), 200):   # chunk to keep each POST modest
+            self._post("/api/agent/events", {"events": events[i:i + 200]})
+        self.conf["rustinel_offsets"] = new_offsets
+        save_conf(self.conf_path, self.conf)
+        print(f"[rustinel] {len(files)} alert file(s), {len(events)} new detection(s) → events")
+        return len(events)
+
+    def do_yara(self):
+        """Run a local YARA scan using rules from XORCISM's YARARULE store (served at
+        /api/agent/yara-rules) or a local rules file (XOR_YARA_RULES), and post matches as
+        events. Read-only; a graceful no-op if the `yara` binary or rules are absent. Targets
+        default to temp + Downloads; override with XOR_YARA_TARGET."""
+        if not _yara_exe():
+            print("[yara] yara binary not installed (skip) — install YARA to enable on-host scanning")
+            return 0
+        workdir = tempfile.mkdtemp(prefix="xor-yara-")
+        try:
+            rules_path = os.environ.get("XOR_YARA_RULES")
+            if not rules_path:
+                st, d = self._get("/api/agent/yara-rules")
+                rules = d.get("rules", []) if st == 200 else []
+                if not rules:
+                    print("[yara] no rules available — set XOR_YARA_RULES or populate XTHREAT.YARARULE")
+                    return 0
+                rules_path = os.path.join(workdir, "xorcism.yar")
+                with open(rules_path, "w", encoding="utf-8", errors="replace") as fh:
+                    for r in rules:
+                        fh.write((r.get("source") or "") + "\n\n")
+                print(f"[yara] fetched {len(rules)} rule(s) from XORCISM")
+            targets = _yara_targets()
+            res = yara_scan(rules_path, targets)
+            matches = res.get("matches", [])
+            if matches:
+                self._post("/api/agent/events", {"events": [{
+                    "type": "yara_match", "severity": "high",
+                    "title": f"YARA: {len(matches)} match(es)", "detail": matches[:200],
+                }]})
+            print(f"[yara] {len(matches)} match(es) over {len(targets)} target(s)")
+            return len(matches)
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+
+    def run_scan(self, kind, oval_class=None, scenario_id=None):
         if kind in ("inventory", "full"):
             self.do_inventory()
         if kind in ("vuln", "full"):
             self.do_vuln()
         if kind in ("oval", "full"):
-            self.do_oval()
+            self.do_oval(oval_class)
+        if kind == "emulate":
+            self.do_emulate(scenario_id)
         if kind in ("av", "full"):
             self.do_av()
         if kind in ("hunt", "full"):
             self.do_hunt()
+        if kind in ("rustinel", "full"):
+            self.do_rustinel()
+        if kind in ("yara", "full"):
+            self.do_yara()
+        if kind == "forensics":
+            self.do_forensics()
 
     def checkin(self):
         st, d = self._post("/api/agent/checkin", {})
@@ -1352,9 +2057,21 @@ class XorAgent:
         jobs = d.get("jobs", [])
         for j in jobs:
             kind = j.get("kind", "full")
-            print(f"[checkin] job {j.get('AgentJobID')} → scan « {kind} »")
+            # job params (e.g. {"ovalClass": "compliance"} or {"scenarioId": 5}) — may be a JSON string
+            oval_class = None
+            scenario_id = None
+            params = j.get("params")
+            if params:
+                try:
+                    p = json.loads(params) if isinstance(params, str) else params
+                    oval_class = (p or {}).get("ovalClass")
+                    scenario_id = (p or {}).get("scenarioId")
+                except Exception:
+                    oval_class = scenario_id = None
+            print(f"[checkin] job {j.get('AgentJobID')} → scan « {kind} »"
+                  + (f" [OVAL {oval_class}]" if oval_class else "") + (f" [scenario {scenario_id}]" if scenario_id else ""))
             try:
-                self.run_scan(kind)
+                self.run_scan(kind, oval_class, scenario_id)
                 self._post(f"/api/agent/job/{j['AgentJobID']}/result", {"summary": f"{kind} done"})
             except Exception as e:  # noqa: BLE001
                 self._post(f"/api/agent/job/{j['AgentJobID']}/result", {"summary": f"error: {e}"})
@@ -1379,7 +2096,10 @@ def main():
     ap.add_argument("--enroll-key", help="clé d'enrôlement (XOR_ENROLL_KEY côté serveur)")
     ap.add_argument("--insecure", action="store_true", help="ignorer la vérif TLS (lab)")
     ap.add_argument("--inventory", action="store_true")
-    ap.add_argument("--scan", choices=["inventory", "vuln", "oval", "av", "hunt", "full"])
+    ap.add_argument("--scan", choices=["inventory", "vuln", "oval", "av", "hunt", "full", "emulate", "forensics", "rustinel", "yara"])
+    ap.add_argument("--oval-class", choices=["compliance", "vulnerability", "inventory", "patch", "all"],
+                    help="restrict an OVAL scan to one class (default: all classes in the content)")
+    ap.add_argument("--scenario", type=int, help="EMULATIONSCENARIO id for --scan emulate (BAS run)")
     ap.add_argument("--once", action="store_true", help="un seul check-in puis sortie")
     ap.add_argument("--run", action="store_true", help="démon (check-in périodique)")
     ap.add_argument("--interval", type=int, default=300)
@@ -1405,7 +2125,7 @@ def main():
     if args.inventory:
         agent.do_inventory()
     elif args.scan:
-        agent.run_scan(args.scan)
+        agent.run_scan(args.scan, args.oval_class, args.scenario)
     elif args.once:
         agent.checkin()
     elif args.run:

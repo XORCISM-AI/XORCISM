@@ -25,7 +25,7 @@ import { buildOpenApi } from "../openapi";
 import { dispatchWebhook } from "../webhook";
 
 const router = Router();
-const VERSION = "1.1.0-beta.1";
+const VERSION = "1.3.0-beta.1";
 
 const tenantOf = (req: Request): number | null => (req.user!.isSuperAdmin ? null : (req.user!.tenantId ?? null));
 const colset = (dbName: string, table: string): Set<string> => {

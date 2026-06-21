@@ -81,20 +81,55 @@ function showScopeHint(): void {
 
 async function loadConnectors(): Promise<void> {
   connectors = await jget("/api/connectors");
-  renderConnectorList(($("cn-search") as HTMLInputElement | null)?.value || "");
+  populateFilters();
+  applyFilters();
 }
 
-// Renders the connector list grouped by category, filtered by `query` on the
-// connector name / id / category / type (case-insensitive).
-function renderConnectorList(query: string): void {
+// Populates the Category / Type dropdowns (with per-option counts) from the loaded
+// connectors, preserving the current selection across reloads.
+function populateFilters(): void {
+  const catSel = $("cn-cat") as HTMLSelectElement;
+  const typeSel = $("cn-type") as HTMLSelectElement;
+  const cats = new Map<string, number>();
+  const types = new Map<string, number>();
+  for (const c of connectors) {
+    const cat = c.category || "autres";
+    cats.set(cat, (cats.get(cat) || 0) + 1);
+    const ty = c.type || "?";
+    types.set(ty, (types.get(ty) || 0) + 1);
+  }
+  const curCat = catSel.value, curType = typeSel.value;
+  catSel.length = 1; typeSel.length = 1; // keep the leading "all" option
+  [...cats.keys()].sort((a, b) => a.localeCompare(b)).forEach((k) => {
+    const o = document.createElement("option"); o.value = k; o.textContent = `${k} (${cats.get(k)})`; catSel.appendChild(o);
+  });
+  [...types.keys()].sort((a, b) => a.localeCompare(b)).forEach((k) => {
+    const o = document.createElement("option"); o.value = k; o.textContent = `${k} (${types.get(k)})`; typeSel.appendChild(o);
+  });
+  catSel.value = curCat; typeSel.value = curType;
+}
+
+// Reads the search box + category/type dropdowns + "intrusive only" toggle, filters the
+// connector list accordingly and renders it (with a result count). Mirrors the tool catalogue.
+function applyFilters(): void {
+  const q = (($("cn-search") as HTMLInputElement | null)?.value || "").trim().toLowerCase();
+  const cat = ($("cn-cat") as HTMLSelectElement | null)?.value || "";
+  const type = ($("cn-type") as HTMLSelectElement | null)?.value || "";
+  const intrOnly = !!($("cn-intr") as HTMLInputElement | null)?.checked;
+  let matched = connectors;
+  if (q) matched = matched.filter((c) => `${c.name} ${c.id} ${c.category || ""} ${c.type || ""} ${c.description || ""}`.toLowerCase().includes(q));
+  if (cat) matched = matched.filter((c) => (c.category || "autres") === cat);
+  if (type) matched = matched.filter((c) => (c.type || "?") === type);
+  if (intrOnly) matched = matched.filter((c) => c.intrusive);
+  renderConnectorList(matched);
+  const cnt = $("cn-count"); if (cnt) cnt.textContent = connectors.length ? `(${matched.length}/${connectors.length})` : "";
+}
+
+// Renders the connector list grouped by category from an already-filtered list.
+function renderConnectorList(matched: Connector[]): void {
   const host = $("cn-list");
   host.innerHTML = "";
   if (!connectors.length) { host.innerHTML = `<span class="hint">${t("conn.none")}</span>`; return; }
-  const q = query.trim().toLowerCase();
-  const matched = q
-    ? connectors.filter((c) =>
-        `${c.name} ${c.id} ${c.category || ""} ${c.type || ""}`.toLowerCase().includes(q))
-    : connectors;
   if (!matched.length) { host.innerHTML = `<span class="hint">${t("conn.noMatch")}</span>`; return; }
   const byCat: Record<string, Connector[]> = {};
   matched.forEach((c) => { (byCat[c.category || "autres"] ||= []).push(c); });
@@ -394,9 +429,10 @@ function applyConnectorDeepLink(): void {
 
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
-  ($("cn-search") as HTMLInputElement | null)?.addEventListener("input", (e) => {
-    renderConnectorList((e.target as HTMLInputElement).value);
-  });
+  ($("cn-search") as HTMLInputElement | null)?.addEventListener("input", applyFilters);
+  ($("cn-cat") as HTMLSelectElement | null)?.addEventListener("change", applyFilters);
+  ($("cn-type") as HTMLSelectElement | null)?.addEventListener("change", applyFilters);
+  ($("cn-intr") as HTMLInputElement | null)?.addEventListener("change", applyFilters);
   void loadConnectors().then(applyConnectorDeepLink);
   void loadWorkerPath();
   void loadEngagements();

@@ -1,0 +1,11 @@
+{
+  "assets": [
+    {"id": "a-11", "name": "ENG-WS-01", "ip": "10.30.1.40", "type": "EngineeringStation", "os": "Windows 10", "vendor": "Dell"},
+    {"id": "a-12", "name": "PLC-Boiler-Allen", "ip": "10.30.2.11", "type": "PLC", "vendor": "Allen-Bradley", "firmware": "ControlLogix v32"}
+  ],
+  "findings": [
+    {"asset_id": "a-11", "cve": "CVE-2021-44228", "name": "Apache Log4j2 Log4Shell RCE", "severity": "Critical"},
+    {"asset_id": "a-12", "cve": "CVE-2017-12741", "name": "Siemens/Rockwell device DoS via crafted packets", "severity": "High"},
+    {"asset_id": "a-12", "plugin_id": "500123", "cve": "CVE-2020-6998", "name": "Rockwell Logix controllers improper access control", "risk": "High"}
+  ]
+}

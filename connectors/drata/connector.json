@@ -1,0 +1,16 @@
+{
+  "id": "drata",
+  "name": "Drata",
+  "type": "import",
+  "category": "GRC",
+  "description": "Drata — continuous security & compliance automation (SOC 2, ISO 27001, GDPR…). Imports Drata policies + evidence/documents into the XORCISM controlled-document register (XCOMPLIANCE.DOCUMENT). Offline: a JSON export. Live: set DRATA_API_KEY (Bearer) and optionally DRATA_API_BASE (default https://public-api.drata.com). Tool: https://drata.com.",
+  "intrusive": false,
+  "permission": "connector:drata",
+  "run": "run.py",
+  "mapping": "drata",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of Drata policies/evidence." },
+    { "name": "base", "type": "string", "required": false, "help": "Drata API base URL (default https://public-api.drata.com). Live mode needs DRATA_API_KEY in the worker env." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum documents to import." }
+  ]
+}

@@ -45,6 +45,7 @@ const entryPoints = [
   "client/ts/pqcmm.ts",
   "client/ts/sca.ts",
   "client/ts/tools.ts",
+  "client/ts/threat-model.ts",
   "client/ts/threat-informed-defense.ts",
   "client/ts/oval-scan.ts",
   "client/ts/api-keys.ts",
@@ -58,6 +59,14 @@ const entryPoints = [
   "client/ts/a3m.ts",
   "client/ts/tprm.ts",
   "client/ts/ebios.ts",
+  "client/ts/nist-800-30.ts",
+  "client/ts/ot-security.ts",
+  "client/ts/patch-management.ts",
+  "client/ts/asset-monitoring.ts",
+  "client/ts/control-management.ts",
+  "client/ts/trust-center.ts",
+  "client/ts/trust-public.ts",
+  "client/ts/investment-advisor.ts",
   "client/ts/hunting.ts",
 ];
 

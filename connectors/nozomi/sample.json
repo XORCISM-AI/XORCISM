@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {"id": "n-001", "label": "PLC-Line1-S7", "ip": "10.20.1.10", "mac_address": "00:1b:1b:aa:bb:cc", "type": "plc", "vendor": "Siemens", "firmware_version": "S7-1500 v2.9", "level": "1"},
+    {"id": "n-002", "label": "HMI-Pump-Station", "ip": "10.20.1.25", "type": "hmi", "vendor": "Schneider", "os": "Windows 7 Embedded", "level": "2"},
+    {"id": "n-003", "label": "RTU-Substation-A", "ip": "10.20.2.5", "type": "rtu", "vendor": "GE", "firmware_version": "D20 v3.4"}
+  ],
+  "vulnerabilities": [
+    {"node_id": "n-001", "cve": "CVE-2020-15782", "name": "Siemens SIMATIC S7 memory protection bypass", "severity": "critical"},
+    {"node_id": "n-002", "cve": "CVE-2019-0708", "name": "BlueKeep RDP remote code execution", "severity": "critical"},
+    {"node_id": "n-002", "cve": "CVE-2017-0144", "name": "EternalBlue SMBv1 RCE", "severity": "high"},
+    {"node_id": "n-003", "cve": "CVE-2021-33833", "name": "Improper access control on RTU web interface", "severity": "medium"}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "checkcle",
+  "name": "CheckCle",
+  "type": "import",
+  "category": "Monitoring",
+  "description": "CheckCle — open-source full-stack monitoring (uptime HTTP/DNS/Ping/TCP, server CPU/RAM/disk, SSL/domain expiry, incidents, status pages). Imports CheckCle's monitored services / servers / SSL certificates into XORCISM Asset Monitoring (MONITORINGCHECK) and its incidents (MONITORINGINCIDENT). Tool: https://github.com/operacle/checkcle. Parses an exported JSON, or pulls live from CheckCle's PocketBase API — CHECKCLE_URL + CHECKCLE_TOKEN, or CHECKCLE_USER + CHECKCLE_PASSWORD (PocketBase auth).",
+  "intrusive": false,
+  "permission": "connector:checkcle",
+  "run": "run.py",
+  "mapping": "checkcle",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "file",
+      "required": false,
+      "help": "Offline: a CheckCle JSON export — {services,servers,ssl,incidents}, a PocketBase {items:[…]} page, or a flat list of records (type auto-detected)."
+    },
+    {
+      "name": "base",
+      "type": "string",
+      "required": false,
+      "help": "CheckCle base URL (PocketBase, e.g. http://host:8090). Overrides CHECKCLE_URL. Live mode needs CHECKCLE_TOKEN or CHECKCLE_USER + CHECKCLE_PASSWORD."
+    },
+    {
+      "name": "collections",
+      "type": "string",
+      "required": false,
+      "help": "Comma-separated PocketBase collections to pull (default: services,servers,ssl_certificates,incident)."
+    },
+    {
+      "name": "max_items",
+      "type": "int",
+      "required": false,
+      "default": 1000,
+      "help": "Maximum records to import per collection."
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat Modeling</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tm-wrap{max-width:1280px;margin:0 auto;padding:16px}
+  .tm-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+  .tm-head h2{margin:0;font-size:18px;color:#e2e8f0}
+  .tm-sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:960px}
+  .tm-stats{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px}
+  .tm-stat{background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:10px 14px;min-width:120px}
+  .tm-stat .n{font-size:22px;font-weight:700;color:#e2e8f0}
+  .tm-stat .l{font-size:11px;color:#94a3b8;margin-top:2px}
+  table.tm{width:100%;border-collapse:collapse;font-size:13px}
+  table.tm th{text-align:left;padding:7px 10px;color:#94a3b8;border-bottom:1px solid #2d3250;background:#0f1117;font-weight:600}
+  table.tm th.num{text-align:center}
+  table.tm td{padding:6px 10px;border-bottom:1px solid #1e2133;color:#cbd5e1;vertical-align:top}
+  table.tm tr:hover td{background:#13162a}
+  table.tm td.num{text-align:center;font-variant-numeric:tabular-nums}
+  table.tm a{color:#7c83fd;text-decoration:none}table.tm a:hover{text-decoration:underline}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid currentColor}
+  .tm-filter{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:6px 9px;min-width:240px}
+  .tm-meth{font-size:10px;color:#64748b;border:1px solid #2d3250;border-radius:6px;padding:0 5px}
+  .muted{color:#64748b}
+  /* modal */
+  .tm-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .tm-modal-bg.open{display:flex}
+  .tm-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:22px 24px}
+  .tm-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .tm-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .tm-modal .fld{margin-bottom:13px}
+  .tm-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .tm-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .tm-modal label .req{color:#f87171}
+  .tm-modal input,.tm-modal select,.tm-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .tm-modal input:focus,.tm-modal select:focus,.tm-modal textarea:focus{outline:none;border-color:#7c83fd}
+  .tm-modal textarea{resize:vertical;min-height:60px}
+  .tm-modal .hint{font-size:11px;color:#64748b;margin-top:4px}
+  .tm-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .tm-err{color:#f87171;font-size:12px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/?db=XORCISM&amp;table=ASSET">&#128450;&#65039; Assets</a>
+  <a href="/dashboard">&#128202; Dashboard</a>
+  <a href="/ebios">&#127919; EBIOS RM</a>
+  <a href="/?db=XORCISM&amp;table=THREATMODEL">&#128221; Threat models</a>
+</div>
+
+<div class="tm-wrap">
+  <div class="tm-head">
+    <h2>&#129513; <span data-i18n="tm.title">Threat Modeling</span></h2>
+    <input id="tm-search" class="tm-filter" type="search" data-i18n-placeholder="tm.search" placeholder="Filter (name, status, methodology…)">
+    <span style="flex:1"></span>
+    <button id="tm-new" class="btn btn-primary btn-sm" data-i18n="tm.new">+ New threat model</button>
+  </div>
+  <div class="tm-sub" data-i18n="tm.sub">Identify what can go wrong and how you'll stop it. Each model has a scope, a methodology (STRIDE, LINDDUN, PASTA…), in-scope assets, identified threats and mitigating controls — with open-threat and coverage counts at a glance.</div>
+  <div class="tm-stats" id="tm-stats"></div>
+  <div id="tm-table"></div>
+  <div id="tm-hint" style="font-size:12px;color:#64748b;margin-top:12px"></div>
+</div>
+
+<!-- Guided "new threat model" modal -->
+<div class="tm-modal-bg" id="tm-modal">
+  <div class="tm-modal">
+    <h3 data-i18n="tm.modal.title">New threat model</h3>
+    <p class="lead" data-i18n="tm.modal.lead">Start a guided threat model. After saving, add in-scope assets, threats (STRIDE) and mitigating controls.</p>
+    <div class="fld">
+      <label data-i18n="tm.modal.name">Name <span class="req">*</span></label>
+      <input id="tm-f-name" type="text" data-i18n-placeholder="tm.modal.name.ph" placeholder="e.g. Customer portal — payment flow" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label data-i18n="tm.modal.method">Methodology</label>
+        <select id="tm-f-method">
+          <option value="STRIDE">STRIDE</option>
+          <option value="LINDDUN">LINDDUN (privacy)</option>
+          <option value="PASTA">PASTA</option>
+          <option value="Attack Trees">Attack Trees</option>
+          <option value="OWASP">OWASP Threat Modeling</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label data-i18n="tm.modal.status">Status</label>
+        <select id="tm-f-status">
+          <option value="Draft">Draft</option>
+          <option value="In progress">In progress</option>
+          <option value="In review">In review</option>
+          <option value="Approved">Approved</option>
+          <option value="Deprecated">Deprecated</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label data-i18n="tm.modal.risk">Risk level</label>
+        <select id="tm-f-risk">
+          <option value="" data-i18n="tm.modal.risk.none">— not rated —</option>
+          <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label data-i18n="tm.modal.owner">Owner (optional)</label>
+        <input id="tm-f-owner" type="text" data-i18n-placeholder="tm.modal.owner.ph" placeholder="Team or person" maxlength="200" autocomplete="off">
+      </div>
+    </div>
+    <div class="fld">
+      <label data-i18n="tm.modal.scope">Scope (optional)</label>
+      <textarea id="tm-f-scope" data-i18n-placeholder="tm.modal.scope.ph" placeholder="System / data flow / trust boundaries in scope…" maxlength="2000"></textarea>
+    </div>
+    <div class="fld">
+      <label data-i18n="tm.modal.desc">Description (optional)</label>
+      <textarea id="tm-f-desc" maxlength="4000"></textarea>
+    </div>
+    <div class="tm-modal-foot">
+      <span class="tm-err" id="tm-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="tm-cancel" data-i18n="tm.modal.cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="tm-create" data-i18n="tm.modal.create">Create model</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/threat-model.js"></script>
+</body>
+</html>

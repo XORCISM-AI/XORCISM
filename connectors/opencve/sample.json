@@ -1,0 +1,31 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "cve_id": "CVE-2024-31880",
+      "description": "IBM Db2 for Linux, UNIX and Windows is vulnerable to a denial of service.",
+      "created_at": "2024-10-23T01:09:30.580000Z",
+      "updated_at": "2024-11-06T20:39:55.200000Z",
+      "metrics": {"cvssV3_1": {"data": {"score": 5.3, "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:H"}, "provider": "mitre"}},
+      "weaknesses": ["CWE-770"],
+      "vendors": ["ibm"]
+    },
+    {
+      "cve_id": "CVE-2025-12345",
+      "description": "Critical remote code execution in ExampleApp via unsafe deserialization.",
+      "created_at": "2025-02-01T10:00:00.000000Z",
+      "updated_at": "2025-02-02T10:00:00.000000Z",
+      "metrics": {"cvssV3_1": {"data": {"score": 9.8, "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}, "provider": "nvd"}},
+      "weaknesses": ["CWE-502"],
+      "vendors": ["exampleorg"]
+    },
+    {
+      "cve_id": "CVE-2023-0001",
+      "description": "Legacy CVE with only a CVSS v2 score.",
+      "metrics": {"cvssV2_0": {"data": {"score": 7.5, "vector": "AV:N/AC:L/Au:N/C:P/I:P/A:P"}, "provider": "nvd"}},
+      "vendors": ["legacyvendor"]
+    }
+  ]
+}

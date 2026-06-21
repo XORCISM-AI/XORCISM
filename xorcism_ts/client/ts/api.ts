@@ -319,6 +319,10 @@ export const api = {
     request<string[]>(`/api/cwe-tags?cweId=${cweId}`),
   setCweTags: (cweId: number, tags: string[]) =>
     request<{ ok: boolean }>("/api/cwe-tags", "PUT", { cweId, tags }),
+  getControlTags: (controlId: number) =>
+    request<string[]>(`/api/control-tags?controlId=${controlId}`),
+  setControlTags: (controlId: number, tags: string[]) =>
+    request<{ ok: boolean }>("/api/control-tags", "PUT", { controlId, tags }),
   harvestAssetEmail: (email: string) =>
     request<{ ok: boolean; email: string; organisationId: number | null; emailInserted: boolean; addressInserted: boolean; orgLinkInserted: boolean }>(
       "/api/asset-email-harvest", "POST", { email }),

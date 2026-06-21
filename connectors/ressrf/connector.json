@@ -1,0 +1,17 @@
+{
+  "id": "ressrf",
+  "name": "ressrf — SSRF scanner",
+  "type": "import",
+  "category": "vuln",
+  "description": "ressrf (R0X4R) — automated Server-Side Request Forgery (SSRF) discovery: mutates parameters and headers while correlating out-of-band (OAST) callbacks. Confirmed SSRF findings are imported as VULNERABILITY / ASSETVULNERABILITY against the target asset. Authorized testing only (target must be in the engagement scope). Tool: https://github.com/R0X4R/ressrf.",
+  "binary": "ressrf",
+  "intrusive": true,
+  "permission": "connector:ressrf",
+  "run": "run.py",
+  "mapping": "ressrf",
+  "parameters": [
+    { "name": "target", "type": "target", "required": true, "help": "Target URL/host to test for SSRF (within the authorized engagement scope)." },
+    { "name": "collab", "type": "string", "required": false, "help": "Custom OAST collaborator domain (-c). Otherwise ressrf's default is used." },
+    { "name": "rate", "type": "int", "required": false, "default": 50, "min": 1, "max": 500, "help": "Max requests/second (-r)." }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "findings": [
+    {
+      "id": "uw-0001",
+      "title": "Critical RCE in log4j on running container",
+      "type": "vulnerability",
+      "severity": "critical",
+      "cve": "CVE-2021-44228",
+      "resource": { "name": "payments-api", "type": "container", "image": "payments-api:1.4.2" },
+      "runtime": true
+    },
+    {
+      "id": "uw-0002",
+      "title": "S3 bucket publicly accessible",
+      "type": "misconfiguration",
+      "severity": "high",
+      "resource": { "name": "arn:aws:s3:::acme-prod-backups", "type": "s3" }
+    },
+    {
+      "id": "uw-0003",
+      "title": "Reverse shell detected from web pod",
+      "type": "runtime-threat",
+      "severity": "critical",
+      "resource": { "name": "web-frontend-7c9", "type": "pod" }
+    },
+    {
+      "id": "uw-0004",
+      "title": "Overly permissive IAM role (AdministratorAccess)",
+      "type": "identity",
+      "severity": "medium",
+      "resource": { "name": "ci-deployer-role", "type": "iam-role" }
+    }
+  ]
+}

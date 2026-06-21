@@ -1,0 +1,10 @@
+{
+  "policies": [
+    { "id": "POL-001", "name": "Information Security Policy", "framework": "SOC 2", "status": "Approved", "version": "3.1", "owner": "CISO", "updatedAt": "2026-05-01", "url": "https://app.drata.com/policies/POL-001", "description": "Top-level ISMS policy." },
+    { "id": "POL-002", "name": "Access Control Policy", "framework": "ISO 27001", "status": "Approved", "version": "2.0", "owner": "IT" }
+  ],
+  "evidence": [
+    { "id": "EV-1001", "name": "MFA enforced — screenshot", "framework": "SOC 2", "status": "Collected", "updatedAt": "2026-06-10", "category": "Access Control" },
+    { "id": "EV-1002", "name": "Backup restoration test report", "framework": "SOC 2", "status": "Collected", "category": "Resilience" }
+  ]
+}

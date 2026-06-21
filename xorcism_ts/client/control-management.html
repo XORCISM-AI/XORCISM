@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — NIST SP 800-53 Control Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cm-wrap{max-width:1380px;margin:0 auto;padding:18px}
+  .cm-wrap h1{font-size:20px;margin:0 0 2px}
+  .cm-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .cm-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cm-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cm-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cm-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .cm-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cm-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .cm-section .act{margin-left:auto;text-transform:none;letter-spacing:0}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1;cursor:pointer}.bd b{color:#e2e8f0}
+  .fam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:8px}
+  .fam{background:#13162a;border:1px solid #2d3250;border-radius:9px;padding:9px 11px;cursor:pointer}
+  .fam:hover{border-color:#3b4270}
+  .fam .top{display:flex;align-items:baseline;gap:7px;font-size:12.5px}
+  .fam .code{font-family:ui-monospace,monospace;font-weight:700;color:#22c55e}
+  .fam .nm{color:#e2e8f0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fam .cnt{margin-left:auto;color:#64748b;font-size:11px;white-space:nowrap}
+  .fam .barwrap{height:7px;background:#0f1117;border-radius:4px;margin-top:7px;overflow:hidden;display:flex}
+  .fam .pct{font-size:11px;color:#94a3b8;margin-top:3px}
+  .seg-impl{background:#34d399}.seg-part{background:#fbbf24}.seg-plan{background:#60a5fa}.seg-no{background:#f87171}.seg-na{background:#475569}.seg-inh{background:#a78bfa}
+  .blrow{display:flex;gap:8px;flex-wrap:wrap}
+  .blcard{background:#13162a;border:1px solid #2d3250;border-radius:9px;padding:9px 13px;min-width:150px}
+  .blcard .t{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
+  .blcard .v{font-size:18px;font-weight:700;margin-top:2px}
+  table.cm{width:100%;border-collapse:collapse;font-size:13px}
+  table.cm th,table.cm td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.cm th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .cref{font-family:ui-monospace,monospace;font-weight:700;color:#e2e8f0;white-space:nowrap}
+  .cref.enh{color:#94a3b8;font-weight:600}
+  .ctitle{color:#cbd5e1}.muted{color:#64748b}
+  .bl{display:inline-block;font-size:10px;font-weight:700;border-radius:4px;padding:0 5px;margin-right:3px}
+  .bl-L{background:#14532d;color:#bbf7d0}.bl-M{background:#78350f;color:#fcd34d}.bl-H{background:#7f1d1d;color:#fecaca}.bl-P{background:#3b2a63;color:#ddd6fe}
+  select.st,select.rs,select.ps{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;padding:3px 5px;font-size:12px;font-family:inherit;max-width:170px}
+  .dotc{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .c-Implemented{background:#34d399}.c-Partial{background:#fbbf24}.c-Planned{background:#60a5fa}.c-NotImpl{background:#f87171}.c-NA{background:#475569}.c-Inherited{background:#a78bfa}.c-Unassigned{background:#334155}
+  .att{font-size:10px;border-radius:5px;padding:1px 6px;background:#311b3f;color:#e9d5ff;border:1px solid #6b21a8}
+  .asmt{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .a-Satisfied{background:#14532d;color:#bbf7d0}.a-Other{background:#7f1d1d;color:#fecaca}.a-None{background:#1e2133;color:#64748b}
+  .edit-btn{background:none;border:1px solid #2d3250;border-radius:6px;color:#94a3b8;cursor:pointer;font-size:12px;padding:2px 7px}.edit-btn:hover{border-color:#22c55e;color:#e2e8f0}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .filters input,.filters select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px}
+  .chk{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#cbd5e1;cursor:pointer}
+  .worklist{list-style:none;margin:0;padding:0}
+  .worklist li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;align-items:center;gap:8px}
+  .pri{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:#7f1d1d;color:#fecaca}
+  .sev-Critical{color:#f87171;font-weight:700}.sev-High{color:#fb923c}.sev-Moderate{color:#fbbf24}.sev-Low{color:#94a3b8}
+  .ovd{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:#7f1d1d;color:#fecaca;margin-left:6px}
+  /* modals */
+  .cm-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .cm-modal-bg.open{display:flex}
+  .cm-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:740px;max-width:100%;padding:22px 24px}
+  .cm-modal.wide{width:740px}
+  .cm-modal h3{margin:0 0 2px;font-size:17px;color:#e2e8f0}.cm-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 14px}
+  .cm-modal .fld{margin-bottom:13px}.cm-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}.cm-modal .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+  .cm-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .cm-modal input,.cm-modal select,.cm-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .cm-modal textarea{min-height:72px;resize:vertical}
+  .cm-modal-foot{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}.cm-err{color:#f87171;font-size:12px;flex:1;min-width:120px}
+  .btn-save{background:#22c55e;color:#04140a;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}.btn-save:hover{background:#4ade80}
+  .btn-2nd{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:8px;font-size:13px;padding:8px 12px;cursor:pointer}.btn-2nd:hover{border-color:#7c83fd}
+  /* detail panels */
+  .panel{background:#0f1117;border:1px solid #232842;border-radius:9px;padding:10px 12px;margin-bottom:12px}
+  .panel h4{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
+  .prose{white-space:pre-wrap;font-size:12.5px;color:#cbd5e1;line-height:1.5;max-height:230px;overflow:auto}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;max-height:150px;overflow:auto}
+  .relchip{font-family:ui-monospace,monospace;font-size:11px;background:#13233b;color:#bfdbfe;border:1px solid #1e3a5f;border-radius:5px;padding:1px 6px;cursor:pointer}
+  .relchip:hover{border-color:#60a5fa}
+  .techchip{font-size:11px;background:#311b3f;color:#e9d5ff;border:1px solid #6b21a8;border-radius:5px;padding:1px 6px;text-decoration:none}
+  .techchip:hover{border-color:#a855f7}
+  .secthead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#22c55e;margin:16px 0 8px;border-top:1px solid #232842;padding-top:12px}
+  .poam-mini{list-style:none;margin:0;padding:0;font-size:12.5px}
+  .poam-mini li{padding:4px 0;border-bottom:1px solid #1e2133;display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management">&#9989; Compliance</a>
+  <a href="/policy-management">&#128203; Policies</a>
+  <a href="/?db=XORCISM&amp;table=CONTROL">&#128218; Catalogue</a>
+  <span class="spacer"></span>
+  <span class="title">&#128737; NIST SP 800-53 Controls</span>
+</div>
+
+<div class="cm-wrap">
+  <h1>NIST SP 800-53 Control Management</h1>
+  <div class="cm-sub">Manage the full <b>NIST SP 800-53 Rev 5</b> catalogue — <b>1,196 controls</b> across <b>20 families</b>.
+    Set each control's <b>implementation status</b>, <b>responsibility</b>, owner and narrative; record the
+    <b>SP 800-53A assessment</b> (Satisfied / Other-than-satisfied); read the full <b>control text</b> and its
+    <b>ATT&amp;CK crosswalk</b>; filter by family or <b>Low / Moderate / High / Privacy</b> baseline; track
+    <b>coverage / assessment posture</b>, the <b>gap worklist</b> and <b>POA&amp;M</b>. Status is org-wide (per tenant).</div>
+  <div id="cm-body"><div class="muted" style="padding:24px;text-align:center">Loading the 800-53 catalogue…</div></div>
+</div>
+
+<!-- Control detail + implementation/assessment modal -->
+<div class="cm-modal-bg" id="cm-modal">
+  <div class="cm-modal wide">
+    <h3 id="cm-d-ref">Control</h3>
+    <p class="lead" id="cm-d-meta">—</p>
+    <div id="cm-d-body"><div class="muted">Loading…</div></div>
+
+    <div class="secthead">Implementation</div>
+    <div class="row2">
+      <div class="fld"><label>Status</label><select id="cm-d-status"></select></div>
+      <div class="fld"><label>Responsibility</label><select id="cm-d-resp"></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Owner</label><select id="cm-d-owner"><option value="">—</option></select></div>
+      <div class="fld"><label>Target date</label><input id="cm-d-target" type="date"></div>
+    </div>
+    <div class="fld"><label>Implementation narrative</label><textarea id="cm-d-narr" placeholder="How is this control implemented (people / process / technology, inherited from…)?"></textarea></div>
+
+    <div class="secthead">Assessment (SP 800-53A)</div>
+    <div class="row3">
+      <div class="fld"><label>Result</label><select id="cm-d-aresult"></select></div>
+      <div class="fld"><label>Assessed date</label><input id="cm-d-adate" type="date"></div>
+      <div class="fld"><label>Assessor</label><select id="cm-d-assessor"><option value="">—</option></select></div>
+    </div>
+    <div class="fld"><label>Assessor findings / remarks</label><textarea id="cm-d-aremarks" placeholder="Determination rationale, evidence, deficiencies…"></textarea></div>
+
+    <div class="cm-modal-foot">
+      <span class="cm-err" id="cm-d-err"></span>
+      <button class="btn-2nd" id="cm-d-poam">+ POA&amp;M for this control</button>
+      <button class="btn btn-ghost btn-sm" id="cm-d-cancel">Close</button>
+      <button class="btn-save" id="cm-d-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- POA&M create modal -->
+<div class="cm-modal-bg" id="cm-poam-modal">
+  <div class="cm-modal">
+    <h3>New POA&amp;M item</h3>
+    <p class="lead">A Plan of Action &amp; Milestones entry — a control weakness tracked to closure.</p>
+    <div class="fld"><label>Title <span style="color:#f87171">*</span></label><input id="cm-p-title" type="text" maxlength="300" placeholder="e.g. MFA not enforced for admin accounts"></div>
+    <div class="row3">
+      <div class="fld"><label>Control</label><select id="cm-p-control"><option value="">— none —</option></select></div>
+      <div class="fld"><label>Severity</label><select id="cm-p-sev"></select></div>
+      <div class="fld"><label>Status</label><select id="cm-p-status"></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Owner</label><select id="cm-p-owner"><option value="">—</option></select></div>
+      <div class="fld"><label>Scheduled completion</label><input id="cm-p-sched" type="date"></div>
+    </div>
+    <div class="fld"><label>Weakness description</label><textarea id="cm-p-weak" placeholder="What is deficient and why it matters."></textarea></div>
+    <div class="fld"><label>Remediation plan</label><textarea id="cm-p-plan" placeholder="Planned corrective action."></textarea></div>
+    <div class="fld"><label>Milestones</label><textarea id="cm-p-miles" placeholder="One milestone per line (date — milestone)."></textarea></div>
+    <div class="cm-modal-foot">
+      <span class="cm-err" id="cm-p-err"></span>
+      <button class="btn btn-ghost btn-sm" id="cm-p-cancel">Cancel</button>
+      <button class="btn-save" id="cm-p-save">Create POA&amp;M</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/control-management.js"></script>
+</body>
+</html>

@@ -91,10 +91,32 @@ async function load(): Promise<void> {
     <div class="cf-section">By class</div><div class="breakdown">${byClass}</div>
     <div class="cf-section">By status</div><div class="breakdown">${byStatus}</div>
     ${table}
+    <div class="cf-section">CIS Benchmarks</div><div id="cf-cis"><div class="muted">Loading CIS benchmarks…</div></div>
     <div class="legend">↳ <b>Score</b> is a baseline's health gap (higher = worse): deprecated +40, non-accepted status +15, no CCE reference +5.
       Configuration items are the compliance-class OVAL definitions; verification comes from
       <a href="/oval-scan">OVAL scans</a> (OVALRESULTS). Manage content under
-      <a href="/?db=XOVAL&table=OVALDEFINITION">OVAL definitions</a>.</div>`;
+      <a href="/?db=XOVAL&table=OVALDEFINITION">OVAL definitions</a>.
+      CIS Benchmark posture comes from <code>import_cis_benchmarks.py</code> (catalogue) + CIS-CAT scan imports.</div>`;
+  void loadCis();
+}
+
+// ── CIS Benchmarks panel (catalogue + CIS-CAT pass/fail posture) ─────────────────
+async function loadCis(): Promise<void> {
+  const host = document.getElementById("cf-cis"); if (!host) return;
+  let d: { benchmarks: Record<string, any>[]; summary: Record<string, any> };
+  try { const r = await fetch("/api/configuration/cis-benchmarks"); if (!r.ok) throw new Error(`HTTP ${r.status}`); d = await r.json(); }
+  catch (e) { host.innerHTML = `<div class="muted">⚠️ ${esc(e)}</div>`; return; }
+  if (!d.benchmarks.length) { host.innerHTML = `<div class="muted">No CIS benchmarks yet — run <code>python xorcism_python/importers/import_cis_benchmarks.py</code>.</div>`; return; }
+  const s = d.summary;
+  const cats = Object.entries(s.byCategory || {}).map(([k, n]) => `<span class="bd">${esc(k)} <b>${n}</b></span>`).join("");
+  const rows = d.benchmarks.map((b) => {
+    const pr = b.passRate == null ? "<span class='muted'>not scanned</span>" : `<b style="color:${b.passRate >= 80 ? "#34d399" : b.passRate >= 50 ? "#fbbf24" : "#f87171"}">${b.passRate}%</b> (${b.pass}/${b.scored})`;
+    return `<tr><td>${esc(b.name)}</td><td>${esc(b.version)}</td><td><span class="muted">${esc(b.platform)}</span></td><td>${esc(b.category)}</td><td>${b.recs ?? 0}</td><td>${pr}</td></tr>`;
+  }).join("");
+  host.innerHTML = `<div class="breakdown" style="margin-bottom:8px">
+      <span class="bd">${s.total} benchmarks</span><span class="bd">${s.recommendations} recommendations</span>
+      <span class="bd">${s.scanned} scanned</span>${s.passRate != null ? `<span class="bd">pass rate <b>${s.passRate}%</b></span>` : ""}${cats}</div>
+    <table class="cf"><thead><tr><th>Benchmark</th><th>Version</th><th>Platform</th><th>Category</th><th>Recs</th><th>CIS-CAT pass</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ── Launch an OVAL scan on an enrolled agent (localhost or remote) ───────────────

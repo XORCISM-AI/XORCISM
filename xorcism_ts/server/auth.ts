@@ -216,6 +216,8 @@ export function requireAuthGate(req: Request, res: Response, next: NextFunction)
     p.startsWith("/css/") ||
     p.startsWith("/js/") ||
     p.startsWith("/vendor/") ||
+    p.startsWith("/trust/") ||        // public Trust Center page (slug)
+    p.startsWith("/api/public/") ||   // public Trust Center API (read-only posture)
     PUBLIC_PATHS.has(p) ||
     PUBLIC_API.has(p)
   ) {

@@ -339,6 +339,14 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_threat_intel(result))
     if result.get("detections") or result.get("sigma"):
         counts.update(import_sigma_rules(result))
+    if result.get("yara"):
+        counts.update(import_yara_rules(result))
+    if result.get("identities"):
+        counts.update(import_identities(result))
+    if result.get("monitors") or result.get("monitoring_incidents"):
+        counts.update(import_monitoring(result))
+    if result.get("documents"):
+        counts.update(import_documents(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):
         counts.update(import_findings(result))
     if counts:
@@ -512,6 +520,331 @@ def import_sigma_rules(result: Dict[str, Any]) -> Dict[str, int]:
                 (*common, it.get("guid") or str(uuid4()), _now()),
             )
             counts["sigma"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+# YARARULE schema (kept in sync with ensureThreatTables() in xorcism_ts/server/db.ts).
+_YARA_COLUMNS = {
+    "YaraRuleID": "INTEGER PRIMARY KEY", "YaraRuleGUID": "TEXT", "YaraRuleName": "TEXT",
+    "YaraRuleDescription": "TEXT", "YaraSource": "TEXT", "Namespace": "TEXT", "Tags": "TEXT",
+    "Meta": "TEXT", "Author": "TEXT", "YaraReference": "TEXT", "AttackTags": "TEXT",
+    "StringCount": "INTEGER", "Status": "TEXT", "CreatedDate": "DATE",
+}
+_YARA_ATTACK_RE = re.compile(r"\bT\d{4}(?:\.\d{3})?\b")
+
+
+def import_yara_rules(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import normalized YARA rules into XTHREAT.YARARULE (the YARA "support" store —
+    browsable in the explorer, served to agents, used by the yara connector / import_yara.py).
+    Idempotent by YaraReference (else name+namespace). Each rule item (dict):
+        {"name", "description", "source" (full rule text), "namespace", "tags" (CSV),
+         "meta", "author", "reference"/"id" (unique), "attack_tags", "string_count"}
+    Self-creates/ALTERs the table so it runs against any DB version."""
+    from uuid import uuid4
+
+    items = result.get("yara") or []
+    counts = {"yara": 0, "yara_updated": 0}
+    if not items:
+        return counts
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XTHREAT.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cols_sql = ", ".join(f"{n} {t}" for n, t in _YARA_COLUMNS.items())
+    cur.execute(f"CREATE TABLE IF NOT EXISTS YARARULE ({cols_sql})")
+    existing = {r[1] for r in cur.execute("PRAGMA table_info(YARARULE)").fetchall()}
+    for name, typ in _YARA_COLUMNS.items():
+        if name not in existing:
+            cur.execute(f"ALTER TABLE YARARULE ADD COLUMN {name} {typ.replace(' PRIMARY KEY', '')}")
+    cur.execute("CREATE INDEX IF NOT EXISTS ix_yararule_ref ON YARARULE(YaraReference)")
+    src = result.get("source") or "YARA import"
+
+    for it in items:
+        name = it.get("name") or it.get("rule") or ""
+        ns = it.get("namespace") or ""
+        ref = it.get("reference") or it.get("id") or (f"yara:{ns}:{name}" if name else None)
+        if not ref:
+            continue
+        source_text = it.get("source") or it.get("body") or ""
+        attack = it.get("attack_tags")
+        if not attack and source_text:
+            attack = ", ".join(sorted({m.upper() for m in _YARA_ATTACK_RE.findall(source_text)}))
+        common = (name, it.get("description"), source_text, ns,
+                  it.get("tags"), it.get("meta"), (it.get("author") or src),
+                  ref, attack, it.get("string_count"), (it.get("status") or "active"))
+        row = cur.execute("SELECT YaraRuleID FROM YARARULE WHERE YaraReference=?", (ref,)).fetchone()
+        if row:
+            cur.execute(
+                """UPDATE YARARULE SET YaraRuleName=?, YaraRuleDescription=?, YaraSource=?,
+                     Namespace=?, Tags=?, Meta=?, Author=?, YaraReference=?, AttackTags=?,
+                     StringCount=?, Status=? WHERE YaraRuleID=?""",
+                (*common, row[0]),
+            )
+            counts["yara_updated"] += 1
+        else:
+            cur.execute(
+                """INSERT INTO YARARULE (YaraRuleName, YaraRuleDescription, YaraSource, Namespace,
+                     Tags, Meta, Author, YaraReference, AttackTags, StringCount, Status,
+                     YaraRuleGUID, CreatedDate)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (*common, it.get("guid") or str(uuid4()), _now()),
+            )
+            counts["yara"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+# IDENTITY schema (subset kept in sync with XORCISM_sqlite.sql / ensureIdentityTables()).
+_IDENTITY_COLUMNS = {
+    "IdentityID": "INTEGER PRIMARY KEY", "IdentityGUID": "TEXT", "IdentityName": "TEXT",
+    "IdentityType": "TEXT", "IdentityClass": "TEXT", "Description": "TEXT", "Status": "TEXT",
+    "OwnerPersonID": "INTEGER", "AssetID": "INTEGER", "Provider": "TEXT", "ExternalID": "TEXT",
+    "PrivilegeLevel": "TEXT", "Environment": "TEXT", "CredentialType": "TEXT", "MFAEnabled": "TEXT",
+    "LastRotatedDate": "DATE", "ExpiryDate": "DATE", "LastUsedDate": "DATE", "RiskLevel": "TEXT",
+    "CreatedDate": "DATE", "ModifiedDate": "DATE", "TenantID": "INTEGER",
+}
+
+
+def import_identities(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import normalized identities into XORCISM.IDENTITY (the IAM inventory: human users +
+    non-human / NHI service principals, managed identities, …). Used by the Microsoft Entra
+    ID connector. Idempotent by (Provider, ExternalID) — existing identities are updated, new
+    ones inserted. Device identities can carry an AssetID (link to the ASSET created by the
+    findings path). Stamps XORCISM_IMPORT_TENANT_ID so tenant-scoped users see the rows.
+    Each identity item (dict):
+        {"name", "type" (human/non-human), "class" (user/servicePrincipal/managedIdentity/
+         device/…), "description", "status", "provider", "external_id" (unique per provider),
+         "privilege", "environment", "credential_type", "mfa", "last_used", "risk", "asset"}
+    Self-creates/ALTERs the table so it runs against any DB version."""
+    from uuid import uuid4
+
+    items = result.get("identities") or []
+    counts = {"identities": 0, "identities_updated": 0}
+    if not items:
+        return counts
+
+    tid = _import_tenant_id()
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cols_sql = ", ".join(f"{n} {t}" for n, t in _IDENTITY_COLUMNS.items())
+    cur.execute(f"CREATE TABLE IF NOT EXISTS IDENTITY ({cols_sql})")
+    existing = {r[1] for r in cur.execute("PRAGMA table_info(IDENTITY)").fetchall()}
+    for name, typ in _IDENTITY_COLUMNS.items():
+        if name not in existing:
+            cur.execute(f"ALTER TABLE IDENTITY ADD COLUMN {name} {typ.replace(' PRIMARY KEY', '')}")
+    cur.execute("CREATE INDEX IF NOT EXISTS ix_identity_extid ON IDENTITY(Provider, ExternalID)")
+    provider = result.get("source") or "Microsoft Entra ID"
+
+    # Resolve a device identity's asset name → AssetID (assets were created by import_findings).
+    def _asset_id(name: Optional[str]) -> Optional[int]:
+        if not name:
+            return None
+        r = cur.execute("SELECT AssetID FROM ASSET WHERE AssetName=? LIMIT 1", (name,)).fetchone()
+        return r[0] if r else None
+
+    for it in items:
+        ext = it.get("external_id") or it.get("id")
+        prov = it.get("provider") or provider
+        if not ext:
+            continue
+        aid = _asset_id(it.get("asset"))
+        common = (it.get("name") or ext, it.get("type"), it.get("class"), it.get("description"),
+                  it.get("status"), prov, str(ext), it.get("privilege"), it.get("environment"),
+                  it.get("credential_type"), it.get("mfa"), it.get("last_used"), it.get("risk"), aid)
+        row = cur.execute(
+            "SELECT IdentityID FROM IDENTITY WHERE Provider=? AND ExternalID=?", (prov, str(ext))
+        ).fetchone()
+        if row:
+            cur.execute(
+                """UPDATE IDENTITY SET IdentityName=?, IdentityType=?, IdentityClass=?, Description=?,
+                     Status=?, Provider=?, ExternalID=?, PrivilegeLevel=?, Environment=?,
+                     CredentialType=?, MFAEnabled=?, LastUsedDate=?, RiskLevel=?, AssetID=?,
+                     ModifiedDate=? WHERE IdentityID=?""",
+                (*common, _now(), row[0]),
+            )
+            counts["identities_updated"] += 1
+        else:
+            cur.execute(
+                """INSERT INTO IDENTITY (IdentityName, IdentityType, IdentityClass, Description,
+                     Status, Provider, ExternalID, PrivilegeLevel, Environment, CredentialType,
+                     MFAEnabled, LastUsedDate, RiskLevel, AssetID, IdentityGUID, CreatedDate, TenantID)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (*common, str(uuid4()), _now(), tid),
+            )
+            counts["identities"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+# MONITORINGCHECK / MONITORINGINCIDENT schema (kept in sync with ensureMonitoringTables() in db.ts).
+_MONCHECK_COLS = {
+    "CheckID": "INTEGER PRIMARY KEY", "CheckGUID": "TEXT", "AssetID": "INTEGER", "Name": "TEXT",
+    "CheckType": "TEXT", "Target": "TEXT", "IntervalSeconds": "INTEGER", "Enabled": "INTEGER",
+    "Status": "TEXT", "UptimePercent": "REAL", "ResponseTimeMs": "INTEGER", "LastCheckedAt": "TEXT",
+    "SSLExpiryDate": "DATE", "SSLIssuer": "TEXT", "OwnerPersonID": "INTEGER", "Source": "TEXT",
+    "ExternalID": "TEXT", "CreatedDate": "TEXT", "TenantID": "INTEGER",
+}
+_MONINC_COLS = {
+    "IncidentID": "INTEGER PRIMARY KEY", "IncidentGUID": "TEXT", "CheckID": "INTEGER", "AssetID": "INTEGER",
+    "Title": "TEXT", "Status": "TEXT", "Severity": "TEXT", "StartedAt": "TEXT", "ResolvedAt": "TEXT",
+    "DurationMinutes": "INTEGER", "Description": "TEXT", "Source": "TEXT", "ExternalID": "TEXT",
+    "CreatedDate": "TEXT", "TenantID": "INTEGER",
+}
+
+
+def import_monitoring(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import Asset Monitoring data into XORCISM.MONITORINGCHECK / MONITORINGINCIDENT (the CheckCle
+    connector and any uptime source). Idempotent by (Source, ExternalID) — existing monitors/incidents
+    are updated, new ones inserted. AssetID is resolved from ASSET by name (assets are created by the
+    findings path in the same run). Self-creates/ALTERs the tables so it runs against any DB version.
+        monitors:  [{name, type, target, asset, status, uptime, response_time, ssl_expiry, ssl_issuer,
+                     interval, external_id, source}]
+        monitoring_incidents: [{title, monitor (external id/name), asset, status, severity, started_at,
+                     resolved_at, duration, external_id, source}]"""
+    from uuid import uuid4
+
+    monitors = result.get("monitors") or []
+    incidents = result.get("monitoring_incidents") or []
+    counts = {"monitors": 0, "monitors_updated": 0, "monitoring_incidents": 0, "monitoring_incidents_updated": 0}
+    if not monitors and not incidents:
+        return counts
+    tid = _import_tenant_id()
+    src = result.get("source") or "monitoring"
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    for table, schema in (("MONITORINGCHECK", _MONCHECK_COLS), ("MONITORINGINCIDENT", _MONINC_COLS)):
+        cur.execute(f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{n} {t}' for n, t in schema.items())})")
+        have = {r[1] for r in cur.execute(f"PRAGMA table_info({table})").fetchall()}
+        for name, typ in schema.items():
+            if name not in have:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {name} {typ.replace(' PRIMARY KEY', '')}")
+
+    def asset_id(name):
+        if not name:
+            return None
+        r = cur.execute("SELECT AssetID FROM ASSET WHERE AssetName=? LIMIT 1", (str(name),)).fetchone()
+        return r[0] if r else None
+
+    ext2check = {}
+    for m in monitors:
+        provider = m.get("source") or src
+        ext = m.get("external_id") or m.get("id") or m.get("name")
+        if not ext:
+            continue
+        aid = asset_id(m.get("asset"))
+        vals = (aid, m.get("name") or str(ext), (m.get("type") or "http"), m.get("target"),
+                m.get("interval"), 1 if m.get("enabled", True) else 0, m.get("status"),
+                m.get("uptime"), m.get("response_time"), m.get("last_checked"),
+                m.get("ssl_expiry"), m.get("ssl_issuer"), provider, str(ext))
+        row = cur.execute("SELECT CheckID FROM MONITORINGCHECK WHERE Source=? AND ExternalID=?", (provider, str(ext))).fetchone()
+        if row:
+            cur.execute("""UPDATE MONITORINGCHECK SET AssetID=?, Name=?, CheckType=?, Target=?, IntervalSeconds=?,
+                             Enabled=?, Status=?, UptimePercent=?, ResponseTimeMs=?, LastCheckedAt=?,
+                             SSLExpiryDate=?, SSLIssuer=?, Source=?, ExternalID=? WHERE CheckID=?""", (*vals, row[0]))
+            ext2check[str(ext)] = row[0]; counts["monitors_updated"] += 1
+        else:
+            nid = cur.execute("SELECT COALESCE(MAX(CheckID),0)+1 FROM MONITORINGCHECK").fetchone()[0]
+            cur.execute("""INSERT INTO MONITORINGCHECK (CheckID, CheckGUID, AssetID, Name, CheckType, Target, IntervalSeconds,
+                             Enabled, Status, UptimePercent, ResponseTimeMs, LastCheckedAt, SSLExpiryDate, SSLIssuer,
+                             Source, ExternalID, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (nid, str(uuid4()), *vals, _now(), tid))
+            ext2check[str(ext)] = nid; counts["monitors"] += 1
+
+    for it in incidents:
+        provider = it.get("source") or src
+        ext = it.get("external_id") or it.get("id")
+        if not ext:
+            continue
+        cid = ext2check.get(str(it.get("monitor") or "")) or None
+        aid = asset_id(it.get("asset"))
+        vals = (cid, aid, it.get("title") or "Incident", it.get("status"), it.get("severity"),
+                it.get("started_at"), it.get("resolved_at"), it.get("duration"), it.get("description"), provider, str(ext))
+        row = cur.execute("SELECT IncidentID FROM MONITORINGINCIDENT WHERE Source=? AND ExternalID=?", (provider, str(ext))).fetchone()
+        if row:
+            cur.execute("""UPDATE MONITORINGINCIDENT SET CheckID=?, AssetID=?, Title=?, Status=?, Severity=?,
+                             StartedAt=?, ResolvedAt=?, DurationMinutes=?, Description=?, Source=?, ExternalID=? WHERE IncidentID=?""", (*vals, row[0]))
+            counts["monitoring_incidents_updated"] += 1
+        else:
+            nid = cur.execute("SELECT COALESCE(MAX(IncidentID),0)+1 FROM MONITORINGINCIDENT").fetchone()[0]
+            cur.execute("""INSERT INTO MONITORINGINCIDENT (IncidentID, IncidentGUID, CheckID, AssetID, Title, Status, Severity,
+                             StartedAt, ResolvedAt, DurationMinutes, Description, Source, ExternalID, CreatedDate, TenantID)
+                           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (nid, str(uuid4()), *vals, _now(), tid))
+            counts["monitoring_incidents"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+# DOCUMENT schema (subset kept in sync with XCOMPLIANCE / ensureGrcColumns()).
+_DOCUMENT_COLS = {
+    "DocumentID": "INTEGER PRIMARY KEY", "DocumentGUID": "TEXT", "DocumentName": "TEXT",
+    "DocumentDescription": "TEXT", "DocumentDate": "TEXT", "Author": "TEXT", "DocumentURL": "TEXT",
+    "Version": "TEXT", "Status": "TEXT", "Category": "TEXT", "DocumentType": "TEXT",
+    "Classification": "TEXT", "Framework": "TEXT", "Language": "TEXT", "ExternalID": "TEXT",
+    "Source": "TEXT", "TenantID": "INTEGER",
+}
+
+
+def import_documents(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import evidence + policy documents into XCOMPLIANCE.DOCUMENT (the controlled-document register).
+    Used by the GRC connectors (Vanta, Drata, ServiceNow GRC, OneTrust, AuditBoard). Idempotent by
+    (Source, ExternalID) — existing documents are updated, new ones inserted. Each document item (dict):
+        {"name", "description", "type" (policy/evidence/report/…), "framework", "url", "external_id"
+         (unique per source), "author", "date", "status", "category", "classification", "version",
+         "language"}
+    Self-creates/ALTERs the table so it runs against any DB version."""
+    from uuid import uuid4
+
+    docs = result.get("documents") or []
+    counts = {"documents": 0, "documents_updated": 0}
+    if not docs:
+        return counts
+    tid = _import_tenant_id()
+    src = result.get("source") or "GRC"
+    con = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute(f"CREATE TABLE IF NOT EXISTS DOCUMENT ({', '.join(f'{n} {t}' for n, t in _DOCUMENT_COLS.items())})")
+    have = {r[1] for r in cur.execute("PRAGMA table_info(DOCUMENT)").fetchall()}
+    for name, typ in _DOCUMENT_COLS.items():
+        if name not in have:
+            cur.execute(f"ALTER TABLE DOCUMENT ADD COLUMN {name} {typ.replace(' PRIMARY KEY', '')}")
+    cur.execute("CREATE INDEX IF NOT EXISTS ix_document_extid ON DOCUMENT(Source, ExternalID)")
+
+    for d in docs:
+        provider = d.get("source") or src
+        ext = d.get("external_id") or d.get("id") or d.get("url") or d.get("name")
+        if not ext:
+            continue
+        vals = (d.get("name") or str(ext), d.get("description"), d.get("date"), d.get("author"),
+                d.get("url"), d.get("version"), (d.get("status") or "Active"), d.get("category"),
+                (d.get("type") or "Evidence"), d.get("classification"), d.get("framework"),
+                (d.get("language") or "en"), provider, str(ext))
+        row = cur.execute("SELECT DocumentID FROM DOCUMENT WHERE Source=? AND ExternalID=?", (provider, str(ext))).fetchone()
+        if row:
+            cur.execute(
+                """UPDATE DOCUMENT SET DocumentName=?, DocumentDescription=?, DocumentDate=?, Author=?,
+                     DocumentURL=?, Version=?, Status=?, Category=?, DocumentType=?, Classification=?,
+                     Framework=?, Language=?, Source=?, ExternalID=? WHERE DocumentID=?""",
+                (*vals, row[0]),
+            )
+            counts["documents_updated"] += 1
+        else:
+            nid = cur.execute("SELECT COALESCE(MAX(DocumentID),0)+1 FROM DOCUMENT").fetchone()[0]
+            cur.execute(
+                """INSERT INTO DOCUMENT (DocumentID, DocumentGUID, DocumentName, DocumentDescription,
+                     DocumentDate, Author, DocumentURL, Version, Status, Category, DocumentType,
+                     Classification, Framework, Language, Source, ExternalID, TenantID)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (nid, str(uuid4()), *vals, tid),
+            )
+            counts["documents"] += 1
     con.commit()
     con.close()
     return counts

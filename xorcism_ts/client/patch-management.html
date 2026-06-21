@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Patch Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .pm-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .pm-wrap h1{font-size:20px;margin:0 0 2px}
+  .pm-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:980px}
+  .pm-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .pm-card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .pm-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .pm-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .pm-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .pm-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}
+  .bd b{color:#e2e8f0}
+  .bar{height:9px;border-radius:6px;background:#1e2133;overflow:hidden;margin:6px 0 2px}
+  .bar > span{display:block;height:100%;background:linear-gradient(90deg,#34d399,#22d3ee)}
+  table.pm{width:100%;border-collapse:collapse;font-size:13px}
+  table.pm th,table.pm td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.pm th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .sev{font-size:11px;font-weight:600;border-radius:5px;padding:1px 7px;white-space:nowrap}
+  .s-critical{background:#7f1d1d;color:#fecaca}.s-high{background:#7c2d12;color:#fed7aa}
+  .s-medium{background:#78350f;color:#fcd34d}.s-low{background:#1e2133;color:#94a3b8}.s-info{background:#1e2133;color:#64748b}
+  .kev{font-size:10px;font-weight:700;background:#7f1d1d;color:#fecaca;border-radius:5px;padding:1px 6px}
+  .pa{font-size:10px;border-radius:5px;padding:1px 6px}.pa-y{background:#14532d;color:#bbf7d0}.pa-n{background:#3b2f1e;color:#fcd34d}
+  .due-ok{color:#94a3b8}.due-soon{color:#fbbf24}.due-over{color:#f87171;font-weight:700}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace}
+  .pst{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;padding:4px 7px}
+  .plan{font-size:10px;background:#1e2542;border:1px solid #7c83fd;color:#c7ccff;border-radius:5px;padding:1px 6px}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .pm-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .pm-modal-bg.open{display:flex}
+  .pm-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:560px;max-width:100%;padding:22px 24px}
+  .pm-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .pm-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .pm-modal .fld{margin-bottom:13px}.pm-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .pm-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .pm-modal label .req{color:#f87171}
+  .pm-modal input,.pm-modal select,.pm-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .pm-modal textarea{resize:vertical;min-height:54px}
+  .pm-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .pm-err{color:#f87171;font-size:12px;min-height:16px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .filters input,.filters select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px}
+  .ck{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#cbd5e1}.ck input{width:auto}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <a href="/exposure">&#127919; Exposure</a>
+  <a href="/?db=XVULNERABILITY&amp;table=VULNERABILITY">&#128737;&#65039; Vulnerabilities</a>
+  <span class="spacer"></span>
+  <span class="title">&#129520; Patch Management</span>
+</div>
+
+<div class="pm-wrap">
+  <h1>Patch Management</h1>
+  <div class="pm-sub">Drive the <b>patch lifecycle</b> of every asset&#8596;vulnerability: prioritized by
+    <b>KEV</b>, <b>CVSS</b> and <b>EPSS</b>, governed by <b>risk-based patch SLAs</b>, and tracked from
+    <i>Unpatched</i> → <i>Patched</i> with <b>remediation plans</b>. Each row is a CVE on a specific asset;
+    mark its patch status inline, attach a remediation plan, and watch <b>coverage</b>, <b>MTTR</b> and
+    <b>overdue SLAs</b> move. Patch status lives on ASSETVULNERABILITY; plans on ASSETVULNERABILITYREMEDIATION.</div>
+  <div id="pm-body"><div class="muted" style="padding:24px;text-align:center">Building the patch posture…</div></div>
+</div>
+
+<!-- Remediation-plan modal -->
+<div class="pm-modal-bg" id="pm-modal">
+  <div class="pm-modal">
+    <h3>New remediation plan</h3>
+    <p class="lead" id="pm-modal-ctx">Plan the remediation for this finding.</p>
+    <div class="fld">
+      <label>Plan name <span class="req">*</span></label>
+      <input id="pm-f-name" type="text" placeholder="e.g. Patch Log4j on prod-web (Q3 window)" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld">
+        <label>Type</label>
+        <select id="pm-f-type">
+          <option>Patch</option><option>Mitigation</option><option>Configuration change</option>
+          <option>Compensating control</option><option>Upgrade / replace</option><option>Accept risk</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Status</label>
+        <select id="pm-f-status">
+          <option>Planned</option><option>In progress</option><option>Awaiting change window</option>
+          <option>Testing</option><option>Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Target date</label><input id="pm-f-target" type="date"></div>
+      <div class="fld">
+        <label>Priority</label>
+        <select id="pm-f-priority"><option value="">—</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      </div>
+    </div>
+    <div class="fld"><label>Owner (optional)</label><select id="pm-f-owner"><option value="">—</option></select></div>
+    <div class="fld"><label>Notes (optional)</label><textarea id="pm-f-desc" maxlength="2000"></textarea></div>
+    <div class="pm-modal-foot">
+      <span class="pm-err" id="pm-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="pm-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="pm-create">Create plan</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/patch-management.js"></script>
+</body>
+</html>

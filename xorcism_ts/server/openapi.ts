@@ -23,7 +23,7 @@ export function buildOpenApi(): Record<string, unknown> {
     openapi: "3.0.3",
     info: {
       title: "XORCISM API",
-      version: "1.1.0-beta.1",
+      version: "1.3.0-beta.1",
       description:
         "REST API over the XORCISM cyber-exposure platform. Authenticate with an API key " +
         "(`Authorization: Bearer xor_…` or `X-API-Key: xor_…`). A key acts as its owning user and is " +

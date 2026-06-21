@@ -86,4 +86,56 @@ async function load(): Promise<void> {
       <a href="/?db=XCOMPLIANCE&table=AUDIT">Audits</a> / <a href="/?db=XCOMPLIANCE&table=AUDITFINDING">Findings</a>.</div>`;
 }
 
-document.addEventListener("DOMContentLoaded", () => void load());
+// ── Guided "new audit" modal ──────────────────────────────────────────────────
+function openAuditModal(): void {
+  for (const id of ["cm-f-name", "cm-f-category", "cm-f-auditor", "cm-f-scope", "cm-f-desc", "cm-f-closure"]) (document.getElementById(id) as HTMLInputElement).value = "";
+  (document.getElementById("cm-f-type") as HTMLSelectElement).value = "Compliance";
+  (document.getElementById("cm-f-status") as HTMLSelectElement).value = "Planned";
+  (document.getElementById("cm-f-date") as HTMLInputElement).value = new Date().toISOString().slice(0, 10);
+  $("cm-f-err").textContent = "";
+  $("cm-modal").classList.add("open");
+  ($("cm-f-name") as HTMLInputElement).focus();
+}
+function closeAuditModal(): void { $("cm-modal").classList.remove("open"); }
+
+function toast(html: string): void {
+  const el = $("toast");
+  el.innerHTML = html;
+  el.style.cssText = "position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#13162a;border:1px solid #34d399;color:#e2e8f0;border-radius:10px;padding:11px 16px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);z-index:1100";
+  window.setTimeout(() => { el.innerHTML = ""; el.style.cssText = ""; }, 8000);
+}
+
+async function createAudit(): Promise<void> {
+  const v = (id: string): string => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
+  const name = v("cm-f-name").trim();
+  const err = $("cm-f-err");
+  if (!name) { err.textContent = "⚠️ Enter a name."; ($("cm-f-name") as HTMLInputElement).focus(); return; }
+  const btn = $("cm-create") as HTMLButtonElement;
+  btn.disabled = true; err.textContent = "Creating…";
+  try {
+    const body = {
+      name, type: v("cm-f-type"), category: v("cm-f-category").trim() || undefined, status: v("cm-f-status"),
+      auditor: v("cm-f-auditor").trim() || undefined, scope: v("cm-f-scope").trim() || undefined,
+      description: v("cm-f-desc").trim() || undefined, date: v("cm-f-date") || undefined,
+      closureDate: v("cm-f-closure") || undefined,
+    };
+    const r = await fetch("/api/compliance-management/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    closeAuditModal();
+    await load();
+    const link = `/?db=XCOMPLIANCE&table=AUDIT&editCol=AuditID&editVal=${d.id}`;
+    toast(`✅ Audit created — <a href="${link}" style="color:#7dd3fc">open it ↗</a>`);
+  } catch (e) { err.textContent = `⚠️ ${e}`; }
+  finally { btn.disabled = false; }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  $("cm-new").addEventListener("click", openAuditModal);
+  $("cm-cancel").addEventListener("click", closeAuditModal);
+  $("cm-create").addEventListener("click", () => void createAudit());
+  $("cm-modal").addEventListener("click", (e) => { if (e.target === $("cm-modal")) closeAuditModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAuditModal(); });
+  ($("cm-f-name") as HTMLInputElement).addEventListener("keydown", (e) => { if ((e as KeyboardEvent).key === "Enter") void createAudit(); });
+  void load();
+});

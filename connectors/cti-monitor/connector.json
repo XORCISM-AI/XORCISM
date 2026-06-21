@@ -1,0 +1,17 @@
+{
+  "id": "cti-monitor",
+  "name": "CTI Monitor",
+  "type": "import",
+  "category": "CTI",
+  "description": "CTI Monitor (0xw01f) — self-hosted threat-intelligence workspace that collects, enriches and risk-scores CTI from open sources (RSS, paste sites…) with AI classification and actor reputation. Imports its threat-intelligence records into XORCISM (XTHREAT.INTELEXCHANGE). Offline: a JSON export. Live: set CTI_MONITOR_URL (e.g. http://localhost:8000) + optional CTI_MONITOR_TOKEN. Tool: https://github.com/0xw01f/CTI-Monitor (license CC BY-NC 4.0 — non-commercial).",
+  "intrusive": false,
+  "permission": "connector:cti-monitor",
+  "run": "run.py",
+  "mapping": "cti-monitor",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of CTI Monitor threat records ({threats:[…]} or a flat list)." },
+    { "name": "base", "type": "string", "required": false, "help": "CTI Monitor base URL (e.g. http://localhost:8000). Overrides CTI_MONITOR_URL." },
+    { "name": "path", "type": "string", "required": false, "help": "API path to pull (default /api/threats)." },
+    { "name": "max_items", "type": "int", "required": false, "default": 1000, "help": "Maximum records to import." }
+  ]
+}

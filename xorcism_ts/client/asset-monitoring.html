@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Asset Monitoring</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mn-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .mn-wrap h1{font-size:20px;margin:0 0 2px}
+  .mn-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:980px}
+  .mn-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .mn-card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .mn-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .mn-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .mn-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .mn-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}.bd b{color:#e2e8f0}
+  table.mn{width:100%;border-collapse:collapse;font-size:13px}
+  table.mn th,table.mn td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.mn th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+  .d-up{background:#34d399}.d-down{background:#f87171}.d-warning{background:#fbbf24}.d-paused{background:#64748b}.d-unknown{background:#475569}
+  .stt{font-size:11px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .st-up{background:#14532d;color:#bbf7d0}.st-down{background:#7f1d1d;color:#fecaca}.st-warning{background:#78350f;color:#fcd34d}.st-paused{background:#1e2133;color:#94a3b8}.st-unknown{background:#1e2133;color:#64748b}
+  .ty{font-size:10px;border-radius:5px;padding:1px 6px;background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;text-transform:uppercase}
+  .aname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px}
+  .ssl-soon{color:#fbbf24}.ssl-over{color:#f87171;font-weight:700}.ssl-ok{color:#94a3b8}
+  .pst{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;padding:3px 6px}
+  .legend{font-size:11px;color:#64748b;margin-top:12px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .filters input,.filters select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px}
+  .mn-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .mn-modal-bg.open{display:flex}
+  .mn-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:560px;max-width:100%;padding:22px 24px}
+  .mn-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}.mn-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .mn-modal .fld{margin-bottom:13px}.mn-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .mn-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .mn-modal label .req{color:#f87171}
+  .mn-modal input,.mn-modal select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .mn-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}.mn-err{color:#f87171;font-size:12px;min-height:16px}
+  .btn-new{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}.btn-new:hover{background:#9aa0ff}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <a href="/incident-management">&#128680; Incidents</a>
+  <a href="/?db=XORCISM&amp;table=MONITORINGCHECK">&#128203; Monitors</a>
+  <span class="spacer"></span>
+  <span class="title">&#128225; Asset Monitoring</span>
+</div>
+
+<div class="mn-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Asset Monitoring</h1>
+    <button class="btn btn-ghost btn-sm" id="mn-run" title="Probe all due monitors now (HTTP/TCP/DNS/SSL/ping)">↻ Check now</button>
+    <button class="btn btn-ghost btn-sm" id="mn-activate" title="Activate monitoring on an asset — auto-create HTTP/SSL/Ping/DNS monitors from its IP &amp; URL">⊕ Activate from asset</button>
+    <button class="btn-new" id="mn-new">+ Add monitor</button>
+  </div>
+  <div class="mn-sub">Real-time <b>uptime &amp; health</b> of your assets — <b>HTTP / Ping / TCP / DNS / SSL / Server</b>
+    monitors with status (<span class="stt st-up">up</span> / <span class="stt st-down">down</span> /
+    <span class="stt st-warning">warning</span> / <span class="stt st-paused">paused</span>), <b>uptime %</b>, response
+    time, <b>SSL expiry</b> and up/down <b>incidents</b>. Create monitors here, or import them from
+    <b>CheckCle</b> (the <code>checkcle</code> connector). Records land in MONITORINGCHECK / MONITORINGINCIDENT.</div>
+  <div id="mn-body"><div class="muted" style="padding:24px;text-align:center">Building the monitoring view…</div></div>
+</div>
+
+<!-- Add-monitor modal -->
+<div class="mn-modal-bg" id="mn-modal">
+  <div class="mn-modal">
+    <h3>Add monitor</h3>
+    <p class="lead">Define an uptime/health check on an asset. Status updates land via the connector,
+      the optional in-process checker, or a manual status change in the table.</p>
+    <div class="fld">
+      <label>Name <span class="req">*</span></label>
+      <input id="mn-f-name" type="text" placeholder="e.g. Customer portal — HTTPS" maxlength="300" autocomplete="off">
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Type</label>
+        <select id="mn-f-type"><option value="http">HTTP(S)</option><option value="ping">Ping</option><option value="tcp">TCP</option><option value="dns">DNS</option><option value="ssl">SSL / domain</option><option value="server">Server (agent)</option></select>
+      </div>
+      <div class="fld"><label>Check interval (s)</label><input id="mn-f-interval" type="number" min="30" step="30" value="300"></div>
+    </div>
+    <div class="fld"><label>Target (URL / host:port / domain)</label><input id="mn-f-target" type="text" placeholder="https://portal.example.com  ·  10.0.0.5:443  ·  example.com" maxlength="500" autocomplete="off"></div>
+    <div class="fld"><label>Cron schedule (optional — overrides interval)</label><input id="mn-f-cron" type="text" placeholder="e.g. */5 * * * *  ·  0 * * * *  (min hour dom mon dow)" maxlength="120" autocomplete="off"></div>
+    <div class="row2">
+      <div class="fld"><label>Asset (optional)</label><select id="mn-f-asset"><option value="">—</option></select></div>
+      <div class="fld"><label>Owner (optional)</label><select id="mn-f-owner"><option value="">—</option></select></div>
+    </div>
+    <div class="fld" id="mn-ssl-wrap" style="display:none"><label>SSL expiry date (optional)</label><input id="mn-f-ssl" type="date"></div>
+    <div class="mn-modal-foot">
+      <span class="mn-err" id="mn-f-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="mn-cancel">Cancel</button>
+      <button class="btn-new" id="mn-create">Add monitor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activate-from-asset modal -->
+<div class="mn-modal-bg" id="mn-act-modal">
+  <div class="mn-modal">
+    <h3>Activate monitoring on an asset</h3>
+    <p class="lead">Auto-create <b>HTTP / SSL / Ping / DNS</b> monitors from the asset's website URL and IP address.
+      Already-monitored targets are skipped. Set an interval, or a <b>cron</b> schedule for the periodicity.</p>
+    <div class="fld"><label>Asset <span class="req">*</span></label><select id="mn-act-asset"><option value="">—</option></select></div>
+    <div class="row2">
+      <div class="fld"><label>Check interval (s)</label><input id="mn-act-interval" type="number" min="30" step="30" value="300"></div>
+      <div class="fld"><label>Cron (optional)</label><input id="mn-act-cron" type="text" placeholder="*/5 * * * *" maxlength="120"></div>
+    </div>
+    <div class="fld"><label>Monitor types</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#cbd5e1;padding-top:2px">
+        <label><input type="checkbox" class="mn-act-type" value="http" checked> HTTP</label>
+        <label><input type="checkbox" class="mn-act-type" value="ssl" checked> SSL</label>
+        <label><input type="checkbox" class="mn-act-type" value="ping" checked> Ping</label>
+        <label><input type="checkbox" class="mn-act-type" value="dns" checked> DNS</label>
+      </div>
+    </div>
+    <div class="fld"><label>Owner (optional)</label><select id="mn-act-owner"><option value="">—</option></select></div>
+    <div class="mn-modal-foot">
+      <span class="mn-err" id="mn-act-err" style="flex:1"></span>
+      <button class="btn btn-ghost btn-sm" id="mn-act-cancel">Cancel</button>
+      <button class="btn-new" id="mn-act-go">Activate</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/asset-monitoring.js"></script>
+</body>
+</html>

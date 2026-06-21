@@ -1,0 +1,16 @@
+{
+  "id": "auditboard",
+  "name": "AuditBoard",
+  "type": "import",
+  "category": "GRC",
+  "description": "AuditBoard — connected risk, audit & compliance platform. Imports AuditBoard policies + evidence/documents into the XORCISM controlled-document register (XCOMPLIANCE.DOCUMENT). Offline: a JSON export. Live: set AUDITBOARD_BASE (https://<tenant>.auditboardapp.com) + AUDITBOARD_API_TOKEN (Bearer). Tool: https://www.auditboard.com.",
+  "intrusive": false,
+  "permission": "connector:auditboard",
+  "run": "run.py",
+  "mapping": "auditboard",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of AuditBoard policies/evidence." },
+    { "name": "base", "type": "string", "required": false, "help": "AuditBoard tenant base URL (https://<tenant>.auditboardapp.com). Overrides AUDITBOARD_BASE. Live needs AUDITBOARD_API_TOKEN." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum documents to import." }
+  ]
+}

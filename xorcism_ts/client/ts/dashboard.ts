@@ -593,6 +593,7 @@ interface Kpis {
   crisis: { readinessScore: number; exercises: number; completionRate: number | null; scenarioCoverage: number; openActions: number; overdueActions: number; scenariosNeverExercised: number } | null;
   risk: { riskScore: number; open: number; highCritical: number; untreated: number; overdueReview: number; treatedRate: number | null; totalALE: number; currency: string } | null;
   pqcmm: { maturityScore: number; assessments: number; quantumVulnerable: number; productionReady: number; managed: number } | null;
+  patch: { coverage: number | null; overdue: number; kevUnpatched: number; unpatched: number; instances: number; mttr: number | null } | null;
 }
 const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
 const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
@@ -632,6 +633,11 @@ async function initKpis(): Promise<void> {
   if (k.compliance) {
     tile(k.compliance.completionRate != null ? `${k.compliance.completionRate}%` : null, "Audit completion", "audits completed", "/compliance-management", pctColor(k.compliance.completionRate));
     tile(k.compliance.highOpen, "High findings open", `${k.compliance.openFindings} open · ${k.compliance.overdue} overdue`, "/compliance-management", badColor(k.compliance.highOpen));
+  }
+  if (k.patch) {
+    tile(k.patch.coverage != null ? `${k.patch.coverage}%` : null, "Patch coverage", `${k.patch.instances} asset×CVE`, "/patch-management", pctColor(k.patch.coverage));
+    tile(k.patch.overdue, "Overdue patches", "past patch SLA", "/patch-management", badColor(k.patch.overdue));
+    tile(k.patch.kevUnpatched, "Unpatched KEV", "known-exploited · open", "/patch-management", badColor(k.patch.kevUnpatched));
   }
   if (k.risk) {
     const money = (n: number): string => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: k.risk!.currency || "EUR", maximumFractionDigits: 0, notation: "compact" }).format(n); } catch { return String(n); } };

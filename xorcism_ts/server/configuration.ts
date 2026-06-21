@@ -196,3 +196,39 @@ export function configurationInventory(tenant: number | null): ConfigurationInve
     },
   };
 }
+
+// ── CIS Benchmarks (consensus secure-configuration baselines + CIS-CAT scan results) ──────────
+export interface CisBenchmarkInventory {
+  benchmarks: Record<string, unknown>[];
+  summary: { total: number; recommendations: number; scanned: number; pass: number; fail: number; error: number; passRate: number | null; byCategory: Record<string, number> };
+}
+
+/** CIS Benchmark catalogue (XOVAL.CISBENCHMARK) + per-benchmark CIS-CAT pass/fail tally. */
+export function cisBenchmarkInventory(_tenant: number | null): CisBenchmarkInventory {
+  const empty: CisBenchmarkInventory = { benchmarks: [], summary: { total: 0, recommendations: 0, scanned: 0, pass: 0, fail: 0, error: 0, passRate: null, byCategory: {} } };
+  let ov;
+  try { ov = getDb("XOVAL"); } catch { return empty; }
+  if (!ov.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CISBENCHMARK'").get()) return empty;
+  const benches = ov.prepare("SELECT BenchmarkID id, Name name, Version version, Platform platform, Category category, RecommendationCount recs FROM CISBENCHMARK ORDER BY Category, Name").all() as Record<string, any>[];
+
+  // result tally per benchmark + grand totals
+  const tally = new Map<number, Record<string, number>>();
+  let pass = 0; let fail = 0; let error = 0; let scanned = 0;
+  if (ov.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CISBENCHMARKRESULT'").get()) {
+    for (const r of ov.prepare("SELECT BenchmarkID b, LOWER(COALESCE(Result,'')) res, COUNT(*) n FROM CISBENCHMARKRESULT GROUP BY BenchmarkID, LOWER(COALESCE(Result,''))").all() as { b: number; res: string; n: number }[]) {
+      const t = tally.get(Number(r.b)) ?? {}; t[r.res] = (t[r.res] || 0) + Number(r.n); tally.set(Number(r.b), t);
+      if (r.res === "pass") pass += Number(r.n); else if (r.res === "fail") fail += Number(r.n); else if (r.res === "error" || r.res === "unknown") error += Number(r.n);
+    }
+    scanned = (ov.prepare("SELECT COUNT(DISTINCT BenchmarkID) n FROM CISBENCHMARKRESULT").get() as { n: number }).n;
+  }
+  const byCategory: Record<string, number> = {};
+  const recommendations = benches.reduce((s, b) => s + Number(b.recs || 0), 0);
+  const benchmarks = benches.map((b) => {
+    byCategory[b.category || "Other"] = (byCategory[b.category || "Other"] || 0) + 1;
+    const t = tally.get(Number(b.id)) ?? {};
+    const p = t.pass || 0; const f = t.fail || 0; const tot = p + f + (t.error || 0) + (t.unknown || 0);
+    return { ...b, pass: p, fail: f, scored: tot, passRate: tot ? Math.round((p / tot) * 100) : null };
+  });
+  const graded = pass + fail;
+  return { benchmarks, summary: { total: benches.length, recommendations, scanned, pass, fail, error, passRate: graded ? Math.round((pass / graded) * 100) : null, byCategory } };
+}

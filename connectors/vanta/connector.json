@@ -1,0 +1,16 @@
+{
+  "id": "vanta",
+  "name": "Vanta",
+  "type": "import",
+  "category": "GRC",
+  "description": "Vanta — security & compliance automation (SOC 2, ISO 27001, HIPAA…). Imports Vanta policies + collected evidence/documents into the XORCISM controlled-document register (XCOMPLIANCE.DOCUMENT). Offline: a JSON export ({documents:[…]} or {policies:[…],evidence:[…]}). Live: set VANTA_API_TOKEN (Bearer) and optionally VANTA_API_BASE (default https://api.vanta.com). Tool: https://www.vanta.com.",
+  "intrusive": false,
+  "permission": "connector:vanta",
+  "run": "run.py",
+  "mapping": "vanta",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of Vanta policies/evidence/documents." },
+    { "name": "base", "type": "string", "required": false, "help": "Vanta API base URL (default https://api.vanta.com). Live mode needs VANTA_API_TOKEN in the worker env." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum documents to import." }
+  ]
+}

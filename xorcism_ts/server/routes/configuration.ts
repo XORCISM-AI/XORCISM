@@ -6,7 +6,7 @@
 import os from "os";
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { configurationInventory } from "../configuration";
+import { configurationInventory, cisBenchmarkInventory } from "../configuration";
 import { listAgents } from "../agents";
 import { createSchedule, listSchedules } from "../jobs";
 import * as xid from "../xid";
@@ -74,6 +74,15 @@ router.post("/configuration/schedule-scan", (req: Request, res: Response) => {
   xid.addAudit({ userId: req.user.UserID ?? null, action: "configuration_schedule_scan", resourceType: "schedule",
     resourceKey: String(scheduleId), detail: `agent=${agent} ovalClass=${ovalClass} cron=${cron}`, ip: clientIp(req) });
   res.json({ ok: true, scheduleId, agent, ovalClass, cron });
+});
+
+// GET /api/configuration/cis-benchmarks — CIS Benchmark catalogue + CIS-CAT pass/fail posture
+router.get("/configuration/cis-benchmarks", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XOVAL", "OVALDEFINITION")) return void res.status(403).json({ error: "forbidden" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try { res.json(cisBenchmarkInventory(tenant)); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
 export default router;

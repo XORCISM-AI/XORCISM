@@ -1,0 +1,16 @@
+{
+  "id": "onetrust",
+  "name": "OneTrust",
+  "type": "import",
+  "category": "GRC",
+  "description": "OneTrust — privacy, GRC & third-party risk management. Imports OneTrust policies + documents/evidence into the XORCISM controlled-document register (XCOMPLIANCE.DOCUMENT). Offline: a JSON export. Live: set ONETRUST_BASE (https://<tenant>.onetrust.com) + ONETRUST_API_TOKEN (Bearer). Tool: https://www.onetrust.com.",
+  "intrusive": false,
+  "permission": "connector:onetrust",
+  "run": "run.py",
+  "mapping": "onetrust",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline JSON export of OneTrust policies/documents." },
+    { "name": "base", "type": "string", "required": false, "help": "OneTrust tenant base URL (https://<tenant>.onetrust.com). Overrides ONETRUST_BASE. Live needs ONETRUST_API_TOKEN." },
+    { "name": "max_items", "type": "int", "required": false, "default": 2000, "help": "Maximum documents to import." }
+  ]
+}

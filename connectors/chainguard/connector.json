@@ -1,0 +1,15 @@
+{
+  "id": "chainguard",
+  "name": "Chainguard",
+  "type": "import",
+  "category": "Container Security",
+  "description": "Imports container-image vulnerability results from Chainguard (https://www.chainguard.dev) — minimal, low-CVE Wolfi-based images and the chainctl platform. The scanned image becomes an ASSET, each package a component, and each vulnerability a VULNERABILITY / ASSETVULNERABILITY (ref = CVE/GHSA, severity). Offline mode: import a Grype JSON report (`grype <image> -o json`, the scanner Chainguard tooling uses), an `{images:[{name,vulnerabilities:[...]}]}` export, or a flat findings list. Live mode: if `image` is set and the `chainctl` or `grype` binary is on the worker, scans it. Optional env CHAINGUARD_TOKEN for chainctl auth. No DB access in run.py (worker-safe).",
+  "intrusive": false,
+  "permission": "connector:chainguard",
+  "run": "run.py",
+  "mapping": "chainguard",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to a Chainguard/Grype JSON vulnerability report to import." },
+    { "name": "image", "type": "string", "required": false, "help": "Live mode: an image ref to scan with the local grype/chainctl binary (also used as the ASSET name)." }
+  ]
+}

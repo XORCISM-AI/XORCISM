@@ -58,6 +58,7 @@ export const DEFAULT_PLAYBOOK: PlaybookDef = {
     { id: "web-nikto", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "nikto", targetFrom: "url", label: "Web server → Nikto vulnerability scan" },
     { id: "web-nuclei", when: { service: "https?|http-proxy|ssl/http", ports: [80, 443, 8080, 8443] }, run: "nuclei", targetFrom: "url", label: "Web server → Nuclei templates" },
     { id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" },
+    { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" },
     { id: "tls", when: { ports: [443, 8443] }, run: "sslyze", targetFrom: "host", label: "TLS endpoint → sslyze (cert/cipher audit)" },
   ],
 };
@@ -220,7 +221,7 @@ function seedBuiltinPlaybooks(db: ReturnType<typeof getDb>): void {
   const have = new Set((db.prepare("SELECT Name FROM XCHAINPLAYBOOK WHERE Builtin=1").all() as { Name: string }[]).map((r) => r.Name));
   const builtins: { name: string; description: string; def: PlaybookDef }[] = [
     { name: "Full external pentest", description: "Port/service discovery (nmap) → web fingerprint & scanners on HTTP(S) → WPScan on WordPress → TLS audit. Findings roll up to the engagement.", def: DEFAULT_PLAYBOOK },
-    { name: "Web app assessment", description: "Fingerprint (WhatWeb) → Nikto + Nuclei → WPScan when WordPress is detected. Seed a URL.", def: { seed: ["whatweb", "nikto", "nuclei"], maxDepth: 3, maxSteps: 40, rules: [{ id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" }] } },
+    { name: "Web app assessment", description: "Fingerprint (WhatWeb) → Nikto + Nuclei → WPScan + WPProbe when WordPress is detected. Seed a URL.", def: { seed: ["whatweb", "nikto", "nuclei"], maxDepth: 3, maxSteps: 40, rules: [{ id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" }, { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" }] } },
     { name: "Web recon (subdomains)", description: "Subdomain enumeration (subfinder) → probe each host with httpx → fingerprint & scan the live web hosts (WhatWeb, Nikto) → WPScan on WordPress. Seed a domain.", def: {
       seed: ["subfinder"], maxDepth: 5, maxSteps: 60, rules: [
         { id: "probe", when: { hasHosts: true }, run: "httpx", targetFrom: "host-each", label: "Subdomains found → probe with httpx" },

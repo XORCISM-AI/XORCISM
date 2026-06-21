@@ -38,6 +38,12 @@ import identitiesRouter from "./routes/identities";
 import assetsRouter from "./routes/assets";
 import incidentsRouter from "./routes/incidents";
 import complianceRouter from "./routes/compliance";
+import otSecurityRouter from "./routes/otsecurity";
+import patchMgmtRouter from "./routes/patchmgmt";
+import monitoringRouter from "./routes/monitoring";
+import control53Router from "./routes/control53";
+import trustCenterRouter from "./routes/trustcenter";
+import investmentRouter from "./routes/investment";
 import policiesRouter from "./routes/policies";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
@@ -63,8 +69,10 @@ import epssRouter from "./routes/epss";
 import huntingRouter from "./routes/hunting";
 import threatFeedsRouter from "./routes/threatfeeds";
 import { antibot } from "./antibot";
-import { getJobDb } from "./jobs";
+import { getJobDb, ensureCveSchedule } from "./jobs";
 import { startScheduler } from "./scheduler";
+import { ensureCveMatchTables, startCveMatcher } from "./cvematch";
+import { startMonitorChecker } from "./monitorcheck";
 import { startThreatFeedPoller } from "./feeds";
 import { startRiskScoreLoop } from "./riskscore";
 import {
@@ -76,7 +84,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureAssetColumns, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -176,6 +184,12 @@ app.use("/api", identitiesRouter); // IAM: identity inventory (human + non-human
 app.use("/api", assetsRouter); // Asset Management: asset inventory + governance worklist
 app.use("/api", incidentsRouter); // Incident Management: incident inventory + governance worklist
 app.use("/api", complianceRouter); // Compliance Management: audit inventory + findings/policy worklist
+app.use("/api", otSecurityRouter); // OT Security: IEC 62443 / NIST 800-82 OT assessments + OT assets + zones
+app.use("/api", patchMgmtRouter); // Patch Management: asset↔vuln patch status, SLAs, remediation plans
+app.use("/api", monitoringRouter); // Asset Monitoring: uptime/SSL/incident monitors over ASSET
+app.use("/api", control53Router); // NIST SP 800-53 control management: catalogue + implementation status + baselines + posture
+app.use("/api", trustCenterRouter); // Trust Center: admin config + PUBLIC read-only posture (/api/public/trust/:slug)
+app.use("/api", investmentRouter); // Agentic Security Investment Advisor: what-if simulation + local-AI recommendation
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
 app.use("/api", crisisRouter); // Crisis Management: tabletop-exercise readiness + scenario library + improvement worklist
@@ -278,6 +292,31 @@ app.get("/tprm", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/ebios", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ebios.html"));
 });
+app.get("/nist-800-30", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "nist-800-30.html"));
+});
+app.get("/ot-security", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ot-security.html"));
+});
+app.get("/patch-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "patch-management.html"));
+});
+app.get("/asset-monitoring", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "asset-monitoring.html"));
+});
+app.get("/control-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "control-management.html"));
+});
+app.get("/trust-center", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "trust-center.html"));
+});
+app.get("/investment-advisor", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "investment-advisor.html"));
+});
+// PUBLIC trust center page (auth-exempt via the /trust/ prefix in requireAuthGate).
+app.get("/trust/:slug", (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "trust-public.html"));
+});
 app.get("/stix-graph", pageGuard("/stix-graph"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "stix-graph.html"));
 });
@@ -347,6 +386,9 @@ app.get("/sca", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/tools", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "tools.html"));
 });
+app.get("/threat-model", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "threat-model.html"));
+});
 app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
 });
@@ -411,6 +453,13 @@ ensureIncidentTables(); // creates the XINCIDENT.ALERT table if needed
 ensureOpenctiColumns(); // adapts the XTHREAT tables to OpenCTI properties (Confidence/TLP/Sighting…)
 ensureEmulationTables(); // adversary emulation / validation (BAS) module: EMULATION*/ATOMICTEST
 ensureAssetColumns(); // adds ASSET.BusinessValue (and future core ASSET fields) if missing
+ensureAssetPrimaryKey(); // rebuilds ASSET so AssetID is a real INTEGER PRIMARY KEY (legacy non-PK quirk); idempotent
+ensureCveMatchTables(); // CVE→ASSET matcher watermark (CVEMATCHCURSOR); initialised to current MAX(VulnerabilityID)
+ensurePatchTables(); // Patch Management: ASSETVULNERABILITY patch-status cols + ASSETVULNERABILITYREMEDIATION plan cols
+ensureMonitoringTables(); // Asset Monitoring (CheckCle-style): MONITORINGCHECK + MONITORINGINCIDENT
+ensureControlImplementationTables(); // NIST 800-53 management: CONTROLIMPLEMENTATION + CONTROL.Baseline* columns
+ensureCisBenchmarkTables(); // CIS Benchmarks catalogue + CIS-CAT results (Configuration Management)
+ensureTrustCenterTables(); // Trust Center: public posture page config (per tenant)
 ensureIdentityTables(); // IAM registry: XORCISM.IDENTITY + IDENTITYPERSON (human + non-human identities)
 ensureToolDocumentTable(); // XORCISM.TOOLDOCUMENT — TOOL ↔ DOCUMENT link table (provenance/validity/confidence)
 ensureOrganisationRiskScoreTable(); // XORCISM.ORGANISATIONRISKSCORE — per-organisation risk-score history
@@ -420,6 +469,8 @@ ensureVulnerabilityColumns(); // adds VULNERABILITY.EPSS (Exploit Prediction Sco
 ensureGrcColumns(); // advanced GRC: CRQ/FAIR (risk register), findings workflow, policy lifecycle
 ensureBugBountyTables(); // Bug Bounty program management (XVULNERABILITY): BUGBOUNTY*
 ensureEbiosTables(); // EBIOS Risk Manager (ANSSI) in XCOMPLIANCE: reuses RISKASSESSMENT/RISKSCENARIO + EBIOS* tables
+ensureNist80030Tables(); // NIST SP 800-30 risk assessment in XCOMPLIANCE: reuses RISKASSESSMENT + NIST80030* tables
+ensureOtSecurityTables(); // OT/ICS Security (IEC 62443/NIST 800-82): reuses AUDIT + OTZONE/OTCONDUIT/OTZONEASSET stubs
 ensureFairMamTables(); // FAIR-MAM materiality assessment model: FAIRMAMCATEGORY taxonomy + FAIRMAMASSESSMENT/LINEITEM
 ensurePqcmmTables(); // PQCMM post-quantum-crypto maturity model: PQCMMLEVEL taxonomy + PQCMMASSESSMENT
 ensureScaTables(); // SCA / SBOM: SBOM + enriched COMPONENT + COMPONENTDEPENDENCY (CycloneDX/SPDX over CPE inventory)
@@ -427,7 +478,10 @@ ensureToolStarTable(); // XORCISM.TOOLSTAR — per-user GitHub-style stars on th
 ensureTenantColumns(); // adds TenantID to the operational tables (best-effort)
 getJobDb(); // creates the job-queue schema (XJOB.db) if needed
 seedData(); // pre-inserts reference data (e.g. VOCABULARY "XORCISM") — idempotent
+ensureCveSchedule(); // seeds the hourly NVD CVE import schedule (cron '0 * * * *'); XOR_CVE_IMPORT=0 to disable
 startScheduler(); // fires the connectors' scheduled tasks (XSCHEDULE)
+startCveMatcher(); // hourly CVE→ASSET tech matcher ("New CVEs for ASSET") — catches every import path
+startMonitorChecker(); // live Asset-Monitoring prober (HTTP/TCP/DNS/SSL/ping due monitors); XOR_MONITOR=0 to disable
 startThreatFeedPoller(); // periodically turns CTI RSS feed items into THREATREPORT entries
 startRiskScoreLoop(); // recomputes ASSET.RiskScore every 30 s
 startChainEngine(); // advances active tool-chaining runs (pentest playbooks)

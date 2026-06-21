@@ -5607,6 +5607,9 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   } else if (currentTable === "CWE") {
     appendTagsPanel(body, "Tags (CWETAG)", Number(row["CWEID"]) || null,
       api.getCweTags, api.setCweTags, null);
+  } else if (currentTable === "CONTROL") {
+    appendTagsPanel(body, "Tags (CONTROLTAG)", Number(row["ControlID"]) || null,
+      api.getControlTags, api.setControlTags, null);
   } else if (currentTable === "QUESTIONNAIRE") {
     appendQuestionnaireImportButton(body); // "📥 Excel import" at the top of the form
     await appendQuestionnaireQuestions(body, Number(row["QuestionnaireID"]) || null);
@@ -6536,6 +6539,7 @@ let pendingVulnTags: Set<string> | null = null;
 let pendingOvalTags: Set<string> | null = null;
 let pendingCpeTags: Set<string> | null = null;
 let pendingCweTags: Set<string> | null = null;
+let pendingControlTags: Set<string> | null = null;
 
 // Shows a list of pending links (label + removal button) in `box`.
 function renderStagedBox(box: HTMLElement, items: Map<number, string>, emptyMsg: string): void {
@@ -8517,6 +8521,7 @@ async function openInsertModal(): Promise<void> {
   pendingOvalTags = null; // tags buffer: OVALDEFINITION creation
   pendingCpeTags = null; // tags buffer: CPE creation
   pendingCweTags = null; // tags buffer: CWE creation
+  pendingControlTags = null; // tags buffer: CONTROL creation
 
   if (!schema.length) {
     body.innerHTML = `<p style="color:var(--text-muted)">Schema non charge</p>`;
@@ -8819,6 +8824,12 @@ async function openInsertModal(): Promise<void> {
       get: () => Array.from(pendingCweTags ?? []),
       set: (tg) => { pendingCweTags = new Set(tg); },
     });
+  } else if (currentTable === "CONTROL") {
+    pendingControlTags = new Set(); // buffered tags (creation) → saved after the insert
+    appendTagsPanel(body, "Tags (CONTROLTAG)", null, api.getControlTags, api.setControlTags, {
+      get: () => Array.from(pendingControlTags ?? []),
+      set: (tg) => { pendingControlTags = new Set(tg); },
+    });
   } else if (currentTable === "THREATMODEL") {
     // Scope/threats: handled AFTER creation (the model must exist in the database).
     // We pass null → "save first" hint; querying the phantom id
@@ -8941,6 +8952,12 @@ async function submitInsert(): Promise<void> {
       const cid = Number((document.getElementById("f_CWEID") as HTMLInputElement)?.value);
       if (cid) { try { await api.setCweTags(cid, [...pendingCweTags]); } catch (e) { toast(t("tag.saveErr") + " " + e, "err"); } }
       pendingCweTags = null;
+    }
+    // CONTROL: saves the buffered tags (CONTROLTAG) after the insert.
+    if (currentTable === "CONTROL" && pendingControlTags && pendingControlTags.size) {
+      const cid = Number((document.getElementById("f_ControlID") as HTMLInputElement)?.value);
+      if (cid) { try { await api.setControlTags(cid, [...pendingControlTags]); } catch (e) { toast(t("tag.saveErr") + " " + e, "err"); } }
+      pendingControlTags = null;
     }
     // Creation of a VULNERABILITY in the KEV catalog (KEV=1) → notification. Best-effort.
     if (currentTable === "VULNERABILITY" && row["KEV"] === "1") {

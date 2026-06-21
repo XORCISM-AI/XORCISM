@@ -8,6 +8,8 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20_LTS-339933?logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-portable-4169E1?logo=postgresql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL%2FMariaDB-portable-4479A1?logo=mysql&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20%C2%B7%20D3FEND%20%C2%B7%20CAPEC-C8102E)
@@ -36,8 +38,9 @@ validates the attack paths to your crown jewels, quantifies the dollar impact,
 and proves your controls — continuously, from OSINT to the boardroom.
 
 It is **fully self-hosted**: a Node.js/TypeScript server over a family of SQLite
-databases, with optional Python importers and connectors. No SaaS, no telemetry,
-your data never leaves your infrastructure.
+databases (zero-config by default, **portable to PostgreSQL / MySQL / MariaDB** —
+see [§ Database backends](docs/DATABASE_BACKENDS.md)), with optional Python importers
+and connectors. No SaaS, no telemetry, your data never leaves your infrastructure.
 
 ### Who it is for
 
@@ -64,9 +67,15 @@ your data never leaves your infrastructure.
 - **Standards built in.** MITRE ATT&CK / ATLAS / D3FEND / CAPEC, STIX/TAXII 2.1,
   Sigma, OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS, and GRC frameworks (ISO
   27001, NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
-- **Extensible by drop-in.** A searchable catalogue of **300+ security
+- **Extensible by drop-in.** A searchable, filterable catalogue of **1,200+ security
   connectors** and a remote-worker model; add one with a `connector.json`
   manifest — no rebuild.
+- **Runs on your database.** Zero-config **SQLite** out of the box, and the data
+  layer is **portable to PostgreSQL / MySQL / MariaDB** (`XORCISM_DB_ENGINE` +
+  `tools/migrate_db.py`) — see [§ Database backends](docs/DATABASE_BACKENDS.md).
+- **Continuously fresh.** The NVD **CVE importer runs hourly** and every new CVE is
+  **auto-matched to the assets it affects** (by CPE + technology tags), raising
+  *"New CVEs for ASSET"* notifications — no manual triage to discover new exposure.
 - **Multi-tenant & RBAC.** Row-level tenant scoping and role-based access, with
   passkey (WebAuthn) and optional OIDC sign-in.
 - **10 UI languages.** EN, FR, DE, IT, ES, PT, 中文, 日本語, العربية (RTL), Русский.
@@ -160,6 +169,20 @@ your data never leaves your infrastructure.
   risk and a worklist of the gaps that matter — **high/critical residual risks left untreated**,
   risks **accepted without justification**, **overdue reviews**, treatments **past their target
   date**, and **unowned** risks. Mirrors the asset/identity/compliance governance pages.
+- **PQCMM — Quantum Readiness** — the PKI Consortium's **Post-Quantum Cryptography Maturity
+  Model**: assess every product, service or asset that relies on cryptography against the **6
+  PQCMM levels** (0 None → 5 Optimized), track **current vs target** maturity, and roll up your
+  organisation's quantum-readiness posture — what's still **quantum-vulnerable** (Level 0),
+  **production-ready** with PQC (≥ 2) or fully **managed** (CBOM + zero-legacy, ≥ 4) — with a
+  maturity score and a below-target worklist. Get ahead of "harvest-now-decrypt-later."
+- **SCA — Software Composition Analysis** — know what your software is made of. Import a
+  **Software Bill of Materials** in the two most widely used standards — **CycloneDX** (OWASP) and
+  **SPDX** (Linux Foundation) — and XORCISM persists every component with its **version, PURL, CPE,
+  license, supplier and hash**, links CPE-bearing components back to the asset's exposure inventory
+  (`CPEFORASSET`), and maps the **dependency graph**. The worklist surfaces **known-vulnerable
+  components**, **license-compliance gaps** and **unpinned versions**; any SBOM can be **exported**
+  back out in either standard (CycloneDX 1.5 / SPDX 2.3). Breakdowns by component type, license and
+  supplier, plus an interactive composition graph.
 - **FAIR-MAM Materiality** — the FAIR Institute's **Materiality Assessment Model**: decompose a
   cyber loss event's single-loss magnitude across the **10 standardized cost categories**
   (incident response, cyber extortion, business interruption, asset restoration, privacy/security
@@ -178,6 +201,11 @@ your data never leaves your infrastructure.
   **Express mode**, business values, supporting assets, feared events (DICT),
   risk sources and an **ecosystem of stakeholders with auto-computed threat
   levels & zones**.
+- **NIST SP 800-30** — the US federal **Guide for Conducting Risk Assessments**, the
+  EBIOS-RM counterpart: threat sources (adversarial & non-adversarial), threat events,
+  vulnerabilities & predisposing conditions, and risk determination as **likelihood ×
+  impact** on the 800-30 scale (Very Low → Very High, Appendix I Table I-2), with a
+  cockpit dashboard and a guided-create flow (`/nist-800-30`).
 - **TPRM** — third-party / supplier risk assessments and questionnaires.
 - **OCIL questionnaires** — OCIL 2.0-compatible authoring, XML import/export and
   an optional AI "suggest answer".
@@ -290,12 +318,23 @@ your data never leaves your infrastructure.
 
 ### 🔌 Integrations & automation
 
-- **300+ connectors** — a **searchable catalogue**: curated tool-runners (nmap,
+- **1,200+ connectors** — a **searchable, filterable catalogue** (search + category /
+  type filters, like the tool catalogue): curated tool-runners (nmap,
   nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS) and API imports
   (Nessus, Qualys, Rapid7, Caldera, Dependency-Track, OSV-Scanner, depx, Wiz,
   Lacework, Sysdig, Aikido, Burp Suite, Metasploit, Splunk, Elastic Security,
-  Microsoft Sentinel, QRadar, SAINT), plus a large **OSINT tool-runner** set. See
-  [§ Connectors](#-connectors).
+  Microsoft Sentinel, QRadar, SAINT, **OpenCVE**, **Microsoft Entra ID**), plus a
+  large **OSINT tool-runner** set and a **YARA** scanner. See [§ Connectors](#-connectors).
+- **Continuous CVE → asset matching** — the NVD CVE importer **runs every hour**
+  (`XSCHEDULE`, incremental); each newly-imported or OpenCVE-pulled CVE is **auto-linked
+  to the assets it affects** — matched by the asset's **CPE inventory** and free-text
+  **technology tags** (`ASSETTAG`) — and every affected asset gets a **"New CVEs for
+  ASSET" notification**. Runs after each import, hourly, and on demand (the *Match CVEs*
+  button on Asset Management).
+- **Identity & device sync (Microsoft Entra ID)** — the `entra-id` connector pulls
+  users (human identities), service principals & managed identities (non-human / NHI)
+  and registered devices (assets) from the **Microsoft Graph API** into `IDENTITY` +
+  `ASSET` (app-only OAuth2; feeds the IAM orphaned-NHI / stale / MFA-gap worklist).
 - **CTI platform connectors** — pull threat intelligence and detection content from
   **MISP** (events → `INTELEXCHANGE`, galaxies → ATT&CK/actor/malware tags), **OpenCTI**
   (reports via GraphQL or a STIX 2.1 bundle → `INTELEXCHANGE`) and **SOC Prime**
@@ -311,6 +350,11 @@ your data never leaves your infrastructure.
   **read-only** live-response snapshot (processes, network connections, persistence/autoruns,
   logon sessions, recent files, ARP/DNS/routes, drivers, event-log summary) with conservative
   triage **flags** → `XAGENT.FORENSICTRIAGE`; collection never modifies the host.
+- **Endpoint EDR & YARA (XOR agent)** — `--scan yara` runs the local **YARA** engine using
+  rules from XORCISM's `YARARULE` store (served to the agent) and reports matches as events; and
+  the **Rustinel EDR bridge** (`--scan rustinel`) tails [Rustinel](https://github.com/Karib0u/rustinel)'s
+  kernel-level **ETW / eBPF / Endpoint-Security** alerts (Sigma + YARA + IOC) into XORCISM —
+  kernel-grade detection without a custom agent core. Both are read-only and part of `--scan full`.
 - **TAXII 2.1 server** — publish/consume STIX feeds.
 - **Local AI (Ollama)** — fully-offline assistants: **"Ask the threat model"**
   (RAG over your XORCISM data), an **intel brief builder**, a
@@ -355,7 +399,7 @@ your data never leaves your infrastructure.
 | ![Ticketing](docs/screenshots/13_ticketing.png)<br>**Ticketing** — tasks & comments | ![Connectors](docs/screenshots/14_xposure_connectors.png)<br>**Connectors** — nmap, nuclei, Nessus, SBOM… | ![OSINT](docs/screenshots/15_osint_tools.png)<br>**OSINT** toolbox |
 | ![ATT&CK](docs/screenshots/16_matrix_attack.png)<br>**MITRE ATT&CK** — with BAS coverage heatmap | ![D3FEND](docs/screenshots/17_matrix_d3fend.png)<br>**MITRE D3FEND** — defensive matrix | ![A3M](docs/screenshots/18_matrix_a3m.png)<br>**A3M** — Agentic AI Attack Matrix |
 | ![Dashboard](docs/screenshots/19_dashboard.png)<br>**Executive dashboard** — risk, exposure, trends | ![BIA](docs/screenshots/20_bia_audit.png)<br>**Business Impact Analysis (BIA)** | ![STIX graph](docs/screenshots/21_stix_graph.png)<br>**STIX graph** — hunts ↔ ATT&CK techniques |
-| ![Threat hunting](docs/screenshots/22_threat_hunting.png)<br>**Threat hunting** — HUNT · IOC · ATT&CK, local-AI assistant | ![Ask the threat model](docs/screenshots/23_ask_ai.png)<br>**Ask the threat model** — local-AI RAG | ![Connectors](docs/screenshots/24_connector_search.png)<br>**Connectors** — searchable catalogue (300+) |
+| ![Threat hunting](docs/screenshots/22_threat_hunting.png)<br>**Threat hunting** — HUNT · IOC · ATT&CK, local-AI assistant | ![Ask the threat model](docs/screenshots/23_ask_ai.png)<br>**Ask the threat model** — local-AI RAG | ![Connectors](docs/screenshots/24_connector_search.png)<br>**Connectors** — searchable catalogue (1,200+) |
 | ![Threat feeds](docs/screenshots/25_threat_feeds.png)<br>**Threat feeds** — curated CTI RSS reader (newest first) | ![Attack-surface graph](docs/screenshots/26_attack_surface.png)<br>**Attack-surface graph** — asset-centric force map | ![Attack-surface focus](docs/screenshots/27_attack_surface_focus.png)<br>**Attack surface** — focused on one asset |
 | ![Pentesting](docs/screenshots/28_pentest.png)<br>**Pentesting** — engagements, scope, tooling, findings & vulns | ![LLM ATT&CK](docs/screenshots/31_llm_attack.png)<br>**LLM ATT&CK** — AI-enabled technique overlay (Anthropic) | ![BIA dependency graph](docs/screenshots/33_bia_graph.png)<br>**BIA dependency graph** — impact propagation |
 | ![Kill chain graph](docs/screenshots/34_kill_chain.png)<br>**Kill chain graph** — ATT&CK phases + adversary TTPs | ![Attack chain](docs/screenshots/35_attack_chain.png)<br>**Attack chain** — tool-chaining playbook run (nmap → web scanners → WPScan) | ![Attack chain card](docs/screenshots/36_pentest_chain_card.png)<br>**Attack chain** — launch a playbook from an engagement |
@@ -445,6 +489,14 @@ $env:DB_DIR = "C:\Users\$env:USERNAME\XORCISM_databases"  # SQLite location (mus
 $env:PORT   = "9292"                                       # HTTP port (default)
 # $env:XORCISM_ALLOW_REGISTER = "0"                        # disable public self-registration
 # $env:XORCISM_DB_DIR  → same path as DB_DIR, for the Python tooling
+# --- Optional: run the Python data layer on a server DB (see docs/DATABASE_BACKENDS.md) ---
+# $env:XORCISM_DB_ENGINE   = "postgresql"   # sqlite (default) | postgresql | mysql | mariadb
+# $env:XORCISM_DB_HOST     = "db.internal"  # + XORCISM_DB_PORT / _USER / _PASSWORD / _PREFIX
+# --- Optional: hourly NVD CVE import + CVE→asset matching ---
+# $env:NVD_API_KEY   = "..."                # higher NVD rate limit (hourly importer)
+# $env:XOR_PYTHON    = "python"             # python used by the in-process CVE importer
+# $env:XOR_CVE_IMPORT = "0"                 # disable the hourly CVE import schedule
+# $env:XOR_CVE_MATCH  = "0"                 # disable the hourly CVE→asset matcher
 ```
 
 See [SETUP.MD](SETUP.MD) §4–§9 for connectors, TAXII, forum and the encryption
@@ -498,8 +550,9 @@ XORCISM/
 │   ├── esbuild.config.js  tsconfig*.json  package.json  start.ps1
 │
 ├── databases/                  # Canonical SQLite DDL (XORCISM, XVULNERABILITY, XTHREAT, …)
-├── xorcism_python/             # SQLAlchemy models + importers/ (reference-data loaders)
-├── connectors/                 # 300+ connectors (connector.json + run.py) + runner.py
+├── xorcism_python/             # SQLAlchemy models + importers/ (engine-agnostic: config.py)
+├── tools/migrate_db.py         # SQLite → PostgreSQL / MySQL / MariaDB migration (see docs/DATABASE_BACKENDS.md)
+├── connectors/                 # 1,200+ connectors (connector.json + run.py) + runner.py
 ├── taxii/                      # TAXII 2.1 server (Flask)
 ├── docs/                       # Documentation + screenshots/
 ├── tools/nodejs/               # Portable Node 20 runtime (better-sqlite3 ABI)
@@ -512,7 +565,7 @@ XORCISM/
 | Layer | Technology |
 |---|---|
 | Server | Node.js 20 + Express 4 + TypeScript (compiled to CommonJS) |
-| Database | better-sqlite3 (synchronous, no ORM) — a family of SQLite files |
+| Database | Node: better-sqlite3 (synchronous, no ORM) — a family of SQLite files. Python/SQLAlchemy data layer is **portable to PostgreSQL / MySQL / MariaDB** (`XORCISM_DB_ENGINE`, `tools/migrate_db.py`); see [docs/DATABASE_BACKENDS.md](docs/DATABASE_BACKENDS.md) |
 | Client | TypeScript bundled with esbuild (one entry per page) |
 | Charts | Chart.js (dashboard) |
 | Export | SheetJS / XLSX |
@@ -591,17 +644,19 @@ timers — **no external cron**:
 Connectors live in `connectors/<id>/` with a `connector.json` manifest
 (auto-discovered under **Connectors** — no rebuild) and a `run.py`. Results are
 normalized into findings (project → `ASSET`, vuln → `VULNERABILITY` /
-`ASSETVULNERABILITY`). The catalogue holds **300+** connectors and is
-**searchable** in the UI.
+`ASSETVULNERABILITY`). The catalogue holds **1,200+** connectors and is
+**searchable and filterable** (by category & type) in the UI.
 
 | Type | Connectors |
 |---|---|
 | **Network / web scanners** (tool-runners) | nmap, nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS |
 | **Vulnerability / posture (API)** | Nessus, Qualys, Rapid7, Wiz, Lacework, Sysdig, Aikido |
+| **CVE intelligence** | **OpenCVE** (CVE monitoring → `VULNERABILITY`) |
 | **SCA / supply chain** | Dependency-Track, OSV-Scanner, **depx** (malicious-package audit) |
 | **Offensive / BAS** | Caldera, Metasploit, Metasploit-scan, Burp Suite, SAINT |
-| **SIEM / detection** | Splunk, Elastic Security, Microsoft Sentinel, QRadar |
-| **OSINT** (tool-runners) | 300+ reconnaissance / OSINT tools from the searchable catalogue |
+| **SIEM / detection / EDR** | Splunk, Elastic Security, Microsoft Sentinel, QRadar, **Rustinel** (ETW/eBPF), **YARA** |
+| **Identity (API)** | **Microsoft Entra ID** (users / NHI / devices → `IDENTITY` + `ASSET`) |
+| **OSINT** (tool-runners) | 1,000+ reconnaissance / OSINT tools from the searchable catalogue |
 
 - **Tool-runners** need the named binary on `PATH` on the runner host.
 - **API connectors** are configured **only** via environment variables (never in

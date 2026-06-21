@@ -9,6 +9,8 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20_LTS-339933?logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003B57?logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-portable-4169E1?logo=postgresql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL%2FMariaDB-portable-4479A1?logo=mysql&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20%C2%B7%20D3FEND%20%C2%B7%20CAPEC-C8102E)
@@ -39,9 +41,10 @@ quantifie l'impact financier et prouve vos mesures de sécurité — en continu,
 l'OSINT jusqu'au comité de direction.
 
 La plateforme est **entièrement auto-hébergée** : un serveur Node.js/TypeScript
-au-dessus d'une famille de bases SQLite, avec des importeurs et connecteurs
-Python optionnels. Pas de SaaS, pas de télémétrie : vos données ne quittent
-jamais votre infrastructure.
+au-dessus d'une famille de bases SQLite (sans configuration par défaut, **portable
+vers PostgreSQL / MySQL / MariaDB** — voir [§ Bases de données](docs/DATABASE_BACKENDS.md)),
+avec des importeurs et connecteurs Python optionnels. Pas de SaaS, pas de télémétrie :
+vos données ne quittent jamais votre infrastructure.
 
 ### À qui s'adresse XORCISM
 
@@ -71,9 +74,15 @@ jamais votre infrastructure.
 - **Standards intégrés.** MITRE ATT&CK / ATLAS / D3FEND / CAPEC, STIX/TAXII 2.1,
   Sigma, OVAL, OCIL, EBIOS Risk Manager, CVE/KEV/EPSS et référentiels GRC (ISO
   27001, NIST CSF/800-53, CIS, NIS2, DORA, CRA, SOC 2).
-- **Extensible par simple dépôt de fichiers.** Un catalogue **recherchable de
-  300+ connecteurs de sécurité** et un modèle de worker distant ; on en ajoute un
-  avec un manifeste `connector.json` — sans recompilation.
+- **Extensible par simple dépôt de fichiers.** Un catalogue **recherchable et
+  filtrable de 1 200+ connecteurs de sécurité** et un modèle de worker distant ;
+  on en ajoute un avec un manifeste `connector.json` — sans recompilation.
+- **Tourne sur votre base de données.** **SQLite** sans configuration par défaut, et
+  la couche de données est **portable vers PostgreSQL / MySQL / MariaDB**
+  (`XORCISM_DB_ENGINE` + `tools/migrate_db.py`) — voir [§ Bases de données](docs/DATABASE_BACKENDS.md).
+- **Toujours à jour.** L'import **CVE NVD s'exécute toutes les heures** et chaque
+  nouvelle CVE est **rapprochée automatiquement des actifs concernés** (par CPE +
+  étiquettes de technologie), avec des notifications *« Nouvelles CVE pour l'ACTIF »*.
 - **Multi-tenant et RBAC.** Cloisonnement par locataire au niveau ligne et
   contrôle d'accès par rôle, avec connexion par clé d'accès (WebAuthn) et OIDC
   optionnel.
@@ -167,6 +176,11 @@ jamais votre infrastructure.
   traitement) avec un **mode Express**, des valeurs métier, des biens supports,
   des événements redoutés (DICT), des sources de risque et un **écosystème de
   parties prenantes avec niveaux et zones de menace calculés automatiquement**.
+- **NIST SP 800-30** — le guide fédéral américain d'**analyse de risque**, le pendant
+  d'EBIOS RM : sources de menace (adverses et non adverses), événements de menace,
+  vulnérabilités et conditions prédisposantes, et détermination du risque en
+  **vraisemblance × impact** sur l'échelle 800-30 (Très faible → Très élevé, table I-2),
+  avec un tableau de bord et une création guidée (`/nist-800-30`).
 - **TPRM** — évaluations de risque tiers / fournisseurs et questionnaires.
 - **Questionnaires OCIL** — création compatible OCIL 2.0, import/export XML et un
   bouton « suggérer une réponse » par IA (optionnel).
@@ -229,12 +243,22 @@ jamais votre infrastructure.
 
 ### 🔌 Intégrations et automatisation
 
-- **300+ connecteurs** — un **catalogue recherchable** : lanceurs d'outils curés
+- **1 200+ connecteurs** — un **catalogue recherchable et filtrable** (recherche +
+  filtres catégorie/type) : lanceurs d'outils curés
   (nmap, nuclei, nikto, sqlmap, whatweb, wpscan, WPProbe, w3af, OpenVAS) et
   imports par API (Nessus, Qualys, Rapid7, Caldera, Dependency-Track, OSV-Scanner,
   depx, Wiz, Lacework, Sysdig, Aikido, Burp Suite, Metasploit, Splunk, Elastic
-  Security, Microsoft Sentinel, QRadar, SAINT), plus un large jeu de **lanceurs
-  d'outils OSINT**. Voir [§ Connecteurs](#-connecteurs).
+  Security, Microsoft Sentinel, QRadar, SAINT, **OpenCVE**, **Microsoft Entra ID**),
+  plus un large jeu de **lanceurs d'outils OSINT** et un scanner **YARA**.
+  Voir [§ Connecteurs](#-connecteurs).
+- **Rapprochement CVE → actifs en continu** — l'import CVE NVD **s'exécute toutes les
+  heures** ; chaque nouvelle CVE est **liée automatiquement aux actifs concernés**
+  (par inventaire **CPE** + **étiquettes de technologie** `ASSETTAG`), et chaque actif
+  touché reçoit une **notification « Nouvelles CVE pour l'ACTIF »**. Après chaque import,
+  toutes les heures, et à la demande (bouton *Rapprocher les CVE* sur la gestion d'actifs).
+- **Synchronisation des identités (Microsoft Entra ID)** — le connecteur `entra-id`
+  importe utilisateurs, principaux de service & identités managées (NHI) et appareils
+  via l'API Microsoft Graph vers `IDENTITY` + `ASSET`.
 - **Workers distants** — exécutez les connecteurs sur une autre machine (ex. une
   VM Kali) via un jeton de worker ; les résultats normalisés sont importés
   centralement.
@@ -374,6 +398,13 @@ $env:DB_DIR = "C:\Users\$env:USERNAME\XORCISM_databases"  # emplacement SQLite (
 $env:PORT   = "9292"                                       # port HTTP (défaut)
 # $env:XORCISM_ALLOW_REGISTER = "0"                        # désactive l'auto-inscription publique
 # $env:XORCISM_DB_DIR  → même chemin que DB_DIR, pour l'outillage Python
+# --- Optionnel : couche de données Python sur une base serveur (voir docs/DATABASE_BACKENDS.md) ---
+# $env:XORCISM_DB_ENGINE = "postgresql"   # sqlite (défaut) | postgresql | mysql | mariadb
+# $env:XORCISM_DB_HOST   = "db.internal"  # + XORCISM_DB_PORT / _USER / _PASSWORD / _PREFIX
+# --- Optionnel : import CVE NVD horaire + rapprochement CVE→actifs ---
+# $env:NVD_API_KEY    = "..."             # limite de débit NVD plus élevée
+# $env:XOR_CVE_IMPORT = "0"               # désactive l'import CVE horaire
+# $env:XOR_CVE_MATCH  = "0"               # désactive le rapprochement CVE→actifs horaire
 ```
 
 Voir [SETUP.MD](SETUP.MD) §4–§9 pour les connecteurs, TAXII, le forum et le
@@ -430,7 +461,8 @@ XORCISM/
 │
 ├── databases/                  # DDL SQLite canonique (XORCISM, XVULNERABILITY, XTHREAT, …)
 ├── xorcism_python/             # Modèles SQLAlchemy + importers/ (chargeurs de données de référence)
-├── connectors/                 # 300+ connecteurs (connector.json + run.py) + runner.py
+├── tools/migrate_db.py         # Migration SQLite → PostgreSQL / MySQL / MariaDB (voir docs/DATABASE_BACKENDS.md)
+├── connectors/                 # 1 200+ connecteurs (connector.json + run.py) + runner.py
 ├── taxii/                      # Serveur TAXII 2.1 (Flask)
 ├── docs/                       # Documentation + screenshots/
 ├── tools/nodejs/               # Runtime Node 20 portable (ABI de better-sqlite3)
@@ -443,7 +475,7 @@ XORCISM/
 | Couche | Technologie |
 |---|---|
 | Serveur | Node.js 20 + Express 4 + TypeScript (compilé en CommonJS) |
-| Base de données | better-sqlite3 (synchrone, sans ORM) — une famille de fichiers SQLite |
+| Base de données | Node : better-sqlite3 (synchrone, sans ORM) — une famille de fichiers SQLite. La couche de données Python/SQLAlchemy est **portable vers PostgreSQL / MySQL / MariaDB** (`XORCISM_DB_ENGINE`, `tools/migrate_db.py`) ; voir [docs/DATABASE_BACKENDS.md](docs/DATABASE_BACKENDS.md) |
 | Client | TypeScript bundlé avec esbuild (une entrée par page) |
 | Graphiques | Chart.js (tableau de bord) |
 | Export | SheetJS / XLSX |
@@ -527,7 +559,7 @@ Les connecteurs vivent dans `connectors/<id>/` avec un manifeste `connector.json
 (découvert automatiquement sous **Connecteurs** — sans recompilation) et un
 `run.py`. Les résultats sont normalisés en constats (projet → `ASSET`,
 vulnérabilité → `VULNERABILITY` / `ASSETVULNERABILITY`). Le catalogue compte
-**300+** connecteurs et est **recherchable** dans l'UI.
+**1 200+** connecteurs et est **recherchable et filtrable** (catégorie & type) dans l'UI.
 
 | Type | Connecteurs |
 |---|---|
@@ -536,7 +568,10 @@ vulnérabilité → `VULNERABILITY` / `ASSETVULNERABILITY`). Le catalogue compte
 | **SCA / chaîne d'approvisionnement** | Dependency-Track, OSV-Scanner, **depx** (audit de paquets malveillants) |
 | **Offensif / BAS** | Caldera, Metasploit, Metasploit-scan, Burp Suite, SAINT |
 | **SIEM / détection** | Splunk, Elastic Security, Microsoft Sentinel, QRadar |
-| **OSINT** (lanceurs d'outils) | 300+ outils de reconnaissance / OSINT du catalogue recherchable |
+| **Renseignement CVE** | **OpenCVE** (veille CVE → `VULNERABILITY`) |
+| **SIEM / détection / EDR** | Splunk, Elastic Security, Microsoft Sentinel, QRadar, **Rustinel** (ETW/eBPF), **YARA** |
+| **Identité (API)** | **Microsoft Entra ID** (utilisateurs / NHI / appareils → `IDENTITY` + `ASSET`) |
+| **OSINT** (lanceurs d'outils) | 1 000+ outils de reconnaissance / OSINT du catalogue recherchable |
 
 - Les **lanceurs d'outils** ont besoin du binaire nommé dans le `PATH` de la
   machine qui exécute le runner.

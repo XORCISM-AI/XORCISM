@@ -1,0 +1,13 @@
+{
+  "datasources": [
+    { "uid": "ds-prom", "name": "Prometheus", "url": "http://prometheus:9090" },
+    { "uid": "ds-loki", "name": "Loki", "url": "http://loki:3100" }
+  ],
+  "alert_rules": [
+    { "uid": "rule-cpu", "title": "High CPU — web tier", "state": "normal" },
+    { "uid": "rule-5xx", "title": "5xx error rate", "state": "alerting" }
+  ],
+  "alerts": [
+    { "fingerprint": "abc123", "startsAt": "2026-06-21T16:40:00Z", "labels": { "alertname": "5xx error rate", "severity": "high" } }
+  ]
+}

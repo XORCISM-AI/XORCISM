@@ -5,14 +5,72 @@
  * (XJOB), after re-validating the engagement scope. The runner remains the
  * authoritative guard (re-checks the scope before executing).
  */
+import { spawn } from "child_process";
+import * as path from "path";
 import {
   listEnabledSchedules, markScheduleRun, createJob, getEngagement, minuteOf, sqlNow,
   Schedule,
 } from "./jobs";
 import { createAgentJob } from "./agents";
+import { matchCves } from "./cvematch";
 import { cronMatches } from "./cron";
 import { targetInScope } from "./scope";
 import * as xid from "./xid";
+
+// Single-flight guard: never run two NVD imports at once (an hourly run that overruns is skipped).
+let cveImportRunning = false;
+
+// Spawn the Python NVD CVE importer (incremental --recent-only by default). Fire-and-forget,
+// non-blocking; graceful if Python isn't on PATH (logs once, set XOR_PYTHON to override).
+function runCveImport(s: Schedule): void {
+  markScheduleRun(s.ScheduleID, 0, sqlNow()); // mark fired now → anti-duplicate within the minute
+  if (cveImportRunning) { console.warn("[scheduler] NVD CVE import still running — skipping this hour"); return; }
+  let p: { recentOnly?: boolean } = {};
+  try { p = JSON.parse(s.params || "{}"); } catch { p = {}; }
+  const py = process.env.XOR_PYTHON || "python";
+  const repoRoot = path.resolve(__dirname, "../../..");
+  const script = path.join(repoRoot, "xorcism_python", "importers", "import_nvd_cve.py");
+  const args = [script];
+  if (p.recentOnly !== false) args.push("--recent-only");
+  if (process.env.NVD_API_KEY) args.push("--api-key", process.env.NVD_API_KEY);
+  const env = { ...process.env, XORCISM_DB_DIR: process.env.DB_DIR || "C:/Users/jerom/XORCISM_databases" };
+  cveImportRunning = true;
+  const t0 = Date.now();
+  console.log(`[scheduler] NVD CVE import starting (${py} import_nvd_cve.py ${args.slice(1).join(" ")})`);
+  let child;
+  try {
+    child = spawn(py, args, { cwd: repoRoot, env, windowsHide: true });
+  } catch (e) {
+    cveImportRunning = false;
+    console.warn(`[scheduler] NVD CVE import could not start: ${(e as Error).message} — set XOR_PYTHON to your python executable`);
+    return;
+  }
+  let tail = "";
+  const cap = (b: Buffer): void => { tail = (tail + b.toString()).slice(-2000); };
+  child.stdout?.on("data", cap);
+  child.stderr?.on("data", cap);
+  const killTimer = setTimeout(() => { try { child!.kill(); } catch { /* already gone */ } }, 50 * 60 * 1000);
+  if (typeof killTimer.unref === "function") killTimer.unref();
+  child.on("error", (e) => {
+    cveImportRunning = false; clearTimeout(killTimer);
+    console.warn(`[scheduler] NVD CVE import failed: ${e.message} — is '${py}' on PATH? (set XOR_PYTHON)`);
+  });
+  child.on("close", (code) => {
+    cveImportRunning = false; clearTimeout(killTimer);
+    const secs = Math.round((Date.now() - t0) / 1000);
+    const last = (tail.trim().split(/\r?\n/).pop() || "").slice(0, 200);
+    console.log(`[scheduler] NVD CVE import finished (exit ${code}, ${secs}s)${last ? " · " + last : ""}`);
+    xid.addAudit({ userId: s.created_by, action: "schedule_fire", resourceType: "importer",
+      resourceKey: "import-nvd-cve", detail: `recent-only exit=${code} ${secs}s` });
+    // Link the freshly-imported CVEs to assets by technology + raise "New CVEs for ASSET" alerts.
+    if (code === 0) {
+      try {
+        const r = matchCves({ tenant: null });
+        if (r.newLinks) console.log(`[cvematch] post-import: ${r.newLinks} new link(s) → ${r.assetsNotified} asset(s) notified (scanned ${r.cvesScanned})`);
+      } catch (e) { console.warn(`[cvematch] post-import: ${(e as Error).message}`); }
+    }
+  });
+}
 
 function scopeHost(target: string): string {
   try {
@@ -64,6 +122,9 @@ function fireSchedule(s: Schedule, nowMin: string): void {
     console.log(`[scheduler] schedule ${s.ScheduleID} (agent-oval) → agent job ${jobId} (oval ${p.ovalClass ?? "all"} on ${p.agent})`);
     return;
   }
+
+  // Recurring NVD CVE import: spawn the Python importer (incremental --recent-only) every hour.
+  if (s.connector === "import-nvd-cve") { runCveImport(s); return; }
 
   // Re-validate the scope if the schedule targets something with an engagement.
   if (s.target) {
