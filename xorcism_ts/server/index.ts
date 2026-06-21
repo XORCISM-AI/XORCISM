@@ -44,6 +44,8 @@ import monitoringRouter from "./routes/monitoring";
 import control53Router from "./routes/control53";
 import trustCenterRouter from "./routes/trustcenter";
 import investmentRouter from "./routes/investment";
+import bugBountyRouter from "./routes/bugbounty";
+import vulnMgmtRouter from "./routes/vulnmgmt";
 import policiesRouter from "./routes/policies";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
@@ -190,6 +192,8 @@ app.use("/api", monitoringRouter); // Asset Monitoring: uptime/SSL/incident moni
 app.use("/api", control53Router); // NIST SP 800-53 control management: catalogue + implementation status + baselines + posture
 app.use("/api", trustCenterRouter); // Trust Center: admin config + PUBLIC read-only posture (/api/public/trust/:slug)
 app.use("/api", investmentRouter); // Agentic Security Investment Advisor: what-if simulation + local-AI recommendation
+app.use("/api", bugBountyRouter); // Bug Bounty Management: programmes + submissions inventory + triage worklist
+app.use("/api", vulnMgmtRouter); // Vulnerability Management: vuln-centric inventory (KEV/CVSS/EPSS/SSVC) + triage worklist
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
 app.use("/api", crisisRouter); // Crisis Management: tabletop-exercise readiness + scenario library + improvement worklist
@@ -312,6 +316,12 @@ app.get("/trust-center", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/investment-advisor", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "investment-advisor.html"));
+});
+app.get("/bug-bounty", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "bug-bounty.html"));
+});
+app.get("/vulnerability-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "vulnerability-management.html"));
 });
 // PUBLIC trust center page (auth-exempt via the /trust/ prefix in requireAuthGate).
 app.get("/trust/:slug", (_req: Request, res: Response) => {

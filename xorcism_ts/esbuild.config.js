@@ -67,6 +67,8 @@ const entryPoints = [
   "client/ts/trust-center.ts",
   "client/ts/trust-public.ts",
   "client/ts/investment-advisor.ts",
+  "client/ts/bug-bounty.ts",
+  "client/ts/vulnerability-management.ts",
   "client/ts/hunting.ts",
 ];
 

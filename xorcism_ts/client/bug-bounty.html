@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Bug Bounty Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .bb-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .bb-wrap h1{font-size:20px;margin:0 0 2px}
+  .bb-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .bb-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .bb-card{flex:1;min-width:115px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .bb-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .bb-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .bb-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .bb-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}.bd b{color:#e2e8f0}
+  table.bb{width:100%;border-collapse:collapse;font-size:13px}
+  table.bb th,table.bb td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.bb th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .pname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}.sv-Info{background:#1e2133;color:#64748b}
+  .st{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .st-open{background:#14532d;color:#bbf7d0}.st-closed{background:#1e2133;color:#94a3b8}
+  .plat{font-size:10px;border-radius:5px;padding:1px 6px;background:#0f1117;border:1px solid #2d3250;color:#cbd5e1}
+  .worklist{list-style:none;margin:0;padding:0}
+  .worklist li{padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;align-items:center;gap:8px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .filters input,.filters select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px}
+  .bb-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .bb-modal-bg.open{display:flex}
+  .bb-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:22px 24px}
+  .bb-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}.bb-modal .lead{font-size:12.5px;color:#94a3b8;margin:0 0 16px}
+  .bb-modal .fld{margin-bottom:13px}.bb-modal .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}.bb-modal .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+  .bb-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .bb-modal label .req{color:#f87171}
+  .bb-modal input,.bb-modal select,.bb-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .bb-modal textarea{min-height:60px;resize:vertical}
+  .bb-modal-foot{display:flex;align-items:center;gap:10px;margin-top:18px}.bb-err{color:#f87171;font-size:12px;flex:1;min-height:16px}
+  .btn-new{background:#fb7185;color:#2a0a12;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}.btn-new:hover{background:#fda4af}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XVULNERABILITY&amp;table=VULNERABILITY">&#128027; Vulnerabilities</a>
+  <a href="/?db=XVULNERABILITY&amp;table=BUGBOUNTYSUBMISSION">&#128221; Submissions</a>
+  <span class="spacer"></span>
+  <span class="title">&#129714; Bug Bounty</span>
+</div>
+<div class="bb-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Bug Bounty Management</h1>
+    <button class="btn-new" id="bb-new">+ New program</button>
+  </div>
+  <div class="bb-sub">One pane over your <b>bug bounty programmes</b> — submissions received, the <b>triage backlog</b>,
+    severity mix, <b>rewards paid</b>, researchers and scope — plus the worklist your triage team acts on
+    (submissions awaiting triage, high-severity still open, resolved reports not linked to a tracked vulnerability,
+    programmes with no scope). Programmes & submissions live in XVULNERABILITY (BUGBOUNTY*).</div>
+  <div id="bb-body"><div class="muted" style="padding:24px;text-align:center">Loading bug bounty programmes…</div></div>
+</div>
+
+<div class="bb-modal-bg" id="bb-modal">
+  <div class="bb-modal">
+    <h3>New bug bounty program</h3>
+    <p class="lead">Define a programme. Add scope, submissions and rewards afterwards (the worklist will surface what needs attention).</p>
+    <div class="fld"><label>Program name <span class="req">*</span></label><input id="bb-f-name" type="text" maxlength="300" placeholder="e.g. Acme Public VDP"></div>
+    <div class="row3">
+      <div class="fld"><label>Platform</label><select id="bb-f-platform"><option>HackerOne</option><option>Bugcrowd</option><option>Intigriti</option><option>YesWeHack</option><option>Synack</option><option selected>Self-hosted</option></select></div>
+      <div class="fld"><label>Status</label><select id="bb-f-status"><option>Draft</option><option>Private</option><option>Public</option><option>Paused</option><option>Closed</option></select></div>
+      <div class="fld"><label>Currency</label><select id="bb-f-currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Min reward</label><input id="bb-f-min" type="number" min="0" step="50" placeholder="100"></div>
+      <div class="fld"><label>Max reward</label><input id="bb-f-max" type="number" min="0" step="100" placeholder="10000"></div>
+    </div>
+    <div class="fld"><label>Policy URL</label><input id="bb-f-policy" type="text" maxlength="500" placeholder="https://acme.com/security/policy"></div>
+    <div class="fld"><label>Scope / description</label><textarea id="bb-f-scope" placeholder="*.acme.com, the iOS app, the public API…"></textarea></div>
+    <div class="bb-modal-foot">
+      <span class="bb-err" id="bb-f-err"></span>
+      <button class="btn btn-ghost btn-sm" id="bb-cancel">Cancel</button>
+      <button class="btn-new" id="bb-create">Create program</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/bug-bounty.js"></script>
+</body>
+</html>

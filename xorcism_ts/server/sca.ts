@@ -291,7 +291,7 @@ export function scaInventory(tenant: number | null): ScaInventory {
   const compCols = colset(xo, "COMPONENT");
   if (!compCols.has("Name")) return empty; // not yet migrated
   const tw = (alias: string, has: boolean) => (tenant != null && has ? `WHERE ${alias}TenantID = ${tenant}` : "");
-  const sbomTw = tw("", colset(xo, "SBOM").has("TenantID"));
+  const sbomTw = tw("s.", colset(xo, "SBOM").has("TenantID")); // qualified: SBOM joins ASSET (both have TenantID)
   const compTw = tw("", compCols.has("TenantID"));
 
   const sbomRows = xo.prepare(
