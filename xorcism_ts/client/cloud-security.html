@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Cloud Security</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cs-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .cs-wrap h1{font-size:20px;margin:0 0 2px}
+  .cs-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1010px}
+  .cs-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cs-card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cs-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cs-card .val{font-size:26px;font-weight:700;margin-top:3px}.cs-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cs-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}.bd b{color:#e2e8f0}
+  table.cs{width:100%;border-collapse:collapse;font-size:13px}
+  table.cs th,table.cs td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.cs th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .prov{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .p-AWS{background:#7c2d12;color:#fed7aa}.p-Azure{background:#1e3a5f;color:#bfdbfe}.p-GCP{background:#14532d;color:#bbf7d0}.p-OCI{background:#7f1d1d;color:#fecaca}.p-SaaS{background:#581c87;color:#e9d5ff}.p-Cloud{background:#1e2133;color:#94a3b8}
+  .tag{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .t-pub{background:#7f1d1d;color:#fecaca}.t-enc{background:#14532d;color:#bbf7d0}.t-unenc{background:#78350f;color:#fcd34d}.t-kev{background:#7f1d1d;color:#fecaca}.t-pii{background:#581c87;color:#e9d5ff}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/asset-management">&#128451; Assets</a>
+  <a href="/connectors?connector=wiz">&#9729; Cloud connectors</a>
+  <span class="spacer"></span>
+  <span class="title">&#9729; Cloud Security</span>
+</div>
+<div class="cs-wrap">
+  <h1>Cloud Security Management</h1>
+  <div class="cs-sub">CSPM-style governance over your <b>cloud estate</b> — assets identified as cloud (cloud flag,
+    third-party hosted, a cloud tag or a cloud hostname) enriched with their KEV/critical vulnerabilities, public
+    exposure and encryption posture, against a <b>CSA Cloud Controls Matrix</b> reference. Fed by the cloud
+    connectors (Entra ID, Wiz, Lacework, Upwind, Chainguard…). The worklist is what to fix first.</div>
+  <div id="cs-body"><div class="muted" style="padding:24px;text-align:center">Loading cloud estate…</div></div>
+</div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/cloud-security.js"></script>
+</body>
+</html>

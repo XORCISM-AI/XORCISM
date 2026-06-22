@@ -3,7 +3,7 @@
  * and OCIL answer suggestion. All the routes are authenticated (mounted under /api).
  */
 import { Router, Request, Response } from "express";
-import { askThreatModel, suggestOcilAnswer, ollamaStatus, enrichThreatReport, triageVulnerability, buildIntelBrief, analyzeAttackChain, exposureBrief } from "../ai";
+import { askThreatModel, suggestOcilAnswer, ollamaStatus, enrichThreatReport, triageVulnerability, buildIntelBrief, analyzeAttackChain, exposureBrief, feedDigest } from "../ai";
 import { userCan } from "../auth";
 import { getRun } from "../chain";
 import { getEngagement } from "../engagements";
@@ -71,6 +71,19 @@ router.post("/ai/triage-vuln", async (req: Request, res: Response) => {
   } catch (e) {
     res.status(502).json({ error: aiError(e) });
   }
+});
+
+// POST /api/ai/feed-digest { items:[{title,summary,source,date}], focus? } — summarize threat-feed items
+router.post("/ai/feed-digest", async (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  const body = req.body as { items?: unknown; focus?: unknown };
+  const items = Array.isArray(body?.items) ? (body.items as Record<string, unknown>[]).slice(0, 80).map((i) => ({
+    title: i?.title != null ? String(i.title) : "", summary: i?.summary != null ? String(i.summary) : "",
+    source: i?.source != null ? String(i.source) : "", date: i?.date != null ? String(i.date) : "",
+  })) : [];
+  if (!items.length) return void res.status(400).json({ error: "items required" });
+  try { res.json(await feedDigest(items, body?.focus ? String(body.focus).slice(0, 300) : undefined)); }
+  catch (e) { res.status(502).json({ error: aiError(e) }); }
 });
 
 // POST /api/ai/brief { reportIds?, focus? } — intelligence-brief builder (Markdown)

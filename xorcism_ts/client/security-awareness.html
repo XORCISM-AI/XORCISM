@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Security Awareness</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .sa-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .sa-wrap h1{font-size:20px;margin:0 0 2px}
+  .sa-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .sa-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .sa-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .sa-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .sa-card .val{font-size:26px;font-weight:700;margin-top:3px}.sa-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sa-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .sa-section .spacer{flex:1}
+  table.sa{width:100%;border-collapse:collapse;font-size:13px}
+  table.sa th,table.sa td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.sa th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .tag{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .t-req{background:#7f1d1d;color:#fecaca}.t-cat{background:#1e2133;color:#94a3b8}.t-prov{background:#1e3a5f;color:#bfdbfe}
+  .t-done{background:#14532d;color:#bbf7d0}.t-phish{background:#7f1d1d;color:#fecaca}.t-report{background:#14532d;color:#bbf7d0}.t-sub{background:#581c87;color:#e9d5ff}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;align-items:center;gap:8px}
+  .bar{height:7px;border-radius:4px;background:#1e2133;overflow:hidden;min-width:60px;display:inline-block;vertical-align:middle}
+  .bar > i{display:block;height:100%;border-radius:4px}
+  .riskpill{font-size:11px;font-weight:700;border-radius:5px;padding:1px 8px}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:5px 11px;cursor:pointer}
+  .btn-sm2:hover{border-color:#fb923c}
+  .ppp{font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/org-chart">&#128101; Org chart</a>
+  <a href="/identities">&#128272; Identities</a>
+  <span class="spacer"></span>
+  <span class="title">&#127891; Security Awareness</span>
+</div>
+<div class="sa-wrap">
+  <h1>Security Awareness &amp; Phishing Simulations</h1>
+  <div class="sa-sub">KnowBe4-style human-risk management — a <b>training catalogue</b> with per-person enrollment and
+    completion, recurring <b>phishing simulation</b> campaigns, the org's <b>Phish-Prone Percentage</b>, repeat
+    clickers, and a per-user <b>human-risk score</b>. The worklist is who to remediate first: credential submitters,
+    repeat clickers, overdue and never-trained staff.</div>
+  <div id="sa-body"><div class="muted" style="padding:24px;text-align:center">Loading awareness program…</div></div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/security-awareness.js"></script>
+</body>
+</html>

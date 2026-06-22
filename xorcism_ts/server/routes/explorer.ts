@@ -1693,15 +1693,25 @@ function ovalDefFilePath(pattern: string): string | null {
 router.get("/oval-xml", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XOVAL", "OVALDEFINITION")) return deny(req, res, "read", "XOVAL", "OVALDEFINITION");
   const id = String(req.query.id || "").trim();
-  // The OVAL identifier (without "/" or "..") strictly bounds the file name.
+  // The OVAL identifier (without "/" or "..") strictly bounds the lookup.
   if (!/^oval:[A-Za-z0-9_.\-]+:def:[0-9]+$/i.test(id))
     return void res.status(400).json({ error: "Identifiant OVAL invalide." });
+  const audit = (detail: string): void => { xid.addAudit({ userId: req.user?.UserID ?? null, action: "oval_xml_view", resourceType: "table", resourceKey: "XOVAL.OVALDEFINITION", detail, ip: clientIp(req) }); };
+  // Primary source: the definition's raw XML stored in OVALDEFINITION.BLOB by import_oval.py.
+  try {
+    const row = getDb("XOVAL").prepare(`SELECT "BLOB" AS xml FROM OVALDEFINITION WHERE OVALDefinitionIDPattern = ? AND "BLOB" IS NOT NULL AND "BLOB" <> '' LIMIT 1`).get(id) as { xml: string } | undefined;
+    if (row?.xml) {
+      audit(`${id} (blob)`);
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      return void res.send(row.xml);
+    }
+  } catch { /* fall through to the legacy file lookup */ }
+  // Fallback (definitions imported before the BLOB was stored): the OVALRepo file.
   const file = ovalDefFilePath(id);
-  if (!file) return void res.status(404).json({ error: "Fichier OVAL introuvable dans le dépôt importé (OVALRepo)." });
+  if (!file) return void res.status(404).json({ error: "OVAL definition XML not found (no BLOB stored and no OVALRepo file). Re-run import_oval.py to populate the BLOB." });
   try {
     const xml = fs.readFileSync(file, "utf-8");
-    xid.addAudit({ userId: req.user?.UserID ?? null, action: "oval_xml_view", resourceType: "table",
-      resourceKey: "XOVAL.OVALDEFINITION", detail: id, ip: clientIp(req) });
+    audit(`${id} (file)`);
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
     res.send(xml);
   } catch (e) {

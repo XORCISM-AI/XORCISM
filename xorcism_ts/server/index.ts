@@ -10,7 +10,7 @@ import biaRouter from "./routes/bia";
 import authRouter from "./routes/auth";
 import oidcRouter from "./routes/oidc";
 import adminRouter from "./routes/admin";
-import connectorsRouter from "./routes/connectors";
+import connectorsRouter, { warmManifestCache } from "./routes/connectors";
 import workerApiRouter from "./routes/worker_api";
 import vaultRouter from "./routes/vault";
 import { agentTokenRouter, agentAdminRouter } from "./routes/agent";
@@ -46,6 +46,13 @@ import trustCenterRouter from "./routes/trustcenter";
 import investmentRouter from "./routes/investment";
 import bugBountyRouter from "./routes/bugbounty";
 import vulnMgmtRouter from "./routes/vulnmgmt";
+import orgChartRouter from "./routes/orgchart";
+import attackTreeRouter from "./routes/attacktree";
+import cloudSecRouter from "./routes/cloudsec";
+import awarenessRouter from "./routes/awareness";
+import malscanRouter from "./routes/malscan";
+import journeysRouter from "./routes/journeys";
+import osintGraphRouter from "./routes/osintgraph";
 import policiesRouter from "./routes/policies";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
@@ -86,7 +93,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureComplianceJourneyTables, ensureNotificationRuleTable, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -194,6 +201,13 @@ app.use("/api", trustCenterRouter); // Trust Center: admin config + PUBLIC read-
 app.use("/api", investmentRouter); // Agentic Security Investment Advisor: what-if simulation + local-AI recommendation
 app.use("/api", bugBountyRouter); // Bug Bounty Management: programmes + submissions inventory + triage worklist
 app.use("/api", vulnMgmtRouter); // Vulnerability Management: vuln-centric inventory (KEV/CVSS/EPSS/SSVC) + triage worklist
+app.use("/api", orgChartRouter); // Org Chart: PERSON management hierarchy (Entra/AD-aligned)
+app.use("/api", attackTreeRouter); // Attack Trees: AND/OR threat-model decomposition + feasibility rollup
+app.use("/api", cloudSecRouter); // Cloud Security: cloud asset inventory + exposure worklist + CCM posture
+app.use("/api", awarenessRouter); // Security Awareness: training catalogue + phishing simulations + human-risk
+app.use("/api", malscanRouter); // Malware scan: multi-engine IOC/file reputation (VT/OpenTIP/ANY.RUN/…) → XMALWARE
+app.use("/api", journeysRouter); // Compliance journeys: guided multi-framework wizard (ISO/SOC2/NIST/NIS2/DORA/CRA/MiCA/FedRAMP)
+app.use("/api", osintGraphRouter); // OSINT Link Analysis: entity-link graph over INTELEXCHANGE
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
 app.use("/api", crisisRouter); // Crisis Management: tabletop-exercise readiness + scenario library + improvement worklist
@@ -322,6 +336,27 @@ app.get("/bug-bounty", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/vulnerability-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "vulnerability-management.html"));
+});
+app.get("/org-chart", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "org-chart.html"));
+});
+app.get("/attack-tree", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "attack-tree.html"));
+});
+app.get("/cloud-security", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "cloud-security.html"));
+});
+app.get("/security-awareness", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "security-awareness.html"));
+});
+app.get("/malware-scan", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "malware-scan.html"));
+});
+app.get("/compliance-journeys", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "compliance-journeys.html"));
+});
+app.get("/osint-graph", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "osint-graph.html"));
 });
 // PUBLIC trust center page (auth-exempt via the /trust/ prefix in requireAuthGate).
 app.get("/trust/:slug", (_req: Request, res: Response) => {
@@ -476,6 +511,12 @@ ensureOrganisationRiskScoreTable(); // XORCISM.ORGANISATIONRISKSCORE — per-org
 ensureOvalScanTables(); // OVAL scan results: extend XOVAL.OVALRESULTS into per-asset verdicts + seed result enum
 ensureSlaColumns(); // ASSET.SLAResponseHours/SLAResolutionHours + INCIDENT.Duration (SLA breach view)
 ensureVulnerabilityColumns(); // adds VULNERABILITY.EPSS (Exploit Prediction Scoring System) if missing
+ensureDocumentSensitivity(); // adds DOCUMENT.SensitivityLabel + TLP (data-classification labels) if missing
+ensurePersonOrgChartColumns(); // adds PERSON org-chart/AD/Entra fields (ManagerPersonID, JobTitle, UPN…) if missing
+ensureAwarenessTables(); // security-awareness training + phishing-simulation schema (PHISHINGSIMULATION/RESULT)
+ensureMalwareScanTables(); // multi-engine malware scan store (XMALWARE.MALWARESCAN/MALWARESCANENGINE)
+ensureComplianceJourneyTables(); // guided compliance-journey wizard (XCOMPLIANCE.COMPLIANCEJOURNEY/STEP)
+ensureNotificationRuleTable(); // per-user event→notification rules (XORCISM.NOTIFICATIONRULE)
 ensureGrcColumns(); // advanced GRC: CRQ/FAIR (risk register), findings workflow, policy lifecycle
 ensureBugBountyTables(); // Bug Bounty program management (XVULNERABILITY): BUGBOUNTY*
 ensureEbiosTables(); // EBIOS Risk Manager (ANSSI) in XCOMPLIANCE: reuses RISKASSESSMENT/RISKSCENARIO + EBIOS* tables
@@ -495,6 +536,7 @@ startMonitorChecker(); // live Asset-Monitoring prober (HTTP/TCP/DNS/SSL/ping du
 startThreatFeedPoller(); // periodically turns CTI RSS feed items into THREATREPORT entries
 startRiskScoreLoop(); // recomputes ASSET.RiskScore every 30 s
 startChainEngine(); // advances active tool-chaining runs (pentest playbooks)
+warmManifestCache(); // pre-parse the 1200+ connector manifests so the first /connectors load is instant
 purgeExpiredSessions();
 setInterval(purgeExpiredSessions, 60 * 60 * 1000).unref();
 

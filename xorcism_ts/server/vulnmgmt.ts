@@ -66,7 +66,8 @@ export function vulnInventory(tenant: number | null): VulnInventory {
 
   // Cross-DB VULNERABILITY enrichment (chunked).
   type Vmeta = { cve: string; name: string; cvss: number | null; kev: boolean; epss: number | null;
-    exploited: boolean; easilyExploitable: boolean; ssvc: string; published: string | null; desc: string };
+    exploited: boolean; easilyExploitable: boolean; ssvc: string; published: string | null; desc: string;
+    euvd: string; euvdUrl: string };
   const vuln = new Map<number, Vmeta>();
   const vids = [...new Set(links.map((l) => Number(l.VulnerabilityID)))];
   const vc = cols("XVULNERABILITY", "VULNERABILITY");
@@ -77,7 +78,8 @@ export function vulnInventory(tenant: number | null): VulnInventory {
       const chunk = vids.slice(i, i + 400); const ph = chunk.map(() => "?").join(",");
       for (const r of xv.prepare(
         `SELECT VulnerabilityID, ${g("VULReferentialID")}, ${g("VULName")}, ${g("CVSSBaseScore")}, ${g("KEV")}, ${g("EPSS")},
-                ${g("Exploited")}, ${g("EasilyExploitable")}, ${g("SsvcDecision")}, ${g("VULPublishedDate")}, ${g("VULDescription")}
+                ${g("Exploited")}, ${g("EasilyExploitable")}, ${g("SsvcDecision")}, ${g("VULPublishedDate")}, ${g("VULDescription")},
+                ${g("EUVDId")}, ${g("EUVDUrl")}
          FROM VULNERABILITY WHERE VulnerabilityID IN (${ph})`
       ).all(...chunk) as Record<string, any>[]) {
         vuln.set(Number(r.VulnerabilityID), {
@@ -88,6 +90,8 @@ export function vulnInventory(tenant: number | null): VulnInventory {
           ssvc: String(r.SsvcDecision ?? "").trim(),
           published: r.VULPublishedDate ? String(r.VULPublishedDate).slice(0, 10) : null,
           desc: String(r.VULDescription ?? "").trim().slice(0, 280),
+          euvd: String(r.EUVDId ?? "").trim(),
+          euvdUrl: String(r.EUVDUrl ?? "").trim() || (String(r.EUVDId ?? "").trim() ? `https://euvd.enisa.europa.eu/vulnerability/${String(r.EUVDId).trim()}` : ""),
         });
       }
     }
@@ -155,7 +159,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
     return {
       id: vid, cve: v?.cve ?? `VULN#${vid}`, name: v?.name ?? "", description: v?.desc ?? "",
       severity, cvss, kev, epss: v?.epss ?? null, exploited: v?.exploited ?? false, easilyExploitable: v?.easilyExploitable ?? false,
-      ssvc: v?.ssvc ?? "", published: v?.published ?? null,
+      ssvc: v?.ssvc ?? "", published: v?.published ?? null, euvd: v?.euvd ?? "", euvdUrl: v?.euvdUrl ?? "",
       affectedAssets: insts.length, openInstances: open.length, resolvedInstances: insts.length - open.length,
       assets: insts.slice(0, 8).map((i) => i.asset), maxCriticality: maxCrit,
       overdue, oldestAgeDays: oldestAge, hasOwner, falsePositive: insts.every((i) => i.falsePositive),

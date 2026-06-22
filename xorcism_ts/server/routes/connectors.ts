@@ -47,7 +47,16 @@ interface Manifest {
   parameters?: Param[];
 }
 
-function loadManifests(): Manifest[] {
+// The catalogue is large (1200+ connectors ≈ 0.9 MB). Scanning + parsing every
+// connector.json on each request costs ~300 ms (worse on OneDrive/network volumes),
+// so we cache the parsed manifests in memory and only re-scan when the connectors
+// directory changes (mtime) or the cache ages past the TTL (catches edits inside an
+// existing manifest, which don't bump the parent-dir mtime).
+const MANIFEST_TTL_MS = 60_000;
+let _manifestCache: { manifests: Manifest[]; mtimeMs: number; at: number } | null = null;
+function connectorsDirMtime(): number { try { return fs.statSync(CONNECTORS_DIR).mtimeMs; } catch { return 0; } }
+
+function scanManifests(): Manifest[] {
   const out: Manifest[] = [];
   let dirs: string[] = [];
   try {
@@ -59,18 +68,33 @@ function loadManifests(): Manifest[] {
   }
   for (const d of dirs) {
     const p = path.join(CONNECTORS_DIR, d, "connector.json");
-    if (!fs.existsSync(p)) continue;
     try {
       out.push(JSON.parse(fs.readFileSync(p, "utf-8")) as Manifest);
     } catch {
-      /* invalid manifest ignored */
+      /* missing or invalid manifest ignored (drops the existsSync syscall) */
     }
   }
   return out;
 }
 
+function loadManifests(): Manifest[] {
+  const mt = connectorsDirMtime();
+  if (_manifestCache && _manifestCache.mtimeMs === mt && Date.now() - _manifestCache.at < MANIFEST_TTL_MS)
+    return _manifestCache.manifests;
+  const manifests = scanManifests();
+  _manifestCache = { manifests, mtimeMs: mt, at: Date.now() };
+  return manifests;
+}
+
+/** Warm the manifest cache at boot so the first /connectors load is already fast. */
+export function warmManifestCache(): void { try { loadManifests(); } catch { /* non-fatal */ } }
+
 function findManifest(id: string): Manifest | undefined {
   if (!/^[a-z0-9_-]+$/.test(id)) return undefined;
+  // Serve from the warm cache when possible (manifest.id === directory name by convention),
+  // so selecting/running a connector costs no disk read.
+  const hit = _manifestCache?.manifests.find((m) => m.id === id);
+  if (hit) return hit;
   const p = path.join(CONNECTORS_DIR, id, "connector.json");
   if (!fs.existsSync(p)) return undefined;
   try {
@@ -131,12 +155,25 @@ function validate(manifest: Manifest, raw: Record<string, unknown>): Record<stri
   return out;
 }
 
-// GET /api/connectors — list of connectors (for the form)
+// GET /api/connectors — slim list for the picker. Parameters (the bulk of the payload)
+// are omitted and fetched on demand per connector via GET /api/connectors/:id when one
+// is selected — halves the payload (~900 KB → ~490 KB) and the client JSON parse.
 router.get("/connectors", (_req: Request, res: Response) => {
   res.json(loadManifests().map((m) => ({
     id: m.id, name: m.name, type: m.type, category: m.category,
-    description: m.description, intrusive: !!m.intrusive, parameters: m.parameters ?? [],
+    description: m.description, intrusive: !!m.intrusive,
+    hasParams: Array.isArray(m.parameters) && m.parameters.length > 0,
   })));
+});
+
+// GET /api/connectors/:id — full manifest (with parameters) for the selected connector
+router.get("/connectors/:id", (req: Request, res: Response) => {
+  const m = findManifest(String(req.params.id));
+  if (!m) return void res.status(404).json({ error: "Connecteur inconnu" });
+  res.json({
+    id: m.id, name: m.name, type: m.type, category: m.category,
+    description: m.description, intrusive: !!m.intrusive, parameters: m.parameters ?? [],
+  });
 });
 
 // ── Engagements (scope/ROE) ──────────────────────────────────────────────────

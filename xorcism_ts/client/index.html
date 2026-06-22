@@ -115,11 +115,25 @@
         <span class="domain-desc" data-i18n="landing.assets.d">Inventaire des actifs, propriétaires, criticité et exposition.</span>
       </a>
 
+      <a class="domain-card" href="/cloud-security" style="--accent:#0ea5e9">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.34 9 4.5 4.5 0 0 0 7 18h10.5z"/><path d="M9 13l2 2 3.5-3.5"/></svg></span>
+        <span class="domain-title" data-i18n="landing.cloudsec">Cloud Security</span>
+        <span class="domain-sub">CSPM · CCM · exposure</span>
+        <span class="domain-desc" data-i18n="landing.cloudsec.d">Gestion de la sécurité cloud (CSPM) : inventaire des actifs cloud (AWS/Azure/GCP/SaaS), exposition publique, chiffrement et vulnérabilités KEV, avec référence CSA CCM.</span>
+      </a>
+
       <a class="domain-card" href="/identities" style="--accent:#a78bfa">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="18" cy="8" r="2"/><path d="M22 21v-1a3 3 0 0 0-2.5-2.96"/></svg></span>
         <span class="domain-title" data-i18n="landing.identities">Identities &amp; IAM</span>
         <span class="domain-sub">XORCISM · IDENTITY</span>
         <span class="domain-desc" data-i18n="landing.identities.d">Inventaire des identités humaines et non-humaines (agents IA, API, conteneurs, comptes de service, secrets, certificats, machines) — propriétaires, privilèges, MFA, rotation et risques.</span>
+      </a>
+
+      <a class="domain-card" href="/org-chart" style="--accent:#38bdf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v4M5 17v-3h14v3M12 11v3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.orgchart">Org Chart</span>
+        <span class="domain-sub">XORCISM · PERSON</span>
+        <span class="domain-desc" data-i18n="landing.orgchart.d">Organigramme construit depuis PERSON.ManagerPersonID, avec des attributs d'annuaire alignés sur Microsoft Entra ID / Active Directory (poste, département, UPN, statut de compte) — un annuaire importé alimente directement l'organigramme.</span>
       </a>
 
       <a class="domain-card" href="/bia" style="--accent:#60a5fa">
@@ -239,7 +253,7 @@
         <span class="approach-title" data-i18n="landing.approach.threat">Threat-Based</span>
         <span class="approach-sub" data-i18n="landing.approach.threat.d">Adversary-centric — intelligence, hunting and detection engineering.</span>
       </span>
-      <span class="approach-count">9</span>
+      <span class="approach-count">10</span>
     </div>
     <div class="domain-grid" data-group="threat">
 
@@ -292,6 +306,13 @@
         <span class="domain-desc" data-i18n="landing.threatmodel.d">Modélisation des menaces : STRIDE, périmètre, menaces et contrôles d'atténuation.</span>
       </a>
 
+      <a class="domain-card" href="/attack-tree" style="--accent:#a78bfa">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><circle cx="6" cy="14" r="2"/><circle cx="18" cy="14" r="2"/><circle cx="6" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M12 6v3M11 9H6.5a.5.5 0 0 0-.5.5V12M13 9h4.5a.5.5 0 0 1 .5.5V12M6 16v2M18 16v2"/></svg></span>
+        <span class="domain-title" data-i18n="landing.attacktree">Attack Trees</span>
+        <span class="domain-sub">AND/OR · feasibility · path</span>
+        <span class="domain-desc" data-i18n="landing.attacktree.d">Arbres d'attaque (Schneier) : décomposez un objectif attaquant en sous-buts AND/OR, avec remontée de faisabilité et le chemin d'attaque le plus facile.</span>
+      </a>
+
       <a class="domain-card" href="/ransomware" style="--accent:#f43f5e">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><line x1="12" y1="15" x2="12" y2="17"/></svg></span>
         <span class="domain-title" data-i18n="landing.ransomware">Ransomware $ impact</span>
@@ -304,6 +325,20 @@
         <span class="domain-title" data-i18n="landing.osint">OSINT</span>
         <span class="domain-sub">Tool catalogue · Category=OSINT</span>
         <span class="domain-desc" data-i18n="landing.osint.d">Outils de renseignement en sources ouvertes : le catalogue d'outils filtré sur la catégorie OSINT (recherche, tri, ⭐ favoris).</span>
+      </a>
+
+      <a class="domain-card" href="/osint-graph" style="--accent:#22d3ee">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="12" r="2.5"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M6.7 7.2 10 10.5M17.3 7.2 14 10.5M10 13.5 6.7 16.8M14 13.5l3.3 3.3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.osintgraph">OSINT Link Analysis</span>
+        <span class="domain-sub">Entity graph · pivots · IOCs</span>
+        <span class="domain-desc" data-i18n="landing.osintgraph.d">Analyse de liens façon Palantir sur le flux OSINT/CTI : graphe d'entités (CVE, acteurs, malware, ATT&CK, IOC) extraites des rapports, avec co-occurrence et pivots.</span>
+      </a>
+
+      <a class="domain-card" href="/malware-scan" style="--accent:#fb923c">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 1 3 3c0 .6-.2 1.2-.5 1.7C16.5 7.6 18 9.6 18 12v1h1a2 2 0 0 1 0 4M12 2a3 3 0 0 0-3 3c0 .6.2 1.2.5 1.7C7.5 7.6 6 9.6 6 12v1H5a2 2 0 0 0 0 4M9 9h.01M15 9h.01M8 21l1-3M16 21l-1-3M12 18v3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.malscan">Malware Scan</span>
+        <span class="domain-sub">VT · OpenTIP · ANY.RUN · XMALWARE</span>
+        <span class="domain-desc" data-i18n="landing.malscan.d">Analyse multi-moteurs d'un hash, d'une URL, d'un domaine ou d'une IP (VirusTotal, Kaspersky OpenTIP, ANY.RUN, Avira, FortiGuard, Jotti) : verdict normalisé stocké dans XMALWARE, scan des documents et suivi des IOC malveillants en observables CTI.</span>
       </a>
 
     </div>
@@ -395,9 +430,16 @@
         <span class="approach-title" data-i18n="landing.approach.compliance">Compliance-Based</span>
         <span class="approach-sub" data-i18n="landing.approach.compliance.d">Govern, audit and prove your controls — continuously, not once a year.</span>
       </span>
-      <span class="approach-count">5</span>
+      <span class="approach-count">6</span>
     </div>
     <div class="domain-grid" data-group="compliance">
+
+      <a class="domain-card" href="/compliance-journeys" style="--accent:#4ade80">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l-5-3 5-3M15 6l5 3-5 3"/><circle cx="4.5" cy="15" r="1.5"/><circle cx="19.5" cy="9" r="1.5"/><path d="M6 15h6a3 3 0 0 0 3-3V9"/><path d="M9 6h3"/></svg></span>
+        <span class="domain-title" data-i18n="landing.journeys">Compliance Journeys</span>
+        <span class="domain-sub">Wizard · ISO/SOC2/NIST/NIS2/DORA/CRA</span>
+        <span class="domain-desc" data-i18n="landing.journeys.d">Assistant de parcours guidés vers la conformité (ISO 27001 &amp; 42001, SOC 2, NIST CSF/800-53, NIS2, DORA, CRA, MiCA, FedRAMP, GDPR) : choisissez un référentiel, l'assistant déroule la check-list par phases où chaque étape pointe vers le module qui réalise le travail (risques, contrôles, politiques, audits, preuves), avec suivi de progression jusqu'à la certification.</span>
+      </a>
 
       <a class="domain-card" href="/control-management" style="--accent:#22c55e">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
@@ -445,7 +487,7 @@
         <span class="approach-title" data-i18n="landing.approach.operations">Response &amp; Operations</span>
         <span class="approach-sub" data-i18n="landing.approach.operations.d">Act — respond to incidents, rehearse crises and manage the work.</span>
       </span>
-      <span class="approach-count">6</span>
+      <span class="approach-count">7</span>
     </div>
     <div class="domain-grid" data-group="operations">
 
@@ -489,6 +531,13 @@
         <span class="domain-title" data-i18n="landing.content">Content hub</span>
         <span class="domain-sub">Playbooks · Sigma · VEX</span>
         <span class="domain-desc" data-i18n="landing.content.d">Share and reuse content as portable files — attack playbooks, the Sigma detection library, and an OpenVEX document.</span>
+      </a>
+
+      <a class="domain-card" href="/security-awareness" style="--accent:#f59e0b">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><path d="M22 10v6"/></svg></span>
+        <span class="domain-title" data-i18n="landing.awareness">Security Awareness</span>
+        <span class="domain-sub">Trainings · phishing sims · human-risk</span>
+        <span class="domain-desc" data-i18n="landing.awareness.d">Gestion du risque humain façon KnowBe4 : catalogue de formations avec inscription/achèvement par personne, campagnes de simulation de phishing, Phish-Prone %, récidivistes et score de risque humain par utilisateur.</span>
       </a>
 
     </div>

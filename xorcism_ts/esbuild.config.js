@@ -69,6 +69,13 @@ const entryPoints = [
   "client/ts/investment-advisor.ts",
   "client/ts/bug-bounty.ts",
   "client/ts/vulnerability-management.ts",
+  "client/ts/org-chart.ts",
+  "client/ts/attack-tree.ts",
+  "client/ts/cloud-security.ts",
+  "client/ts/security-awareness.ts",
+  "client/ts/malware-scan.ts",
+  "client/ts/compliance-journeys.ts",
+  "client/ts/osint-graph.ts",
   "client/ts/hunting.ts",
 ];
 

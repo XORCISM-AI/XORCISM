@@ -15,6 +15,7 @@ import {
 } from "../db";
 import * as xid from "../xid";
 import { clientIp, userCan } from "../auth";
+import { listRulesForUser, upsertRule, resetRule, dispatchEvent, ruleAllows, isEvent } from "../notifrules";
 
 const router = Router();
 
@@ -103,6 +104,46 @@ router.post("/notifications", (req: Request, res: Response) => {
   res.json({ ok: true, created: 1, id });
 });
 
+// ── Notification rules: which events auto-create a notification for the current user ──────────────
+// GET /api/notification-rules → catalogue merged with the user's settings.
+router.get("/notification-rules", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  res.json(listRulesForUser(req.user.UserID));
+});
+
+// PUT /api/notification-rules/:eventKey { enabled?, minLevel? } → upsert the user's rule.
+router.put("/notification-rules/:eventKey", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  const eventKey = String(req.params.eventKey);
+  if (!isEvent(eventKey)) return void res.status(404).json({ error: "unknown event" });
+  const b = (req.body || {}) as { enabled?: unknown; minLevel?: unknown };
+  const minLevel = b.minLevel != null && LEVELS.has(String(b.minLevel)) ? String(b.minLevel) : undefined;
+  const ok = upsertRule(req.user.UserID, eventKey, { enabled: b.enabled != null ? !!b.enabled : undefined, minLevel }, req.user.tenantId ?? null);
+  if (!ok) return void res.status(400).json({ error: "bad rule" });
+  res.json({ ok: true, ...listRulesForUser(req.user.UserID) });
+});
+
+// DELETE /api/notification-rules/:eventKey → reset to the catalogue default.
+router.delete("/notification-rules/:eventKey", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  resetRule(req.user.UserID, String(req.params.eventKey));
+  res.json({ ok: true, ...listRulesForUser(req.user.UserID) });
+});
+
+// POST /api/notification-rules/test { eventKey } → fire a sample notification (forced) so the user
+// can see the effect, and report whether their current rule would have allowed it.
+router.post("/notification-rules/test", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  const eventKey = String((req.body || {}).eventKey || "");
+  if (!isEvent(eventKey)) return void res.status(404).json({ error: "unknown event" });
+  const wouldNotify = ruleAllows(req.user.UserID, eventKey, "info");
+  dispatchEvent(eventKey, {
+    userId: req.user.UserID, tenant: req.user.tenantId ?? null, force: true,
+    title: "Test notification", message: `Sample notification for the "${eventKey}" event.`, link: "/",
+  });
+  res.json({ ok: true, wouldNotify });
+});
+
 // POST /api/alert/notify { alertId, alertName } — broadcast a "new alert" notification
 // to all users in the CURRENT tenant who have at least read access to XINCIDENT.
 // Triggered from the ALERT creation form (the creator needs read on XINCIDENT.ALERT).
@@ -116,17 +157,16 @@ router.post("/alert/notify", (req: Request, res: Response) => {
   const tenant = req.user.tenantId ?? null;
 
   const recipients = usersWithDbReadAccess("XINCIDENT", tenant);
-  const base = {
-    title: (alertName ? `New alert: ${alertName}` : "New incident alert").slice(0, 300),
+  // Honor each recipient's "incident.created" notification rule (Settings → Notifications).
+  const { created } = dispatchEvent("incident.created", {
+    userIds: recipients, tenant,
+    title: alertName ? `New alert: ${alertName}` : "New incident alert",
     message: alertName ? `A new alert "${alertName}" was created.` : "A new alert was created.",
     level: "warning",
     link: Number.isInteger(alertId) && alertId > 0
       ? `/?db=XINCIDENT&table=ALERT&filterCol=AlertID&filterVal=${alertId}`
       : "/?db=XINCIDENT&table=ALERT",
-    source: "ALERT",
-    tenantId: tenant,
-  };
-  const created = notifyUsers(recipients, base);
+  });
   xid.addAudit({ userId: req.user.UserID, action: "alert_notify", resourceType: "table",
     resourceKey: "XINCIDENT.ALERT", detail: `alertId=${alertId} recipients=${created}`, ip: clientIp(req) });
   res.json({ ok: true, count: created });

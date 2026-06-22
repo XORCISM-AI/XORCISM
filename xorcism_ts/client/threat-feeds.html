@@ -55,8 +55,10 @@
       <h2 id="tf-title">Dernières actus CTI</h2>
       <span class="src" id="tf-src"></span>
       <span class="spacer"></span>
+      <button class="btn-sm2" id="tf-digest">🧠 AI digest</button>
       <button class="btn-sm2" id="tf-refresh">⟳ Rafraîchir</button>
     </div>
+    <div id="tf-digest-panel" style="display:none;background:#13162a;border:1px solid #7c83fd;border-radius:10px;padding:13px 15px;margin-bottom:12px;font-size:13px;line-height:1.55;color:#cbd5e1"></div>
     <div class="tf-news" id="tf-news"><div class="tf-status">…</div></div>
   </div>
 </div>
@@ -67,6 +69,8 @@
 (function () {
   var feeds = [];
   var current = "latest"; // "latest" | feed id
+  var currentItems = [];
+  var currentTitle = "";
   var newsEl = document.getElementById("tf-news");
   var sideEl = document.getElementById("tf-side");
 
@@ -101,6 +105,7 @@
   }
 
   function renderItems(items, withSource) {
+    currentItems = items || [];
     if (!items || !items.length) { newsEl.innerHTML = '<div class="tf-status">Aucun article.</div>'; return; }
     newsEl.innerHTML = items.map(function (it) {
       var sub = [];
@@ -142,6 +147,32 @@
   }
 
   document.getElementById("tf-refresh").onclick = function () { select(current); };
+
+  // 🧠 Local-AI digest of the currently displayed feed items (Ollama, deterministic fallback).
+  var digestBtn = document.getElementById("tf-digest");
+  var digestPanel = document.getElementById("tf-digest-panel");
+  function mdToHtml(s) {
+    return esc(s)
+      .replace(/\*\*([^*]+)\*\*/g, "<b style=\"color:#e2e8f0\">$1</b>")
+      .replace(/^- (.*)$/gm, "<div style=\"margin-left:10px\">• $1</div>")
+      .replace(/\n/g, "<br>");
+  }
+  digestBtn.onclick = function () {
+    if (!currentItems.length) { return; }
+    digestPanel.style.display = "block";
+    digestPanel.innerHTML = "🧠 Génération du résumé par l'IA locale…";
+    digestBtn.disabled = true;
+    var payload = { items: currentItems.slice(0, 60).map(function (i) { return { title: i.title, summary: i.summary, source: i.source || "", date: i.date }; }) };
+    fetch("/api/ai/feed-digest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || ("HTTP " + r.status)); return d; }); })
+      .then(function (d) {
+        digestPanel.innerHTML = "<div style=\"font-size:11px;color:#64748b;margin-bottom:6px\">🧠 " +
+          (d.ai ? "Résumé IA (" + esc(d.model) + ")" : "Résumé hors-ligne — " + esc(d.model)) +
+          " · " + d.items + " articles" + (d.cves && d.cves.length ? " · " + d.cves.length + " CVE" : "") + "</div>" + mdToHtml(d.digest);
+      })
+      .catch(function (e) { digestPanel.innerHTML = "⚠️ " + esc(e.message || e); })
+      .finally(function () { digestBtn.disabled = false; });
+  };
 
   fetch("/api/threatfeeds").then(function (r) { return r.json(); }).then(function (list) {
     feeds = Array.isArray(list) ? list : [];

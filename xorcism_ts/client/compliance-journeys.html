@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Compliance Journeys</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cj-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .cj-wrap h1{font-size:20px;margin:0 0 2px}
+  .cj-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .cj-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .cj-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .cj-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .cj-card .val{font-size:26px;font-weight:700;margin-top:3px}.cj-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .cj-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 10px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .cj-section .spacer{flex:1}
+  /* framework catalogue */
+  .fw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .fw{background:#13162a;border:1px solid #2d3250;border-radius:11px;padding:14px 15px;cursor:pointer;transition:border-color .15s,transform .1s;display:flex;flex-direction:column;gap:6px}
+  .fw:hover{border-color:#4ade80;transform:translateY(-2px)}
+  .fw .top{display:flex;align-items:center;gap:8px}
+  .fw .nm{font-size:14.5px;font-weight:700;color:#e7ebf3}
+  .fw .kind{font-size:9px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .k-Certification{background:#14532d;color:#bbf7d0}.k-Attestation{background:#1e3a5f;color:#bfdbfe}.k-Regulation{background:#78350f;color:#fcd34d}.k-Framework{background:#3730a3;color:#c7d2fe}.k-Authorization{background:#581c87;color:#e9d5ff}
+  .fw .desc{font-size:12px;color:#94a3b8;line-height:1.45;flex:1}
+  .fw .meta{font-size:11px;color:#64748b;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .fw .start{align-self:flex-start;margin-top:4px;background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:5px 12px;cursor:pointer}
+  .fw:hover .start{border-color:#4ade80;color:#bbf7d0}
+  /* journeys list */
+  .jr{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+  .jr:hover{border-color:#4ade80}
+  .jr .row1{display:flex;align-items:center;gap:10px}
+  .jr .jn{font-size:14px;font-weight:700;color:#e7ebf3}
+  .jr .meta{font-size:11px;color:#64748b;margin-top:2px;display:flex;gap:10px;flex-wrap:wrap}
+  .pbar{height:8px;border-radius:5px;background:#1e2133;overflow:hidden;flex:1;min-width:120px}
+  .pbar > i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22c55e,#4ade80)}
+  .pct{font-size:13px;font-weight:700;color:#4ade80;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+  /* detail */
+  .phase{background:#13162a;border:1px solid #2d3250;border-radius:10px;margin-bottom:12px;overflow:hidden}
+  .phase .ph-head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#161a30;border-bottom:1px solid #2d3250}
+  .phase .ph-name{font-size:13px;font-weight:700;color:#e2e8f0}
+  .phase .ph-num{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#1e2440;color:#4ade80;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .step{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid #1e2133}
+  .step:last-child{border-bottom:none}
+  .step .st-main{flex:1;min-width:0}
+  .step .st-title{font-size:13px;font-weight:600;color:#e2e8f0}
+  .step .st-title.done{text-decoration:line-through;color:#64748b}
+  .step .st-desc{font-size:12px;color:#94a3b8;margin-top:2px;line-height:1.45}
+  .step .st-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+  .step a.go{font-size:11px;color:#7c83fd;text-decoration:none;border:1px solid #2d3250;border-radius:6px;padding:3px 8px}
+  .step a.go:hover{border-color:#7c83fd}
+  .step select{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 6px}
+  .st-todo{border-left:3px solid #475569}.st-in_progress{border-left:3px solid #fbbf24}.st-done{border-left:3px solid #22c55e}.st-na{border-left:3px solid #334155;opacity:.6}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:5px 11px;cursor:pointer}
+  .btn-sm2:hover{border-color:#4ade80}
+  .muted{color:#64748b}
+  /* modal */
+  .cj-modal{position:fixed;inset:0;background:rgba(5,7,15,.72);display:none;align-items:center;justify-content:center;z-index:50}
+  .cj-modal.show{display:flex}
+  .cj-dlg{background:#0f1322;border:1px solid #2d3250;border-radius:14px;padding:20px 22px;width:min(520px,92vw);max-height:88vh;overflow:auto}
+  .cj-dlg h3{margin:0 0 4px;font-size:16px;color:#e7ebf3}
+  .cj-dlg .fwline{font-size:12px;color:#94a3b8;margin-bottom:14px}
+  .cj-dlg label{display:block;font-size:12px;color:#94a3b8;margin:10px 0 4px}
+  .cj-dlg input,.cj-dlg textarea{width:100%;background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box}
+  .cj-dlg .chk{display:flex;align-items:center;gap:7px;font-size:12px;color:#cbd5e1;margin-top:12px}
+  .cj-dlg .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+  .btn-go{background:#22c55e;border:none;color:#04130a;border-radius:7px;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer}
+  .btn-cancel{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:7px;font-size:13px;padding:8px 14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management">&#9989; Compliance</a>
+  <a href="/policy-management">&#128220; Policies</a>
+  <a href="/trust-center">&#128737;&#65039; Trust Center</a>
+  <span class="spacer"></span>
+  <span class="title">&#129517; Compliance Journeys</span>
+</div>
+<div class="cj-wrap">
+  <h1>Compliance Journeys</h1>
+  <div class="cj-sub">Guided, step-by-step <b>journeys</b> to reach compliance with a framework — ISO 27001 &amp; 42001,
+    SOC 2, NIST CSF/800-53, NIS2, DORA, the EU Cyber Resilience Act, MiCA, FedRAMP and GDPR. Pick a framework, scope it,
+    and the wizard lays out the phased checklist where <b>every step deep-links into the module that does the work</b>
+    (risk, controls, policies, audits, evidence). Track progress to certification.</div>
+  <div id="cj-body"><div class="muted" style="padding:24px;text-align:center">Loading journeys…</div></div>
+</div>
+
+<div class="cj-modal" id="cj-modal">
+  <div class="cj-dlg">
+    <h3 id="cj-dlg-title">Start a compliance journey</h3>
+    <div class="fwline" id="cj-dlg-fw"></div>
+    <label>Journey name</label>
+    <input type="text" id="cj-name" autocomplete="off">
+    <label>Scope / perimeter</label>
+    <input type="text" id="cj-scope" autocomplete="off" placeholder="e.g. Production SaaS platform &amp; the team operating it">
+    <label>Owner</label>
+    <input type="text" id="cj-owner" autocomplete="off" placeholder="e.g. CISO / GRC Lead">
+    <label>Target date</label>
+    <input type="date" id="cj-target">
+    <div class="chk"><input type="checkbox" id="cj-spawn" checked> Also create a Compliance Assessment for this framework</div>
+    <div class="acts">
+      <button class="btn-cancel" id="cj-cancel">Cancel</button>
+      <button class="btn-go" id="cj-create">Start journey</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/compliance-journeys.js"></script>
+</body>
+</html>

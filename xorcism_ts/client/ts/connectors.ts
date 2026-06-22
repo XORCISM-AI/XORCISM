@@ -51,7 +51,8 @@ async function loadWorkerPath(): Promise<void> {
 }
 
 interface Param { name: string; type: string; required?: boolean; default?: unknown; values?: unknown[]; help?: string; pattern?: string }
-interface Connector { id: string; name: string; type: string; category?: string; description?: string; intrusive?: boolean; parameters: Param[] }
+// The list endpoint returns a slim shape (no `parameters`); they are lazy-loaded on select.
+interface Connector { id: string; name: string; type: string; category?: string; description?: string; intrusive?: boolean; hasParams?: boolean; parameters?: Param[] }
 
 let connectors: Connector[] = [];
 let engagements: any[] = [];
@@ -80,7 +81,14 @@ function showScopeHint(): void {
 }
 
 async function loadConnectors(): Promise<void> {
-  connectors = await jget("/api/connectors");
+  const host = $("cn-list");
+  host.innerHTML = `<span class="hint">${t("conn.loading")}</span>`;
+  try {
+    connectors = await jget("/api/connectors");
+  } catch (e) {
+    host.innerHTML = `<span class="hint">⚠️ ${esc(String(e))}</span>`;
+    return;
+  }
   populateFilters();
   applyFilters();
 }
@@ -125,36 +133,50 @@ function applyFilters(): void {
   const cnt = $("cn-count"); if (cnt) cnt.textContent = connectors.length ? `(${matched.length}/${connectors.length})` : "";
 }
 
-// Renders the connector list grouped by category from an already-filtered list.
+// Cap on the number of items painted at once: the catalogue is 1200+ connectors, and rendering
+// them all (DOM + reflow) on every keystroke is the page's main slowdown. Nobody scrolls 1200
+// items — they search — so we paint the first RENDER_CAP and invite refining the search.
+const RENDER_CAP = 300;
+
+// Renders the connector list grouped by category from an already-filtered list. Built as a
+// single innerHTML string (1200+ items make per-node createElement + appendChild + onclick a
+// reflow/GC hotspot); clicks are handled by one delegated listener on the host (see DOMContentLoaded).
 function renderConnectorList(matched: Connector[]): void {
   const host = $("cn-list");
-  host.innerHTML = "";
   if (!connectors.length) { host.innerHTML = `<span class="hint">${t("conn.none")}</span>`; return; }
   if (!matched.length) { host.innerHTML = `<span class="hint">${t("conn.noMatch")}</span>`; return; }
   const byCat: Record<string, Connector[]> = {};
   matched.forEach((c) => { (byCat[c.category || "autres"] ||= []).push(c); });
-  Object.keys(byCat).sort().forEach((cat) => {
-    const h = document.createElement("div");
-    h.className = "meta"; h.style.cssText = "margin:8px 0 4px;color:var(--accent);font-size:10px;text-transform:uppercase";
-    h.textContent = cat;
-    host.appendChild(h);
-    byCat[cat].forEach((c) => {
-      const it = document.createElement("div");
-      it.className = "cn-item"; it.dataset.id = c.id;
-      if (selected && selected.id === c.id) it.classList.add("sel");
-      it.innerHTML =
+  let html = "", shown = 0;
+  for (const cat of Object.keys(byCat).sort()) {
+    if (shown >= RENDER_CAP) break;
+    let items = "";
+    for (const c of byCat[cat]) {
+      if (shown >= RENDER_CAP) break;
+      items += `<div class="cn-item${selected && selected.id === c.id ? " sel" : ""}" data-id="${esc(c.id)}">` +
         `<span><span class="nm">${esc(c.name)}</span><div class="meta">${esc(c.type)}</div></span>` +
-        (c.intrusive ? `<span class="pill intr">intrusif</span>` : "");
-      it.onclick = () => selectConnector(c, it);
-      host.appendChild(it);
-    });
-  });
+        (c.intrusive ? `<span class="pill intr">intrusif</span>` : "") +
+        `</div>`;
+      shown++;
+    }
+    if (items) html += `<div class="meta" style="margin:8px 0 4px;color:var(--accent);font-size:10px;text-transform:uppercase">${esc(cat)}</div>${items}`;
+  }
+  if (matched.length > shown) {
+    html += `<div class="hint" style="margin:10px 2px;text-align:center">… +${matched.length - shown} ${t("conn.more")}</div>`;
+  }
+  host.innerHTML = html;
 }
 
-function selectConnector(c: Connector, el: HTMLElement): void {
+async function selectConnector(c: Connector, el: HTMLElement): Promise<void> {
   selected = c;
   document.querySelectorAll(".cn-item").forEach((x) => x.classList.remove("sel"));
   el.classList.add("sel");
+  // Parameters are omitted from the slim list — fetch them on first selection (cached on the object).
+  if (!c.parameters) {
+    try { const full = await jget(`/api/connectors/${encodeURIComponent(c.id)}`); c.parameters = full.parameters || []; }
+    catch { c.parameters = []; }
+    if (selected !== c) return; // a newer selection won the race while we awaited
+  }
   $("cn-empty").style.display = "none";
   $("cn-form-card").style.display = "";
   $("cn-form-title").textContent = c.name;
@@ -388,11 +410,25 @@ async function loadJobs(): Promise<void> {
 }
 
 async function watchJob(id: number): Promise<void> {
+  if (!Number.isFinite(id)) return;
   if (pollTimer) clearInterval(pollTimer);
-  $("cn-log-card").style.display = "";
+  const card = $("cn-log-card");
+  card.style.display = "";
+  $("cn-log-title").textContent = `Job #${id}`;
+  $("cn-summary").textContent = "";
+  $("cn-log").textContent = "…";
+  // Bring the log into view: it sits below the (potentially long) jobs table, so a plain
+  // un-hide can leave it off-screen and make "View" look like it did nothing.
+  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
   const tick = async () => {
     let j: any;
-    try { j = await jget(`/api/jobs/${id}`); } catch { return; }
+    try {
+      j = await jget(`/api/jobs/${id}`);
+    } catch (e) {
+      $("cn-log").textContent = `⚠️ ${String(e)}`;
+      if (pollTimer) clearInterval(pollTimer);
+      return;
+    }
     $("cn-log-title").textContent = `Job #${j.JobID} — ${j.connector} (${j.status})`;
     $("cn-summary").textContent = j.result_summary ? `import: ${j.result_summary}` : (j.error || "");
     $("cn-log").textContent = j.log || "(en attente…)";
@@ -407,15 +443,19 @@ async function watchJob(id: number): Promise<void> {
 }
 
 // Deep link from the ASSET form: ?connector=<id>&target=<url>
-// → pre-selects the connector and fills the target.
-function applyConnectorDeepLink(): void {
+// → applies the search filter to the connector, pre-selects it and fills the target.
+async function applyConnectorDeepLink(): Promise<void> {
   const qp = new URLSearchParams(location.search);
   const cid = qp.get("connector");
   if (!cid) return;
   const c = connectors.find((x) => x.id === cid);
+  if (!c) return;
+  // Narrow the (large) connector list to the deep-linked connector so it's visible, then select it.
+  const search = $("cn-search") as HTMLInputElement | null;
+  if (search) { search.value = c.id; applyFilters(); }
   const el = document.querySelector(`.cn-item[data-id="${cid}"]`) as HTMLElement | null;
-  if (!c || !el) return;
-  selectConnector(c, el);
+  if (!el) return;
+  await selectConnector(c, el); // awaits lazy param load so the target input exists below
   const target = qp.get("target");
   if (target) {
     const tp = (c.parameters || []).find((p) => p.type === "target" || p.type === "url");
@@ -429,10 +469,22 @@ function applyConnectorDeepLink(): void {
 
 document.addEventListener("DOMContentLoaded", () => {
   initI18n();
-  ($("cn-search") as HTMLInputElement | null)?.addEventListener("input", applyFilters);
+  // Debounce the search box: filtering re-renders the (capped) list, so coalesce keystrokes.
+  let searchTimer: number | undefined;
+  ($("cn-search") as HTMLInputElement | null)?.addEventListener("input", () => {
+    if (searchTimer) clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(applyFilters, 130);
+  });
   ($("cn-cat") as HTMLSelectElement | null)?.addEventListener("change", applyFilters);
   ($("cn-type") as HTMLSelectElement | null)?.addEventListener("change", applyFilters);
   ($("cn-intr") as HTMLInputElement | null)?.addEventListener("change", applyFilters);
+  // One delegated click handler for the whole (re-rendered) connector list.
+  $("cn-list").addEventListener("click", (e) => {
+    const item = (e.target as HTMLElement).closest(".cn-item") as HTMLElement | null;
+    if (!item) return;
+    const c = connectors.find((x) => x.id === item.dataset.id);
+    if (c) void selectConnector(c, item);
+  });
   void loadConnectors().then(applyConnectorDeepLink);
   void loadWorkerPath();
   void loadEngagements();

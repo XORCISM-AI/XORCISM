@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Org Chart</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .oc-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .oc-wrap h1{font-size:20px;margin:0 0 2px}
+  .oc-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1010px}
+  .oc-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .oc-card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .oc-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .oc-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .oc-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .oc-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .breakdown{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 9px;color:#cbd5e1}.bd b{color:#e2e8f0}
+  .muted{color:#64748b}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .filters input,.filters select{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px}
+  /* tree */
+  .tree, .tree ul{list-style:none;margin:0;padding:0}
+  .tree ul{margin-left:20px;border-left:1px solid #2d3250;padding-left:16px}
+  .tree li{margin:6px 0;position:relative}
+  .node{display:inline-flex;align-items:center;gap:10px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:8px 12px;min-width:280px}
+  .node.disabled{opacity:.55;border-style:dashed}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1453b8,#0e7490);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .node .nm{font-weight:600;color:#e2e8f0;font-size:13px}
+  .node .ti{font-size:11px;color:#94a3b8}
+  .node .dept{font-size:10px;background:#0f1117;border:1px solid #2d3250;border-radius:5px;padding:1px 6px;color:#cbd5e1}
+  .node .rc{font-size:10px;color:#34d399}
+  .node .entra{font-size:9px;background:#0b3a82;color:#bfdbfe;border-radius:4px;padding:1px 5px}
+  .toggle{cursor:pointer;color:#60a5fa;font-size:11px;user-select:none;margin-left:4px}
+  .collapsed > ul{display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/?db=XORCISM&amp;table=PERSON">&#128100; People</a>
+  <a href="/identities">&#128273; Identities</a>
+  <span class="spacer"></span>
+  <span class="title">&#127970; Org Chart</span>
+</div>
+<div class="oc-wrap">
+  <h1>Organisation Chart</h1>
+  <div class="oc-sub">The management hierarchy built from <b>PERSON.ManagerPersonID</b>, with directory attributes
+    (job title, department, UPN, account status) aligned to <b>Microsoft Entra ID / Active Directory</b> — so an
+    imported directory drives the chart directly. Each node shows reports count, department and an
+    <span class="entra">ENTRA</span> badge when synced from Entra ID.</div>
+  <div id="oc-body"><div class="muted" style="padding:24px;text-align:center">Loading org chart…</div></div>
+</div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/org-chart.js"></script>
+</body>
+</html>

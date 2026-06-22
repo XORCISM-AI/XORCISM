@@ -43,6 +43,8 @@ export interface DocumentRow {
   validUntil: string | null;
   expired: boolean;
   issues: string[];
+  classification: string;
+  tlp: string;
 }
 export interface PolicyFinding {
   id: number;
@@ -189,13 +191,18 @@ export function policyInventory(tenant: number | null): PolicyInventory {
         if (expired) { issues.push(`expired (${-(vu as number)}d)`); expiredDocs++; }
         if (!owner) { issues.push("no owner"); docsNoOwner++; }
         if (!isStr(d.Version)) issues.push("no version");
+        const classification = norm(d.Classification);
+        const tlp = norm(d.TLP);
+        if (!classification && isStr(d.DocumentName)) issues.push("unclassified");
         if (expired)
           findings.push({ id, name, kind: "document", severity: "Medium", reason: "expired", label: `${name} — expired ${-(vu as number)}d ago` });
         else if (!owner && isStr(d.DocumentName))
           findings.push({ id, name, kind: "document", severity: "Low", reason: "doc-no-owner", label: `${name} — no owner` });
+        else if (!classification && isStr(d.DocumentName))
+          findings.push({ id, name, kind: "document", severity: "Low", reason: "doc-unclassified", label: `${name} — no sensitivity label` });
         documents.push({
           id, name, type: norm(d.DocumentType) || "—", category: norm(d.Category) || "—",
-          status: norm(d.Status) || "—", version: norm(d.Version) || "—",
+          status: norm(d.Status) || "—", version: norm(d.Version) || "—", classification, tlp,
           language: (norm(d.Language) || "—").toLowerCase(), owner, reviewDate, validUntil, expired, issues,
         });
       }

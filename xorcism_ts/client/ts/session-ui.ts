@@ -13,6 +13,8 @@ import { passkeySupported, registerPasskey, listPasskeys, deletePasskey, Passkey
 // top bar. Set as soon as the module loads (the bar is already parsed).
 document.querySelector(".topbar")?.setAttribute("data-lang-external", "1");
 
+function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
+
 // "Settings" panel: user preferences (display, security…).
 // Hosts the language selector, the PIN and the passkey management.
 function openSettings(me: any): void {
@@ -95,6 +97,16 @@ function openSettings(me: any): void {
   }
   card.appendChild(security);
 
+  // ── Notifications: which events auto-create a notification ──
+  const notif = section(t("settings.notifications"));
+  const notifBtn = document.createElement("button");
+  notifBtn.className = "btn btn-ghost btn-sm";
+  notifBtn.textContent = t("settings.manageRules");
+  notifBtn.title = t("settings.manageRules");
+  notifBtn.onclick = openNotificationRules;
+  notif.appendChild(row(t("settings.notifEvents"), notifBtn));
+  card.appendChild(notif);
+
   const footer = document.createElement("div");
   footer.style.cssText = "display:flex;justify-content:flex-end";
   const closeBtn = document.createElement("button");
@@ -103,6 +115,94 @@ function openSettings(me: any): void {
   closeBtn.onclick = () => bg.remove();
   footer.appendChild(closeBtn);
   card.appendChild(footer);
+
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+}
+
+// Notification rules manager: which events auto-create a notification for the current user.
+// Each event has an on/off toggle, a minimum-severity threshold, and a "Test" button.
+interface NotifRule { key: string; label: string; description: string; category: string; level: string; defaultEnabled: boolean; enabled: boolean; minLevel: string; configured: boolean; }
+function openNotificationRules(): void {
+  const bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:2001";
+  bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  const card = document.createElement("div");
+  card.style.cssText = "background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:18px;width:560px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column";
+  card.innerHTML =
+    `<div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px">🔔 ${t("settings.notifRulesTitle")}</div>` +
+    `<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">${t("settings.notifRulesHint")}</div>`;
+  const list = document.createElement("div");
+  list.style.cssText = "overflow:auto;border:1px solid var(--border);border-radius:8px;background:var(--bg);margin-bottom:12px";
+  card.appendChild(list);
+
+  function levelSelect(cur: string): HTMLSelectElement {
+    const s = document.createElement("select");
+    s.className = "btn btn-ghost btn-sm";
+    s.style.cssText = "font-size:11px;padding:2px 4px";
+    for (const [v, l] of [["info", "Info+"], ["warning", "Warning+"], ["error", "Error only"]]) {
+      const o = document.createElement("option"); o.value = v; o.textContent = l; if (v === cur) o.selected = true; s.appendChild(o);
+    }
+    return s;
+  }
+
+  async function put(key: string, body: Record<string, unknown>): Promise<void> {
+    await fetch(`/api/notification-rules/${encodeURIComponent(key)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
+
+  function render(events: NotifRule[]): void {
+    list.innerHTML = "";
+    let lastCat = "";
+    for (const ev of events) {
+      if (ev.category !== lastCat) {
+        lastCat = ev.category;
+        const h = document.createElement("div");
+        h.style.cssText = "font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);padding:8px 10px 4px;background:var(--surface-2);position:sticky;top:0";
+        h.textContent = ev.category;
+        list.appendChild(h);
+      }
+      const r = document.createElement("div");
+      r.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--border)";
+      const main = document.createElement("div"); main.style.cssText = "flex:1;min-width:0";
+      main.innerHTML = `<div style="font-size:13px;color:var(--text)">${esc(ev.label)}</div>` +
+        `<div style="font-size:11px;color:var(--text-muted)">${esc(ev.description)}</div>`;
+      // toggle
+      const toggle = document.createElement("input"); toggle.type = "checkbox"; toggle.checked = ev.enabled;
+      toggle.style.cssText = "width:16px;height:16px;cursor:pointer;flex:0 0 auto";
+      // min-level
+      const sel = levelSelect(ev.minLevel); sel.disabled = !ev.enabled;
+      // test
+      const testBtn = document.createElement("button"); testBtn.className = "btn btn-ghost btn-sm"; testBtn.textContent = t("settings.notifTest"); testBtn.style.cssText = "font-size:11px;padding:2px 8px;flex:0 0 auto";
+      toggle.onchange = async () => { sel.disabled = !toggle.checked; await put(ev.key, { enabled: toggle.checked, minLevel: sel.value }); ev.enabled = toggle.checked; };
+      sel.onchange = async () => { await put(ev.key, { enabled: toggle.checked, minLevel: sel.value }); };
+      testBtn.onclick = async () => {
+        testBtn.disabled = true;
+        try {
+          const res = await fetch("/api/notification-rules/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventKey: ev.key }) });
+          const d = await res.json().catch(() => ({}));
+          testBtn.textContent = d.wouldNotify ? "✓" : t("settings.notifMuted");
+          window.dispatchEvent(new CustomEvent("xorcism:notifications-refresh"));
+          setTimeout(() => { testBtn.textContent = t("settings.notifTest"); testBtn.disabled = false; }, 1600);
+        } catch { testBtn.disabled = false; }
+      };
+      const right = document.createElement("div"); right.style.cssText = "display:flex;align-items:center;gap:6px;flex:0 0 auto";
+      right.appendChild(sel); right.appendChild(testBtn); right.appendChild(toggle);
+      r.appendChild(main); r.appendChild(right);
+      list.appendChild(r);
+    }
+  }
+
+  const footer = document.createElement("div");
+  footer.style.cssText = "display:flex;justify-content:flex-end";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn-ghost btn-sm";
+  closeBtn.textContent = t("modal.close") || "Fermer";
+  closeBtn.onclick = () => bg.remove();
+  footer.appendChild(closeBtn);
+  card.appendChild(footer);
+
+  list.innerHTML = `<div style="padding:12px;color:var(--text-dim);font-size:12px">…</div>`;
+  fetch("/api/notification-rules").then((r) => r.json()).then((d) => render(d.events || [])).catch(() => { list.innerHTML = `<div style="padding:12px;color:var(--danger);font-size:12px">${t("common.error") || "Error"}</div>`; });
 
   bg.appendChild(card);
   document.body.appendChild(bg);

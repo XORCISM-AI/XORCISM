@@ -161,6 +161,53 @@ export async function enrichThreatReport(reportId: number): Promise<{ summary: s
   return { summary, cves, model: OLLAMA_MODEL };
 }
 
+/**
+ * Summarize a batch of threat-feed items into a concise CTI digest. Uses the local LLM (Ollama)
+ * when reachable, else falls back to a deterministic digest so the feature always returns something.
+ */
+export async function feedDigest(
+  items: { title?: string; summary?: string; source?: string; date?: string }[],
+  focus?: string,
+): Promise<{ digest: string; cves: string[]; items: number; model: string; ai: boolean }> {
+  const clean = (items || []).filter((i) => i && (i.title || i.summary)).slice(0, 60)
+    .map((i) => ({ title: String(i.title || "").slice(0, 240), summary: String(i.summary || "").slice(0, 300), source: String(i.source || "").slice(0, 60) }));
+  const corpus = clean.map((i) => `${i.source ? `[${i.source}] ` : ""}${i.title}${i.summary ? ` — ${i.summary}` : ""}`).join("\n");
+  const cves = extractCves(corpus);
+  if (!clean.length) return { digest: "No feed items to summarize.", cves: [], items: 0, model: "deterministic", ai: false };
+
+  try {
+    const system =
+      "You are a senior CTI analyst. From the threat-intel headlines below, write a concise daily digest in Markdown (max ~180 words): " +
+      "1) the 3-5 dominant themes; 2) notable threats, actors, malware and CVEs explicitly mentioned; 3) 2-3 recommended defender actions. " +
+      "Be factual — do not invent CVEs, actors or IOCs that are not in the text. No preamble." + (focus ? ` Emphasize: ${focus}.` : "");
+    const digest = await ollamaChat([{ role: "system", content: system }, { role: "user", content: corpus.slice(0, 7000) }], 0.3, 60000);
+    return { digest, cves, items: clean.length, model: OLLAMA_MODEL, ai: true };
+  } catch {
+    return { digest: _deterministicDigest(clean, cves), cves, items: clean.length, model: "deterministic (Ollama unreachable)", ai: false };
+  }
+}
+
+function _deterministicDigest(items: { title: string; summary: string; source: string }[], cves: string[]): string {
+  const bySource: Record<string, number> = {};
+  for (const i of items) if (i.source) bySource[i.source] = (bySource[i.source] || 0) + 1;
+  const blob = items.map((i) => `${i.title} ${i.summary}`).join(" ").toLowerCase();
+  const KW: [string, RegExp][] = [["Ransomware", /ransomware|lockbit|ransom|extortion/], ["Phishing", /phish|spoof|smish|bec\b/],
+    ["Vulnerability/exploit", /vulnerab|exploit|cve-|zero[- ]?day|0-day|rce\b|patch/], ["APT/nation-state", /\bapt\b|nation|state-sponsored|espionage/],
+    ["Malware", /malware|trojan|loader|stealer|backdoor|botnet|rat\b/], ["Data breach", /breach|leak|exposed|data theft/],
+    ["Supply chain", /supply.?chain|dependency|npm|pypi/], ["Cloud/identity", /cloud|azure|aws|okta|identity|oauth|saas/]];
+  const themes = KW.filter(([, re]) => re.test(blob)).map(([k]) => k);
+  const topSrc = Object.entries(bySource).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([s, n]) => `${s} (${n})`);
+  const lines = [
+    `**CTI digest — ${items.length} items** (offline summary; start Ollama for an AI digest).`, "",
+    themes.length ? `**Dominant themes:** ${themes.join(", ")}.` : "",
+    cves.length ? `**CVEs mentioned (${cves.length}):** ${cves.slice(0, 12).join(", ")}${cves.length > 12 ? "…" : ""}.` : "",
+    topSrc.length ? `**Most active sources:** ${topSrc.join(", ")}.` : "",
+    "", "**Latest headlines:**",
+    ...items.slice(0, 8).map((i) => `- ${i.source ? `[${i.source}] ` : ""}${i.title}`),
+  ];
+  return lines.filter((l) => l !== "").join("\n");
+}
+
 /** Vulnerability-triage agent: assembles KEV/EPSS/CPE/asset context for a CVE, then an LLM assessment. */
 export async function triageVulnerability(input: { cve?: string; vulnerabilityId?: number }): Promise<{ assessment: string; context: string; model: string }> {
   const xv = getDb("XVULNERABILITY");

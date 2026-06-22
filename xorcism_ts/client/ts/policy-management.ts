@@ -9,7 +9,7 @@ function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
 
 interface PolicyRow { id: number; name: string; reference: string; category: string; framework: string; language: string; status: string; version: string; owner: string | null; effectiveDate: string | null; reviewDate: string | null; reviewInDays: number | null; published: boolean; retired: boolean; score: number; issues: string[]; }
-interface DocumentRow { id: number; name: string; type: string; category: string; status: string; version: string; language: string; owner: string | null; reviewDate: string | null; validUntil: string | null; expired: boolean; issues: string[]; }
+interface DocumentRow { id: number; name: string; type: string; category: string; status: string; version: string; language: string; owner: string | null; reviewDate: string | null; validUntil: string | null; expired: boolean; issues: string[]; classification?: string; tlp?: string; }
 interface Finding { id: number; name: string; kind: "policy" | "document"; severity: "High" | "Medium" | "Low"; reason: string; label: string; }
 interface Inventory {
   rows: PolicyRow[]; documents: DocumentRow[]; findings: Finding[];
@@ -47,12 +47,21 @@ function policyHtml(r: PolicyRow): string {
   </tr>`;
 }
 
+const CLASS_COLOR: Record<string, string> = { Public: "#34d399", Internal: "#60a5fa", Confidential: "#fbbf24", Restricted: "#f87171" };
+const TLP_COLOR: Record<string, string> = { "TLP:CLEAR": "#94a3b8", "TLP:GREEN": "#34d399", "TLP:AMBER": "#fbbf24", "TLP:AMBER+STRICT": "#fb923c", "TLP:RED": "#f87171" };
+function sensBadge(d: DocumentRow): string {
+  const parts: string[] = [];
+  if (d.classification) parts.push(`<span class="tag" style="background:${CLASS_COLOR[d.classification] || "#334155"};color:#0b1220">${esc(d.classification)}</span>`);
+  if (d.tlp) parts.push(`<span class="tag" style="background:${TLP_COLOR[d.tlp] || "#334155"};color:#0b1220;font-size:9px">${esc(d.tlp)}</span>`);
+  return parts.length ? parts.join(" ") : `<span class="muted">—</span>`;
+}
 function docHtml(d: DocumentRow): string {
-  const issues = d.issues.length ? d.issues.map((i) => `<span class="tag${/version/.test(i) ? " tag-w" : ""}">${esc(i)}</span>`).join("") : `<span class="s-lo">✓ ok</span>`;
+  const issues = d.issues.length ? d.issues.map((i) => `<span class="tag${/version|unclassified/.test(i) ? " tag-w" : ""}">${esc(i)}</span>`).join("") : `<span class="s-lo">✓ ok</span>`;
   return `<tr>
     <td><div class="pname">${esc(d.name)}${d.language !== "—" ? `<span class="lang">${esc(d.language)}</span>` : ""}</div>
       <div class="muted" style="font-size:11px">${esc(d.type)}${d.category !== "—" ? ` · ${esc(d.category)}` : ""}</div></td>
     <td>${d.status !== "—" ? `<span class="st ${stClass(d.status)}">${esc(d.status)}</span>` : `<span class="muted">—</span>`}</td>
+    <td>${sensBadge(d)}</td>
     <td>${esc(d.version)}</td>
     <td>${d.owner ? esc(d.owner) : `<span class="tag">none</span>`}</td>
     <td>${d.validUntil ? esc(d.validUntil) : `<span class="muted">—</span>`}</td>
@@ -105,7 +114,7 @@ async function load(): Promise<void> {
 
   const docTable = d.documents.length ? `<div class="pp-section">Document register (${d.documents.length})</div>
     <table class="pp"><thead><tr>
-      <th>Document</th><th>Status</th><th>Ver.</th><th>Owner</th><th>Valid until</th><th>Gaps</th>
+      <th>Document</th><th>Status</th><th>Sensitivity</th><th>Ver.</th><th>Owner</th><th>Valid until</th><th>Gaps</th>
     </tr></thead><tbody>${d.documents.map(docHtml).join("")}</tbody></table>` : "";
 
   $("pp-body").innerHTML = `<div class="pp-cards">${cards}</div>

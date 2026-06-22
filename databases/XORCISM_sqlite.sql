@@ -8567,7 +8567,9 @@ CREATE TABLE "DOCUMENT"(
 	"DocumentDescription" TEXT NULL,
 	"DocumentURL" TEXT NULL,
 	"Category" TEXT NULL,
-	"Author" TEXT NULL
+	"Author" TEXT NULL,
+	"Classification" TEXT NULL,   -- data-sensitivity label: Public / Internal / Confidential / Restricted
+	"TLP" TEXT NULL               -- Traffic Light Protocol 2.0 sharing marker (TLP:CLEAR…TLP:RED)
 )
 
 ;
@@ -17326,7 +17328,14 @@ CREATE TABLE "PERSON"(
 	"VocabularyID" INTEGER NULL,
 	"isEncrypted" INTEGER NULL,
 	"ValidFromDate" TEXT NULL,
-	"ValidUntilDate" TEXT NULL
+	"ValidUntilDate" TEXT NULL,
+	"email" TEXT NULL,
+	-- Org-chart / directory fields, aligned with Microsoft Entra ID / Active Directory (see /org-chart)
+	"ManagerPersonID" INTEGER NULL,    -- org-chart parent edge (Entra/AD manager)
+	"JobTitle" TEXT NULL, "Department" TEXT NULL, "CompanyName" TEXT NULL, "OfficeLocation" TEXT NULL,
+	"UserPrincipalName" TEXT NULL, "EmployeeID" TEXT NULL, "EmployeeType" TEXT NULL,
+	"EntraObjectID" TEXT NULL, "ObjectGUID" TEXT NULL, "OnPremisesSamAccountName" TEXT NULL,
+	"UsageLocation" TEXT NULL, "MobilePhone" TEXT NULL, "BusinessPhone" TEXT NULL, "AccountEnabled" INTEGER NULL
 )
 
 ;

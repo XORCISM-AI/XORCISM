@@ -504,6 +504,11 @@ def _import_one_definition(dnode, s, xs, vs, vocab_id: int) -> None:
     defn.OVALClassEnumerationID = class_enum_id
     defn.deprecated = deprecated
     defn.VocabularyID = vocab_id
+    # Store the raw definition XML in the BLOB so the app reads it from the DB (not local files).
+    try:
+        defn.BLOB = ET.tostring(dnode, encoding="unicode")
+    except Exception:  # noqa: BLE001 — serialization is best-effort; metadata import still proceeds
+        pass
     s.flush()
     def_id = defn.OVALDefinitionID
 

@@ -3473,6 +3473,20 @@ export function ensureThreatModelTables(): void {
       ThreatModelControlID INTEGER PRIMARY KEY,
       ThreatModelThreatID INTEGER, ControlID INTEGER, Status TEXT,
       CreatedDate TEXT, TenantID INTEGER);
+    -- Attack trees (Schneier-style): a root goal decomposed via AND/OR gates into leaf attacks.
+    CREATE TABLE IF NOT EXISTS ATTACKTREE (
+      AttackTreeID INTEGER PRIMARY KEY, AttackTreeGUID TEXT,
+      Name TEXT, Goal TEXT, Description TEXT, ThreatModelID INTEGER,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE TABLE IF NOT EXISTS ATTACKTREENODE (
+      AttackTreeNodeID INTEGER PRIMARY KEY, AttackTreeID INTEGER, ParentNodeID INTEGER,
+      Label TEXT, Gate TEXT,                 -- 'AND' | 'OR' for internal nodes, '' for leaves
+      Description TEXT, Likelihood TEXT,      -- leaf feasibility: High/Medium/Low (or numeric 0-1)
+      Cost TEXT, Difficulty TEXT, Mitigated INTEGER DEFAULT 0,
+      MitigationNote TEXT, AttackPattern TEXT, SortOrder INTEGER DEFAULT 0,
+      CreatedDate TEXT, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_attacktree_tenant ON ATTACKTREE(TenantID);
+    CREATE INDEX IF NOT EXISTS ix_attacktreenode_tree ON ATTACKTREENODE(AttackTreeID);
     -- ASSET ↔ OVAL definition link (configuration assessment results)
     CREATE TABLE IF NOT EXISTS ASSETOVALDEFINITION (
       AssetOVALDefinitionID INTEGER PRIMARY KEY,
@@ -4466,9 +4480,154 @@ export function ensureVulnerabilityColumns(): void {
     // points + the computed CISA-level decision (Track / Track* / Attend / Act) + vector.
     SsvcExploitation: "TEXT", SsvcAutomatable: "TEXT", SsvcTechnicalImpact: "TEXT",
     SsvcMissionWellbeing: "TEXT", SsvcDecision: "TEXT", SsvcVector: "TEXT", SsvcDecisionDate: "DATE",
+    // ENISA EU Vulnerability Database (EUVD, NIS2) cross-reference: the EUVD-YYYY-NNNNN id
+    // and its public page URL. Populated by the `euvd` connector (runner.import_euvd).
+    EUVDId: "TEXT", EUVDUrl: "TEXT",
   };
   for (const [n, t] of Object.entries(cols)) {
     if (!existing.has(n)) db.exec(`ALTER TABLE "VULNERABILITY" ADD COLUMN "${n}" ${t}`);
+  }
+  try { db.exec(`CREATE INDEX IF NOT EXISTS ix_vuln_euvd ON "VULNERABILITY"("EUVDId")`); } catch { /* index best-effort */ }
+}
+
+/**
+ * Sensitivity / data-classification labels on DOCUMENT records. Builds on the existing
+ * `Classification` field (Public / Internal / Confidential / Restricted) — adding it to the
+ * general XORCISM.DOCUMENT (the GRC XCOMPLIANCE.DOCUMENT already has it) — and adds a `TLP`
+ * sharing marker (Traffic Light Protocol 2.0) to both. Idempotent; called at boot. The allowed
+ * values + colours live client-side (app.ts STATIC_DATALIST_* / GRID_VALUE_COLORS).
+ */
+/**
+ * Org-chart + directory fields on PERSON, aligned with Microsoft Entra ID / Active Directory
+ * attributes so an imported directory can drive an org chart. Adds the manager edge
+ * (ManagerPersonID, self-referential) + the common Graph/AD user attributes. Idempotent; boot.
+ */
+/**
+ * Security-awareness training + phishing-simulation schema (KnowBe4-style). Reuses the legacy
+ * TRAINING (course catalogue) + TRAININGFORPERSON (enrollment), enriching them, and adds
+ * PHISHINGSIMULATION (campaigns) + PHISHINGRESULT (per-recipient sent/opened/clicked/reported).
+ * Idempotent; called at boot.
+ */
+export function ensureAwarenessTables(): void {
+  const db = getDb("XORCISM");
+  const addCols = (table: string, cols: Record<string, string>): void => {
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table)) return;
+    const existing = new Set((db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name));
+    for (const [n, t] of Object.entries(cols)) if (!existing.has(n)) db.exec(`ALTER TABLE "${table}" ADD COLUMN "${n}" ${t}`);
+  };
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS PHISHINGSIMULATION (
+        PhishingSimulationID INTEGER PRIMARY KEY, PhishingSimulationGUID TEXT,
+        Name TEXT, Theme TEXT, Template TEXT, Difficulty TEXT, Status TEXT, Description TEXT,
+        LandingPageURL TEXT, SentDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS PHISHINGRESULT (
+        PhishingResultID INTEGER PRIMARY KEY, PhishingSimulationID INTEGER, PersonID INTEGER,
+        Sent INTEGER DEFAULT 1, Opened INTEGER DEFAULT 0, Clicked INTEGER DEFAULT 0,
+        SubmittedData INTEGER DEFAULT 0, ReportedPhish INTEGER DEFAULT 0,
+        DateSent TEXT, DateClicked TEXT, DateReported TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_phishresult_sim ON PHISHINGRESULT(PhishingSimulationID);
+      CREATE INDEX IF NOT EXISTS ix_phishresult_person ON PHISHINGRESULT(PersonID);
+      CREATE INDEX IF NOT EXISTS ix_phishsim_tenant ON PHISHINGSIMULATION(TenantID);`);
+    addCols("TRAINING", { Category: "TEXT", DurationMinutes: "INTEGER", Provider: "TEXT", ContentURL: "TEXT", Required: "INTEGER DEFAULT 0", PassingScore: "INTEGER", TenantID: "INTEGER", CreatedDate: "TEXT" });
+    addCols("TRAININGFORPERSON", { Score: "INTEGER", DueDate: "TEXT", AssignedDate: "TEXT" });
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Multi-engine malware scan store (XMALWARE) — a normalized scan record (MALWARESCAN) with one row
+ * per engine queried (MALWARESCANENGINE: VirusTotal / ANY.RUN / Kaspersky OpenTIP / Avira /
+ * FortiGuard / Jotti …). Targets are hashes / URLs / domains / IPs / DOCUMENT blobs; results feed
+ * CTI (links to XTHREAT.OBSERVABLE) and the DOCUMENT register (XORCISM.DOCUMENT).
+ */
+export function ensureMalwareScanTables(): void {
+  try {
+    const db = getDb("XMALWARE");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS MALWARESCAN (
+        ScanID INTEGER PRIMARY KEY, ScanGUID TEXT,
+        Target TEXT, TargetType TEXT, Md5 TEXT, Sha1 TEXT, Sha256 TEXT,
+        DocumentID INTEGER, ObservableID INTEGER,
+        Verdict TEXT, Score INTEGER, Positives INTEGER, Total INTEGER,
+        EnginesQueried INTEGER, EnginesLive INTEGER,
+        Summary TEXT, Source TEXT, TenantID INTEGER, CreatedBy TEXT, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS MALWARESCANENGINE (
+        EngineResultID INTEGER PRIMARY KEY, ScanID INTEGER, Engine TEXT,
+        Verdict TEXT, Detection TEXT, Score INTEGER, Positives INTEGER, Total INTEGER,
+        Category TEXT, Link TEXT, Live INTEGER DEFAULT 0, Raw TEXT, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_malscan_tenant ON MALWARESCAN(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_malscan_sha256 ON MALWARESCAN(Sha256);
+      CREATE INDEX IF NOT EXISTS ix_malscan_doc ON MALWARESCAN(DocumentID);
+      CREATE INDEX IF NOT EXISTS ix_malscaneng_scan ON MALWARESCANENGINE(ScanID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Guided compliance-journey wizard (XCOMPLIANCE). A COMPLIANCEJOURNEY is a per-tenant program to
+ * reach compliance with a framework (ISO 27001/42001, SOC 2, NIST CSF/800-53, NIS2, DORA, CRA,
+ * MiCA, FedRAMP, GDPR…); COMPLIANCEJOURNEYSTEP is the materialized phased checklist, each step
+ * deep-linking into the module that does the work (risk, controls, policies, audits, evidence…).
+ * Sits above the existing FRAMEWORK / COMPLIANCEASSESSMENT model (a journey can spawn one).
+ */
+export function ensureComplianceJourneyTables(): void {
+  try {
+    const db = getDb("XCOMPLIANCE");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS COMPLIANCEJOURNEY (
+        JourneyID INTEGER PRIMARY KEY, JourneyGUID TEXT,
+        FrameworkKey TEXT, FrameworkName TEXT, Name TEXT, Scope TEXT, Owner TEXT,
+        Status TEXT, StartedDate TEXT, TargetDate TEXT,
+        ComplianceAssessmentID INTEGER, AuditID INTEGER,
+        TenantID INTEGER, CreatedBy TEXT, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS COMPLIANCEJOURNEYSTEP (
+        StepID INTEGER PRIMARY KEY, JourneyID INTEGER,
+        PhaseOrder INTEGER, Phase TEXT, StepOrder INTEGER,
+        Title TEXT, Description TEXT, Link TEXT,
+        Status TEXT DEFAULT 'todo', Notes TEXT, CompletedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_journey_tenant ON COMPLIANCEJOURNEY(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_journeystep_journey ON COMPLIANCEJOURNEYSTEP(JourneyID);`);
+  } catch { /* best-effort */ }
+}
+
+export function ensurePersonOrgChartColumns(): void {
+  try {
+    const db = getDb("XORCISM");
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='PERSON'").get()) return;
+    const existing = new Set((db.prepare(`PRAGMA table_info("PERSON")`).all() as { name: string }[]).map((c) => c.name));
+    const cols: Record<string, string> = {
+      ManagerPersonID: "INTEGER",      // org-chart parent edge (Entra: manager / AD: manager)
+      JobTitle: "TEXT",                // Entra jobTitle
+      Department: "TEXT",              // Entra department
+      CompanyName: "TEXT",             // Entra companyName
+      OfficeLocation: "TEXT",          // Entra officeLocation
+      UserPrincipalName: "TEXT",       // Entra userPrincipalName (UPN)
+      EmployeeID: "TEXT",              // Entra employeeId
+      EmployeeType: "TEXT",            // Entra employeeType (Employee/Contractor…)
+      EntraObjectID: "TEXT",           // Entra/Azure AD object id (immutable GUID)
+      ObjectGUID: "TEXT",              // on-prem AD objectGUID
+      OnPremisesSamAccountName: "TEXT",// AD sAMAccountName
+      UsageLocation: "TEXT",           // Entra usageLocation (ISO country)
+      MobilePhone: "TEXT", BusinessPhone: "TEXT",
+      AccountEnabled: "INTEGER",       // Entra accountEnabled (1/0)
+    };
+    for (const [n, t] of Object.entries(cols)) {
+      if (!existing.has(n)) db.exec(`ALTER TABLE "PERSON" ADD COLUMN "${n}" ${t}`);
+    }
+    try { db.exec(`CREATE INDEX IF NOT EXISTS ix_person_manager ON "PERSON"("ManagerPersonID")`); } catch { /* best-effort */ }
+    try { db.exec(`CREATE INDEX IF NOT EXISTS ix_person_entra ON "PERSON"("EntraObjectID")`); } catch { /* best-effort */ }
+  } catch { /* PERSON absent */ }
+}
+
+export function ensureDocumentSensitivity(): void {
+  for (const dbName of ["XORCISM", "XCOMPLIANCE"]) {
+    try {
+      const db = getDb(dbName);
+      if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='DOCUMENT'").get()) continue;
+      const existing = new Set((db.prepare(`PRAGMA table_info("DOCUMENT")`).all() as { name: string }[]).map((c) => c.name));
+      for (const [n, t] of Object.entries({ Classification: "TEXT", TLP: "TEXT" })) {
+        if (!existing.has(n)) db.exec(`ALTER TABLE "DOCUMENT" ADD COLUMN "${n}" ${t}`);
+      }
+    } catch { /* DOCUMENT absent on this deployment */ }
   }
 }
 
@@ -5632,6 +5791,24 @@ function ensureNotificationSchema(db: Database.Database): void {
     if (!have.has(col)) db.exec(`ALTER TABLE NOTIFICATION ADD COLUMN ${col} ${type}`);
   }
   db.exec("CREATE INDEX IF NOT EXISTS ix_notif_user ON NOTIFICATION(UserID, IsRead)");
+}
+
+/**
+ * Per-user rules controlling which events auto-create notifications (managed from the user
+ * Settings panel → see server/notifrules.ts for the event catalogue + dispatch engine).
+ * One row per (UserID, EventKey): Enabled toggle + a minimum severity threshold (MinLevel).
+ * Absence of a row means "use the event's catalogue default".
+ */
+export function ensureNotificationRuleTable(): void {
+  try {
+    const db = getDb("XORCISM");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS NOTIFICATIONRULE (
+        RuleID INTEGER PRIMARY KEY, RuleGUID TEXT, UserID INTEGER, EventKey TEXT,
+        Enabled INTEGER DEFAULT 1, MinLevel TEXT DEFAULT 'info',
+        CreatedDate TEXT, UpdatedDate TEXT, TenantID INTEGER);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_notifrule_user_event ON NOTIFICATIONRULE(UserID, EventKey);`);
+  } catch { /* best-effort */ }
 }
 
 // ── User notifications ─────────────────────────────────────────────────

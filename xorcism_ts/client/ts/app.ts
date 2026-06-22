@@ -2393,16 +2393,27 @@ FK_COLUMNS["AUDITFINDING.RemediationOwnerPersonID"] = { db: "XORCISM", table: "P
 
 // ── Policy & document management metadata (ISO 42001 / 27001 / NIST AI RMF …) ──
 const DOC_LANGUAGES = ["en", "fr", "de", "es", "it", "nl", "pt", "ar"];
-const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "EU AI Act", "SOC 2", "GDPR"];
+const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27031:2011", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "NIST SP 800-53", "Secure Controls Framework (SCF)", "CSA CCM v4", "EU AI Act", "DORA (EU 2022/2554)", "NIS2", "SOC 2", "GDPR"];
 const DOC_CLASSIFICATION = ["Public", "Internal", "Confidential", "Restricted"];
 const DOC_CATEGORIES = ["AI Management System", "Information Security", "Privacy", "Data Governance", "Risk Management", "Operations", "Human Resources"];
 const DOC_TYPES = ["Policy", "Procedure", "Standard", "Guideline", "Record", "Report", "Evidence", "Form", "Plan"];
+// Data-sensitivity labels + TLP 2.0 sharing markers (colour-coded badges in the grid).
+const DOC_CLASSIFICATION_COLORS: Record<string, string> = {
+  Public: "#34d399", Internal: "#60a5fa", Confidential: "#fbbf24", Restricted: "#f87171",
+};
+const DOC_TLP = ["TLP:CLEAR", "TLP:GREEN", "TLP:AMBER", "TLP:AMBER+STRICT", "TLP:RED"];
+const DOC_TLP_COLORS: Record<string, string> = {
+  "TLP:CLEAR": "#94a3b8", "TLP:GREEN": "#34d399", "TLP:AMBER": "#fbbf24", "TLP:AMBER+STRICT": "#fb923c", "TLP:RED": "#f87171",
+};
 for (const t of ["POLICY", "DOCUMENT"]) {
   STATIC_DATALIST_COLUMNS[`${t}.Category`] = DOC_CATEGORIES;
   STATIC_DATALIST_COLUMNS[`${t}.Framework`] = DOC_FRAMEWORKS;
   STATIC_DATALIST_COLUMNS[`${t}.Language`] = DOC_LANGUAGES;
   STATIC_DATALIST_DEFAULTS[`${t}.Language`] = "en";
   STATIC_DATALIST_COLUMNS[`${t}.Classification`] = DOC_CLASSIFICATION;
+  GRID_VALUE_COLORS[`${t}.Classification`] = DOC_CLASSIFICATION_COLORS;
+  STATIC_DATALIST_COLUMNS[`${t}.TLP`] = DOC_TLP;
+  GRID_VALUE_COLORS[`${t}.TLP`] = DOC_TLP_COLORS;
 }
 STATIC_DATALIST_COLUMNS["DOCUMENT.Status"] = GRC_POLICY_STATUS;
 STATIC_DATALIST_DEFAULTS["DOCUMENT.Status"] = "Draft";
@@ -2410,6 +2421,9 @@ GRID_VALUE_COLORS["DOCUMENT.Status"] = GRC_POLICY_COLORS;
 STATIC_DATALIST_COLUMNS["DOCUMENT.DocumentType"] = DOC_TYPES;
 FK_COLUMNS["DOCUMENT.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["DOCUMENT.RelatedPolicyID"] = { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", distinct: true };
+// PERSON org-chart / directory fields (Entra ID / AD aligned) — see /org-chart.
+FK_COLUMNS["PERSON.ManagerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
+STATIC_DATALIST_COLUMNS["PERSON.EmployeeType"] = ["Employee", "Contractor", "Vendor", "Intern", "Service Account", "Guest"];
 
 // ── Defender XDR-aligned incident & alert metadata (XINCIDENT.ALERT / INCIDENT) ──
 const DEFENDER_SEVERITY = ["High", "Medium", "Low", "Informational"];
@@ -4025,6 +4039,90 @@ function appendExploitDbSearchField(body: HTMLElement, prefix: string): void {
   const cve = currentCve(); if (cve) { input.value = cve; void run(); }
 }
 
+// ── Multi-engine malware / IOC scan (XMALWARE) ────────────────────────────────
+// Injected into the OBSERVABLE form (scan the indicator value) and the DOCUMENT form
+// (scan the stored file by its content hash). Renders per-engine verdicts inline and links
+// to the full /malware-scan page. mode: "observable" | "documentFile" | "manual".
+function appendMalwareScanField(body: HTMLElement, prefix: string, mode: "observable" | "documentFile" | "manual"): void {
+  const div = document.createElement("div");
+  div.style.cssText = "margin-bottom:14px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)";
+  const label = document.createElement("label");
+  label.textContent = "🦠 Malware / IOC scan (multi-engine)";
+  label.style.cssText = "display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px";
+  const rowWrap = document.createElement("div"); rowWrap.style.cssText = "display:flex;gap:6px;flex-wrap:wrap";
+  const input = document.createElement("input");
+  input.id = `${prefix}mal_q`; input.autocomplete = "off"; input.placeholder = "hash / URL / domain / IP";
+  input.style.cssText = FIELD_INPUT_CSS + ";flex:1;min-width:200px";
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "btn btn-ghost btn-sm"; btn.textContent = "Scan"; btn.style.flex = "0 0 auto";
+  const docBtn = document.createElement("button");
+  docBtn.type = "button"; docBtn.className = "btn btn-ghost btn-sm"; docBtn.textContent = "Scan document file"; docBtn.style.flex = "0 0 auto";
+  const openBtn = document.createElement("button");
+  openBtn.type = "button"; openBtn.className = "btn btn-ghost btn-sm"; openBtn.textContent = "Open page ↗"; openBtn.style.flex = "0 0 auto";
+  const results = document.createElement("div"); results.style.cssText = "margin-top:6px;max-height:240px;overflow:auto;display:none";
+  const status = document.createElement("div"); status.style.cssText = "font-size:11px;color:var(--text-dim);margin-top:4px";
+
+  function field(col: string): string { return (document.getElementById(`${prefix}${col}`) as HTMLInputElement | HTMLTextAreaElement | null)?.value?.trim() || ""; }
+
+  function render(d: { verdict: string; score: number; positives: number; total: number; summary: string; engines: { engine: string; verdict: string; detection?: string; link?: string; live: boolean }[] }): void {
+    const bad = d.verdict === "malicious" || d.verdict === "suspicious";
+    status.style.color = bad ? "var(--danger)" : "var(--text-dim)";
+    status.textContent = `${bad ? "⚠️ " : ""}${d.verdict.toUpperCase()} — ${d.summary}`;
+    results.innerHTML = "";
+    for (const e of d.engines) {
+      const item = document.createElement("div");
+      item.style.cssText = "display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px";
+      const meta = document.createElement("div"); meta.style.cssText = "min-width:0;flex:1";
+      meta.innerHTML = `<span style="font-size:12px;color:var(--text)">${e.engine}</span> ` +
+        `<span style="font-size:10px;color:${e.verdict === "malicious" ? "var(--danger)" : e.verdict === "suspicious" ? "var(--warning,#fbbf24)" : "var(--text-dim)"}">${e.verdict}</span>` +
+        (e.detection ? ` <span style="font-size:10px;color:var(--text-dim)">${e.detection}</span>` : "") +
+        (e.live ? "" : ` <span style="font-size:9px;color:var(--text-dim)">(${e.verdict === "unconfigured" ? "no key" : "manual"})</span>`);
+      item.appendChild(meta);
+      if (e.link) { const a = document.createElement("a"); a.href = e.link; a.target = "_blank"; a.rel = "noopener noreferrer"; a.className = "btn btn-ghost btn-sm"; a.textContent = "pivot ↗"; item.appendChild(a); }
+      results.appendChild(item);
+    }
+    results.style.display = "";
+  }
+
+  async function postJson(url: string, bodyObj: unknown): Promise<any> {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyObj) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  }
+
+  async function runTarget(): Promise<void> {
+    const target = input.value.trim();
+    if (!target) { status.style.color = "var(--text-dim)"; status.textContent = "Enter a hash, URL, domain or IP."; return; }
+    btn.disabled = true; results.style.display = "none"; status.style.color = "var(--text-dim)"; status.textContent = "Scanning…";
+    try { render(await postJson("/api/malware-scan/run", { target })); }
+    catch (e) { status.style.color = "var(--danger)"; status.textContent = (e as Error).message; }
+    finally { btn.disabled = false; }
+  }
+  async function runDoc(): Promise<void> {
+    const id = field("DocumentID");
+    if (!id) { status.style.color = "var(--text-dim)"; status.textContent = "Save the document first (no DocumentID yet)."; return; }
+    docBtn.disabled = true; results.style.display = "none"; status.style.color = "var(--text-dim)"; status.textContent = "Hashing & scanning the stored file…";
+    try { render(await postJson(`/api/malware-scan/document/${encodeURIComponent(id)}`, {})); }
+    catch (e) { status.style.color = "var(--danger)"; status.textContent = (e as Error).message; }
+    finally { docBtn.disabled = false; }
+  }
+
+  btn.onclick = () => void runTarget();
+  docBtn.onclick = () => void runDoc();
+  openBtn.onclick = () => window.open("/malware-scan", "_blank", "noopener");
+  input.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); void runTarget(); } };
+
+  rowWrap.appendChild(input); rowWrap.appendChild(btn);
+  if (mode === "documentFile") rowWrap.appendChild(docBtn);
+  rowWrap.appendChild(openBtn);
+  div.appendChild(label); div.appendChild(rowWrap); div.appendChild(results); div.appendChild(status);
+  body.appendChild(div);
+
+  // Prefill the IOC input from the OBSERVABLE value (Value column).
+  if (mode === "observable") { const v = field("Value"); if (v) input.value = v; }
+}
+
 // Toolbar button: imports a VULNERABILITY from CIRCL (KEV) by id.
 async function importFromCircl(): Promise<void> {
   const id = (prompt(t("circl.promptId")) || "").trim();
@@ -5318,6 +5416,8 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     appendCirclSearchField(body, "ef_");
     appendExploitDbSearchField(body, "ef_");
   }
+  if (currentTable === "OBSERVABLE") appendMalwareScanField(body, "ef_", "observable");
+  else if (currentTable === "DOCUMENT") appendMalwareScanField(body, "ef_", currentDb === "XORCISM" ? "documentFile" : "manual");
 
   reorderSchema(currentTable, schema).forEach((col) => {
     if (isHiddenFormColumn(col.name)) return; // handled server-side (session)
@@ -7083,7 +7183,7 @@ async function appendOvalDefinitionXml(body: HTMLElement, pattern: string): Prom
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:4px";
   const label = document.createElement("label");
-  label.textContent = "OVAL definition XML (fichier OVALRepo importé)";
+  label.textContent = "OVAL definition XML (stored in OVALDEFINITION.BLOB)";
   label.style.cssText = "font-size:12px;color:var(--text-muted)";
   header.appendChild(label);
   const copy = document.createElement("button");
@@ -8552,6 +8652,8 @@ async function openInsertModal(): Promise<void> {
     appendCirclSearchField(body, "f_");
     appendExploitDbSearchField(body, "f_");
   }
+  if (currentTable === "OBSERVABLE") appendMalwareScanField(body, "f_", "observable");
+  else if (currentTable === "DOCUMENT") appendMalwareScanField(body, "f_", currentDb === "XORCISM" ? "documentFile" : "manual");
 
   reorderSchema(currentTable, schema).forEach((col) => {
     if (isHiddenFormColumn(col.name)) return; // handled server-side (session)

@@ -21,6 +21,7 @@ import { zh } from "./locales/zh";
 import { ja } from "./locales/ja";
 import { ar } from "./locales/ar";
 import { ru } from "./locales/ru";
+import { he } from "./locales/he";
 
 const fr: Dict = {
   // Landing (home page by domain)
@@ -42,8 +43,18 @@ const fr: Dict = {
   "landing.approach.platform": "Plateforme & intégration",
   "landing.approach.platform.d": "La tuyauterie — connecteurs, agents distants et API programmatique.",
   "landing.assets": "Gestion des actifs",
+  "landing.cloudsec": "Sécurité cloud",
+  "landing.cloudsec.d": "Gestion de la sécurité cloud (CSPM) : actifs cloud (AWS/Azure/GCP/SaaS), exposition publique, chiffrement et vulnérabilités KEV, référence CSA CCM.",
+  "landing.awareness": "Sensibilisation",
+  "landing.awareness.d": "Gestion du risque humain façon KnowBe4 : catalogue de formations avec inscription/achèvement par personne, campagnes de phishing, Phish-Prone %, récidivistes et score de risque humain.",
+  "landing.malscan": "Analyse de malware",
+  "landing.malscan.d": "Analyse multi-moteurs d'un hash, d'une URL, d'un domaine ou d'une IP (VirusTotal, Kaspersky OpenTIP, ANY.RUN, Avira, FortiGuard, Jotti) : verdict normalisé stocké dans XMALWARE, scan des documents et suivi des IOC malveillants en observables CTI.",
+  "landing.journeys": "Parcours de conformité",
+  "landing.journeys.d": "Assistant de parcours guidés vers la conformité (ISO 27001 & 42001, SOC 2, NIST CSF/800-53, NIS2, DORA, CRA, MiCA, FedRAMP, GDPR) : choisissez un référentiel, l'assistant déroule la check-list par phases où chaque étape pointe vers le module qui réalise le travail, avec suivi de progression jusqu'à la certification.",
   "landing.assets.d": "Inventaire des actifs et worklist de gouvernance : propriétaires, criticité, exposition Internet, sauvegarde, contrôles, BIA et vulnérabilités KEV/critiques — avec score de risque.",
   "landing.identities": "Identités & IAM",
+  "landing.orgchart": "Organigramme",
+  "landing.orgchart.d": "Organigramme depuis PERSON.ManagerPersonID, attributs d'annuaire alignés Entra ID / Active Directory (poste, département, UPN, statut de compte).",
   "landing.identities.d": "Inventaire des identités humaines et non-humaines (agents IA, API, conteneurs, comptes de service, secrets, certificats, machines) — propriétaires, privilèges, MFA, rotation et risques.",
   "landing.bia": "Analyse d'impact métier",
   "landing.bia.d": "Criticité métier des actifs (BIA) : dépendances, valeur, SLA — base du calcul de risque.",
@@ -108,6 +119,8 @@ const fr: Dict = {
   "landing.hunting": "Chasse aux menaces",
   "landing.hunting.d": "Chasse aux menaces : hunts, IOCs et techniques ATT&CK, avec un assistant IA local qui propose hypothèses, sources de logs et détections.",
   "landing.threatmodel": "Modélisation des menaces",
+  "landing.attacktree": "Arbres d'attaque",
+  "landing.attacktree.d": "Arbres d'attaque (Schneier) : objectif attaquant décomposé en sous-buts AND/OR, remontée de faisabilité et chemin le plus facile.",
   "landing.threatmodel.d": "Modélisation des menaces : STRIDE, périmètre, menaces et contrôles d'atténuation.",
   "landing.incident": "Gestion des incidents",
   "landing.incident.d": "File d'incidents + worklist de gouvernance : sévérité, propriétaire, âge, actifs concernés, dépassement SLA/RTO, compromission — avec score de priorité et MTTR.",
@@ -116,6 +129,8 @@ const fr: Dict = {
   "landing.xposure": "Xposure",
   "landing.xposure.d": "Gestion de l'exposition : connecteurs (nmap, nuclei, scanners), engagements (ROE) et agents distants.",
   "landing.osint": "OSINT",
+  "landing.osintgraph": "Analyse de liens OSINT",
+  "landing.osintgraph.d": "Analyse de liens façon Palantir : graphe d'entités (CVE, acteurs, malware, ATT&CK, IOC) extraites du flux OSINT/CTI, co-occurrence et pivots.",
   "landing.osint.d": "Outils de renseignement en sources ouvertes : le catalogue d'outils filtré sur la catégorie OSINT (recherche, tri, ⭐ favoris).",
   "landing.toolcat": "Catalogue d'outils",
   "landing.toolcat.d": "Parcourez le catalogue d'outils de sécurité (recherche, catégories, tri) et mettez en favori (⭐ comme sur GitHub) ceux dont votre équipe se sert ; triez par les plus étoilés.",
@@ -142,9 +157,18 @@ const fr: Dict = {
   "settings.security": "Sécurité",
   "settings.pin": "Code PIN",
   "settings.passkeys": "Clés d'accès",
+  "settings.notifications": "Notifications",
+  "settings.notifEvents": "Événements",
+  "settings.manageRules": "Gérer les règles",
+  "settings.notifRulesTitle": "Notifications automatiques",
+  "settings.notifRulesHint": "Choisissez les événements qui créent automatiquement une notification, et le seuil de gravité.",
+  "settings.notifTest": "Tester",
+  "settings.notifMuted": "désactivé",
   "conn.title": "Connecteurs (outils)",
   "conn.available": "Connecteurs disponibles",
   "conn.search": "Rechercher un connecteur…",
+  "conn.loading": "Chargement des connecteurs…",
+  "conn.more": "de plus — affinez la recherche pour tout voir",
   "conn.noMatch": "Aucun connecteur correspondant.",
   "conn.allCats": "Toutes catégories",
   "conn.allTypes": "Tous les types",
@@ -943,8 +967,18 @@ const en: Dict = {
   "landing.approach.platform": "Platform & Integration",
   "landing.approach.platform.d": "The plumbing — connectors, remote agents and the programmatic API.",
   "landing.assets": "Asset Management",
+  "landing.cloudsec": "Cloud Security",
+  "landing.cloudsec.d": "Cloud security posture (CSPM): cloud assets (AWS/Azure/GCP/SaaS), public exposure, encryption and KEV vulnerabilities, against a CSA CCM reference.",
+  "landing.awareness": "Security Awareness",
+  "landing.awareness.d": "KnowBe4-style human-risk management: a training catalogue with per-person enrollment and completion, phishing simulation campaigns, Phish-Prone %, repeat clickers and a per-user human-risk score.",
+  "landing.malscan": "Malware Scan",
+  "landing.malscan.d": "Multi-engine reputation of a hash, URL, domain or IP (VirusTotal, Kaspersky OpenTIP, ANY.RUN, Avira, FortiGuard, Jotti): a normalized verdict stored in XMALWARE, document scanning, and tracking of malicious IOCs as CTI observables.",
+  "landing.journeys": "Compliance Journeys",
+  "landing.journeys.d": "A guided-journey wizard to reach compliance (ISO 27001 & 42001, SOC 2, NIST CSF/800-53, NIS2, DORA, CRA, MiCA, FedRAMP, GDPR): pick a framework and the wizard lays out the phased checklist where every step deep-links into the module that does the work (risk, controls, policies, audits, evidence), tracked to certification.",
   "landing.assets.d": "Asset inventory + governance worklist: owners, criticality, Internet exposure, backup, controls, BIA and KEV/critical vulnerabilities — with a risk score.",
   "landing.identities": "Identities & IAM",
+  "landing.orgchart": "Org Chart",
+  "landing.orgchart.d": "Org chart built from PERSON.ManagerPersonID, with directory attributes aligned to Microsoft Entra ID / Active Directory (job title, department, UPN, account status).",
   "landing.identities.d": "Inventory of human and non-human identities (AI agents, APIs, containers, service accounts, secrets, certificates, devices) — owners, privilege, MFA, rotation and risk.",
   "landing.bia": "Business Impact Analysis",
   "landing.bia.d": "Business criticality of assets (BIA): dependencies, value, SLAs — the basis of the risk score.",
@@ -1009,6 +1043,8 @@ const en: Dict = {
   "landing.hunting": "Threat Hunting",
   "landing.hunting.d": "Threat hunting: hunts, IOCs and ATT&CK techniques, with a local AI assistant proposing hypotheses, log sources and detections.",
   "landing.threatmodel": "Threat Modeling",
+  "landing.attacktree": "Attack Trees",
+  "landing.attacktree.d": "Schneier-style attack trees: an attacker goal decomposed into AND/OR sub-goals, with feasibility rollup and the easiest attack path.",
   "landing.threatmodel.d": "Threat modeling: STRIDE, scope, threats and mitigating controls.",
   "landing.incident": "Incident Management",
   "landing.incident.d": "Incident queue + governance worklist: severity, owner, age, scoped assets, SLA/RTO breach, compromise — with a priority score and MTTR.",
@@ -1017,6 +1053,8 @@ const en: Dict = {
   "landing.xposure": "Xposure",
   "landing.xposure.d": "Exposure management: connectors (nmap, nuclei, scanners), engagements (ROE) and remote agents.",
   "landing.osint": "OSINT",
+  "landing.osintgraph": "OSINT Link Analysis",
+  "landing.osintgraph.d": "Palantir-style link analysis: an entity graph (CVEs, actors, malware, ATT&CK, IOCs) extracted from the OSINT/CTI feed, with co-occurrence and pivots.",
   "landing.osint.d": "Open-source intelligence tools: the tool catalogue filtered on the OSINT category (search, sort, ⭐ favorites).",
   "landing.toolcat": "Tool Catalogue",
   "landing.toolcat.d": "Browse the security-tool catalogue (search, categories, sort) and ⭐ star — GitHub-style — the tools your team relies on; sort by most-starred to surface what the community trusts.",
@@ -1042,9 +1080,18 @@ const en: Dict = {
   "settings.security": "Security",
   "settings.pin": "PIN code",
   "settings.passkeys": "Passkeys",
+  "settings.notifications": "Notifications",
+  "settings.notifEvents": "Events",
+  "settings.manageRules": "Manage rules",
+  "settings.notifRulesTitle": "Automatic notifications",
+  "settings.notifRulesHint": "Choose which events automatically create a notification, and the minimum severity.",
+  "settings.notifTest": "Test",
+  "settings.notifMuted": "muted",
   "conn.title": "Connectors (tools)",
   "conn.available": "Available connectors",
   "conn.search": "Search a connector…",
+  "conn.loading": "Loading connectors…",
+  "conn.more": "more — refine your search to see all",
   "conn.noMatch": "No matching connector.",
   "conn.allCats": "All categories",
   "conn.allTypes": "All types",
@@ -1810,7 +1857,7 @@ const en: Dict = {
   "common.language": "Language",
 };
 
-const DICTS: Record<string, Dict> = { fr, en, de, it, es, pt, zh, ja, ar, ru };
+const DICTS: Record<string, Dict> = { fr, en, de, it, es, pt, zh, ja, ar, ru, he };
 export const SUPPORTED: { code: string; label: string }[] = [
   { code: "fr", label: "FR" },
   { code: "en", label: "EN" },
@@ -1821,11 +1868,12 @@ export const SUPPORTED: { code: string; label: string }[] = [
   { code: "zh", label: "中文" },
   { code: "ja", label: "日本語" },
   { code: "ar", label: "العربية" },
+  { code: "he", label: "עברית" },
   { code: "ru", label: "Рус" },
 ];
 
 // Right-to-left writing languages (document direction forced via dir="rtl").
-const RTL_LANGS = new Set<string>(["ar"]);
+const RTL_LANGS = new Set<string>(["ar", "he"]);
 
 const STORAGE_KEY = "xorcism_lang";
 

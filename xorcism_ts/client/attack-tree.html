@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Attack Trees</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .at-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .at-wrap h1{font-size:20px;margin:0 0 2px}
+  .at-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1010px}
+  .at-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .at-card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .at-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .at-card .val{font-size:26px;font-weight:700;margin-top:3px}.at-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .at-layout{display:grid;grid-template-columns:280px 1fr;gap:16px}
+  .at-list{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:8px}
+  .at-li{padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+  .at-li:hover{background:#0f1117}.at-li.sel{background:#0f1117;border-color:#a78bfa}
+  .at-li .nm{font-weight:600;color:#e2e8f0;font-size:13px}.at-li .meta{font-size:11px;color:#64748b}
+  .at-detail{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:16px;min-height:300px}
+  .muted{color:#64748b}
+  .tree,.tree ul{list-style:none;margin:0;padding:0}
+  .tree ul{margin-left:18px;border-left:1px solid #2d3250;padding-left:14px}
+  .tree li{margin:5px 0}
+  .atn{display:inline-flex;align-items:center;gap:8px;background:#0f1117;border:1px solid #2d3250;border-radius:9px;padding:6px 10px}
+  .atn.mit{opacity:.6;border-style:dashed}
+  .gate{font-size:9px;font-weight:700;border-radius:4px;padding:1px 6px;color:#0b1220}
+  .gate.AND{background:#fb923c}.gate.OR{background:#60a5fa}
+  .feas{font-size:9px;font-weight:700;border-radius:4px;padding:1px 6px}
+  .f-High{background:#7f1d1d;color:#fecaca}.f-Medium{background:#78350f;color:#fcd34d}.f-Low{background:#14532d;color:#bbf7d0}.f-None{background:#1e2133;color:#94a3b8}
+  .atn .nlbl{font-size:13px;color:#e2e8f0}
+  .nbtn{background:#13162a;border:1px solid #2d3250;color:#94a3b8;border-radius:5px;font-size:11px;padding:1px 6px;cursor:pointer}.nbtn:hover{border-color:#a78bfa;color:#e2e8f0}
+  .path{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 11px;margin-top:10px;font-size:12px}
+  .path b{color:#f87171}
+  .btn-new{background:#a78bfa;color:#1a0b2e;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer}.btn-new:hover{background:#c4b5fd}
+  .at-modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;padding:40px 16px}
+  .at-modal-bg.open{display:flex}
+  .at-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:520px;max-width:100%;padding:22px 24px}
+  .at-modal h3{margin:0 0 12px;font-size:16px;color:#e2e8f0}.at-modal .fld{margin-bottom:11px}
+  .at-modal label{display:block;font-size:12px;color:#94a3b8;margin-bottom:4px}
+  .at-modal input,.at-modal select,.at-modal textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 11px;color:#e2e8f0;font-size:13px;font-family:inherit}
+  .at-modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.at-err{color:#f87171;font-size:12px;flex:1;min-height:14px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/threat-model">&#129302; Threat models</a>
+  <span class="spacer"></span>
+  <span class="title">&#127795; Attack Trees</span>
+</div>
+<div class="at-wrap">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Attack Trees</h1>
+    <button class="btn-new" id="at-new">+ New attack tree</button>
+  </div>
+  <div class="at-sub">Decompose an attacker goal into <b>AND/OR</b> sub-goals and leaf attacks (Schneier-style attack trees).
+    XORCISM rolls up each leaf's feasibility — <b>OR</b> takes the easiest child, <b>AND</b> the hardest required child —
+    to a <b>root feasibility</b> and the single <b>easiest attack path</b>. Mark a node mitigated to see the path collapse.
+    Trees live in XORCISM.ATTACKTREE and can be tied to a THREATMODEL.</div>
+  <div id="at-body"><div class="muted" style="padding:24px;text-align:center">Loading attack trees…</div></div>
+</div>
+
+<div class="at-modal-bg" id="at-tree-modal">
+  <div class="at-modal">
+    <h3>New attack tree</h3>
+    <div class="fld"><label>Name *</label><input id="atm-name" placeholder="Compromise the payments service"></div>
+    <div class="fld"><label>Attacker goal (root)</label><input id="atm-goal" placeholder="Exfiltrate cardholder data"></div>
+    <div class="fld"><label>Description</label><textarea id="atm-desc" rows="2"></textarea></div>
+    <div class="at-modal-foot"><span class="at-err" id="atm-err"></span>
+      <button class="btn btn-ghost btn-sm" id="atm-cancel">Cancel</button>
+      <button class="btn-new" id="atm-create">Create</button></div>
+  </div>
+</div>
+<div class="at-modal-bg" id="at-node-modal">
+  <div class="at-modal">
+    <h3 id="atn-title">Add sub-node</h3>
+    <div class="fld"><label>Label *</label><input id="atn-label" placeholder="Phish an admin's credentials"></div>
+    <div class="fld"><label>Type</label>
+      <select id="atn-gate"><option value="">Leaf (a concrete attack)</option><option value="OR">OR gate (any child suffices)</option><option value="AND">AND gate (all children required)</option></select></div>
+    <div class="fld" id="atn-lik-wrap"><label>Leaf feasibility</label>
+      <select id="atn-lik"><option value="High">High</option><option value="Medium" selected>Medium</option><option value="Low">Low</option></select></div>
+    <div class="at-modal-foot"><span class="at-err" id="atn-err"></span>
+      <button class="btn btn-ghost btn-sm" id="atn-cancel">Cancel</button>
+      <button class="btn-new" id="atn-add">Add</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/attack-tree.js"></script>
+</body>
+</html>

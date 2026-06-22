@@ -57,9 +57,12 @@ export const DEFAULT_PLAYBOOK: PlaybookDef = {
     { id: "web-fingerprint", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "whatweb", targetFrom: "url", label: "HTTP service open → fingerprint (WhatWeb)" },
     { id: "web-nikto", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "nikto", targetFrom: "url", label: "Web server → Nikto vulnerability scan" },
     { id: "web-nuclei", when: { service: "https?|http-proxy|ssl/http", ports: [80, 443, 8080, 8443] }, run: "nuclei", targetFrom: "url", label: "Web server → Nuclei templates" },
+    { id: "web-artemis", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "artemis", targetFrom: "url", label: "Web server → Artemis modular scan (CERT-PL: exposed VCS, outdated CMS, misconfig)" },
     { id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" },
     { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" },
     { id: "tls", when: { ports: [443, 8443] }, run: "sslyze", targetFrom: "host", label: "TLS endpoint → sslyze (cert/cipher audit)" },
+    { id: "openvas", when: { service: ".*" }, run: "openvas", targetFrom: "host", label: "Open service found → OpenVAS / Greenbone host vulnerability scan (NVT/CVE)" },
+    { id: "ai-deep-analysis", when: { hasVuln: true }, run: "cybersentinel-ai", targetFrom: "host", label: "Vulnerability found → CyberSentinel AI deep analysis (33-tool orchestration + AI triage + MITRE ATT&CK mapping)" },
   ],
 };
 
@@ -220,8 +223,8 @@ export function ensureChainTables(): void {
 function seedBuiltinPlaybooks(db: ReturnType<typeof getDb>): void {
   const have = new Set((db.prepare("SELECT Name FROM XCHAINPLAYBOOK WHERE Builtin=1").all() as { Name: string }[]).map((r) => r.Name));
   const builtins: { name: string; description: string; def: PlaybookDef }[] = [
-    { name: "Full external pentest", description: "Port/service discovery (nmap) → web fingerprint & scanners on HTTP(S) → WPScan on WordPress → TLS audit. Findings roll up to the engagement.", def: DEFAULT_PLAYBOOK },
-    { name: "Web app assessment", description: "Fingerprint (WhatWeb) → Nikto + Nuclei → WPScan + WPProbe when WordPress is detected. Seed a URL.", def: { seed: ["whatweb", "nikto", "nuclei"], maxDepth: 3, maxSteps: 40, rules: [{ id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" }, { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" }] } },
+    { name: "Full external pentest", description: "Port/service discovery (nmap) → web fingerprint & scanners on HTTP(S) (Nikto, Nuclei, Artemis) → WPScan on WordPress → TLS audit → OpenVAS/Greenbone host vulnerability scan → CyberSentinel AI deep analysis when a vulnerability is found. Findings roll up to the engagement.", def: DEFAULT_PLAYBOOK },
+    { name: "Web app assessment", description: "Fingerprint (WhatWeb) → Nikto + Nuclei + Artemis (CERT-PL) → WPScan + WPProbe when WordPress is detected → CyberSentinel AI deep analysis on any web vulnerability. Seed a URL.", def: { seed: ["whatweb", "nikto", "nuclei", "artemis"], maxDepth: 3, maxSteps: 40, rules: [{ id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" }, { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" }, { id: "ai-web", when: { hasVuln: true }, run: "cybersentinel-ai", targetFrom: "url", label: "Web vulnerability → CyberSentinel AI deep analysis (AI triage + MITRE ATT&CK mapping)" }] } },
     { name: "Web recon (subdomains)", description: "Subdomain enumeration (subfinder) → probe each host with httpx → fingerprint & scan the live web hosts (WhatWeb, Nikto) → WPScan on WordPress. Seed a domain.", def: {
       seed: ["subfinder"], maxDepth: 5, maxSteps: 60, rules: [
         { id: "probe", when: { hasHosts: true }, run: "httpx", targetFrom: "host-each", label: "Subdomains found → probe with httpx" },
@@ -234,6 +237,7 @@ function seedBuiltinPlaybooks(db: ReturnType<typeof getDb>): void {
       seed: ["nmap"], maxDepth: 4, maxSteps: 50, rules: [
         { id: "web-fingerprint", when: { service: "https?|http-proxy|ssl/http", ports: [80, 443, 8080, 8443] }, run: "whatweb", targetFrom: "url", label: "HTTP service → fingerprint (WhatWeb)" },
         { id: "web-nikto", when: { service: "https?|http-proxy|ssl/http", ports: [80, 443, 8080, 8443] }, run: "nikto", targetFrom: "url", label: "Web server → Nikto scan" },
+        { id: "openvas", when: { service: ".*" }, run: "openvas", targetFrom: "host", label: "Open services → OpenVAS / Greenbone vulnerability scan (NVT/CVE)" },
         { id: "msf-aux", when: { service: ".*" }, run: "metasploit-scan", targetFrom: "host", label: "Open services → Metasploit auxiliary scanners" },
         { id: "msf-exploit", when: { hasVuln: true }, run: "metasploit", targetFrom: "host", label: "Vulnerability found → attempt exploitation (Metasploit)" },
       ] } },
@@ -259,7 +263,14 @@ function seedBuiltinPlaybooks(db: ReturnType<typeof getDb>): void {
       ] } },
   ];
   for (const b of builtins) {
-    if (have.has(b.name)) continue;
+    if (have.has(b.name)) {
+      // Keep code authoritative for built-ins: refresh the shipped definition/description
+      // so newly-added steps (e.g. the CyberSentinel AI deep-analysis rule) propagate on boot.
+      // Users customise by cloning to a non-builtin playbook, so this never clobbers their work.
+      db.prepare("UPDATE XCHAINPLAYBOOK SET Description=?, Definition=? WHERE Name=? AND Builtin=1")
+        .run(b.description, JSON.stringify(b.def), b.name);
+      continue;
+    }
     db.prepare(
       `INSERT INTO XCHAINPLAYBOOK (PlaybookID, PlaybookGUID, Name, Description, Definition, Builtin, CreatedDate)
        VALUES ((SELECT COALESCE(MAX(PlaybookID),0)+1 FROM XCHAINPLAYBOOK), ?, ?, ?, ?, 1, ?)`
