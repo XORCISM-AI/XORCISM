@@ -52,6 +52,15 @@ import cloudSecRouter from "./routes/cloudsec";
 import awarenessRouter from "./routes/awareness";
 import malscanRouter from "./routes/malscan";
 import journeysRouter from "./routes/journeys";
+import socRouter from "./routes/soc";
+import soccmmRouter from "./routes/soccmm";
+import certopsRouter from "./routes/certops";
+import governanceRouter from "./routes/governance";
+import aiexchangeRouter from "./routes/aiexchange";
+import workforceRouter from "./routes/workforce";
+import teamopsRouter from "./routes/teamops";
+import vocRouter from "./routes/voc";
+import netflowRouter from "./routes/netflow";
 import osintGraphRouter from "./routes/osintgraph";
 import policiesRouter from "./routes/policies";
 import configurationRouter from "./routes/configuration";
@@ -93,7 +102,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureComplianceJourneyTables, ensureNotificationRuleTable, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureComplianceJourneyTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -207,6 +216,15 @@ app.use("/api", cloudSecRouter); // Cloud Security: cloud asset inventory + expo
 app.use("/api", awarenessRouter); // Security Awareness: training catalogue + phishing simulations + human-risk
 app.use("/api", malscanRouter); // Malware scan: multi-engine IOC/file reputation (VT/OpenTIP/ANY.RUN/…) → XMALWARE
 app.use("/api", journeysRouter); // Compliance journeys: guided multi-framework wizard (ISO/SOC2/NIST/NIS2/DORA/CRA/MiCA/FedRAMP)
+app.use("/api", socRouter); // SOC Operations: shifts/on-call, MTTD/MTTA/MTTR, escalation procedure, IR playbooks
+app.use("/api", soccmmRouter); // SOC-CMM maturity self-assessment
+app.use("/api", certopsRouter); // CERT/CSIRT operations: forensic cases + chain of custody
+app.use("/api", governanceRouter); // Governance: NIST CSF 2.0 Govern (GV) register
+app.use("/api", aiexchangeRouter); // OWASP AI Exchange agent threat advisor
+app.use("/api", workforceRouter); // NICE + ENISA ECSF workforce roles around PERSON
+app.use("/api", teamopsRouter); // Purple/Red/Blue Team Operations: ATT&CK exercises + capabilities + automations
+app.use("/api", vocRouter); // Vulnerability Operations Center: SLA policy, campaigns, exceptions, remediation KPIs
+app.use("/api", netflowRouter); // NetFlow around ASSET: discovered assets, services, sessions cartography (obserae)
 app.use("/api", osintGraphRouter); // OSINT Link Analysis: entity-link graph over INTELEXCHANGE
 app.use("/api", policiesRouter); // Policy & Document Management: policy lifecycle + document register worklist
 app.use("/api", configurationRouter); // Configuration Management: OVAL secure-config content library + verification worklist
@@ -354,6 +372,33 @@ app.get("/malware-scan", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/compliance-journeys", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "compliance-journeys.html"));
+});
+app.get("/soc", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "soc.html"));
+});
+app.get("/soc-cmm", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "soc-cmm.html"));
+});
+app.get("/cert-ops", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "cert-ops.html"));
+});
+app.get("/governance", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "governance.html"));
+});
+app.get("/ai-threat-advisor", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-threat-advisor.html"));
+});
+app.get("/workforce", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "workforce.html"));
+});
+app.get("/team-ops", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "team-ops.html"));
+});
+app.get("/voc", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "voc.html"));
+});
+app.get("/network-sessions", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "network-sessions.html"));
 });
 app.get("/osint-graph", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "osint-graph.html"));
@@ -517,6 +562,15 @@ ensureAwarenessTables(); // security-awareness training + phishing-simulation sc
 ensureMalwareScanTables(); // multi-engine malware scan store (XMALWARE.MALWARESCAN/MALWARESCANENGINE)
 ensureComplianceJourneyTables(); // guided compliance-journey wizard (XCOMPLIANCE.COMPLIANCEJOURNEY/STEP)
 ensureNotificationRuleTable(); // per-user event→notification rules (XORCISM.NOTIFICATIONRULE)
+ensureSocTables(); // SOC operations: shifts/on-call, escalation policy+log, IR playbooks (XINCIDENT)
+ensureSocCmmTables(); // SOC-CMM maturity self-assessment (XINCIDENT)
+ensureCertOpsTables(); // CERT/CSIRT operations: forensic cases + chain of custody (XINCIDENT)
+ensureGovernanceTables(); // Governance: NIST CSF 2.0 Govern (GV) register (XCOMPLIANCE)
+ensureAiThreatTables(); // OWASP AI Exchange agentic threat catalogue (XTHREAT)
+ensureWorkforceTables(); // NICE + ENISA ECSF workforce role catalogue around PERSON (XORCISM)
+ensureTeamOpsTables(); // Purple/Red/Blue Team Operations: ATT&CK exercises + capabilities (XTHREAT)
+ensureVocTables(); // Vulnerability Operations Center: SLA policy + campaigns + exceptions (XVULNERABILITY)
+ensureNetflowTables(); // NetFlow around ASSET: ASSETSERVICE + NETWORKSESSION (discovery/monitoring, SOC)
 ensureGrcColumns(); // advanced GRC: CRQ/FAIR (risk register), findings workflow, policy lifecycle
 ensureBugBountyTables(); // Bug Bounty program management (XVULNERABILITY): BUGBOUNTY*
 ensureEbiosTables(); // EBIOS Risk Manager (ANSSI) in XCOMPLIANCE: reuses RISKASSESSMENT/RISKSCENARIO + EBIOS* tables

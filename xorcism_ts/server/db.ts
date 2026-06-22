@@ -166,22 +166,26 @@ export function seedTools(): void {
   try {
     const db = getDb("XORCISM");
     if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='TOOL'").get()) return;
-    if ((db.prepare("SELECT COUNT(*) AS c FROM TOOL").get() as { c: number }).c > 0) return; // already populated
     const cols = new Set((db.prepare(`PRAGMA table_info("TOOL")`).all() as { name: string }[]).map((c) => c.name));
     const now = nowTs();
+    // On a fresh install, insert from ToolID 1. On an already-seeded DB, only insert the catalogue
+    // entries whose ToolName is missing (so appending to TOOL_SEED auto-adds new tools), keyed by name.
+    const existing = new Set((db.prepare('SELECT ToolName FROM "TOOL"').all() as { ToolName: string }[]).map((r) => String(r.ToolName)));
+    const toAdd = TOOL_SEED.filter((t) => !existing.has(t.name));
+    if (!toAdd.length) return;
     const insert = db.prepare(
       `INSERT INTO "TOOL" (ToolID, ToolGUID, ToolName, ToolDescription, Category, ToolURL, CreatedDate, ValidFromDate, VocabularyID, isEncrypted)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)`
     );
     const tx = db.transaction((tools: { name: string; description: string; category: string; url: string }[]) => {
-      let id = 1;
+      let id = (db.prepare('SELECT COALESCE(MAX(ToolID),0)+1 AS n FROM "TOOL"').get() as { n: number }).n;
       for (const t of tools) {
         insert.run(id++, randomUUID(), t.name.slice(0, 200), t.description || null,
           cols.has("Category") ? (t.category || null) : null, cols.has("ToolURL") ? (t.url || null) : null, now, now);
       }
     });
-    tx(TOOL_SEED);
-    console.log(`[seed] XORCISM.TOOL ← ${TOOL_SEED.length} tools`);
+    tx(toAdd);
+    console.log(`[seed] XORCISM.TOOL ← +${toAdd.length} tools (${existing.size} existing)`);
   } catch (e) {
     console.warn(`[seed] TOOL: ${(e as Error).message}`);
   }
@@ -5808,6 +5812,211 @@ export function ensureNotificationRuleTable(): void {
         Enabled INTEGER DEFAULT 1, MinLevel TEXT DEFAULT 'info',
         CreatedDate TEXT, UpdatedDate TEXT, TenantID INTEGER);
       CREATE UNIQUE INDEX IF NOT EXISTS ux_notifrule_user_event ON NOTIFICATIONRULE(UserID, EventKey);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * SOC operations schema (XINCIDENT) — analyst rota / on-call (SOCSHIFT), an escalation procedure
+ * (ESCALATIONPOLICY + ordered ESCALATIONTIER with ack/resolve timeouts) and its per-incident log
+ * (INCIDENTESCALATION), and an IR-playbook library (PLAYBOOK + PLAYBOOKSTEP, NIST SP 800-61 phases)
+ * materialized onto an incident as INCIDENTPLAYBOOKSTEP. INCIDENT gains acknowledge_datetime (for
+ * MTTA), EscalationTier, PlaybookID and AssignedPersonID. See server/soc.ts for the cockpit + KPIs.
+ */
+export function ensureSocTables(): void {
+  try {
+    const db = getDb("XINCIDENT");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS SOCSHIFT (
+        ShiftID INTEGER PRIMARY KEY, ShiftGUID TEXT, PersonID INTEGER, PersonName TEXT,
+        Tier TEXT, ShiftDate TEXT, StartTime TEXT, EndTime TEXT, OnCall INTEGER DEFAULT 0,
+        Status TEXT, Notes TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS ESCALATIONPOLICY (
+        PolicyID INTEGER PRIMARY KEY, PolicyGUID TEXT, Name TEXT, Description TEXT,
+        IsDefault INTEGER DEFAULT 0, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS ESCALATIONTIER (
+        TierID INTEGER PRIMARY KEY, PolicyID INTEGER, Level INTEGER, Name TEXT, TargetRole TEXT,
+        AckMinutes INTEGER, ResolveMinutes INTEGER, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS INCIDENTESCALATION (
+        EscalationID INTEGER PRIMARY KEY, IncidentID INTEGER, FromTier TEXT, ToTier TEXT,
+        Reason TEXT, ByPerson TEXT, ToPerson TEXT, EscalatedAt TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS PLAYBOOK (
+        PlaybookID INTEGER PRIMARY KEY, PlaybookGUID TEXT, Name TEXT, Category TEXT,
+        Description TEXT, Severity TEXT, StepCount INTEGER, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS PLAYBOOKSTEP (
+        StepID INTEGER PRIMARY KEY, PlaybookID INTEGER, Phase TEXT, StepOrder INTEGER,
+        Title TEXT, Description TEXT, Role TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS INCIDENTPLAYBOOKSTEP (
+        RunStepID INTEGER PRIMARY KEY, IncidentID INTEGER, PlaybookID INTEGER, Phase TEXT,
+        StepOrder INTEGER, Title TEXT, Description TEXT, Status TEXT DEFAULT 'todo',
+        CompletedBy TEXT, CompletedAt TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_socshift_tenant ON SOCSHIFT(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_socshift_person ON SOCSHIFT(PersonID);
+      CREATE INDEX IF NOT EXISTS ix_esctier_policy ON ESCALATIONTIER(PolicyID);
+      CREATE INDEX IF NOT EXISTS ix_incesc_incident ON INCIDENTESCALATION(IncidentID);
+      CREATE INDEX IF NOT EXISTS ix_pbstep_playbook ON PLAYBOOKSTEP(PlaybookID);
+      CREATE INDEX IF NOT EXISTS ix_incpbstep_incident ON INCIDENTPLAYBOOKSTEP(IncidentID);`);
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='INCIDENT'").get()) {
+      const have = new Set((db.prepare(`PRAGMA table_info("INCIDENT")`).all() as { name: string }[]).map((c) => c.name));
+      for (const [n, t] of [["acknowledge_datetime", "TEXT"], ["EscalationTier", "TEXT"], ["PlaybookID", "INTEGER"], ["AssignedPersonID", "INTEGER"]] as [string, string][])
+        if (!have.has(n)) db.exec(`ALTER TABLE "INCIDENT" ADD COLUMN "${n}" ${t}`);
+    }
+  } catch { /* best-effort */ }
+}
+
+/** SOC-CMM self-assessment (XINCIDENT): aspect catalogue (5 domains) + per-tenant maturity scores. */
+export function ensureSocCmmTables(): void {
+  try {
+    getDb("XINCIDENT").exec(`
+      CREATE TABLE IF NOT EXISTS SOCCMMASPECT (
+        AspectID INTEGER PRIMARY KEY, Domain TEXT, Aspect TEXT, Description TEXT, Weight REAL DEFAULT 1, SortOrder INTEGER);
+      CREATE TABLE IF NOT EXISTS SOCCMMSCORE (
+        ScoreID INTEGER PRIMARY KEY, AspectID INTEGER, Maturity INTEGER, Importance INTEGER DEFAULT 3,
+        Notes TEXT, AssessedDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_soccmm_score ON SOCCMMSCORE(AspectID, TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/** CERT / CSIRT operations (XINCIDENT): forensic cases, chain-of-custody log, CERT activities. */
+export function ensureCertOpsTables(): void {
+  try {
+    getDb("XINCIDENT").exec(`
+      CREATE TABLE IF NOT EXISTS FORENSICCASE (
+        CaseID INTEGER PRIMARY KEY, CaseGUID TEXT, CaseNumber TEXT, Title TEXT, IncidentID INTEGER,
+        Status TEXT, Severity TEXT, Examiner TEXT, ExaminerPersonID INTEGER, Description TEXT,
+        Methodology TEXT, OpenedDate TEXT, ClosedDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS FORENSICEVIDENCE (
+        EvidenceID INTEGER PRIMARY KEY, EvidenceGUID TEXT, CaseID INTEGER, ExhibitNumber TEXT, Description TEXT,
+        EvidenceType TEXT, Source TEXT, AcquisitionTool TEXT, Sha256 TEXT, Md5 TEXT, Size TEXT,
+        Status TEXT, CollectedBy TEXT, CollectedAt TEXT, StorageLocation TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS CUSTODYEVENT (
+        CustodyID INTEGER PRIMARY KEY, EvidenceID INTEGER, CaseID INTEGER, Action TEXT, FromParty TEXT, ToParty TEXT,
+        Purpose TEXT, Hash TEXT, HashVerified INTEGER, At TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS CERTACTIVITY (
+        ActivityID INTEGER PRIMARY KEY, ActivityGUID TEXT, Title TEXT, ActivityType TEXT, Service TEXT,
+        Status TEXT, Priority TEXT, IncidentID INTEGER, CaseID INTEGER, AssignedTo TEXT, Description TEXT,
+        DueDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_fcase_tenant ON FORENSICCASE(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_fevid_case ON FORENSICEVIDENCE(CaseID);
+      CREATE INDEX IF NOT EXISTS ix_custody_evid ON CUSTODYEVENT(EvidenceID);
+      CREATE INDEX IF NOT EXISTS ix_certact_tenant ON CERTACTIVITY(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/** Governance (XCOMPLIANCE) — NIST CSF 2.0 Govern (GV) subcategory register + per-tenant status. */
+export function ensureGovernanceTables(): void {
+  try {
+    getDb("XCOMPLIANCE").exec(`
+      CREATE TABLE IF NOT EXISTS GOVERNANCEITEM (
+        ItemID INTEGER PRIMARY KEY, Category TEXT, CategoryCode TEXT, SubCode TEXT, Title TEXT, Description TEXT, SortOrder INTEGER);
+      CREATE TABLE IF NOT EXISTS GOVERNANCESTATUS (
+        StatusID INTEGER PRIMARY KEY, ItemID INTEGER, Status TEXT, Maturity INTEGER, OwnerPersonID INTEGER,
+        Evidence TEXT, Notes TEXT, ReviewDate TEXT, TenantID INTEGER, UpdatedDate TEXT);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_govstatus ON GOVERNANCESTATUS(ItemID, TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/** OWASP AI Exchange / agentic threat catalogue (XTHREAT) for the AI threat advisor in threat modeling. */
+export function ensureAiThreatTables(): void {
+  try {
+    getDb("XTHREAT").exec(`
+      CREATE TABLE IF NOT EXISTS AIEXCHANGETHREAT (
+        ThreatID INTEGER PRIMARY KEY, ThreatGUID TEXT, Ref TEXT, Name TEXT, Category TEXT, Lifecycle TEXT,
+        Impact TEXT, Description TEXT, Controls TEXT, AppliesTo TEXT, Source TEXT, URL TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_aithreat_cat ON AIEXCHANGETHREAT(Category);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Network flow (NetFlow/IPFIX) around ASSET — discovery & monitoring, useful for the SOC.
+ * ASSETSERVICE = a listening service (the ASSET↔SERVICE relationship: protocol/port/service seen on
+ * an asset). NETWORKSESSION = a reconstructed network session/flow (protocol, source↔destination
+ * assets+IPs+ports, bytes/packets, first/last seen, state). Fed by the obserae connector (NetFlow
+ * collector cartography + sessions). Surfaced at /network-sessions.
+ */
+export function ensureNetflowTables(): void {
+  try {
+    getDb("XORCISM").exec(`
+      CREATE TABLE IF NOT EXISTS ASSETSERVICE (
+        AssetServiceID INTEGER PRIMARY KEY, AssetID INTEGER, Protocol TEXT, Port INTEGER, ServiceName TEXT,
+        Banner TEXT, FlowCount INTEGER DEFAULT 0, FirstSeen TEXT, LastSeen TEXT, Source TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS NETWORKSESSION (
+        NetworkSessionID INTEGER PRIMARY KEY, SessionGUID TEXT, SrcAssetID INTEGER, DstAssetID INTEGER,
+        SrcIP TEXT, DstIP TEXT, Protocol TEXT, SrcPort INTEGER, DstPort INTEGER, ServiceName TEXT,
+        Bytes INTEGER, Packets INTEGER, Flows INTEGER, Direction TEXT, State TEXT,
+        FirstSeen TEXT, LastSeen TEXT, Source TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_assetservice ON ASSETSERVICE(AssetID, Protocol, Port);
+      CREATE INDEX IF NOT EXISTS ix_netsession_src ON NETWORKSESSION(SrcAssetID);
+      CREATE INDEX IF NOT EXISTS ix_netsession_dst ON NETWORKSESSION(DstAssetID);
+      CREATE INDEX IF NOT EXISTS ix_netsession_tenant ON NETWORKSESSION(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Vulnerability Operations Center (XVULNERABILITY) — runs remediation as an operations function.
+ * VOCSLATIER = a configurable remediation-SLA policy (days per severity/KEV tier); VOCCAMPAIGN =
+ * remediation campaigns/sprints over a scope of vulnerabilities; VOCEXCEPTION = the formal risk-
+ * acceptance / exception register (justification, approver, expiry). The operational backlog + KPIs
+ * are computed over XORCISM.ASSETVULNERABILITY cross-enriched with XVULNERABILITY.VULNERABILITY.
+ */
+export function ensureVocTables(): void {
+  try {
+    getDb("XVULNERABILITY").exec(`
+      CREATE TABLE IF NOT EXISTS VOCSLATIER (
+        SlaID INTEGER PRIMARY KEY, Tier TEXT, RemediationDays INTEGER, Label TEXT, SortOrder INTEGER, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS VOCCAMPAIGN (
+        CampaignID INTEGER PRIMARY KEY, CampaignGUID TEXT, Name TEXT, Description TEXT, Scope TEXT,
+        TargetDate TEXT, OwnerPersonID INTEGER, Status TEXT, StartDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS VOCEXCEPTION (
+        ExceptionID INTEGER PRIMARY KEY, ExceptionGUID TEXT, VulnerabilityID INTEGER, AssetVulnerabilityID INTEGER,
+        Scope TEXT, Title TEXT, Justification TEXT, CompensatingControl TEXT, RequestedBy TEXT, ApprovedBy TEXT,
+        Status TEXT, ExpiryDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_vocsla_tenant ON VOCSLATIER(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_voccamp_tenant ON VOCCAMPAIGN(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_vocexc_tenant ON VOCEXCEPTION(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Purple / Red / Blue Team Operations (XTHREAT) — VECTR-style purple-team exercises mapped to
+ * MITRE ATT&CK. TEAMEXERCISE = a campaign; EXERCISETESTCASE = one ATT&CK technique with the red
+ * offensive action and the blue outcome (prevented / detected / logged / missed) + detection time,
+ * for prevention/detection/visibility efficiency metrics. TEAMCAPABILITY = red/blue/purple
+ * capability & capacity management.
+ */
+export function ensureTeamOpsTables(): void {
+  try {
+    getDb("XTHREAT").exec(`
+      CREATE TABLE IF NOT EXISTS TEAMEXERCISE (
+        ExerciseID INTEGER PRIMARY KEY, ExerciseGUID TEXT, Name TEXT, ExerciseType TEXT,
+        Objective TEXT, ThreatActor TEXT, Status TEXT, StartDate TEXT, EndDate TEXT,
+        TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS EXERCISETESTCASE (
+        TestCaseID INTEGER PRIMARY KEY, ExerciseID INTEGER, AttackID TEXT, Technique TEXT, Tactic TEXT,
+        OffensiveAction TEXT, OffensiveTool TEXT, ExpectedDefense TEXT, Outcome TEXT,
+        Prevented INTEGER DEFAULT 0, Detected INTEGER DEFAULT 0, Logged INTEGER DEFAULT 0,
+        DetectionTimeMin INTEGER, DetectionSource TEXT, ResponseAction TEXT, SigmaRuleID INTEGER,
+        Notes TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS TEAMCAPABILITY (
+        CapabilityID INTEGER PRIMARY KEY, Team TEXT, Name TEXT, Category TEXT, Maturity INTEGER,
+        Capacity TEXT, Tooling TEXT, OwnerPersonID INTEGER, Notes TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_teamex_tenant ON TEAMEXERCISE(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_testcase_ex ON EXERCISETESTCASE(ExerciseID);
+      CREATE INDEX IF NOT EXISTS ix_teamcap_tenant ON TEAMCAPABILITY(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/** Cybersecurity workforce framework (XORCISM) — NICE + ENISA ECSF role catalogue, assignable to PERSON. */
+export function ensureWorkforceTables(): void {
+  try {
+    getDb("XORCISM").exec(`
+      CREATE TABLE IF NOT EXISTS WORKROLE (
+        WorkRoleID INTEGER PRIMARY KEY, WorkRoleGUID TEXT, Framework TEXT, Code TEXT, Name TEXT, Category TEXT,
+        Description TEXT, Tasks TEXT, Skills TEXT, Knowledge TEXT, URL TEXT, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS PERSONWORKROLE (
+        PersonWorkRoleID INTEGER PRIMARY KEY, PersonID INTEGER, WorkRoleID INTEGER, Proficiency TEXT,
+        Primary_ INTEGER DEFAULT 0, Notes TEXT, AssignedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_workrole_fw ON WORKROLE(Framework);
+      CREATE INDEX IF NOT EXISTS ix_pwr_person ON PERSONWORKROLE(PersonID);`);
   } catch { /* best-effort */ }
 }
 

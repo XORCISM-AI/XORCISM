@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Network Sessions</title><link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:11px;color:#a5b4fc}
+  .proto{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:#1e2440;color:#a5b4fc}
+  .st{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}.st-established{background:#14532d;color:#bbf7d0}.st-rejected{background:#7f1d1d;color:#fecaca}.st-other{background:#1e2133;color:#94a3b8}
+  .ext{font-size:9px;font-weight:700;border-radius:5px;padding:1px 6px;background:#78350f;color:#fcd34d}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}.panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e2133;font-size:12px}.row:last-child{border-bottom:none}.row .nm2{min-width:150px;color:#cbd5e1}
+  .bar{height:8px;border-radius:5px;background:#1e2133;overflow:hidden;flex:1;min-width:80px}.bar>i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#3266ad,#60a5fa)}
+</style></head><body>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/asset-management">&#128451; Assets</a><a href="/soc">&#128225; SOC</a><a href="/connectors?connector=obserae">&#128268; Obserae</a><span class="spacer"></span><span class="title">&#128225; Network Sessions</span></div>
+<div class="mw"><h1>Network Sessions &amp; Cartography (NetFlow)</h1>
+<div class="sub">Network observability <b>around your assets</b> — discovery, monitoring and SOC investigation. Fed by the
+  <b>Obserae</b> NetFlow/IPFIX collector: hosts become assets, listening <b>services</b> (protocol/port) become
+  ASSET↔SERVICE relationships, and reconstructed <b>sessions</b> (source↔destination, bytes, state) reveal who talks to
+  whom — surfacing external-inbound and rejected flows.</div>
+<div id="body"><div class="muted" style="padding:24px;text-align:center">Loading network cartography…</div></div></div>
+<div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/network-sessions.js"></script></body></html>

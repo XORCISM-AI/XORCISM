@@ -37,14 +37,14 @@ export interface IncidentInventory {
   findings: IncidentFinding[];
   summary: {
     total: number; open: number; criticalOpen: number; breached: number; unassigned: number;
-    stale: number; compromises: number; mttrHours: number | null;
+    stale: number; compromises: number; mttrHours: number | null; mttdMinutes: number | null;
     byStatus: Record<string, number>; bySeverity: Record<string, number>;
   };
 }
 
 const EMPTY: IncidentInventory = {
   rows: [], findings: [],
-  summary: { total: 0, open: 0, criticalOpen: 0, breached: 0, unassigned: 0, stale: 0, compromises: 0, mttrHours: null, byStatus: {}, bySeverity: {} },
+  summary: { total: 0, open: 0, criticalOpen: 0, breached: 0, unassigned: 0, stale: 0, compromises: 0, mttrHours: null, mttdMinutes: null, byStatus: {}, bySeverity: {} },
 };
 
 const STALE_DAYS = 7;
@@ -85,6 +85,8 @@ export function incidentInventory(tenant: number | null): IncidentInventory {
 
   const findings: IncidentFinding[] = [];
   const durations: number[] = [];
+  const detectDeltas: number[] = []; // MTTD: minutes from start_datetime → detect_datetime
+  const pms = (v: unknown): number | null => { if (v == null || v === "") return null; const t = Date.parse(String(v).replace(" ", "T")); return Number.isFinite(t) ? t : null; };
   const rows: IncidentRow[] = incs.map((r) => {
     const id = Number(r.IncidentID);
     const name = String(r.IncidentName ?? "").trim() || `Incident #${id}`;
@@ -104,6 +106,8 @@ export function incidentInventory(tenant: number | null): IncidentInventory {
     const compromise = truthy(r.security_compromise);
     const isCrit = HIGH_SEV.test(severity);
     if (resolved && durationHours != null) durations.push(durationHours);
+    const stMs = pms(r.start_datetime), dtMs = pms(r.detect_datetime);
+    if (stMs != null && dtMs != null && dtMs >= stMs) detectDeltas.push((dtMs - stMs) / 60000);
 
     const flags: string[] = [];
     let score = 0;
@@ -136,6 +140,7 @@ export function incidentInventory(tenant: number | null): IncidentInventory {
   const bySeverity: Record<string, number> = {};
   for (const r of rows) { byStatus[r.status] = (byStatus[r.status] || 0) + 1; bySeverity[r.severity] = (bySeverity[r.severity] || 0) + 1; }
   const mttrHours = durations.length ? Math.round(durations.reduce((s, d) => s + d, 0) / durations.length) : null;
+  const mttdMinutes = detectDeltas.length ? Math.round(detectDeltas.reduce((s, d) => s + d, 0) / detectDeltas.length) : null;
 
   return {
     rows, findings,
@@ -147,7 +152,7 @@ export function incidentInventory(tenant: number | null): IncidentInventory {
       unassigned: rows.filter((r) => r.open && !r.assignee).length,
       stale: rows.filter((r) => r.flags.some((f) => f.startsWith("Open for"))).length,
       compromises: rows.filter((r) => r.compromise).length,
-      mttrHours, byStatus, bySeverity,
+      mttrHours, mttdMinutes, byStatus, bySeverity,
     },
   };
 }

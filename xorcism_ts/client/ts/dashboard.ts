@@ -587,7 +587,7 @@ interface Kpis {
   riskScore: number | null;
   assets: { total: number; crownJewels: number; internetFacing: number; criticalVulns: number; unbacked: number; noOwner: number } | null;
   identities: { total: number; privileged: number; orphaned: number; mfaGaps: number } | null;
-  incidents: { open: number; criticalOpen: number; breached: number; mttrHours: number | null } | null;
+  incidents: { open: number; criticalOpen: number; breached: number; mttrHours: number | null; mttdMinutes: number | null } | null;
   compliance: { completionRate: number | null; openFindings: number; highOpen: number; overdue: number } | null;
   tid: { tidScore: number; detectRate: number; mitigateRate: number; testRate: number; detectionFailed: number; detectionRegressed: number; exposed: number; threatRelevant: number } | null;
   crisis: { readinessScore: number; exercises: number; completionRate: number | null; scenarioCoverage: number; openActions: number; overdueActions: number; scenariosNeverExercised: number } | null;
@@ -628,7 +628,8 @@ async function initKpis(): Promise<void> {
   if (k.incidents) {
     tile(k.incidents.criticalOpen, "Open critical incidents", `${k.incidents.open} open total`, "/incident-management", badColor(k.incidents.criticalOpen));
     tile(k.incidents.breached, "SLA / RTO breaches", "past target", "/incident-sla", warnColor(k.incidents.breached));
-    tile(k.incidents.mttrHours != null ? `${k.incidents.mttrHours}h` : null, "MTTR", "mean time to resolve", "/incident-management");
+    tile(k.incidents.mttdMinutes != null ? (k.incidents.mttdMinutes < 90 ? `${k.incidents.mttdMinutes}m` : `${(k.incidents.mttdMinutes / 60).toFixed(1)}h`) : null, "MTTD", "mean time to detect", "/soc", k.incidents.mttdMinutes != null && k.incidents.mttdMinutes <= 60 ? "#34d399" : "#fbbf24");
+    tile(k.incidents.mttrHours != null ? `${k.incidents.mttrHours}h` : null, "MTTR", "mean time to resolve", "/soc");
   }
   if (k.compliance) {
     tile(k.compliance.completionRate != null ? `${k.compliance.completionRate}%` : null, "Audit completion", "audits completed", "/compliance-management", pctColor(k.compliance.completionRate));

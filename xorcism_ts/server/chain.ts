@@ -58,6 +58,7 @@ export const DEFAULT_PLAYBOOK: PlaybookDef = {
     { id: "web-nikto", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "nikto", targetFrom: "url", label: "Web server → Nikto vulnerability scan" },
     { id: "web-nuclei", when: { service: "https?|http-proxy|ssl/http", ports: [80, 443, 8080, 8443] }, run: "nuclei", targetFrom: "url", label: "Web server → Nuclei templates" },
     { id: "web-artemis", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "artemis", targetFrom: "url", label: "Web server → Artemis modular scan (CERT-PL: exposed VCS, outdated CMS, misconfig)" },
+    { id: "web-burpwn", when: { service: "https?|http-proxy|http-alt|ssl/http", ports: [80, 443, 8080, 8443, 8000, 8888] }, run: "burpwn", targetFrom: "url", label: "Web server → burpwn proxy capture (endpoints, auth surfaces, sensitive params)" },
     { id: "wordpress", when: { tech: "wordpress" }, run: "wpscan", targetFrom: "url", label: "WordPress detected → WPScan" },
     { id: "wordpress-wpprobe", when: { tech: "wordpress" }, run: "wpprobe", targetFrom: "url", label: "WordPress detected → WPProbe (plugin/theme CVEs)" },
     { id: "tls", when: { ports: [443, 8443] }, run: "sslyze", targetFrom: "host", label: "TLS endpoint → sslyze (cert/cipher audit)" },

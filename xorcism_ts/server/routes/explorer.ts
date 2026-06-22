@@ -358,7 +358,7 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     assets: a && { total: a.total, crownJewels: a.crownJewels, internetFacing: a.internetFacing, criticalVulns: a.withCriticalVulns, unbacked: a.unbackedCritical, noOwner: a.noOwner },
     identities: i && { total: i.total, privileged: i.privileged, orphaned: i.orphaned, mfaGaps: i.mfaGaps },
-    incidents: inc && { open: inc.open, criticalOpen: inc.criticalOpen, breached: inc.breached, mttrHours: inc.mttrHours },
+    incidents: inc && { open: inc.open, criticalOpen: inc.criticalOpen, breached: inc.breached, mttrHours: inc.mttrHours, mttdMinutes: inc.mttdMinutes },
     compliance: c && { completionRate: c.completionRate, openFindings: c.openFindings, highOpen: c.highOpen, overdue: c.overdue },
     tid: t && { tidScore: t.tidScore, detectRate: t.detectRate, mitigateRate: t.mitigateRate, testRate: t.testRate, detectionFailed: t.detectionFailed, detectionRegressed: t.detectionRegressed, exposed: t.exposed, threatRelevant: t.threatRelevant },
     crisis: cr && { readinessScore: cr.readinessScore, exercises: cr.exercises, completionRate: cr.completionRate, scenarioCoverage: cr.scenarioCoverage, openActions: cr.openActions, overdueActions: cr.overdueActions, scenariosNeverExercised: cr.scenariosNeverExercised },

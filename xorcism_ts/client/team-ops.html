@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Team Operations</title><link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .card{flex:1;min-width:115px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}.sec .spacer{flex:1}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:11px;color:#a5b4fc}
+  .oc{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}.o-prevented{background:#14532d;color:#bbf7d0}.o-detected{background:#1e3a5f;color:#bfdbfe}.o-logged{background:#78350f;color:#fcd34d}.o-missed{background:#7f1d1d;color:#fecaca}
+  .tm{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}.t-Red{background:#7f1d1d;color:#fecaca}.t-Blue{background:#1e3a5f;color:#bfdbfe}.t-Purple{background:#3730a3;color:#c7d2fe}.t-AppSec{background:#134e4a;color:#99f6e4}
+  .bar{height:8px;border-radius:5px;background:#1e2133;overflow:hidden;flex:1;min-width:90px}.bar>i{display:block;height:100%;border-radius:5px}
+  .tac{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1e2133;font-size:12px}.tac .nm2{min-width:180px;color:#cbd5e1}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;gap:8px;align-items:center}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}.panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}.btn-sm2:hover{border-color:#d946ef}
+  select{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:2px 6px}
+  .auto{font-size:12px;padding:6px 0;border-bottom:1px solid #1e2133}.auto b{color:#e2e8f0}
+  .modal{position:fixed;inset:0;background:rgba(5,7,15,.74);display:none;align-items:center;justify-content:center;z-index:50}.modal.show{display:flex}
+  .dlg{background:#0f1322;border:1px solid #2d3250;border-radius:14px;padding:18px 20px;width:min(760px,95vw);max-height:90vh;overflow:auto}
+</style></head><body>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/purple-team">&#129512; Detection coverage</a><a href="/?db=XTHREAT&amp;table=EMULATION">&#9876;&#65039; BAS</a><a href="/hunting">&#128270; Hunting</a><span class="spacer"></span><span class="title">&#129505; Team Operations</span></div>
+<div class="mw"><h1>Purple / Red / Blue Team Operations</h1>
+<div class="sub">State-of-the-art purple teaming (VECTR-style): run <b>exercises</b> as ATT&amp;CK test cases — each pairs a
+  <b>Red offensive action</b> with the <b>Blue outcome</b> (prevented · detected · logged · missed) and a detection
+  time — to measure <b>efficiency</b> (prevention/detection/visibility rates, MTTD) and per-tactic coverage. Manage
+  Red/Blue/Purple <b>capabilities &amp; capacities</b>, and drive offensive/defensive <b>automation playbooks</b>.</div>
+<div id="body"><div class="muted" style="padding:24px;text-align:center">Loading team operations…</div></div></div>
+<div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
+<div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/team-ops.js"></script></body></html>

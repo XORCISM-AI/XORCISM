@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — CERT Operations</title><link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1300px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1010px}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .card{flex:1;min-width:110px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}.sec .spacer{flex:1}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:11px}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}.sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}
+  .pill{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#1e2440;color:#a5b4fc}.ok{background:#14532d;color:#bbf7d0}.bad{background:#7f1d1d;color:#fecaca}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}.btn-sm2:hover{border-color:#fb923c}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .refrow{font-size:12px;padding:5px 0;border-bottom:1px solid #1e2133}.refrow b{color:#e2e8f0}
+  .modal{position:fixed;inset:0;background:rgba(5,7,15,.74);display:none;align-items:center;justify-content:center;z-index:50}.modal.show{display:flex}
+  .dlg{background:#0f1322;border:1px solid #2d3250;border-radius:14px;padding:18px 20px;width:min(720px,95vw);max-height:90vh;overflow:auto}
+  .ev{border:1px solid #2d3250;border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#13162a}
+  .cust{font-size:12px;padding:5px 0;border-top:1px dashed #2d3250;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+</style></head><body>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/soc">&#128225; SOC Ops</a><a href="/incident-management">&#128680; Incidents</a><span class="spacer"></span><span class="title">&#128300; CERT Operations</span></div>
+<div class="mw"><h1>CERT / CSIRT Operations</h1>
+<div class="sub">DFIR case management with a tamper-evident <b>chain of custody</b>. Forensic cases hold evidence exhibits
+  (with acquisition hashes) and an append-only custody log — who handled what, when and why. CERT activities track the
+  CSIRT service portfolio. Handling follows <b>state-of-the-art</b> standards (NIST SP 800-86, ISO/IEC 27037, RFC 3227).</div>
+<div id="body"><div class="muted" style="padding:24px;text-align:center">Loading CERT operations…</div></div></div>
+<div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
+<div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/cert-ops.js"></script></body></html>

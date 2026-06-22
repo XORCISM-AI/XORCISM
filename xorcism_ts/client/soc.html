@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — SOC Operations</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .so-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .so-wrap h1{font-size:20px;margin:0 0 2px}
+  .so-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
+  .so-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .so-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .so-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .so-card .val{font-size:24px;font-weight:700;margin-top:3px}.so-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .so-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .so-section .spacer{flex:1}
+  table.so{width:100%;border-collapse:collapse;font-size:13px}
+  table.so th,table.so td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.so th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}
+  .tier{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#1e2440;color:#a5b4fc}
+  .pill{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .p-ok{background:#14532d;color:#bbf7d0}.p-warn{background:#78350f;color:#fcd34d}.p-bad{background:#7f1d1d;color:#fecaca}.p-idle{background:#1e2133;color:#94a3b8}
+  .bar{height:7px;border-radius:4px;background:#1e2133;overflow:hidden;min-width:54px;display:inline-block;vertical-align:middle}
+  .bar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#22c55e,#4ade80)}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}
+  .btn-sm2:hover{border-color:#fb923c}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;align-items:center;gap:8px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .oncall{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .oncall:last-child{border-bottom:none}
+  .pbcat{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#3730a3;color:#c7d2fe}
+  .tierrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e2133;font-size:13px}
+  .tierrow:last-child{border-bottom:none}
+  /* modal */
+  .so-modal{position:fixed;inset:0;background:rgba(5,7,15,.72);display:none;align-items:center;justify-content:center;z-index:50}
+  .so-modal.show{display:flex}
+  .so-dlg{background:#0f1322;border:1px solid #2d3250;border-radius:14px;padding:18px 20px;width:min(640px,94vw);max-height:88vh;overflow:auto}
+  .phase .ph-head{display:flex;align-items:center;gap:8px;margin:12px 0 6px;font-size:12px;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:.5px}
+  .pstep{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid #1e2133}
+  .pstep .pt{flex:1;min-width:0}.pstep .pt .tt{font-size:13px;font-weight:600;color:#e2e8f0}.pstep .pt .dd{font-size:12px;color:#94a3b8;margin-top:2px;line-height:1.4}
+  .pstep select{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:2px 6px}
+  .st-done .tt{text-decoration:line-through;color:#64748b}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/incident-management">&#128680; Incidents</a>
+  <a href="/incident-sla">&#9201;&#65039; SLA</a>
+  <a href="/crisis-management">&#127983; Crisis</a>
+  <span class="spacer"></span>
+  <span class="title">&#128225; SOC Operations</span>
+</div>
+<div class="so-wrap">
+  <h1>SOC Operations</h1>
+  <div class="so-sub">The SOC command center: detection &amp; response <b>KPIs</b> (MTTD · MTTA · MTTR), the live
+    <b>on-call roster</b> and shift coverage, the open-incident <b>queue</b> with its <b>escalation procedure</b>
+    (L1 → L2 → L3 → Manager, ack/resolve timeouts), and <b>IR playbooks</b> (NIST SP 800-61) you attach to an
+    incident and work step by step. The worklist is what needs a SOC action right now.</div>
+  <div id="so-body"><div class="muted" style="padding:24px;text-align:center">Loading SOC operations…</div></div>
+</div>
+
+<div class="so-modal" id="so-modal"><div class="so-dlg" id="so-dlg"></div></div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/soc.js"></script>
+</body>
+</html>
