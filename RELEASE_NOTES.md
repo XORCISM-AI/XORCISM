@@ -9,6 +9,76 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ---
 
+## [1.5.0-beta.1] — 2026-06-23
+
+An **AI-security & endpoint-agent** release, headlined by **AI-agent guardrails management** — a
+cockpit that discovers the LLM apps / autonomous AI agents running on your hosts, scores them
+against a 12-control **AI Guardrail Baseline** (mapped to OWASP AI Exchange, Google SAIF,
+ISO/IEC 42001, OWASP LLM Top 10, MITRE ATLAS and NIST AI RMF), and monitors their traces with the
+**local AI** for guardrail violations. The XOR endpoint agent also gains **RAM acquisition**,
+**AI log-hunting**, a **honeypot** sensor, and **fleet-wide compliance deployment**; plus an
+**EASM** cockpit, **Frameworks management**, the **TaHiTI** hunting methodology, and seven new
+connectors/tools.
+
+### Highlights
+
+- **AI-agent guardrails management** (`/ai-guardrails`) — the operational layer for guarding LLM
+  apps & autonomous agents. The agent's new `aiguard` scan **discovers** AI agents (LangChain,
+  CrewAI, AutoGen, LlamaIndex, Ollama/local models, MCP servers, exposed keys) and **assesses**
+  each against the **AI Guardrail Baseline** (12 controls, cross-mapped to OWASP AI Exchange / SAIF
+  / ISO 42001 / OWASP LLM Top 10 / MITRE ATLAS / NIST AI RMF); the **local AI** then **monitors**
+  agent traces for prompt injection, jailbreaks, data exfiltration and excessive agency → spawns a
+  **TaHiTI** hunt. Inline **enforcement** is delegated to a guardrail gateway (NeMo Guardrails /
+  LLM Guard / Llama Guard / Lakera) whose block telemetry is imported (`llm-guard` connector).
+- **XOR agent — new DFIR & AI capabilities** — `--scan memdump` (**RAM acquisition** for forensics
+  via winpmem/avml; the image stays on the host for chain of custody, the manifest + SHA-256 is
+  shipped), `--scan loghunt` (**AI log hunting**: collects Sysmon/PowerShell/Security logs → the
+  local AI maps them to ATT&CK and spawns hunts), `--scan honeypot` (a bounded **deception sensor**
+  on decoy ports; attacker IPs become IOCs), and `--scan aiguard` (above).
+- **Fleet-wide compliance deployment** (`/configuration-management`) — push a CIS/OVAL compliance
+  baseline to all online agents in one shot, with an optional recurrence for continuous assurance.
+- **External Attack Surface Management** (`/easm`) — the attacker's outside-in view: internet-facing
+  assets, exposed services & ports, TLS/cert posture, external KEV vulns, **shadow exposure** and
+  surface drift, each scored.
+- **Frameworks management** (`/frameworks`) — manage the compliance/security framework catalogue and
+  **map each framework to a VOCABULARY** (its controls catalogue), with live control counts.
+- **TaHiTI hunting methodology** (`/hunting`) — the 3-phase *Targeted Hunting integrating Threat
+  Intelligence* funnel (Initiate → Hunt → Finalize) over the HUNT backlog.
+- **Agents cockpit KPIs** (`/agents`) — fleet health, job success rate, scans/24h, alerts, honeypot
+  hits, RAM dumps and AI-log-hunt KPIs; per-agent RAM-dump and AI-log-hunt panels.
+- **New connectors & tools** — **DrogonSec** (SAST/SCA/secrets/IaC, SARIF), **graphql-cop**
+  (GraphQL API DAST, wired into the attack chains), **Zabbix** (infrastructure monitoring → Asset
+  Monitoring), **GLPI** (IT asset management / CMDB → assets), **EMAIL-CRAWL** (OSINT email
+  harvesting), **llm-guard** (AI guardrail-gateway telemetry), plus a **GCVE CPE** dictionary search
+  in the CPE editor (cpe.gcve.eu) and a topbar **"Go to…"** quick-jump menu.
+
+### Added
+
+**AI security**
+- **AI-agent guardrails** (`aiguard.ts`, `/ai-guardrails`) — `AIAGENT` / `AIGUARDRAILRESULT` /
+  `AIGUARDRAILVIOLATION` (XAGENT); the 12-control AI Guardrail Baseline; discovery scoring;
+  heuristic + local-AI runtime violation monitoring → spawned TaHiTI hunts; gateway-telemetry
+  ingest. Agent kind `aiguard` (`discover_ai_agents()`); `llm-guard` connector; 6 guardrail tools in
+  the new **AI Guardrails** TOOL category.
+
+**XOR endpoint agent**
+- **Memory acquisition** — `--scan memdump` → `MEMORYDUMP` manifest (tool/path/size/SHA-256) + event.
+- **AI log hunting** — `--scan loghunt` (`loghunt.ts`) → `LOGHUNT` + a spawned hunt when suspicious.
+- **Honeypot** — `--scan honeypot` (`honeypot_listen`) → `HONEYPOTHIT` + attacker IPs as IOCs.
+- **Fleet compliance deploy** — `POST /api/configuration/deploy-compliance` (OVAL fan-out + optional
+  recurring enforcement).
+
+**Modules**
+- **EASM** (`easm.ts`, `/easm`), **Frameworks management** (`frameworks.ts`, `/frameworks`), the
+  **TaHiTI** funnel on `/hunting`, the exploit-view on `/vulnerability-management`, and patch-package
+  CVE counts on `/patch-management`.
+
+**Connectors & tools**
+- `drogonsec`, `graphql-cop` (+ attack-chain rule & a "GraphQL API assessment" playbook), `zabbix`,
+  `glpi`, `email-crawl`, `llm-guard`; the **GCVE CPE** form search; the topbar quick-jump menu.
+
+---
+
 ## [1.4.0-beta.1] — 2026-06-22
 
 A **threat-informed operations** release: dedicated cockpits that run security as operational

@@ -367,6 +367,21 @@ and connectors. No SaaS, no telemetry, your data never leaves your infrastructur
   the **Rustinel EDR bridge** (`--scan rustinel`) tails [Rustinel](https://github.com/Karib0u/rustinel)'s
   kernel-level **ETW / eBPF / Endpoint-Security** alerts (Sigma + YARA + IOC) into XORCISM —
   kernel-grade detection without a custom agent core. Both are read-only and part of `--scan full`.
+- **Memory acquisition (XOR agent)** — `--scan memdump` captures a full **RAM image** for forensics
+  (winpmem/avml); the image stays on the endpoint for **chain of custody** and only the manifest
+  (tool / path / size / **SHA-256**) is shipped → `XAGENT.MEMORYDUMP`.
+- **AI log hunting (XOR agent)** — `--scan loghunt` collects Sysmon / PowerShell / Security logs and
+  the **local AI** hunts them for threats, mapping to **MITRE ATT&CK** and spawning a hunt when
+  suspicious; no host data leaves the box.
+- **Honeypot (XOR agent)** — `--scan honeypot` runs a bounded **deception sensor** on decoy ports;
+  every connection attempt is logged and the attacker IPs become IOCs.
+- **AI-agent guardrails management** (`/ai-guardrails`) — the agent's `--scan aiguard` **discovers**
+  the LLM apps / autonomous AI agents on each host (LangChain, CrewAI, Ollama, MCP servers, exposed
+  keys), **scores** them against a **12-control AI Guardrail Baseline** (OWASP AI Exchange / Google
+  SAIF / ISO 42001 / OWASP LLM Top 10 / MITRE ATLAS / NIST AI RMF), and **monitors** their traces
+  with the local AI for prompt injection / jailbreak / exfiltration / excessive agency → spawned
+  hunts. Inline enforcement is delegated to a guardrail gateway (NeMo / LLM Guard / Llama Guard /
+  Lakera) whose block telemetry is imported.
 - **TAXII 2.1 server** — publish/consume STIX feeds.
 - **Local AI (Ollama)** — fully-offline assistants: **"Ask the threat model"**
   (RAG over your XORCISM data), an **intel brief builder**, a
@@ -658,6 +673,9 @@ timers — **no external cron**:
 | **Governance** | `/governance` | NIST CSF 2.0 **Govern (GV)** register |
 | **Workforce** | `/workforce` | NICE + ENISA ECSF roles around PERSON |
 | **AI Threat Advisor** | `/ai-threat-advisor` | OWASP AI Exchange agentic-threat catalogue + advisor |
+| **AI Guardrails** | `/ai-guardrails` | AI-agent guardrails management — discover LLM apps/agents, score vs a 12-control baseline (OWASP AI Exchange / SAIF / ISO 42001 / LLM Top 10 / ATLAS / NIST AI RMF), local-AI runtime violation monitoring, gateway block telemetry |
+| **EASM** | `/easm` | External Attack Surface Management — internet-facing assets, exposed services/ports, TLS posture, external KEV, shadow exposure, surface drift |
+| **Frameworks** | `/frameworks` | Compliance/security framework catalogue + map each framework to a VOCABULARY (controls catalogue) |
 | **Network sessions** | `/network-sessions` | NetFlow/IPFIX around assets (Obserae) — services, sessions, top talkers |
 | **Compliance journeys** | `/compliance-journeys` | Guided multi-framework wizards (ISO / SOC 2 / NIST / DORA / NIS2 / GDPR …) |
 

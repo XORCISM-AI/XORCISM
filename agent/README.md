@@ -180,9 +180,15 @@ The token is stored in `xor_agent.conf` (next to the script).
   `/api/agents`, `/api/agent-events`.
 
 ## Deploying as a service
-- **Linux**: see `install/xor-agent.service` (systemd).
-- **macOS**: see `install/com.xorcism.xor.plist` (launchd).
-- **Windows**: Task Scheduler (at startup) or NSSM for a service.
+Keep the agent checking in across reboots. See [`SETUP.md`](SETUP.md) §9 for full steps.
+- **Linux**: `install/xor-agent.service` (systemd).
+- **macOS**: `install/com.xorcism.xor.plist` (launchd).
+- **Windows (no dependency)**: `install/install_xor_agent.bat <server-url> [enroll-key]` —
+  self-elevates, enrolls, and registers a boot-start SYSTEM **scheduled task** ("XORCISM XOR
+  Agent") with no time limit and auto-restart. Subcommands: `status`, `uninstall`.
+- **Windows (real `services.msc` service)**: `install/install_xor_agent_service.bat` (via
+  [NSSM](https://nssm.cc/download)) or the [WinSW](https://github.com/winsw/winsw) config
+  `install/xor-agent-service.xml`. Use **one** Windows option, not several.
 - **Standalone binary**: `pyinstaller --onefile xor_agent.py` produces a per-OS
   executable (no Python dependency required on the target).
 

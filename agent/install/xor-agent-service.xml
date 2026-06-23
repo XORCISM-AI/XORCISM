@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  WinSW service definition for the XORCISM XOR agent.
+  See https://github.com/winsw/winsw and agent/SETUP.md (section 9) for setup.
+
+  Alternative to install_xor_agent_service.bat (NSSM) for sites that prefer
+  WinSW. Registers a true SCM service (services.msc) running the agent daemon,
+  auto-start at boot as LocalSystem, restart on failure.
+
+  Quick start (as Administrator), in the folder holding xor_agent.exe:
+    1. Enroll the agent first so xor_agent.conf is written next to the exe.
+    2. Copy WinSW.exe to xor-agent-service.exe and place it plus this XML there.
+    3. Run:  xor-agent-service.exe install   then   xor-agent-service.exe start
+    Manage with: status, stop, start, restart, uninstall.
+  %BASE% resolves to the folder containing xor-agent-service.exe.
+-->
+<service>
+  <id>XORCISMXORAgent</id>
+  <name>XORCISM XOR Agent</name>
+  <description>XORCISM endpoint agent - periodic check-in, scans and DFIR.</description>
+
+  <executable>%BASE%\xor_agent.exe</executable>
+  <arguments>--run --interval 300 --conf "%BASE%\xor_agent.conf"</arguments>
+  <workingdirectory>%BASE%</workingdirectory>
+
+  <!-- Auto-start at boot; runs as LocalSystem by default. -->
+  <startmode>Automatic</startmode>
+
+  <!-- Restart the process if it ever exits. -->
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+
+  <!-- Rolling log next to the exe; sizeThreshold is in KB (1024 KB = 1 MB). -->
+  <logpath>%BASE%</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>1024</sizeThreshold>
+    <keepFiles>3</keepFiles>
+  </log>
+</service>

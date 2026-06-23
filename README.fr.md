@@ -206,6 +206,19 @@ vos données ne quittent jamais votre infrastructure.
 - **Matrices MITRE** — **ATT&CK** (Enterprise / Mobile / ICS / **ATLAS**),
   contre-mesures défensives **D3FEND** (mappées à ATT&CK et à `XORCISM.CONTROL`),
   et **A3M — Agentic AI Attack Matrix**.
+- **Garde-fous d'agents IA** (`/ai-guardrails`) — la couche opérationnelle pour protéger vos
+  applications LLM et agents IA autonomes : l'agent XOR (`--scan aiguard`) **découvre** les agents
+  IA sur chaque hôte (LangChain, CrewAI, Ollama, serveurs **MCP**, clés exposées), les **évalue**
+  face à un **référentiel de garde-fous IA** (12 contrôles mappés à OWASP AI Exchange, Google SAIF,
+  ISO/IEC 42001, OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF) et **surveille** leurs traces avec
+  l'**IA locale** (injection de prompt, jailbreak, exfiltration, agence excessive). L'application
+  *inline* est déléguée à une passerelle de garde-fous (NeMo / LLM Guard / Llama Guard / Lakera)
+  dont la télémétrie de blocage est importée.
+- **Agent XOR — DFIR & IA** — acquisition **mémoire (RAM)** pour la forensique (`--scan memdump`,
+  l'image reste sur l'hôte pour la chaîne de custody, manifeste + SHA-256 transmis), **chasse aux
+  menaces par IA locale** sur les journaux Sysmon/PowerShell/Security (`--scan loghunt` → ATT&CK +
+  chasse), et **honeypot** de déception sur ports leurres (`--scan honeypot`, les IP attaquantes
+  deviennent des IOC).
 - **LLM ATT&CK Navigator (Anthropic)** — une **surcouche** d'exposition à l'IA sur
   la matrice ATT&CK : les techniques réellement employées par les acteurs assistés
   par IA, teintées selon leur prévalence (% de comptes bannis), d'après l'analyse

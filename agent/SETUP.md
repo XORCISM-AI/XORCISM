@@ -277,9 +277,28 @@ Install [`install/com.xorcism.xor.plist`](install/com.xorcism.xor.plist) into
 launchctl load -w ~/Library/LaunchAgents/com.xorcism.xor.plist
 ```
 
-### Windows — Task Scheduler
+### Windows — one-shot installer (recommended)
 
-Run the daemon at startup (adjust the python path):
+For the packaged `xor_agent.exe`, [`install/install_xor_agent.bat`](install/install_xor_agent.bat)
+enrolls the agent **and** registers it to keep running. It self-elevates, then creates a SYSTEM
+scheduled task ("XORCISM XOR Agent") that **starts at boot**, has **no time limit** (so it isn't
+killed after the default 72 h) and **auto-restarts** if it stops:
+
+```bat
+:: enroll + install + start (run from the folder with xor_agent.exe, or agent\install)
+install_xor_agent.bat https://xorcism.lab:9292 [enroll-key]
+
+install_xor_agent.bat status        :: show task + process state
+install_xor_agent.bat uninstall     :: stop + remove (keeps xor_agent.conf)
+```
+
+The installer auto-finds `xor_agent.exe` (next to the .bat, or in `..\dist` / `.\dist`) and writes
+`xor_agent.conf` beside it. Requires Windows 8 / Server 2012+.
+
+### Windows — Task Scheduler (manual / from source)
+
+For a source checkout, register the daemon at startup yourself (adjust the python path; use
+`pythonw` to run without a console window):
 
 ```powershell
 schtasks /Create /TN "XOR Agent" /SC ONSTART /RU SYSTEM ^
@@ -287,7 +306,29 @@ schtasks /Create /TN "XOR Agent" /SC ONSTART /RU SYSTEM ^
 ```
 
 For BAS emulation on Windows, set the env var on the task: `setx /M XOR_ALLOW_EMULATION 1` (only on
-an authorised target). Use `pythonw` to run without a console window.
+an authorised target).
+
+### Windows — real service in `services.msc` (NSSM or WinSW)
+
+If you want the agent to appear under **Services** (SCM-managed) rather than as a scheduled task, host
+the console daemon with a service wrapper. Use **one** of these *or* the scheduled-task installer
+above — not several at once.
+
+**NSSM (scripted):** [`install/install_xor_agent_service.bat`](install/install_xor_agent_service.bat)
+enrolls the agent and registers it as the **"XORCISM XOR Agent"** service via
+[NSSM](https://nssm.cc/download) — auto-start at boot, LocalSystem, restart-on-exit, rolling log next
+to the exe. Drop `nssm.exe` next to the .bat (or in `..\tools`, `.\nssm`, or on `PATH`), then:
+
+```bat
+install_xor_agent_service.bat https://xorcism.lab:9292 [enroll-key]
+install_xor_agent_service.bat status       :: sc query + process state
+install_xor_agent_service.bat uninstall    :: stop + remove (keeps xor_agent.conf)
+```
+
+**WinSW (config):** [`install/xor-agent-service.xml`](install/xor-agent-service.xml) is a ready
+[WinSW](https://github.com/winsw/winsw) definition. Enroll first, rename `WinSW.exe` to
+`xor-agent-service.exe`, put it and the XML beside `xor_agent.exe`, then `xor-agent-service.exe
+install` and `... start`.
 
 ---
 
