@@ -54,7 +54,7 @@ vos données ne quittent jamais votre infrastructure.
 | **VOC / Analyste vulnérabilités** | Inventaire d'actifs, triage CVE/KEV/EPSS, ingestion de scans via connecteurs |
 | **GRC / Auditeur** | Politiques et mesures, audits, preuves, workflow des constats, questionnaires OCIL |
 | **CTI / Analyste menaces** | Entités STIX, matrices ATT&CK/D3FEND/A3M, chasses, hypothèses, graphe de menaces |
-| **Red / Purple team** | Playbooks d'attaque chaînés (OSINT→exploit, Metasploit), analyse des chemins d'attaque et points de passage, couverture de détection purple-team, émulation BAS, programmes de bug bounty |
+| **Red / Purple team** | Playbooks d'attaque chaînés (OSINT→exploit, Metasploit), analyse des chemins d'attaque et points de passage, couverture de détection purple-team, **émulation d'adversaire BAS/AEV** (bibliothèque de tests atomiques curated, sûre par conception — 61 tests / 58 techniques MITRE ATT&CK — exécutée par l'agent de poste), programmes de bug bounty |
 | **SOC / Blue team** | Gestion des alertes et incidents, ticketing, de la détection à la réponse |
 
 ### Pourquoi XORCISM
@@ -223,8 +223,13 @@ vos données ne quittent jamais votre infrastructure.
   la matrice ATT&CK : les techniques réellement employées par les acteurs assistés
   par IA, teintées selon leur prévalence (% de comptes bannis), d'après l'analyse
   Anthropic 2026. Activable sur `/attack` à côté de la couche de couverture BAS.
-- **Émulation d'adversaire (BAS)** — plans d'émulation, tests atomiques et
-  exécuteurs, et une **heatmap de couverture ATT&CK** superposée à la matrice.
+- **Émulation d'adversaire (BAS/AEV)** — plans d'émulation, tests atomiques et
+  exécuteurs, et une **heatmap de couverture ATT&CK** superposée à la matrice. Une
+  **bibliothèque de tests curated XORCISM** (61 tests / 58 techniques ATT&CK, 7 scénarios,
+  **sûre par conception** : cibles localhost, nettoyage réversible, techniques destructives
+  en simulation sûre ou `manual`) est livrée — importée via
+  `import_atomics.py --xorcism` et exécutée par l'agent (`xor_agent.py --scan emulate --scenario N`,
+  opt-in par hôte). Voir [`agent/README.md`](agent/README.md).
 - **Enchaînement d'outils (playbooks d'attaque)** — indiquez une cible et XORCISM
   imite un engagement complet : un outil s'exécute (ex. **nmap**), son résultat est
   analysé en *faits* (ports/services ouverts, technologies, vulnérabilités), et des

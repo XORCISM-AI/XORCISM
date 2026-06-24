@@ -50,7 +50,7 @@ and connectors. No SaaS, no telemetry, your data never leaves your infrastructur
 | **VOC / Vulnerability analyst** | Asset inventory, CVE/KEV/EPSS triage, connector-driven scan ingestion |
 | **GRC / Auditor** | Policies & controls, audits, evidence, findings workflow, OCIL questionnaires |
 | **CTI / Threat analyst** | STIX entities, ATT&CK/D3FEND/A3M matrices, hunts, hypotheses, threat graph |
-| **Red / Purple team** | Tool-chaining attack playbooks (OSINT→exploit, Metasploit), attack-path & choke-point analysis, purple-team detection coverage, BAS emulation, bug-bounty programs |
+| **Red / Purple team** | Tool-chaining attack playbooks (OSINT→exploit, Metasploit), attack-path & choke-point analysis, purple-team detection coverage, **BAS/AEV** adversary emulation (a curated, safe-by-design atomic-test library — 61 tests / 58 MITRE ATT&CK techniques — run by the endpoint agent), bug-bounty programs |
 | **SOC / Blue team** | Alert & incident management, ticketing, detection-to-response |
 
 ### Why XORCISM
@@ -251,8 +251,12 @@ and connectors. No SaaS, no telemetry, your data never leaves your infrastructur
   chain (Reconnaissance → Impact); overlay any adversary (ATT&CK group) to map
   the techniques it uses per phase and reveal its **coverage and progression**
   (e.g. APT29: 13/15 phases). `/kill-chain`.
-- **Adversary emulation (BAS)** — emulation plans, atomic tests & executors, and
-  an **ATT&CK coverage heatmap** overlaid on the matrix.
+- **Adversary emulation (BAS/AEV)** — emulation plans, atomic tests & executors, and
+  an **ATT&CK coverage heatmap** overlaid on the matrix. A **curated XORCISM test library**
+  ships (61 tests / 58 ATT&CK techniques, 7 scenarios, **safe by design**: localhost targets,
+  reversible cleanup, destructive techniques as safe simulations or `manual`) — imported with
+  `import_atomics.py --xorcism` and run by the endpoint agent (`xor_agent.py --scan emulate
+  --scenario N`, opt-in per host). See [`agent/README.md`](agent/README.md).
 - **Pentesting** — engagements modeled as **AUDITs (type Pentest)** scoped to
   assets: launch tool connectors (nmap, nuclei, nikto, whatweb, wpscan, sqlmap,
   OpenVAS, Metasploit) against the scope under an enforced **ROE**, then collect
