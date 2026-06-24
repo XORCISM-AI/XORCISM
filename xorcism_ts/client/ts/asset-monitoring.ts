@@ -126,6 +126,55 @@ async function loadLookup(table: string, sel: string): Promise<void> {
     for (const p of list) { const o = document.createElement("option"); o.value = String(p.id); o.textContent = p.label || `#${p.id}`; el.appendChild(o); }
   } catch { /* lookup unavailable */ }
 }
+
+// Asset → candidate targets (URL / host / IP), used to pre-fill the monitor target.
+const assetTargetMap = new Map<string, { url: string; host: string; ip: string }>();
+async function loadAssetTargets(): Promise<void> {
+  try {
+    const r = await fetch("/api/asset-monitoring/asset-targets");
+    if (!r.ok) { await loadLookup("ASSET", "mn-f-asset"); return; }
+    const d = (await r.json()) as { assets: { id: number; name: string; url: string; host: string; ip: string }[] };
+    const el = $("mn-f-asset") as HTMLSelectElement;
+    for (const a of d.assets) {
+      const o = document.createElement("option"); o.value = String(a.id); o.textContent = a.name || `#${a.id}`; el.appendChild(o);
+      assetTargetMap.set(String(a.id), { url: a.url, host: a.host, ip: a.ip });
+    }
+  } catch { await loadLookup("ASSET", "mn-f-asset"); }
+}
+// On asset (or type) selection: an HTTP(S) monitor pre-fills the target with the asset's URL.
+function applyAssetTarget(force: boolean): void {
+  const assetId = ($("mn-f-asset") as HTMLSelectElement).value;
+  if (!assetId) return;
+  const t = assetTargetMap.get(assetId);
+  if (!t) return;
+  const type = ($("mn-f-type") as HTMLSelectElement).value;
+  const tgt = $("mn-f-target") as HTMLInputElement;
+  if (type === "http" && t.url && (force || !tgt.value.trim())) tgt.value = t.url;
+}
+
+// Simple cron builder → writes mn-f-cron (still editable). Modes map to a 5-field cron.
+function buildCron(): void {
+  const mode = ($("mn-cron-mode") as HTMLSelectElement).value;
+  const show = (id: string, on: boolean): void => { ($(id) as HTMLElement).style.display = on ? "" : "none"; };
+  show("mn-cron-n", mode === "min" || mode === "hour");
+  show("mn-cron-time", mode === "daily" || mode === "weekly" || mode === "monthly");
+  show("mn-cron-dow", mode === "weekly");
+  show("mn-cron-dom", mode === "monthly");
+  const cronEl = $("mn-f-cron") as HTMLInputElement;
+  if (mode === "" ) { cronEl.value = ""; return; }
+  if (mode === "custom") return; // leave whatever the user typed
+  const n = Math.max(1, Number(($("mn-cron-n") as HTMLInputElement).value) || 1);
+  const [hh, mm] = (($("mn-cron-time") as HTMLInputElement).value || "09:00").split(":");
+  const H = Math.max(0, Math.min(23, Number(hh) || 0)), M = Math.max(0, Math.min(59, Number(mm) || 0));
+  const dow = ($("mn-cron-dow") as HTMLSelectElement).value;
+  const dom = Math.max(1, Math.min(31, Number(($("mn-cron-dom") as HTMLInputElement).value) || 1));
+  if (mode === "min") cronEl.value = `*/${Math.min(59, n)} * * * *`;
+  else if (mode === "hour") cronEl.value = `0 */${Math.min(23, n)} * * *`;
+  else if (mode === "daily") cronEl.value = `${M} ${H} * * *`;
+  else if (mode === "weekly") cronEl.value = `${M} ${H} * * ${dow}`;
+  else if (mode === "monthly") cronEl.value = `${M} ${H} ${dom} * *`;
+}
+
 function openModal(): void {
   ($("mn-f-name") as HTMLInputElement).value = "";
   ($("mn-f-type") as HTMLSelectElement).value = "http";
@@ -135,6 +184,8 @@ function openModal(): void {
   ($("mn-f-owner") as HTMLSelectElement).value = "";
   ($("mn-f-ssl") as HTMLInputElement).value = "";
   ($("mn-f-cron") as HTMLInputElement).value = "";
+  ($("mn-cron-mode") as HTMLSelectElement).value = "";
+  buildCron(); // hides builder inputs + clears cron
   $("mn-ssl-wrap").style.display = "none";
   $("mn-f-err").textContent = "";
   $("mn-modal").classList.add("open");
@@ -214,8 +265,15 @@ document.addEventListener("DOMContentLoaded", () => {
   $("mn-act-go").addEventListener("click", () => void runActivate());
   $("mn-act-modal").addEventListener("click", (e) => { if (e.target === $("mn-act-modal")) closeActivate(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeActivate(); } });
-  ($("mn-f-type") as HTMLSelectElement).addEventListener("change", (e) => { $("mn-ssl-wrap").style.display = (e.target as HTMLSelectElement).value === "ssl" ? "" : "none"; });
-  void loadLookup("ASSET", "mn-f-asset");
+  ($("mn-f-type") as HTMLSelectElement).addEventListener("change", (e) => {
+    $("mn-ssl-wrap").style.display = (e.target as HTMLSelectElement).value === "ssl" ? "" : "none";
+    applyAssetTarget(false); // switching to HTTP(S) with an asset chosen pre-fills an empty target
+  });
+  ($("mn-f-asset") as HTMLSelectElement).addEventListener("change", () => applyAssetTarget(true));
+  ["mn-cron-mode", "mn-cron-n", "mn-cron-time", "mn-cron-dow", "mn-cron-dom"].forEach((id) =>
+    $(id).addEventListener("change", buildCron));
+  ($("mn-cron-n") as HTMLInputElement).addEventListener("input", buildCron);
+  void loadAssetTargets();
   void loadLookup("PERSON", "mn-f-owner");
   void loadLookup("ASSET", "mn-act-asset");
   void loadLookup("PERSON", "mn-act-owner");

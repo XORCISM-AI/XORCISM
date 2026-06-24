@@ -79,6 +79,8 @@
       <label>Name <span class="req">*</span></label>
       <input id="mn-f-name" type="text" placeholder="e.g. Customer portal — HTTPS" maxlength="300" autocomplete="off">
     </div>
+    <div class="fld"><label>Asset (optional)</label><select id="mn-f-asset"><option value="">—</option></select>
+      <div class="muted" style="font-size:11px;margin-top:3px">Pick an asset — for an HTTP(S) monitor, its URL pre-fills the target.</div></div>
     <div class="row2">
       <div class="fld"><label>Type</label>
         <select id="mn-f-type"><option value="http">HTTP(S)</option><option value="ping">Ping</option><option value="tcp">TCP</option><option value="dns">DNS</option><option value="ssl">SSL / domain</option><option value="server">Server (agent)</option></select>
@@ -86,11 +88,24 @@
       <div class="fld"><label>Check interval (s)</label><input id="mn-f-interval" type="number" min="30" step="30" value="300"></div>
     </div>
     <div class="fld"><label>Target (URL / host:port / domain)</label><input id="mn-f-target" type="text" placeholder="https://portal.example.com  ·  10.0.0.5:443  ·  example.com" maxlength="500" autocomplete="off"></div>
-    <div class="fld"><label>Cron schedule (optional — overrides interval)</label><input id="mn-f-cron" type="text" placeholder="e.g. */5 * * * *  ·  0 * * * *  (min hour dom mon dow)" maxlength="120" autocomplete="off"></div>
-    <div class="row2">
-      <div class="fld"><label>Asset (optional)</label><select id="mn-f-asset"><option value="">—</option></select></div>
-      <div class="fld"><label>Owner (optional)</label><select id="mn-f-owner"><option value="">—</option></select></div>
-    </div>
+    <div class="fld"><label>Cron schedule (optional — overrides interval)</label>
+      <div id="mn-cron-builder" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px">
+        <select id="mn-cron-mode" style="flex:0 0 auto">
+          <option value="">Use interval (no cron)</option>
+          <option value="min">Every N minutes</option>
+          <option value="hour">Every N hours</option>
+          <option value="daily">Daily at…</option>
+          <option value="weekly">Weekly on…</option>
+          <option value="monthly">Monthly on day…</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input id="mn-cron-n" type="number" min="1" max="59" value="5" style="width:64px;display:none" title="N">
+        <input id="mn-cron-time" type="time" value="09:00" style="display:none">
+        <select id="mn-cron-dow" style="display:none"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
+        <input id="mn-cron-dom" type="number" min="1" max="31" value="1" style="width:64px;display:none" title="Day of month">
+      </div>
+      <input id="mn-f-cron" type="text" placeholder="e.g. */5 * * * *  ·  0 * * * *  (min hour dom mon dow)" maxlength="120" autocomplete="off"></div>
+    <div class="fld"><label>Owner (optional)</label><select id="mn-f-owner"><option value="">—</option></select></div>
     <div class="fld" id="mn-ssl-wrap" style="display:none"><label>SSL expiry date (optional)</label><input id="mn-f-ssl" type="date"></div>
     <div class="mn-modal-foot">
       <span class="mn-err" id="mn-f-err" style="flex:1"></span>

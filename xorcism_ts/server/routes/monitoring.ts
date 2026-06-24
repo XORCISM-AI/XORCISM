@@ -4,7 +4,7 @@
  */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { monitoringInventory, createMonitor, updateMonitorStatus, activateMonitoring, CHECK_TYPES, MON_STATUSES } from "../monitoring";
+import { monitoringInventory, createMonitor, updateMonitorStatus, activateMonitoring, assetTargets, CHECK_TYPES, MON_STATUSES } from "../monitoring";
 import { runMonitorChecks } from "../monitorcheck";
 import * as xid from "../xid";
 
@@ -40,6 +40,15 @@ router.post("/asset-monitoring/check", (req: Request, res: Response) => {
       resourceKey: String(out.id), detail: `name="${name}" type="${String(b.type || "http")}"`, ip: clientIp(req) });
     res.json({ ok: true, ...out });
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// GET /api/asset-monitoring/asset-targets — assets + their URL/host/IP (Add-monitor target pre-fill)
+router.get("/asset-monitoring/asset-targets", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XORCISM", "MONITORINGCHECK")) return void res.status(403).json({ error: "forbidden" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try { res.json({ assets: assetTargets(tenant) }); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
 // POST /api/asset-monitoring/activate — turn on monitoring for an ASSET (derive monitors from its IP/URL)

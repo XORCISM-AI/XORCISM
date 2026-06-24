@@ -210,7 +210,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -1601,6 +1601,10 @@ const GRID_LINK_COLUMNS: Record<string, GridLinkSpec[]> = {
     { col: "FindingName", srcCol: "AuditFindingID", db: "XCOMPLIANCE", table: "AUDITFINDING", idCol: "AuditFindingID" },
     { col: "AuditName", srcCol: "AuditID", db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID" },
   ],
+  // DocumentName → edits this DOCUMENT row itself (self-link).
+  DOCUMENT: [
+    { col: "DocumentName", srcCol: "DocumentID", db: "XCOMPLIANCE", table: "DOCUMENT", idCol: "DocumentID" },
+  ],
 };
 function getGridLink(table: string, col: string): GridLinkSpec | undefined {
   return (GRID_LINK_COLUMNS[table] ?? []).find((s) => s.col === col);
@@ -2922,6 +2926,7 @@ const DATE_PICKER_COLUMNS = new Set<string>([
   "DOCUMENT.DocumentDate",
   "DOCUMENT.ValidFrom",
   "DOCUMENT.ValidUntil",
+  "DOCUMENT.ReviewDate",
   "DOCUMENTPERSON.ValidFrom",
   "DOCUMENTPERSON.ValidUntil",
   // OCIL / questionnaires

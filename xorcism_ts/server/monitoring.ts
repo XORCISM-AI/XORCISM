@@ -197,6 +197,27 @@ export function activateMonitoring(
   return { created: monitors.length, skipped, monitors };
 }
 
+/** Assets with their candidate monitor targets (URL / host / IP) — feeds the Add-monitor form so
+ * selecting an asset can pre-fill the target (URL for HTTP(S)). Scoped to the tenant. */
+export function assetTargets(tenant: number | null): { id: number; name: string; url: string; host: string; ip: string }[] {
+  const db = getDb("XORCISM");
+  const ac = cols("ASSET");
+  if (!ac.has("AssetID")) return [];
+  const g = (c: string): string => (ac.has(c) ? `"${c}"` : `'' AS "${c}"`);
+  const scoped = tenant != null && ac.has("TenantID");
+  const tw = scoped ? "WHERE (TenantID = ? OR TenantID IS NULL)" : "";
+  const rows = db.prepare(
+    `SELECT AssetID, AssetName, ${g("websiteurl")}, ${g("fqdn")}, ${g("hostname")}, ${g("ipaddressIPv4")}, ${g("AssetDescription")}
+     FROM ASSET ${tw} ORDER BY AssetName COLLATE NOCASE`
+  ).all(...(scoped ? [tenant] : [])) as Record<string, any>[];
+  return rows.map((r) => {
+    const desc = String(r.AssetDescription ?? "").trim();
+    const url = String(r.websiteurl ?? "").trim() || (/^https?:\/\//i.test(desc) ? desc : "");
+    const host = String(r.fqdn ?? "").trim() || String(r.hostname ?? "").trim();
+    return { id: Number(r.AssetID), name: String(r.AssetName ?? `#${r.AssetID}`), url, host, ip: String(r.ipaddressIPv4 ?? "").trim() };
+  });
+}
+
 /**
  * Record a check result: update the monitor's status / response time / last-checked, and open or
  * resolve a MONITORINGINCIDENT on an up↔down transition. Used by the optional in-process checker
