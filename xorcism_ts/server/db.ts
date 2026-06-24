@@ -1900,6 +1900,12 @@ export interface VulnRow {
   VULReferentialID: string;
   VULGUID: string;
   VULDescription: string;
+  // Enriched on the asset-vulnerability view (getAssetVulnerabilities): the junction-row PK
+  // (needed to attach a remediation plan), the per-instance patch status, and how many
+  // remediation plans already exist for the instance. Optional elsewhere.
+  AssetVulnerabilityID?: number;
+  PatchStatus?: string | null;
+  RemediationCount?: number;
 }
 
 // ── Tag referential (XORCISM.TAG; name column = TagValue) ─────────────
@@ -2553,22 +2559,45 @@ export function getAssetTagCloud(tenant: number | null): { tag: string; count: n
 }
 
 export function getAssetVulnerabilities(assetId: number): VulnRow[] {
-  const vids = (
-    getDb("XORCISM")
-      .prepare(
-        "SELECT VulnerabilityID FROM ASSETVULNERABILITY WHERE AssetID = ? AND VulnerabilityID IS NOT NULL"
-      )
-      .all(assetId) as { VulnerabilityID: number }[]
-  ).map((r) => r.VulnerabilityID);
-  if (!vids.length) return [];
+  const xo = getDb("XORCISM");
+  const avCols = new Set((xo.prepare(`PRAGMA table_info("ASSETVULNERABILITY")`).all() as { name: string }[]).map((c) => c.name));
+  const hasPatch = avCols.has("PatchStatus");
+  const avRows = xo.prepare(
+    `SELECT AssetVulnerabilityID, VulnerabilityID${hasPatch ? ", PatchStatus" : ""}
+     FROM ASSETVULNERABILITY WHERE AssetID = ? AND VulnerabilityID IS NOT NULL
+     ORDER BY AssetVulnerabilityID`
+  ).all(assetId) as { AssetVulnerabilityID: number; VulnerabilityID: number; PatchStatus?: string | null }[];
+  if (!avRows.length) return [];
+  // First junction row wins per vulnerability (a remediation plan attaches to one instance).
+  const byVuln = new Map<number, { avId: number; patch: string | null }>();
+  for (const r of avRows) if (!byVuln.has(r.VulnerabilityID)) byVuln.set(r.VulnerabilityID, { avId: r.AssetVulnerabilityID, patch: r.PatchStatus ?? null });
+
+  // Count existing remediation plans per junction instance (so the UI can show "planned").
+  const remCount = new Map<number, number>();
+  try {
+    const rc = new Set((xo.prepare(`PRAGMA table_info("ASSETVULNERABILITYREMEDIATION")`).all() as { name: string }[]).map((c) => c.name));
+    if (rc.has("AssetVulnerabilityID")) {
+      const avIds = [...byVuln.values()].map((v) => v.avId);
+      const ph2 = avIds.map(() => "?").join(",");
+      for (const r of xo.prepare(`SELECT AssetVulnerabilityID, COUNT(*) n FROM ASSETVULNERABILITYREMEDIATION WHERE AssetVulnerabilityID IN (${ph2}) GROUP BY AssetVulnerabilityID`).all(...avIds) as { AssetVulnerabilityID: number; n: number }[]) {
+        remCount.set(r.AssetVulnerabilityID, r.n);
+      }
+    }
+  } catch { /* remediation table optional */ }
+
+  const vids = [...byVuln.keys()];
   const ph = vids.map(() => "?").join(",");
-  return getDb("XVULNERABILITY")
+  const rows = getDb("XVULNERABILITY")
     .prepare(
       `SELECT VulnerabilityID, VULReferential, VULReferentialID, VULGUID, VULDescription
        FROM VULNERABILITY WHERE VulnerabilityID IN (${ph})
        ORDER BY VULReferentialID`
     )
     .all(...vids) as VulnRow[];
+  return rows.map((v) => {
+    const m = byVuln.get(v.VulnerabilityID);
+    return { ...v, AssetVulnerabilityID: m?.avId, PatchStatus: m?.patch ?? null, RemediationCount: m ? (remCount.get(m.avId) || 0) : 0 };
+  });
 }
 
 /** Search vulnerabilities (by VULReferential / CVE identifier / GUID) — limited. */

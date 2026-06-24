@@ -4,7 +4,8 @@
  */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { patchInventory, updatePatchStatus, createRemediation, PATCH_STATUSES } from "../patchmgmt";
+import { patchInventory, updatePatchStatus, createRemediation, createRemediationTicket, listRemediationsForAsset, PATCH_STATUSES } from "../patchmgmt";
+import { createNotification } from "../db";
 import * as xid from "../xid";
 
 const router = Router();
@@ -15,6 +16,17 @@ router.get("/patch-management", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XORCISM", "ASSETVULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
   const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
   try { res.json({ statuses: PATCH_STATUSES, ...patchInventory(tenant) }); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// GET /api/patch-management/remediations?assetId=N — existing plans for an asset's vulns, grouped by AssetVulnerabilityID
+router.get("/patch-management/remediations", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XORCISM", "ASSETVULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
+  const assetId = Number(req.query.assetId);
+  if (!Number.isInteger(assetId) || assetId <= 0) return void res.status(400).json({ error: "assetId required" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try { res.json({ plans: listRemediationsForAsset(assetId, tenant) }); }
   catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 
@@ -57,9 +69,34 @@ router.post("/patch-management/remediation", (req: Request, res: Response) => {
       ownerPersonId: b.ownerPersonId != null && String(b.ownerPersonId) !== "" ? Number(b.ownerPersonId) : null,
       priority: b.priority ? String(b.priority) : undefined,
     }, tenant);
+    const priority = b.priority ? String(b.priority) : "";
+
+    // Always open an associated ticket for the remediation (best-effort).
+    let ticketId: number | undefined;
+    try {
+      const tk = createRemediationTicket(
+        { assetVulnId, name, priority, targetDate: b.targetDate ? String(b.targetDate) : undefined, description: b.description ? String(b.description) : undefined },
+        tenant, req.user.Email ?? undefined,
+      );
+      if (tk) ticketId = tk.ticketId;
+    } catch { /* ticket is best-effort */ }
+
+    // Critical priority → notify the creator.
+    let notified = false;
+    if (priority.toLowerCase() === "critical" && req.user.UserID) {
+      try {
+        createNotification({
+          userId: req.user.UserID, title: `Critical remediation created: ${name}`.slice(0, 200),
+          message: `A critical-priority remediation plan was created for asset-vulnerability #${assetVulnId}${ticketId ? ` (ticket REM-${ticketId})` : ""}.`,
+          level: "warning", link: "/patch-management", source: "patch-management", tenantId: tenant,
+        });
+        notified = true;
+      } catch { /* notification is best-effort */ }
+    }
+
     xid.addAudit({ userId: req.user.UserID ?? null, action: "remediation_create", resourceType: "ASSETVULNERABILITYREMEDIATION",
-      resourceKey: String(out.id), detail: `assetVuln=${assetVulnId} name="${name}"`, ip: clientIp(req) });
-    res.json({ ok: true, ...out });
+      resourceKey: String(out.id), detail: `assetVuln=${assetVulnId} name="${name}" priority="${priority}"${ticketId ? ` ticket=${ticketId}` : ""}`, ip: clientIp(req) });
+    res.json({ ok: true, ...out, ticketId, notified });
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
 });
 

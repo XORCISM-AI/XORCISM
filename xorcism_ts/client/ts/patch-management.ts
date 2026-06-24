@@ -11,7 +11,10 @@ interface Row {
   severity: string; cvss: number | null; kev: boolean; epss: number | null; patchAvailable: boolean;
   patchStatus: string; resolved: boolean; patchedDate: string | null; due: string | null; dueIn: number | null;
   overdue: boolean; hasPlan: boolean; planStatus: string; planType: string; score: number;
+  recommendedPriority?: string; exploited?: boolean; publicFacing?: boolean; scoreDrivers?: string[];
 }
+const PRIO_COLOR: Record<string, string> = { "Critical": "#f87171", "Very High": "#fb7185", "High": "#fb923c", "Moderate": "#fbbf24", "Low": "#60a5fa", "Very Low": "#94a3b8" };
+const scoreColor = (n: number): string => n >= 80 ? "#f87171" : n >= 65 ? "#fb923c" : n >= 45 ? "#fbbf24" : n >= 25 ? "#60a5fa" : "#94a3b8";
 interface Pkg { name: string; type: string; cves: number; assets: number; open: number; resolved: number; kev: number; status: string; score: number }
 interface Data {
   statuses: string[]; rows: Row[]; worklist: Row[]; packages: Pkg[];
@@ -35,11 +38,19 @@ function dueCell(r: Row): string {
   return `<span class="${cls}" title="${esc(r.due)}">${esc(txt)}</span>`;
 }
 
+function priorityCell(r: Row): string {
+  if (r.resolved) return `<span class="muted">—</span>`;
+  const drivers = (r.scoreDrivers || []).join(" · ");
+  const badge = r.recommendedPriority ? `<div style="font-size:10px;color:${PRIO_COLOR[r.recommendedPriority] || "#94a3b8"}">${esc(r.recommendedPriority)}</div>` : "";
+  return `<span title="${esc(drivers)}"><span style="font-weight:700;color:${scoreColor(r.score)}">${r.score}</span>${badge}</span>`;
+}
+
 function rowHtml(r: Row): string {
   const opts = STATUSES.map((s) => `<option${s === r.patchStatus ? " selected" : ""}>${esc(s)}</option>`).join("");
   return `<tr data-id="${r.id}">
-    <td><span class="mono">${esc(r.cve)}</span>${r.kev ? ' <span class="kev">KEV</span>' : ""}<div class="muted" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</div></td>
-    <td><a href="/?db=XORCISM&table=ASSET&editCol=AssetID&editVal=${r.assetId}">${esc(r.asset)}</a>${r.criticality ? `<div class="muted" style="font-size:11px">${esc(r.criticality)}</div>` : ""}</td>
+    <td><span class="mono">${esc(r.cve)}</span>${r.kev ? ' <span class="kev">KEV</span>' : ""}${r.exploited && !r.kev ? ' <span class="kev" style="background:#7c2d12">EXPL</span>' : ""}<div class="muted" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.name)}</div></td>
+    <td>${priorityCell(r)}</td>
+    <td><a href="/?db=XORCISM&table=ASSET&editCol=AssetID&editVal=${r.assetId}">${esc(r.asset)}</a>${r.criticality ? `<div class="muted" style="font-size:11px">${esc(r.criticality)}${r.publicFacing ? " · internet" : ""}</div>` : (r.publicFacing ? `<div class="muted" style="font-size:11px">internet</div>` : "")}</td>
     <td><span class="sev ${sevClass(r.severity)}">${esc(r.severity)}</span>${r.cvss != null ? `<div class="muted" style="font-size:11px">CVSS ${esc(r.cvss)}</div>` : ""}</td>
     <td>${r.epss != null ? (r.epss * 100).toFixed(0) + "%" : "<span class='muted'>—</span>"}</td>
     <td><span class="pa ${r.patchAvailable ? "pa-y" : "pa-n"}">${r.patchAvailable ? "available" : "none"}</span></td>
@@ -66,7 +77,7 @@ function renderTable(): void {
   const rows = applyFilters();
   const host = $("pm-table-host");
   host.innerHTML = rows.length
-    ? `<table class="pm"><thead><tr><th>CVE</th><th>Asset</th><th>Severity</th><th>EPSS</th><th>Patch</th><th title="Patch SLA due">Due</th><th>Patch status</th><th>Plan</th></tr></thead>
+    ? `<table class="pm"><thead><tr><th>CVE</th><th title="Prioritization score 0-100 (threat × severity × asset × urgency) and recommended priority">Risk</th><th>Asset</th><th>Severity</th><th>EPSS</th><th>Patch</th><th title="Patch SLA due">Due</th><th>Patch status</th><th>Plan</th></tr></thead>
         <tbody>${rows.slice(0, 400).map(rowHtml).join("")}</tbody></table>${rows.length > 400 ? `<div class="muted" style="font-size:11px;margin-top:6px">Showing first 400 of ${rows.length}.</div>` : ""}`
     : `<div class="muted" style="padding:14px 0">No matching asset-vulnerabilities.</div>`;
   host.querySelectorAll<HTMLSelectElement>("select.pst").forEach((sel) => sel.addEventListener("change", () => void setStatus(Number(sel.dataset.id), sel.value)));
@@ -162,7 +173,8 @@ function openPlan(id: number): void {
   ($("pm-f-desc") as HTMLTextAreaElement).value = "";
   ($("pm-f-type") as HTMLSelectElement).value = "Patch";
   ($("pm-f-status") as HTMLSelectElement).value = "Planned";
-  ($("pm-f-priority") as HTMLSelectElement).value = modalRow.severity === "Critical" ? "Critical" : modalRow.severity === "High" ? "High" : "";
+  // Pre-fill with the optimized recommended priority (falls back to severity-derived).
+  ($("pm-f-priority") as HTMLSelectElement).value = modalRow.recommendedPriority || (modalRow.severity === "Critical" ? "Critical" : modalRow.severity === "High" ? "High" : "");
   ($("pm-f-owner") as HTMLSelectElement).value = "";
   ($("pm-f-target") as HTMLInputElement).value = modalRow.due || "";
   $("pm-modal-ctx").innerHTML = `Remediation for <b>${esc(modalRow.cve)}</b> on <b>${esc(modalRow.asset)}</b> · <span class="sev ${sevClass(modalRow.severity)}">${esc(modalRow.severity)}</span>${modalRow.kev ? ' <span class="kev">KEV</span>' : ""}`;
@@ -190,7 +202,7 @@ async function createPlan(): Promise<void> {
     if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
     closePlan();
     await load();
-    toast(`✅ Remediation plan created`);
+    toast(`✅ Remediation plan created${d.ticketId ? ` · ticket REM-${d.ticketId}` : ""}${d.notified ? " · notified" : ""}`);
   } catch (e) { err.textContent = `⚠️ ${e}`; }
   finally { btn.disabled = false; }
 }

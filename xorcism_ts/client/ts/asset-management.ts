@@ -59,9 +59,13 @@ function rowHtml(r: AssetRow): string {
 }
 
 function findingHtml(f: AssetFinding): string {
+  // Click-through opens the ASSET explorer view filtered to the finding's asset (by name).
+  const href = f.asset
+    ? `/?db=XORCISM&table=ASSET&filterCol=AssetName&filterVal=${encodeURIComponent(f.asset)}`
+    : "/?db=XORCISM&table=ASSET";
   return `<li><span class="sev-dot dot-${f.severity}"></span>
     <span class="sev-${f.severity}">${esc(f.severity)}</span> —
-    <a href="/?db=XORCISM&table=ASSET">${esc(f.label)}</a></li>`;
+    <a href="${esc(href)}">${esc(f.label)}</a></li>`;
 }
 
 async function load(): Promise<void> {

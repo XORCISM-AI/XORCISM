@@ -349,6 +349,18 @@ router.get("/persons", (req: Request, res: Response) => {
   res.json(rows);
 });
 
+// GET /api/bia/person-names — DISTINCT PERSON.FullName for the auditor combobox (PERSON is shared).
+router.get("/person-names", (_req: Request, res: Response) => {
+  const rows = db()
+    .prepare(
+      `SELECT DISTINCT FullName FROM PERSON
+       WHERE FullName IS NOT NULL AND TRIM(FullName) <> ''
+       ORDER BY FullName COLLATE NOCASE`
+    )
+    .all() as { FullName: string }[];
+  res.json(rows.map((r) => r.FullName));
+});
+
 // ── Dependency graph ─────────────────────────────────────────────────────────
 // GET /api/bia/graph?auditId=N — BIA entries + dependency edges for one audit.
 router.get("/graph", (req: Request, res: Response) => {

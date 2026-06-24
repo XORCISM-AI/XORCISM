@@ -89,6 +89,38 @@ function mkAssetNameInput(val?: string, placeholder?: string): HTMLInputElement 
   return i;
 }
 
+// Auditor combobox: the #a-auditor input linked to a shared <datalist> of distinct PERSON
+// full names (free input still allowed). Mirrors the AssetName datalist above.
+const PERSON_NAME_LIST_ID = "bia-person-names";
+let personNameOptions: string[] = [];
+
+function ensurePersonNameDatalist(): HTMLDataListElement {
+  let dl = document.getElementById(PERSON_NAME_LIST_ID) as HTMLDataListElement | null;
+  if (!dl) {
+    dl = document.createElement("datalist");
+    dl.id = PERSON_NAME_LIST_ID;
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = "";
+  personNameOptions.forEach((n) => {
+    const o = document.createElement("option");
+    o.value = n;
+    dl!.appendChild(o);
+  });
+  return dl;
+}
+
+async function loadPersonNames(): Promise<void> {
+  try {
+    personNameOptions = await biaApi.personNames();
+  } catch {
+    personNameOptions = [];
+  }
+  ensurePersonNameDatalist();
+  const aud = document.getElementById("a-auditor") as HTMLInputElement | null;
+  if (aud) { aud.setAttribute("list", PERSON_NAME_LIST_ID); aud.autocomplete = "off"; }
+}
+
 function mkTextarea(val?: string, placeholder?: string): HTMLTextAreaElement {
   const t = document.createElement("textarea");
   t.value = val ?? "";
@@ -408,5 +440,6 @@ document.addEventListener("DOMContentLoaded", () => {
   $("filter-crit").onchange = renderTable;
 
   loadAssetNames();
+  loadPersonNames();
   loadAudits();
 });

@@ -210,7 +210,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -563,6 +563,8 @@ const STATIC_DATALIST_COLUMNS: Record<string, string[]> = {
   "ASSETVULNERABILITY.AssetVulnerabilityStatusID": [
     "Open", "In Progress", "Mitigated", "Patched", "Fixed", "Closed",
   ],
+  "ASSETVULNERABILITY.Priority": ["Very Low", "Low", "Moderate", "High", "Very High", "Critical"],
+  "ASSETVULNERABILITYREMEDIATION.Priority": ["Very Low", "Low", "Moderate", "High", "Very High", "Critical"],
   // Risk Register
   "RISKREGISTER.Status": ["Active", "Draft", "Archived"],
   "RISKREGISTERENTRY.Category": [
@@ -825,6 +827,8 @@ const NAME_SEARCH_COLUMNS: Record<string, NameSearchSpec> = {
   // Risk Register: owners (search PERSON.FullName → fills the ID)
   "RISKREGISTER.OwnerPersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "OwnerName" },
   "RISKREGISTERENTRY.RiskOwnerPersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "RiskOwnerName" },
+  // Asset-vuln remediation owner: searchable PERSON.FullName combobox → fills RemediationOwnerPersonID (replaces the raw ID field).
+  "ASSETVULNERABILITY.RemediationOwnerPersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "Remediation owner", replaceIdField: true },
 };
 function getNameSearch(table: string, col: string): NameSearchSpec | null {
   return NAME_SEARCH_COLUMNS[`${table}.${col}`] ?? null;
@@ -2936,6 +2940,10 @@ const DATE_PICKER_COLUMNS = new Set<string>([
   // Asset vulnerability remediations
   "ASSETVULNERABILITYREMEDIATION.ValidFrom",
   "ASSETVULNERABILITYREMEDIATION.ValidUntil",
+  "ASSETVULNERABILITYREMEDIATION.TargetDate",
+  // Asset vulnerability (patch lifecycle dates)
+  "ASSETVULNERABILITY.PatchedDate",
+  "ASSETVULNERABILITY.TargetDate",
   // GRC — date fields
   "COMPLIANCEASSESSMENT.Date",
   "COMPLIANCEASSESSMENT.DueDate",
@@ -2963,6 +2971,9 @@ const DATE_ONLY_PICKER_COLUMNS = new Set<string>([
   "VULNERABILITY.DueDate",
   "QUESTIONNAIREFORORGANISATION.DueDate",
   "QUESTIONNAIREFORORGANISATION.CompletedDate",
+  "ASSETVULNERABILITY.PatchedDate",
+  "ASSETVULNERABILITY.TargetDate",
+  "ASSETVULNERABILITYREMEDIATION.TargetDate",
 ]);
 function isDateOnlyPicker(table: string, col: string): boolean {
   return DATE_ONLY_PICKER_COLUMNS.has(`${table}.${col}`);
@@ -6026,6 +6037,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   setModalWide($("edit-modal") as HTMLElement, WIDE_MODAL_TABLES.has(currentTable));
   if (currentTable === "ASSET") {
     const aid = Number(row["AssetID"]) || null;
+    appendBackupPlanButton("ef_", aid);
     appendAttackSurfaceButton(body, aid);
     appendAgentScan(body, String(row["AssetName"] ?? ""));
     await appendCpeTable(body, aid);
@@ -7439,7 +7451,7 @@ async function renderVulnBox(box: HTMLElement, assetId: number | null): Promise<
     box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">—</div>`;
     return;
   }
-  let vulns: { VulnerabilityID: number; VULGUID: string; VULDescription: string }[] = [];
+  let vulns: { VulnerabilityID: number; VULGUID: string; VULDescription: string; AssetVulnerabilityID?: number; PatchStatus?: string | null; RemediationCount?: number }[] = [];
   try {
     vulns = await api.getAssetVulnerabilities(assetId);
   } catch (e) {
@@ -7450,12 +7462,18 @@ async function renderVulnBox(box: HTMLElement, assetId: number | null): Promise<
     box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("vuln.noneLinked")}</div>`;
     return;
   }
+  // Existing remediation plans for this asset's vuln instances (one call, best-effort).
+  let plansByAvId: Record<string, { RemediationName: string; RemediationType: string | null; Status: string | null; Priority: string | null; TargetDate: string | null; OwnerName: string | null }[]> = {};
+  if (vulns.some((v) => (v.RemediationCount ?? 0) > 0)) {
+    try { plansByAvId = (await api.getAssetRemediations(assetId)).plans; } catch { /* non-fatal */ }
+  }
   const table = document.createElement("table");
   table.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed";
   table.innerHTML =
     '<thead><tr>' +
-    '<th style="text-align:left;padding:5px 8px;color:var(--text-muted);border-bottom:1px solid var(--border);width:240px">VULGUID</th>' +
+    '<th style="text-align:left;padding:5px 8px;color:var(--text-muted);border-bottom:1px solid var(--border);width:220px">VULGUID</th>' +
     '<th style="text-align:left;padding:5px 8px;color:var(--text-muted);border-bottom:1px solid var(--border)">VULDescription</th>' +
+    `<th style="text-align:left;padding:5px 8px;color:var(--text-muted);border-bottom:1px solid var(--border);width:150px">${t("rem.col")}</th>` +
     '<th style="width:30px;border-bottom:1px solid var(--border)"></th>' +
     '</tr></thead>';
   const tb = document.createElement("tbody");
@@ -7467,6 +7485,21 @@ async function renderVulnBox(box: HTMLElement, assetId: number | null): Promise<
     const td2 = document.createElement("td");
     td2.style.cssText = "padding:4px 8px;border-bottom:1px solid var(--border-subtle);color:var(--text-soft);white-space:pre-wrap;word-break:break-word;vertical-align:top";
     td2.textContent = v.VULDescription ?? "";
+    // Remediation plan cell: a "+ plan" button (or "✓ planned (N)" when one exists). Disabled
+    // until the asset-vulnerability junction row has a PK (always true here — DB-backed rows).
+    const tdPlan = document.createElement("td");
+    tdPlan.style.cssText = "padding:3px 8px;border-bottom:1px solid var(--border-subtle);vertical-align:top";
+    const avId = v.AssetVulnerabilityID;
+    const planned = (v.RemediationCount ?? 0) > 0;
+    const planBtn = document.createElement("button");
+    planBtn.type = "button";
+    planBtn.className = "btn btn-ghost btn-sm";
+    planBtn.style.cssText = "padding:2px 8px;font-size:11px";
+    planBtn.textContent = planned ? `✓ ${t("rem.plannedN").replace("{n}", String(v.RemediationCount))}` : t("rem.add");
+    planBtn.title = t("rem.tip");
+    if (avId == null) { planBtn.disabled = true; planBtn.title = t("link.saveFirst"); }
+    else planBtn.onclick = () => openRemediationModal(avId, v.VULGUID || `#${v.VulnerabilityID}`, () => renderVulnBox(box, assetId));
+    tdPlan.appendChild(planBtn);
     const tdRm = document.createElement("td");
     tdRm.style.cssText = "padding:2px 6px;border-bottom:1px solid var(--border-subtle);text-align:right;vertical-align:top";
     const rm = document.createElement("button");
@@ -7486,11 +7519,191 @@ async function renderVulnBox(box: HTMLElement, assetId: number | null): Promise<
     tdRm.appendChild(rm);
     tr.appendChild(td1);
     tr.appendChild(td2);
+    tr.appendChild(tdPlan);
     tr.appendChild(tdRm);
     tb.appendChild(tr);
+
+    // Inline list of existing remediation plans for this vulnerability instance.
+    const plans = avId != null ? plansByAvId[String(avId)] : undefined;
+    if (plans && plans.length) {
+      const escP = (s: unknown): string => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
+      const sub = document.createElement("tr");
+      const cell = document.createElement("td");
+      cell.colSpan = 4;
+      cell.style.cssText = "padding:0 8px 6px 8px;border-bottom:1px solid var(--border-subtle)";
+      const statusColor = (s: string | null): string => /done|complete|resolv|patched/i.test(s || "") ? "var(--success,#34d399)" : /progress/i.test(s || "") ? "#60a5fa" : /defer/i.test(s || "") ? "#fbbf24" : "var(--text-dim)";
+      cell.innerHTML =
+        `<div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin:2px 0 3px">${t("rem.plansFor")}</div>` +
+        plans.map((p) => `<div style="display:flex;gap:8px;align-items:baseline;font-size:11px;padding:2px 0;border-top:1px solid var(--border-subtle)">
+          <span style="color:var(--text-soft);font-weight:600;min-width:0;flex:1;word-break:break-word">${escP(p.RemediationName)}</span>
+          <span style="color:${statusColor(p.Status)};white-space:nowrap">${escP(p.Status || "—")}</span>
+          ${p.RemediationType ? `<span style="color:var(--text-dim);white-space:nowrap">${escP(p.RemediationType)}</span>` : ""}
+          ${p.Priority ? `<span style="color:var(--text-dim);white-space:nowrap">${escP(p.Priority)}</span>` : ""}
+          ${p.TargetDate ? `<span style="color:var(--text-dim);white-space:nowrap">▸ ${escP(String(p.TargetDate).slice(0, 10))}</span>` : ""}
+          ${p.OwnerName ? `<span style="color:var(--text-dim);white-space:nowrap">@${escP(p.OwnerName)}</span>` : ""}
+        </div>`).join("");
+      sub.appendChild(cell);
+      tb.appendChild(sub);
+    }
   });
   table.appendChild(tb);
   box.appendChild(table);
+}
+
+// Remediation-plan modal for an ASSETVULNERABILITY instance — built dynamically (no page HTML
+// needed). Mirrors the /patch-management plan fields and POSTs to the same endpoint.
+function openRemediationModal(assetVulnId: number, vulnLabel: string, onDone: () => void): void {
+  const escHtml = (s: unknown): string => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;inset:0;background:rgba(5,7,15,.72);display:flex;align-items:center;justify-content:center;z-index:3000";
+  bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  const card = document.createElement("div");
+  card.style.cssText = "background:var(--surface-2,#0f1322);border:1px solid var(--border,#2d3250);border-radius:14px;padding:20px 22px;width:min(540px,94vw);max-height:90vh;overflow:auto";
+  const lbl = (s: string) => `<label style="display:block;font-size:12px;color:var(--text-muted,#94a3b8);margin:10px 0 4px">${s}</label>`;
+  const inputCss = "width:100%;background:var(--bg,#0f1117);border:1px solid var(--border,#2d3250);color:var(--text,#e2e8f0);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box";
+  const opt = (vals: string[]) => vals.map((v) => `<option value="${v}">${v}</option>`).join("");
+  card.innerHTML =
+    `<h3 style="margin:0 0 4px;font-size:16px;color:var(--text,#e7ebf3)">${t("rem.title")}</h3>
+     <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-bottom:8px">${t("rem.for")} <b style="color:var(--text-soft,#cbd5e1);word-break:break-all">${escHtml(vulnLabel)}</b></div>
+     ${lbl(t("rem.name") + " *")}<input id="rmf-name" type="text" style="${inputCss}" placeholder="${t("rem.namePh")}" autocomplete="off">
+     ${lbl(t("rem.type"))}<select id="rmf-type" style="${inputCss}">${opt(["Patch", "Mitigation", "Configuration", "Workaround", "Compensating control", "Accept risk"])}</select>
+     ${lbl(t("rem.status"))}<select id="rmf-status" style="${inputCss}">${opt(["Planned", "In progress", "Done", "Deferred"])}</select>
+     <div style="display:flex;gap:10px">
+       <div style="flex:1">${lbl(t("rem.priority"))}<select id="rmf-priority" style="${inputCss}">${opt(["", "Very Low", "Low", "Moderate", "High", "Very High", "Critical"])}</select></div>
+       <div style="flex:1">${lbl(t("rem.target"))}<input id="rmf-target" type="date" style="${inputCss}"></div>
+     </div>
+     ${lbl(t("rem.owner"))}<select id="rmf-owner" style="${inputCss}"><option value="">${t("rem.unassigned")}</option></select>
+     ${lbl(t("rem.desc"))}<textarea id="rmf-desc" rows="3" style="${inputCss};resize:vertical" placeholder="${t("rem.descPh")}"></textarea>
+     <div id="rmf-err" style="color:var(--danger,#f87171);font-size:12px;min-height:16px;margin-top:8px"></div>
+     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+       <button id="rmf-cancel" type="button" class="btn btn-ghost btn-sm">${t("modal.cancel") || "Cancel"}</button>
+       <button id="rmf-create" type="button" class="btn btn-primary btn-sm">${t("rem.create")}</button>
+     </div>`;
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+  const g = (id: string) => card.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`#${id}`)!;
+  (g("rmf-name") as HTMLInputElement).focus();
+  // Populate the owner picker from PERSON (best-effort; stays "unassigned" on failure).
+  void (async () => {
+    try {
+      const people = await api.getLookup("XORCISM", "PERSON", "PersonID", "FullName");
+      const sel = g("rmf-owner") as HTMLSelectElement;
+      people.forEach((p) => { if (p.id == null) return; const o = document.createElement("option"); o.value = String(p.id); o.textContent = p.label == null || p.label === "" ? `#${p.id}` : String(p.label); sel.appendChild(o); });
+    } catch { /* owner stays optional */ }
+  })();
+  (card.querySelector("#rmf-cancel") as HTMLButtonElement).onclick = () => bg.remove();
+  (card.querySelector("#rmf-create") as HTMLButtonElement).onclick = async () => {
+    const name = (g("rmf-name") as HTMLInputElement).value.trim();
+    const err = card.querySelector("#rmf-err") as HTMLElement;
+    if (!name) { err.textContent = t("rem.nameReq"); return; }
+    const btn = card.querySelector("#rmf-create") as HTMLButtonElement;
+    btn.disabled = true; err.textContent = t("rem.creating");
+    try {
+      const body = {
+        assetVulnId, name,
+        type: (g("rmf-type") as HTMLSelectElement).value,
+        status: (g("rmf-status") as HTMLSelectElement).value,
+        priority: (g("rmf-priority") as HTMLSelectElement).value || undefined,
+        targetDate: (g("rmf-target") as HTMLInputElement).value || undefined,
+        ownerPersonId: (g("rmf-owner") as HTMLSelectElement).value || undefined,
+        description: (g("rmf-desc") as HTMLTextAreaElement).value.trim() || undefined,
+      };
+      const r = await fetch("/api/patch-management/remediation", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      bg.remove();
+      toast(t("rem.created") + (d.ticketId ? ` · ${t("rem.ticket")} REM-${d.ticketId}` : ""), "ok");
+      onDone();
+    } catch (e) { err.textContent = "⚠️ " + (e as Error).message; btn.disabled = false; }
+  };
+}
+
+// "Create backup plan" button placed right after the ASSET form's Backup plan combobox
+// (ASSET.BackupPlanID). Creates a BACKUPPLAN for the current asset and points the asset at it.
+function appendBackupPlanButton(prefix: string, assetId: number | null): void {
+  if (assetId == null) return; // only on a saved asset
+  const wrapper = document.getElementById(`${prefix}field_BackupPlanID`);
+  const sel = document.getElementById(`${prefix}BackupPlanID`) as HTMLSelectElement | HTMLInputElement | null;
+  if (!wrapper || !sel || wrapper.querySelector(".bp-create-btn")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-ghost btn-sm bp-create-btn";
+  btn.textContent = t("bp.add");
+  btn.title = t("bp.tip");
+  btn.style.cssText = "margin-top:6px;padding:3px 10px;font-size:11px";
+  btn.onclick = () => openBackupPlanModal(assetId, (newId, name) => {
+    // Point the asset at the new plan: add the option to the combobox and select it.
+    if (sel.tagName === "SELECT") {
+      const o = document.createElement("option"); o.value = String(newId); o.textContent = name; o.selected = true;
+      (sel as HTMLSelectElement).appendChild(o);
+    }
+    (sel as HTMLInputElement).value = String(newId);
+  });
+  wrapper.appendChild(btn);
+}
+
+// Modal to create a BACKUPPLAN for an asset (AssetID prefilled). Reuses the generic insert API.
+function openBackupPlanModal(assetId: number, onCreated: (id: number | string, name: string) => void): void {
+  const escHtml = (s: unknown): string => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const bg = document.createElement("div");
+  bg.style.cssText = "position:fixed;inset:0;background:rgba(5,7,15,.72);display:flex;align-items:center;justify-content:center;z-index:3000";
+  bg.onclick = (e) => { if (e.target === bg) bg.remove(); };
+  const card = document.createElement("div");
+  card.style.cssText = "background:var(--surface-2,#0f1322);border:1px solid var(--border,#2d3250);border-radius:14px;padding:20px 22px;width:min(540px,94vw);max-height:90vh;overflow:auto";
+  const lbl = (s: string) => `<label style="display:block;font-size:12px;color:var(--text-muted,#94a3b8);margin:10px 0 4px">${escHtml(s)}</label>`;
+  const css = "width:100%;background:var(--bg,#0f1117);border:1px solid var(--border,#2d3250);color:var(--text,#e2e8f0);border-radius:7px;padding:8px 10px;font-size:13px;box-sizing:border-box";
+  const opt = (vals: string[]) => vals.map((v) => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join("");
+  card.innerHTML =
+    `<h3 style="margin:0 0 10px;font-size:16px;color:var(--text,#e7ebf3)">${t("bp.title")}</h3>
+     ${lbl(t("bp.name") + " *")}<input id="bpf-name" type="text" style="${css}" placeholder="${t("bp.namePh")}" autocomplete="off">
+     <div style="display:flex;gap:10px">
+       <div style="flex:1">${lbl(t("bp.type"))}<select id="bpf-type" style="${css}">${opt(["Automated", "Manual", "Full", "Incremental", "Differential", "Snapshot", "Continuous", "Cloud", "Offsite", "Tape"])}</select></div>
+       <div style="flex:1">${lbl(t("bp.status"))}<select id="bpf-status" style="${css}">${opt(["Active", "Inactive", "Planned", "Testing"])}</select></div>
+     </div>
+     <div style="display:flex;gap:10px">
+       <div style="flex:1">${lbl(t("bp.frequency"))}<input id="bpf-freq" type="number" min="1" step="1" style="${css}" placeholder="1"></div>
+       <div style="flex:1">${lbl(t("bp.frequencyUnit"))}<select id="bpf-unit" style="${css}">${opt(["Days", "Hours", "Weeks", "Months"])}</select></div>
+     </div>
+     <div style="display:flex;gap:10px">
+       <div style="flex:1">${lbl(t("bp.rpo"))}<input id="bpf-rpo" type="number" min="0" step="1" style="${css}" placeholder="24"></div>
+       <div style="flex:1">${lbl(t("bp.rto"))}<input id="bpf-rto" type="number" min="0" step="1" style="${css}" placeholder="8"></div>
+     </div>
+     ${lbl(t("bp.storage"))}<select id="bpf-storage" style="${css}"><option value=""></option>${opt(["On-site", "Offsite", "Cloud", "Tape", "NAS", "SAN", "Immutable", "Air-gapped"])}</select>
+     ${lbl(t("bp.desc"))}<textarea id="bpf-desc" rows="2" style="${css};resize:vertical"></textarea>
+     <div id="bpf-err" style="color:var(--danger,#f87171);font-size:12px;min-height:16px;margin-top:8px"></div>
+     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+       <button id="bpf-cancel" type="button" class="btn btn-ghost btn-sm">${t("modal.cancel") || "Cancel"}</button>
+       <button id="bpf-create" type="button" class="btn btn-primary btn-sm">${t("bp.create")}</button>
+     </div>`;
+  bg.appendChild(card);
+  document.body.appendChild(bg);
+  const g = (id: string) => card.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`#${id}`)!;
+  (g("bpf-name") as HTMLInputElement).focus();
+  (card.querySelector("#bpf-cancel") as HTMLButtonElement).onclick = () => bg.remove();
+  (card.querySelector("#bpf-create") as HTMLButtonElement).onclick = async () => {
+    const name = (g("bpf-name") as HTMLInputElement).value.trim();
+    const err = card.querySelector("#bpf-err") as HTMLElement;
+    if (!name) { err.textContent = t("bp.nameReq"); return; }
+    const btn = card.querySelector("#bpf-create") as HTMLButtonElement;
+    btn.disabled = true; err.textContent = t("rem.creating");
+    const num = (id: string): number | undefined => { const v = (g(id) as HTMLInputElement).value.trim(); return v === "" ? undefined : Number(v); };
+    const rowData: Record<string, unknown> = {
+      BackupPlanName: name, AssetID: assetId,
+      Type: (g("bpf-type") as HTMLSelectElement).value, Status: (g("bpf-status") as HTMLSelectElement).value,
+      Frequency: num("bpf-freq"), FrequencyUnit: (g("bpf-unit") as HTMLSelectElement).value,
+      RPOHours: num("bpf-rpo"), RTOHours: num("bpf-rto"),
+      StorageLocation: (g("bpf-storage") as HTMLSelectElement).value || undefined,
+      Description: (g("bpf-desc") as HTMLTextAreaElement).value.trim() || undefined,
+    };
+    for (const k of Object.keys(rowData)) if (rowData[k] === undefined) delete rowData[k];
+    try {
+      const r = await api.insertRow("XORCISM", "BACKUPPLAN", rowData);
+      if (!r.ok || r.id == null) throw new Error("insert failed");
+      bg.remove();
+      toast(t("bp.created"), "ok");
+      onCreated(r.id, name);
+    } catch (e) { err.textContent = "⚠️ " + (e as Error).message; btn.disabled = false; }
+  };
 }
 
 // "Vulnerabilities for Asset" section: Add Vulnerability button + table

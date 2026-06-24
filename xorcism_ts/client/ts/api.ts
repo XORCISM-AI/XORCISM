@@ -296,8 +296,12 @@ export const api = {
   setAssetCpes: (assetId: number, cpeIds: number[]) =>
     request<{ ok: boolean }>("/api/asset-cpes", "PUT", { assetId, cpeIds }),
   getAssetVulnerabilities: (assetId: number) =>
-    request<{ VulnerabilityID: number; VULReferentialID: string; VULGUID: string; VULDescription: string }[]>(
+    request<{ VulnerabilityID: number; VULReferentialID: string; VULGUID: string; VULDescription: string; AssetVulnerabilityID?: number; PatchStatus?: string | null; RemediationCount?: number }[]>(
       `/api/asset-vulnerabilities?assetId=${assetId}`
+    ),
+  getAssetRemediations: (assetId: number) =>
+    request<{ plans: Record<string, { AssetVulnerabilityRemediationID: number; AssetVulnerabilityID: number; RemediationName: string; RemediationType: string | null; Status: string | null; Priority: string | null; TargetDate: string | null; OwnerName: string | null }[]> }>(
+      `/api/patch-management/remediations?assetId=${assetId}`
     ),
   searchVulnerabilities: (q: string) =>
     request<{ VulnerabilityID: number; VULReferential: string; VULReferentialID: string; VULGUID: string; VULDescription: string }[]>(
@@ -457,6 +461,7 @@ export const biaApi = {
       `/api/bia/assets?q=${encodeURIComponent(q)}`
     ),
   assetNames: () => request<string[]>("/api/bia/asset-names"),
+  personNames: () => request<string[]>("/api/bia/person-names"),
   searchPersons: (q: string) =>
     request<Record<string, unknown>[]>(
       `/api/bia/persons?q=${encodeURIComponent(q)}`
