@@ -45,27 +45,22 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/asset-management">&#128187; Assets</a>
-  <a href="/vulnerability-management">&#128737;&#65039; Vulnerabilities</a>
-  <a href="/network-sessions">&#127760; Network</a>
-  <a href="/drift">&#128200; Surface drift</a>
+  <a href="/asset-management" data-i18n="em.navAssets">&#128187; Assets</a>
+  <a href="/vulnerability-management" data-i18n="em.navVulns">&#128737;&#65039; Vulnerabilities</a>
+  <a href="/network-sessions" data-i18n="em.navNetwork">&#127760; Network</a>
+  <a href="/drift" data-i18n="em.navDrift">&#128200; Surface drift</a>
   <span class="spacer"></span>
-  <span class="title">&#127760; External Attack Surface</span>
+  <span class="title" data-i18n="em.navTitle">&#127760; External Attack Surface</span>
 </div>
 
 <div class="em-wrap">
-  <h1>External Attack Surface Management</h1>
-  <div class="em-sub">The attacker's <b>outside-in</b> view of your estate: every <b>internet-facing</b> asset, <i>why</i>
-    it is exposed (public IP, website, inbound traffic, a monitored endpoint or a public-facing flag), the
-    <b>services &amp; ports</b> it presents, its <b>TLS/certificate</b> posture and the externally-reachable
-    <b>vulnerabilities</b> it carries (KEV / critical) — ranked by an exposure score. <b>Shadow</b> exposure
-    (internet-reachable but never declared public-facing) and <b>surface drift</b> (newly exposed assets) are
-    flagged for action. Snapshot the surface to measure drift over time.</div>
+  <h1 data-i18n="em.title">External Attack Surface Management</h1>
+  <div class="em-sub" data-i18n="em.sub">The attacker's outside-in view of your estate: every internet-facing asset, why it is exposed (public IP, website, inbound traffic, a monitored endpoint or a public-facing flag), the services &amp; ports it presents, its TLS/certificate posture and the externally-reachable vulnerabilities it carries (KEV / critical) — ranked by an exposure score. Shadow exposure (internet-reachable but never declared public-facing) and surface drift (newly exposed assets) are flagged for action. Snapshot the surface to measure drift over time.</div>
   <div class="em-bar">
-    <button id="em-snap">📸 Snapshot surface</button>
+    <button id="em-snap" data-i18n="em.snapBtn">📸 Snapshot surface</button>
     <span class="stat" id="em-snap-stat"></span>
   </div>
-  <div id="em-body"><div class="muted" style="padding:24px;text-align:center">Mapping the external attack surface…</div></div>
+  <div id="em-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="em.loading">Mapping the external attack surface…</div></div>
 </div>
 
 <div id="toast"></div>

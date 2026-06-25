@@ -4,9 +4,12 @@
  * posture, external KEV/critical vulns), the exposures worklist and surface drift, from
  * /api/easm. A "Snapshot surface" button records a baseline so drift can be measured.
  */
+import { initI18n, t } from "./i18n";
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
-function toast(m: string): void { const t = $("toast"); if (!t) return; t.textContent = m; t.className = "show"; setTimeout(() => { t.className = ""; }, 2600); }
+function toast(m: string): void { const el = $("toast"); if (!el) return; el.textContent = m; el.className = "show"; setTimeout(() => { el.className = ""; }, 2600); }
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
 
 interface Service { proto: string; port: number; service: string; source: string }
 interface Row {
@@ -29,7 +32,7 @@ function sevClass(s: string): string { return `s-${(s || "low").toLowerCase()}`;
 
 function certHtml(ssl: Row["ssl"]): string {
   if (!ssl || ssl.days == null) return `<span class="muted">—</span>`;
-  if (ssl.days < 0) return `<span class="cert-expired">EXPIRED</span> <span class="muted">${esc(ssl.expiry)}</span>`;
+  if (ssl.days < 0) return `<span class="cert-expired">${t("em.expired")}</span> <span class="muted">${esc(ssl.expiry)}</span>`;
   if (ssl.days <= 30) return `<span class="cert-expiring">${ssl.days}d</span> <span class="muted">${esc(ssl.expiry)}</span>`;
   return `<span class="cert-valid">${ssl.days}d</span> <span class="muted">${esc(ssl.expiry)}</span>`;
 }
@@ -40,12 +43,12 @@ function rowHtml(r: Row): string {
     : `<span class="muted">—</span>`;
   const reasons = r.reasons.map((x) => `<span class="reason">${esc(x)}</span>`).join("");
   const vulns = r.vulns.open
-    ? `${r.vulns.kev ? `<span class="kev" title="actively exploited">KEV ${r.vulns.kev}</span> ` : ""}${r.vulns.critical ? `<span class="sev s-high">${r.vulns.critical} crit</span> ` : ""}<span class="muted">${r.vulns.open} open</span>`
+    ? `${r.vulns.kev ? `<span class="kev" title="${t("em.kevTitle")}">KEV ${r.vulns.kev}</span> ` : ""}${r.vulns.critical ? `<span class="sev s-high">${fmt("em.nCrit", { n: r.vulns.critical })}</span> ` : ""}<span class="muted">${fmt("em.nOpen", { n: r.vulns.open })}</span>`
     : `<span class="muted">0</span>`;
   return `<tr>
     <td><span class="scorebar"><span style="width:${Math.max(4, r.score)}%"></span></span><b>${r.score}</b></td>
-    <td><span class="aname">${esc(r.name)}</span>${r.shadow ? ` <span class="shadow" title="internet-reachable but not declared public-facing">SHADOW</span>` : ""}<br><span class="muted mono">${esc(r.address)}</span><div style="margin-top:3px">${reasons}</div></td>
-    <td>${esc(r.criticality)}${r.owner ? `<br><span class="muted">${esc(r.owner)}</span>` : `<br><span class="muted">no owner</span>`}</td>
+    <td><span class="aname">${esc(r.name)}</span>${r.shadow ? ` <span class="shadow" title="${t("em.shadowTitle")}">${t("em.shadow")}</span>` : ""}<br><span class="muted mono">${esc(r.address)}</span><div style="margin-top:3px">${reasons}</div></td>
+    <td>${esc(r.criticality)}${r.owner ? `<br><span class="muted">${esc(r.owner)}</span>` : `<br><span class="muted">${t("em.noOwnerRow")}</span>`}</td>
     <td>${ports}</td>
     <td>${certHtml(r.ssl)}</td>
     <td>${vulns}</td>
@@ -62,71 +65,67 @@ async function load(): Promise<void> {
   catch (e) { $("em-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">⚠️ ${esc(e)}</div>`; return; }
 
   if (!d.rows.length) {
-    $("em-body").innerHTML = `<div class="muted" style="padding:32px;text-align:center;line-height:1.7">
-      No internet-facing assets resolved yet.<br>
-      An asset joins the external surface when it has a <b>public IP</b>, a <b>website URL</b>, <b>inbound traffic</b>
-      (NETWORKSESSION direction=inbound), an <b>externally-monitored endpoint</b>, or its <b>Public-facing</b> flag is set.<br>
-      Mark assets public-facing in <a href="/asset-management">Asset Management</a>, import flows via the
-      <a href="/network-sessions">network</a> cartography, or add HTTP/SSL monitors in <a href="/asset-monitoring">monitoring</a>.</div>`;
+    $("em-body").innerHTML = `<div class="muted" style="padding:32px;text-align:center;line-height:1.7">${t("em.empty")}</div>`;
     return;
   }
 
   const s = d.summary;
   const cards = [
-    card("Internet-facing", String(s.internetFacing), "exposed assets", s.internetFacing ? "#22d3ee" : undefined),
-    card("Exposed services", String(s.exposedServices), `${s.openPorts} open ports`, s.exposedServices ? "#60a5fa" : undefined),
-    card("External KEV", String(s.externalKev), "exploited & reachable", s.externalKev ? "#f87171" : "#34d399"),
-    card("Certificates", String(s.expiredCerts + s.expiringCerts), `${s.expiredCerts} expired · ${s.expiringCerts} expiring`, (s.expiredCerts + s.expiringCerts) ? "#fbbf24" : "#34d399"),
-    card("Shadow exposure", String(s.shadow), "undeclared public", s.shadow ? "#fbbf24" : "#34d399"),
-    card("No owner", String(s.noOwner), "unaccountable", s.noOwner ? "#fbbf24" : undefined),
+    card(t("em.cInternetFacing"), String(s.internetFacing), t("em.cInternetFacing.foot"), s.internetFacing ? "#22d3ee" : undefined),
+    card(t("em.cServices"), String(s.exposedServices), fmt("em.cServices.foot", { n: s.openPorts }), s.exposedServices ? "#60a5fa" : undefined),
+    card(t("em.cExtKev"), String(s.externalKev), t("em.cExtKev.foot"), s.externalKev ? "#f87171" : "#34d399"),
+    card(t("em.cCerts"), String(s.expiredCerts + s.expiringCerts), fmt("em.cCerts.foot", { e: s.expiredCerts, x: s.expiringCerts }), (s.expiredCerts + s.expiringCerts) ? "#fbbf24" : "#34d399"),
+    card(t("em.cShadow"), String(s.shadow), t("em.cShadow.foot"), s.shadow ? "#fbbf24" : "#34d399"),
+    card(t("em.cNoOwner"), String(s.noOwner), t("em.cNoOwner.foot"), s.noOwner ? "#fbbf24" : undefined),
   ].join("");
 
   const reasonChips = Object.entries(s.byReason).sort((a, b) => b[1] - a[1])
     .map(([k, v]) => `<span class="bd"><b>${esc(String(v))}</b> ${esc(k)}</span>`).join("");
 
   const driftHtml = d.drift && (d.drift.added.length || d.drift.removed.length)
-    ? `<div class="em-section">Surface drift (vs previous snapshot · ${d.drift.snapshots} snapshot${d.drift.snapshots === 1 ? "" : "s"})</div>
+    ? `<div class="em-section">${fmt("em.driftSec", { n: d.drift.snapshots })}</div>
        <div class="breakdown">
-         ${d.drift.added.length ? `<span class="bd drift-add">▲ ${d.drift.added.length} newly exposed: ${d.drift.added.slice(0, 8).map(esc).join(", ")}${d.drift.added.length > 8 ? "…" : ""}</span>` : ""}
-         ${d.drift.removed.length ? `<span class="bd drift-rem">▼ ${d.drift.removed.length} no longer exposed: ${d.drift.removed.slice(0, 8).map(esc).join(", ")}${d.drift.removed.length > 8 ? "…" : ""}</span>` : ""}
+         ${d.drift.added.length ? `<span class="bd drift-add">${fmt("em.driftAdded", { n: d.drift.added.length, list: d.drift.added.slice(0, 8).map(esc).join(", ") + (d.drift.added.length > 8 ? "…" : "") })}</span>` : ""}
+         ${d.drift.removed.length ? `<span class="bd drift-rem">${fmt("em.driftRemoved", { n: d.drift.removed.length, list: d.drift.removed.slice(0, 8).map(esc).join(", ") + (d.drift.removed.length > 8 ? "…" : "") })}</span>` : ""}
        </div>`
     : d.drift && d.drift.snapshots
-      ? `<div class="em-section">Surface drift</div><div class="breakdown"><span class="bd">No change since the previous of ${d.drift.snapshots} snapshot${d.drift.snapshots === 1 ? "" : "s"}.</span></div>`
+      ? `<div class="em-section">${t("em.driftSecSimple")}</div><div class="breakdown"><span class="bd">${fmt("em.driftNoChange", { n: d.drift.snapshots })}</span></div>`
       : "";
 
-  const surfaceTable = `<div class="em-section">Internet-facing assets (${d.rows.length})</div>
-    <table class="em"><thead><tr><th>Score</th><th>Asset / address</th><th>Criticality / owner</th><th>Exposed ports</th><th>TLS cert</th><th>External vulns</th></tr></thead>
+  const surfaceTable = `<div class="em-section">${fmt("em.secAssets", { n: d.rows.length })}</div>
+    <table class="em"><thead><tr><th>${t("em.thScore")}</th><th>${t("em.thAsset")}</th><th>${t("em.thCrit")}</th><th>${t("em.thPorts")}</th><th>${t("em.thCert")}</th><th>${t("em.thVulns")}</th></tr></thead>
     <tbody>${d.rows.map(rowHtml).join("")}</tbody></table>`;
 
   const worklist = d.worklist.length
-    ? `<div class="em-section">Exposures worklist (${d.worklist.length})</div>
-       <table class="em"><thead><tr><th>Severity</th><th>Asset</th><th>Exposure</th></tr></thead>
+    ? `<div class="em-section">${fmt("em.secWorklist", { n: d.worklist.length })}</div>
+       <table class="em"><thead><tr><th>${t("em.thSeverity")}</th><th>${t("em.thAssetW")}</th><th>${t("em.thExposure")}</th></tr></thead>
        <tbody>${d.worklist.map(findingHtml).join("")}</tbody></table>`
-    : `<div class="em-section">Exposures worklist</div><div class="breakdown"><span class="bd">✅ No open exposures — the external surface is clean.</span></div>`;
+    : `<div class="em-section">${t("em.secWorklistEmpty")}</div><div class="breakdown"><span class="bd">${t("em.noExposures")}</span></div>`;
 
   $("em-body").innerHTML = `<div class="em-cards">${cards}</div>
-    <div class="em-section">Why exposed</div><div class="breakdown">${reasonChips || `<span class="bd">—</span>`}</div>
+    <div class="em-section">${t("em.secWhy")}</div><div class="breakdown">${reasonChips || `<span class="bd">—</span>`}</div>
     ${driftHtml}
     ${worklist}
     ${surfaceTable}
-    <div class="legend">Outside-in view derived from ASSET (public IP / website / public-facing), ASSETSERVICE &amp; inbound NETWORKSESSION (ports), MONITORINGCHECK (TLS), and ASSETVULNERABILITY ⋈ XVULNERABILITY (KEV/critical). Snapshot the surface to track drift.</div>`;
+    <div class="legend">${t("em.legend")}</div>`;
 }
 
 async function snapshot(): Promise<void> {
   const btn = $("em-snap") as HTMLButtonElement; const stat = $("em-snap-stat");
-  btn.disabled = true; stat.textContent = "Capturing…";
+  btn.disabled = true; stat.textContent = t("em.capturing");
   try {
     const r = await fetch("/api/easm/snapshot", { method: "POST" });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
-    stat.innerHTML = `✅ Snapshot #${esc(j.snapshotId)} — ${esc(j.assets)} assets, ${esc(j.exposed)} exposed. Drift will compare against this next time.`;
-    toast("Surface snapshot captured");
+    stat.innerHTML = fmt("em.snapDone", { id: esc(j.snapshotId), a: esc(j.assets), x: esc(j.exposed) });
+    toast(t("em.toastSnap"));
     void load();
   } catch (e) { stat.innerHTML = `⚠️ ${esc(e)}`; }
   finally { btn.disabled = false; }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initI18n();
   void load();
   const btn = document.getElementById("em-snap");
   if (btn) btn.addEventListener("click", () => void snapshot());

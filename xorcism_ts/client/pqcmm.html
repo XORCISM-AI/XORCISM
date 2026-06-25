@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — PQCMM (Post-Quantum Crypto Maturity)</title>
+<title data-i18n="pq.pageTitle">XORCISM — PQCMM (Post-Quantum Crypto Maturity)</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .pq-wrap{max-width:1280px;margin:0 auto;padding:18px}
@@ -58,26 +58,19 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/?db=XCOMPLIANCE&amp;table=PQCMMASSESSMENT">&#128221; Assessments</a>
-  <a href="/asset-management">&#128737;&#65039; Assets</a>
-  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/?db=XCOMPLIANCE&amp;table=PQCMMASSESSMENT" data-i18n="pq.navAssessments">&#128221; Assessments</a>
+  <a href="/asset-management" data-i18n="pq.navAssets">&#128737;&#65039; Assets</a>
+  <a href="/compliance-management" data-i18n="pq.navCompliance">&#9878;&#65039; Compliance</a>
   <span class="spacer"></span>
-  <span class="title">&#9883; PQCMM — Quantum Readiness</span>
+  <span class="title" data-i18n="pq.navTitle">&#9883; PQCMM — Quantum Readiness</span>
 </div>
 
 <div class="pq-wrap">
   <div>
-    <h1>PQCMM &mdash; Post-Quantum Cryptography Maturity</h1>
-    <div class="pq-sub">Quantum computers will break today's public-key cryptography (RSA, ECC). The
-      PKI Consortium's <b>Post-Quantum Cryptography Maturity Model (PQCMM)</b> defines six
-      quantum-readiness levels (<b>0&nbsp;None &rarr; 5&nbsp;Optimized</b>). Assess every product, service or
-      asset that relies on cryptography, track <b>current vs target</b> maturity, and roll up your
-      organisation's quantum-readiness posture &mdash; how much is still <b>quantum-vulnerable</b>,
-      <b>production-ready</b> with PQC, or fully <b>managed</b> (CBOM + zero-legacy). The worklist
-      surfaces the laggards. Manage entries under
-      <a href="/?db=XCOMPLIANCE&amp;table=PQCMMASSESSMENT">PQCMM assessments</a>.</div>
+    <h1 data-i18n="pq.title">PQCMM &mdash; Post-Quantum Cryptography Maturity</h1>
+    <div class="pq-sub" data-i18n="pq.sub">Quantum computers will break today's public-key cryptography (RSA, ECC). The PKI Consortium's Post-Quantum Cryptography Maturity Model (PQCMM) defines six quantum-readiness levels (0 None → 5 Optimized). Assess every product, service or asset that relies on cryptography, track current vs target maturity, and roll up your organisation's quantum-readiness posture — how much is still quantum-vulnerable, production-ready with PQC, or fully managed (CBOM + zero-legacy). The worklist surfaces the laggards. Manage entries under PQCMM assessments.</div>
   </div>
-  <div id="pq-body"><div class="muted" style="padding:24px;text-align:center">Building the quantum-readiness posture&hellip;</div></div>
+  <div id="pq-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="pq.loading">Building the quantum-readiness posture&hellip;</div></div>
 </div>
 
 <script src="/js/session-ui.js"></script>

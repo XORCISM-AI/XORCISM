@@ -1917,9 +1917,10 @@ const STIX_DIR = path.resolve(__dirname, "../../../../stix");
 
 // GET /api/stix/hunts — STIX 2.1 bundle of the XTHREAT hunts (x-hunt) linked to the
 // ATT&CK techniques (attack-pattern) and IOCs (indicator). For the STIX Graph page.
-router.get("/stix/hunts", (_req: Request, res: Response) => {
+router.get("/stix/hunts", (req: Request, res: Response) => {
   try {
-    res.json(getHuntsStixBundle());
+    const id = req.query.id != null && String(req.query.id) !== "" ? Number(req.query.id) : undefined;
+    res.json(getHuntsStixBundle(id));
   } catch (e) {
     res.status(500).json({ error: String(e) });
   }
@@ -1927,9 +1928,10 @@ router.get("/stix/hunts", (_req: Request, res: Response) => {
 
 // GET /api/stix/reports — STIX 2.1 bundle of the XTHREAT threat reports (report SDO)
 // linked to the ATT&CK techniques / CVEs they mention. For the STIX Graph page.
-router.get("/stix/reports", (_req: Request, res: Response) => {
+router.get("/stix/reports", (req: Request, res: Response) => {
   try {
-    res.json(getReportsStixBundle());
+    const id = req.query.id != null && String(req.query.id) !== "" ? Number(req.query.id) : undefined;
+    res.json(getReportsStixBundle(id));
   } catch (e) {
     res.status(500).json({ error: String(e) });
   }

@@ -1,7 +1,12 @@
 /** attack-tree.ts — attack trees (/attack-tree). List trees, render an AND/OR tree with rolled-up
  * feasibility + easiest path, add/mitigate nodes, create new trees. */
+import { initI18n, t } from "./i18n";
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
+const BAND_KEY: Record<string, string> = { High: "atr.feasHigh", Medium: "atr.feasMedium", Low: "atr.feasLow", None: "atr.feasNone" };
+const bandLabel = (b: string): string => { const n = String(b || "").charAt(0).toUpperCase() + String(b || "").slice(1).toLowerCase(); return BAND_KEY[n] ? t(BAND_KEY[n]) : b; };
 
 interface NodeRow { id: number; parentId: number | null; label: string; gate: string; likelihood: string; mitigated: boolean; }
 interface TreeDetail { tree: any; nodes: NodeRow[]; rootId: number | null; feasibility: number; band: string; easiestPath: string[]; }
@@ -27,29 +32,29 @@ function nodeTree(node: NodeRow, byParent: Map<number | null, NodeRow[]>): strin
   const inner = `<span class="atn${node.mitigated ? " mit" : ""}">
     ${node.gate ? `<span class="gate ${node.gate}">${node.gate}</span>` : ""}
     <span class="nlbl">${esc(node.label)}</span>
-    ${isLeaf && node.likelihood ? `<span class="feas ${fcls(node.likelihood.charAt(0).toUpperCase() + node.likelihood.slice(1).toLowerCase())}">${esc(node.likelihood)}</span>` : ""}
-    ${node.mitigated ? `<span class="muted" style="font-size:10px">mitigated</span>` : ""}
-    <button class="nbtn" data-add="${node.id}" title="Add sub-node">+</button>
-    <button class="nbtn" data-mit="${node.id}" title="Toggle mitigated">${node.mitigated ? "↺" : "🛡"}</button>
-    ${node.parentId != null ? `<button class="nbtn" data-del="${node.id}" title="Delete subtree">✕</button>` : ""}
+    ${isLeaf && node.likelihood ? `<span class="feas ${fcls(node.likelihood.charAt(0).toUpperCase() + node.likelihood.slice(1).toLowerCase())}">${esc(bandLabel(node.likelihood))}</span>` : ""}
+    ${node.mitigated ? `<span class="muted" style="font-size:10px">${t("atr.mitigated")}</span>` : ""}
+    <button class="nbtn" data-add="${node.id}" title="${t("atr.addSubTitle")}">+</button>
+    <button class="nbtn" data-mit="${node.id}" title="${t("atr.toggleMitTitle")}">${node.mitigated ? "↺" : "🛡"}</button>
+    ${node.parentId != null ? `<button class="nbtn" data-del="${node.id}" title="${t("atr.delSubTitle")}">✕</button>` : ""}
   </span>`;
   if (isLeaf) return `<li>${inner}</li>`;
   return `<li>${inner}<ul>${kids.slice().map((k) => nodeTree(k, byParent)).join("")}</ul></li>`;
 }
 
 function renderDetail(): void {
-  const d = DETAIL; if (!d) { $("at-canvas").innerHTML = `<div class="muted">Select a tree on the left, or create one.</div>`; return; }
+  const d = DETAIL; if (!d) { $("at-canvas").innerHTML = `<div class="muted">${t("atr.selectTree")}</div>`; return; }
   const byParent = new Map<number | null, NodeRow[]>();
   for (const n of d.nodes) { const a = byParent.get(n.parentId); if (a) a.push(n); else byParent.set(n.parentId, [n]); }
   const root = d.nodes.find((n) => n.parentId == null);
   const path = d.easiestPath.length ? d.easiestPath.map((p, i) => `${i ? " → " : ""}<b>${esc(p)}</b>`).join("") : "—";
   $("at-canvas").innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <h3 style="margin:0;font-size:16px;color:#e2e8f0;flex:1">${esc(d.tree.Name)} <span class="feas ${fcls(d.band)}">${d.feasibility}% ${esc(d.band)}</span></h3>
+      <h3 style="margin:0;font-size:16px;color:#e2e8f0;flex:1">${esc(d.tree.Name)} <span class="feas ${fcls(d.band)}">${d.feasibility}% ${esc(bandLabel(d.band))}</span></h3>
     </div>
-    <div class="muted" style="font-size:12px;margin-bottom:8px">Goal: ${esc(d.tree.Goal || d.tree.Name)}</div>
-    ${root ? `<ul class="tree">${nodeTree(root, byParent)}</ul>` : "<div class='muted'>empty tree</div>"}
-    <div class="path">🎯 Easiest attack path (feasibility ${d.feasibility}%): ${path}</div>`;
+    <div class="muted" style="font-size:12px;margin-bottom:8px">${fmt("atr.goal", { g: esc(d.tree.Goal || d.tree.Name) })}</div>
+    ${root ? `<ul class="tree">${nodeTree(root, byParent)}</ul>` : `<div class='muted'>${t("atr.emptyTree")}</div>`}
+    <div class="path">${fmt("atr.easiestPath", { n: d.feasibility, path })}</div>`;
   $("at-canvas").querySelectorAll<HTMLButtonElement>("button.nbtn").forEach((b) => {
     if (b.dataset.add) b.addEventListener("click", () => openNodeModal(Number(b.dataset.add)));
     if (b.dataset.mit) b.addEventListener("click", () => void toggleMit(Number(b.dataset.mit)));
@@ -61,14 +66,14 @@ function render(): void {
   const trees = TREES;
   const totalLeaves = trees.reduce((s, t) => s + t.leaves, 0);
   const cards = [
-    card("Attack trees", String(trees.length), "modeled goals"),
-    card("Total nodes", String(trees.reduce((s, t) => s + t.nodes, 0)), `${totalLeaves} leaf attacks`),
-    card("High-feasibility", String(trees.filter((t) => t.feasibility >= 70).length), "goals reachable", trees.some((t) => t.feasibility >= 70) ? "#f87171" : "#34d399"),
+    card(t("atr.cTrees"), String(trees.length), t("atr.cTrees.foot")),
+    card(t("atr.cNodes"), String(trees.reduce((s, tr) => s + tr.nodes, 0)), fmt("atr.cNodes.foot", { n: totalLeaves })),
+    card(t("atr.cHighFeas"), String(trees.filter((tr) => tr.feasibility >= 70).length), t("atr.cHighFeas.foot"), trees.some((tr) => tr.feasibility >= 70) ? "#f87171" : "#34d399"),
   ].join("");
-  const list = trees.length ? trees.map((t) => `<div class="at-li${t.id === SEL ? " sel" : ""}" data-id="${t.id}">
-      <div class="nm">${esc(t.name)} <span class="feas ${fcls(t.band)}">${t.feasibility}%</span></div>
-      <div class="meta">${t.nodes} nodes · ${t.leaves} leaves</div></div>`).join("")
-    : `<div class="muted" style="padding:10px">No attack trees yet.</div>`;
+  const list = trees.length ? trees.map((tr) => `<div class="at-li${tr.id === SEL ? " sel" : ""}" data-id="${tr.id}">
+      <div class="nm">${esc(tr.name)} <span class="feas ${fcls(tr.band)}">${tr.feasibility}%</span></div>
+      <div class="meta">${fmt("atr.liMeta", { n: tr.nodes, m: tr.leaves })}</div></div>`).join("")
+    : `<div class="muted" style="padding:10px">${t("atr.noTrees")}</div>`;
   $("at-body").innerHTML = `<div class="at-cards">${cards}</div>
     <div class="at-layout"><div class="at-list" id="at-list">${list}</div><div class="at-detail" id="at-canvas"></div></div>`;
   $("at-list").querySelectorAll<HTMLElement>(".at-li").forEach((el) => el.addEventListener("click", () => void selectTree(Number(el.dataset.id))));
@@ -94,7 +99,7 @@ async function toggleMit(nodeId: number): Promise<void> {
   try { await jpost("/api/attack-tree/node/update", { nodeId, mitigated: !n.mitigated }); await selectTree(SEL!); await loadList(); } catch (e) { toast(`⚠️ ${esc(e)}`); }
 }
 async function delNode(nodeId: number): Promise<void> {
-  if (!window.confirm("Delete this node and its subtree?")) return;
+  if (!window.confirm(t("atr.confirmDelNode"))) return;
   try { await jpost("/api/attack-tree/node/delete", { nodeId }); await selectTree(SEL!); await loadList(); } catch (e) { toast(`⚠️ ${esc(e)}`); }
 }
 
@@ -102,17 +107,18 @@ function openNodeModal(parentId: number): void { addParent = parentId; ($("atn-l
 function gateChanged(): void { $("atn-lik-wrap").style.display = ($("atn-gate") as HTMLSelectElement).value ? "none" : ""; }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initI18n();
   $("at-new").addEventListener("click", () => { for (const id of ["atm-name", "atm-goal", "atm-desc"]) ($(id) as HTMLInputElement).value = ""; $("atm-err").textContent = ""; $("at-tree-modal").classList.add("open"); ($("atm-name") as HTMLInputElement).focus(); });
   $("atm-cancel").addEventListener("click", () => $("at-tree-modal").classList.remove("open"));
   $("atm-create").addEventListener("click", async () => {
-    const name = ($("atm-name") as HTMLInputElement).value.trim(); if (!name) { $("atm-err").textContent = "⚠️ Name required."; return; }
+    const name = ($("atm-name") as HTMLInputElement).value.trim(); if (!name) { $("atm-err").textContent = t("atr.errName"); return; }
     try { await jpost("/api/attack-tree", { name, goal: ($("atm-goal") as HTMLInputElement).value.trim(), description: ($("atm-desc") as HTMLTextAreaElement).value.trim() });
-      $("at-tree-modal").classList.remove("open"); SEL = null; await loadList(); toast("✅ Attack tree created"); } catch (e) { $("atm-err").textContent = `⚠️ ${e}`; }
+      $("at-tree-modal").classList.remove("open"); SEL = null; await loadList(); toast(t("atr.toastCreated")); } catch (e) { $("atm-err").textContent = `⚠️ ${e}`; }
   });
   $("atn-gate").addEventListener("change", gateChanged);
   $("atn-cancel").addEventListener("click", () => $("at-node-modal").classList.remove("open"));
   $("atn-add").addEventListener("click", async () => {
-    const label = ($("atn-label") as HTMLInputElement).value.trim(); if (!label) { $("atn-err").textContent = "⚠️ Label required."; return; }
+    const label = ($("atn-label") as HTMLInputElement).value.trim(); if (!label) { $("atn-err").textContent = t("atr.errLabel"); return; }
     const gate = ($("atn-gate") as HTMLSelectElement).value; const likelihood = gate ? "" : ($("atn-lik") as HTMLSelectElement).value;
     try { await jpost("/api/attack-tree/node", { treeId: SEL, parentId: addParent, label, gate, likelihood });
       $("at-node-modal").classList.remove("open"); await selectTree(SEL!); await loadList(); } catch (e) { $("atn-err").textContent = `⚠️ ${e}`; }

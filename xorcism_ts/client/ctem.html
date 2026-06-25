@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — CTEM Exposure Management</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="ctem.pageTitle">XORCISM — CTEM Exposure Management</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1060px}
@@ -34,20 +34,17 @@
   .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}.btn-sm2:hover{border-color:#fb923c}
   .lic{font-size:11px;color:#64748b;margin-top:20px;border-top:1px solid #1e2133;padding-top:10px}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/exposure">&#127919; Exposure</a><a href="/voc">&#129657; VOC</a><a href="/attack-surface">&#127760; Surface</a><span class="spacer"></span><span class="title">&#128376;&#65039; CTEM Exposure Management</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/exposure" data-i18n="ctem.navExposure">&#127919; Exposure</a><a href="/voc" data-i18n="ctem.navVoc">&#129657; VOC</a><a href="/attack-surface" data-i18n="ctem.navSurface">&#127760; Surface</a><span class="spacer"></span><span class="title" data-i18n="ctem.navTitle">&#128376;&#65039; CTEM Exposure Management</span></div>
 <div class="mw">
   <div style="display:flex;align-items:flex-start;gap:12px">
     <div style="flex:1">
-      <h1>CTEM — Continuous Threat Exposure Management</h1>
-      <div class="sub">Support for the <b>ctem.org</b> (SecureCoders) standardized <b>exposure-identifier taxonomy</b> — a vendor-neutral
-        <i>“CVE/CWE for exposures”</i>: identifiers <span class="mono">CTEM-&lt;CAT&gt;-&lt;n&gt;</span> across 8 categories, run through the
-        3-stage CTEM program <b>Discover → Prioritize → Remediate</b>. Classify your observed exposures against the standard, track
-        them through the stages, and measure category coverage.</div>
+      <h1 data-i18n="ctem.title">CTEM — Continuous Threat Exposure Management</h1>
+      <div class="sub" data-i18n="ctem.sub">Support for the ctem.org (SecureCoders) standardized exposure-identifier taxonomy — a vendor-neutral “CVE/CWE for exposures”: identifiers CTEM-&lt;CAT&gt;-&lt;n&gt; across 8 categories, run through the 3-stage CTEM program Discover → Prioritize → Remediate. Classify your observed exposures against the standard, track them through the stages, and measure category coverage.</div>
     </div>
     <div style="display:flex;gap:8px;padding-top:4px">
-      <button class="btn-sm2" id="btn-discover" title="Classify internet-exposed assets as CTEM exposures">&#128270; Discover from assets</button>
+      <button class="btn-sm2" id="btn-discover" data-i18n="ctem.discover" data-i18n-title="ctem.discoverTitle" title="Classify internet-exposed assets as CTEM exposures">&#128270; Discover from assets</button>
     </div>
   </div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading CTEM…</div></div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="ctem.loading">Loading CTEM…</div></div>
 </div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/ctem.js"></script></body></html>

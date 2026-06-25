@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Bug Bounty Management</title>
+<title data-i18n="bb.pageTitle">XORCISM — Bug Bounty Management</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .bb-wrap{max-width:1340px;margin:0 auto;padding:18px}
@@ -47,43 +47,40 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/?db=XVULNERABILITY&amp;table=VULNERABILITY">&#128027; Vulnerabilities</a>
-  <a href="/?db=XVULNERABILITY&amp;table=BUGBOUNTYSUBMISSION">&#128221; Submissions</a>
+  <a href="/?db=XVULNERABILITY&amp;table=VULNERABILITY" data-i18n="bb.navVulns">&#128027; Vulnerabilities</a>
+  <a href="/?db=XVULNERABILITY&amp;table=BUGBOUNTYSUBMISSION" data-i18n="bb.navSubs">&#128221; Submissions</a>
   <span class="spacer"></span>
-  <span class="title">&#129714; Bug Bounty</span>
+  <span class="title" data-i18n="bb.navTitle">&#129714; Bug Bounty</span>
 </div>
 <div class="bb-wrap">
   <div style="display:flex;align-items:flex-start;gap:12px">
-    <h1 style="flex:1">Bug Bounty Management</h1>
-    <button class="btn-new" id="bb-new">+ New program</button>
+    <h1 style="flex:1" data-i18n="bb.title">Bug Bounty Management</h1>
+    <button class="btn-new" id="bb-new" data-i18n="bb.newProgram">+ New program</button>
   </div>
-  <div class="bb-sub">One pane over your <b>bug bounty programmes</b> — submissions received, the <b>triage backlog</b>,
-    severity mix, <b>rewards paid</b>, researchers and scope — plus the worklist your triage team acts on
-    (submissions awaiting triage, high-severity still open, resolved reports not linked to a tracked vulnerability,
-    programmes with no scope). Programmes & submissions live in XVULNERABILITY (BUGBOUNTY*).</div>
-  <div id="bb-body"><div class="muted" style="padding:24px;text-align:center">Loading bug bounty programmes…</div></div>
+  <div class="bb-sub" data-i18n="bb.sub">One pane over your bug bounty programmes — submissions received, the triage backlog, severity mix, rewards paid, researchers and scope — plus the worklist your triage team acts on (submissions awaiting triage, high-severity still open, resolved reports not linked to a tracked vulnerability, programmes with no scope). Programmes & submissions live in XVULNERABILITY (BUGBOUNTY*).</div>
+  <div id="bb-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="bb.loading">Loading bug bounty programmes…</div></div>
 </div>
 
 <div class="bb-modal-bg" id="bb-modal">
   <div class="bb-modal">
-    <h3>New bug bounty program</h3>
-    <p class="lead">Define a programme. Add scope, submissions and rewards afterwards (the worklist will surface what needs attention).</p>
-    <div class="fld"><label>Program name <span class="req">*</span></label><input id="bb-f-name" type="text" maxlength="300" placeholder="e.g. Acme Public VDP"></div>
+    <h3 data-i18n="bb.modalTitle">New bug bounty program</h3>
+    <p class="lead" data-i18n="bb.modalLead">Define a programme. Add scope, submissions and rewards afterwards (the worklist will surface what needs attention).</p>
+    <div class="fld"><label><span data-i18n="bb.fName">Program name</span> <span class="req">*</span></label><input id="bb-f-name" type="text" maxlength="300" data-i18n-placeholder="bb.fNamePh" placeholder="e.g. Acme Public VDP"></div>
     <div class="row3">
-      <div class="fld"><label>Platform</label><select id="bb-f-platform"><option>HackerOne</option><option>Bugcrowd</option><option>Intigriti</option><option>YesWeHack</option><option>Synack</option><option selected>Self-hosted</option></select></div>
-      <div class="fld"><label>Status</label><select id="bb-f-status"><option>Draft</option><option>Private</option><option>Public</option><option>Paused</option><option>Closed</option></select></div>
-      <div class="fld"><label>Currency</label><select id="bb-f-currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option></select></div>
+      <div class="fld"><label data-i18n="bb.fPlatform">Platform</label><select id="bb-f-platform"><option>HackerOne</option><option>Bugcrowd</option><option>Intigriti</option><option>YesWeHack</option><option>Synack</option><option selected>Self-hosted</option></select></div>
+      <div class="fld"><label data-i18n="bb.fStatus">Status</label><select id="bb-f-status"><option>Draft</option><option>Private</option><option>Public</option><option>Paused</option><option>Closed</option></select></div>
+      <div class="fld"><label data-i18n="bb.fCurrency">Currency</label><select id="bb-f-currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CHF</option></select></div>
     </div>
     <div class="row2">
-      <div class="fld"><label>Min reward</label><input id="bb-f-min" type="number" min="0" step="50" placeholder="100"></div>
-      <div class="fld"><label>Max reward</label><input id="bb-f-max" type="number" min="0" step="100" placeholder="10000"></div>
+      <div class="fld"><label data-i18n="bb.fMin">Min reward</label><input id="bb-f-min" type="number" min="0" step="50" placeholder="100"></div>
+      <div class="fld"><label data-i18n="bb.fMax">Max reward</label><input id="bb-f-max" type="number" min="0" step="100" placeholder="10000"></div>
     </div>
-    <div class="fld"><label>Policy URL</label><input id="bb-f-policy" type="text" maxlength="500" placeholder="https://acme.com/security/policy"></div>
-    <div class="fld"><label>Scope / description</label><textarea id="bb-f-scope" placeholder="*.acme.com, the iOS app, the public API…"></textarea></div>
+    <div class="fld"><label data-i18n="bb.fPolicy">Policy URL</label><input id="bb-f-policy" type="text" maxlength="500" placeholder="https://acme.com/security/policy"></div>
+    <div class="fld"><label data-i18n="bb.fScope">Scope / description</label><textarea id="bb-f-scope" data-i18n-placeholder="bb.fScopePh" placeholder="*.acme.com, the iOS app, the public API…"></textarea></div>
     <div class="bb-modal-foot">
       <span class="bb-err" id="bb-f-err"></span>
-      <button class="btn btn-ghost btn-sm" id="bb-cancel">Cancel</button>
-      <button class="btn-new" id="bb-create">Create program</button>
+      <button class="btn btn-ghost btn-sm" id="bb-cancel" data-i18n="bb.cancel">Cancel</button>
+      <button class="btn-new" id="bb-create" data-i18n="bb.createProgram">Create program</button>
     </div>
   </div>
 </div>

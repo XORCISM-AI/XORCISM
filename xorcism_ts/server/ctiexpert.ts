@@ -40,6 +40,9 @@ export const TECHNIQUES: Technique[] = [
   { id: "crypto", name: "Blockchain / wallet tracing", phase: "Acquire", kinds: ["crypto"] },
   { id: "people", name: "Person lookup (50+ data points)", phase: "Acquire", kinds: ["person", "email"] },
   { id: "image", name: "Reverse-image & geolocation", phase: "Acquire", kinds: ["person"] },
+  { id: "x-osint", name: "X-OSINT all-in-one (phone/email/subdomain)", phase: "Acquire", kinds: ["phone", "email", "domain", "username"], connector: "x-osint" },
+  { id: "vin", name: "VIN / vehicle-identification OSINT", phase: "Acquire", kinds: ["person", "org"], connector: "x-osint" },
+  { id: "email-from-name", name: "Email discovery from a name", phase: "Acquire", kinds: ["person", "org"], connector: "x-osint" },
   // ── Enrich ──
   { id: "crossref", name: "Cross-reference & pivot", phase: "Enrich", kinds: KINDS },
   { id: "link", name: "Link subjects / entity resolution", phase: "Enrich", kinds: KINDS },

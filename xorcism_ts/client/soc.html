@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — SOC Operations</title>
+<title data-i18n="soc.pageTitle">XORCISM — SOC Operations</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .so-wrap{max-width:1340px;margin:0 auto;padding:18px}
@@ -51,19 +51,16 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/incident-management">&#128680; Incidents</a>
-  <a href="/incident-sla">&#9201;&#65039; SLA</a>
-  <a href="/crisis-management">&#127983; Crisis</a>
+  <a href="/incident-management" data-i18n="soc.navIncidents">&#128680; Incidents</a>
+  <a href="/incident-sla" data-i18n="soc.navSla">&#9201;&#65039; SLA</a>
+  <a href="/crisis-management" data-i18n="soc.navCrisis">&#127983; Crisis</a>
   <span class="spacer"></span>
-  <span class="title">&#128225; SOC Operations</span>
+  <span class="title" data-i18n="soc.navTitle">&#128225; SOC Operations</span>
 </div>
 <div class="so-wrap">
-  <h1>SOC Operations</h1>
-  <div class="so-sub">The SOC command center: detection &amp; response <b>KPIs</b> (MTTD · MTTA · MTTR), the live
-    <b>on-call roster</b> and shift coverage, the open-incident <b>queue</b> with its <b>escalation procedure</b>
-    (L1 → L2 → L3 → Manager, ack/resolve timeouts), and <b>IR playbooks</b> (NIST SP 800-61) you attach to an
-    incident and work step by step. The worklist is what needs a SOC action right now.</div>
-  <div id="so-body"><div class="muted" style="padding:24px;text-align:center">Loading SOC operations…</div></div>
+  <h1 data-i18n="soc.title">SOC Operations</h1>
+  <div class="so-sub" data-i18n="soc.sub">The SOC command center: detection &amp; response KPIs (MTTD · MTTA · MTTR), the live on-call roster and shift coverage, the open-incident queue with its escalation procedure (L1 → L2 → L3 → Manager, ack/resolve timeouts), and IR playbooks (NIST SP 800-61) you attach to an incident and work step by step. The worklist is what needs a SOC action right now.</div>
+  <div id="so-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="soc.loading">Loading SOC operations…</div></div>
 </div>
 
 <div class="so-modal" id="so-modal"><div class="so-dlg" id="so-dlg"></div></div>

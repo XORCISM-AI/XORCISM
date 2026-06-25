@@ -1,0 +1,13 @@
+{
+  "networks": [
+    { "ssid": "HomeFiber", "bssid": "b4:fb:e4:11:22:33", "channel": "36", "signal": -48, "enc": "WPA2", "cipher": "CCMP", "wps": true },
+    { "ssid": "CoffeeShop_Free", "bssid": "b4:fb:e4:11:22:44", "channel": "6", "signal": -61, "enc": "OPEN" },
+    { "ssid": "OldLinksys", "bssid": "b4:fb:e4:11:22:55", "channel": "11", "signal": -72, "enc": "WEP" },
+    { "ssid": "Neighbour6E", "bssid": "b4:fb:e4:11:22:66", "channel": "37", "signal": -55, "enc": "WPA3", "cipher": "CCMP" },
+    { "ssid": "OfficeCorp", "bssid": "b4:fb:e4:11:22:77", "channel": "44", "signal": -50, "enc": "WPA2-Enterprise", "cipher": "CCMP" }
+  ],
+  "captures": [
+    { "type": "PMKID", "bssid": "b4:fb:e4:11:22:33", "ssid": "HomeFiber" },
+    { "type": "handshake", "bssid": "b4:fb:e4:11:22:55", "ssid": "OldLinksys" }
+  ]
+}

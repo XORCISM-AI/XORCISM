@@ -87,6 +87,8 @@ import ctemRouter from "./routes/ctem";
 import { seedCtemIdentifiers } from "./ctem";
 import ctiExpertRouter from "./routes/ctiexpert";
 import { ensureCtiExpertTables } from "./ctiexpert";
+import wifiPentestRouter from "./routes/wifipentest";
+import { ensureWifiTables } from "./wifipentest";
 import teamsRouter from "./routes/teams";
 import { ensureTeamsTables } from "./teams";
 import crocRouter from "./routes/croc";
@@ -280,6 +282,7 @@ app.use("/api", soarCockpitRouter); // SOAR cockpit: orchestration playbooks (tr
 app.use("/api", endpointQueryRouter); // Tanium-style real-time endpoint querying (Interact): sensors + answer grid
 app.use("/api", ctemRouter); // CTEM (ctem.org): standardized exposure-identifier taxonomy + 3-stage exposure cockpit
 app.use("/api", ctiExpertRouter); // CTI-Expert: AI-orchestrated OSINT investigation (cti-expert skill → local AI)
+app.use("/api", wifiPentestRouter); // Wi-Fi pentest: local Wi-Fi security assessment (netsh/nmcli survey → A–F grading + toolkit)
 app.use("/api", teamsRouter); // Microsoft Teams: alert/notification distribution (webhook targets + test)
 app.use("/api", crocRouter); // CROC: Continuous Defense Loop cockpit (event bus + pre-auth policies + bidirectional flow)
 app.use("/api", landingRouter); // landing-menu NICE filter + access config for the current user
@@ -505,6 +508,9 @@ app.get("/ctem", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/cti-expert", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "cti-expert.html"));
 });
+app.get("/wifi-pentest", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "wifi-pentest.html"));
+});
 app.get("/croc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "croc.html"));
 });
@@ -718,6 +724,7 @@ ensureVocTables(); // Vulnerability Operations Center: SLA policy + campaigns + 
 ensureVmTrendsTables(); // VM posture history (VMSNAPSHOT) for the /vm-report executive trends + myth-busting
 ensureCtemTables(); // CTEM (ctem.org): exposure-identifier catalogue (CTEMIDENTIFIER) + tracked exposures (CTEMEXPOSURE)
 ensureCtiExpertTables(); // CTI-Expert: AI-orchestrated OSINT investigations (CTIINVESTIGATION, XTHREAT)
+ensureWifiTables(); // Wi-Fi pentest: local Wi-Fi security assessment results (WIFINETWORK, XORCISM)
 ensureTeamsTables(); // Microsoft Teams webhook targets (TEAMSWEBHOOK, XORCISM) for alert/notification distribution
 ensureCrocTables(); seedCrocPolicies(null); // CROC Continuous Defense Loop: LOOPEVENT bus + LOOPPOLICY (seed default pre-auth policies)
 ensureTicketingTargets(); // CROC outbound ticketing (Jira/ServiceNow) destination store

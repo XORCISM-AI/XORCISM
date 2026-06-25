@@ -1,0 +1,16 @@
+{
+  "id": "macos-security",
+  "name": "NIST macOS Security (mSCP) — compliance import",
+  "type": "import",
+  "category": "Compliance",
+  "description": "Imports the results of a NIST macOS Security Compliance Project (mSCP, pages.nist.gov/macos_security) baseline compliance scan into XORCISM's GRC layer. Parses the audit plist (org.<baseline>.audit.plist, finding==true means a failed rule), a results JSON, or the compliance script's console summary, and records a Compliance AUDIT in XCOMPLIANCE with one AUDITFINDING per failed rule (severity + NIST SP 800-53 references) — surfaced at /compliance-management and /compliance. The connector ingests scan output; it does not run the scan. Offline: pass `file`, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:macos-security",
+  "run": "run.py",
+  "mapping": "macos-security",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An mSCP audit plist (org.<baseline>.audit.plist), results JSON, or compliance-script summary text" },
+    { "name": "baseline", "type": "string", "required": false, "help": "Baseline label if the file does not carry one (e.g. 800-53r5_high, cis_lvl1)" },
+    { "name": "host", "type": "string", "required": false, "help": "The audited Mac's hostname (used as the audit scope) if not in the file" }
+  ]
+}

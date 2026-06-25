@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Kill chain graph</title>
+<title data-i18n="kc.pageTitle">XORCISM — Kill chain graph</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .kc-layout{display:flex;height:calc(100vh - 46px)}
@@ -36,40 +36,40 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/attack">&#127919; ATT&amp;CK</a>
-  <a href="/stix-graph">&#128376; STIX</a>
+  <a href="/attack" data-i18n="kc.navAttack">&#127919; ATT&amp;CK</a>
+  <a href="/stix-graph" data-i18n="kc.navStix">&#128376; STIX</a>
   <span class="spacer"></span>
-  <span class="title">&#9876;&#65039; Kill chain graph</span>
+  <span class="title" data-i18n="kc.navTitle">&#9876;&#65039; Kill chain graph</span>
 </div>
 
 <div class="kc-layout">
   <div class="kc-side">
     <div class="sec">
-      <h3>Adversary (ATT&amp;CK group)</h3>
-      <input type="text" id="kc-search" list="kc-groups" placeholder="e.g. APT29, Lazarus, FIN7…" autocomplete="off">
+      <h3 data-i18n="kc.secAdversary">Adversary (ATT&amp;CK group)</h3>
+      <input type="text" id="kc-search" list="kc-groups" data-i18n-placeholder="kc.searchPh" placeholder="e.g. APT29, Lazarus, FIN7…" autocomplete="off">
       <datalist id="kc-groups"></datalist>
       <div class="kc-btns">
-        <button class="btn btn-primary btn-sm" id="kc-apply">Map kill chain</button>
-        <button class="btn btn-ghost btn-sm" id="kc-clear">Clear</button>
+        <button class="btn btn-primary btn-sm" id="kc-apply" data-i18n="kc.mapBtn">Map kill chain</button>
+        <button class="btn btn-ghost btn-sm" id="kc-clear" data-i18n="kc.clearBtn">Clear</button>
       </div>
       <div class="kc-cov" id="kc-cov" style="margin-top:10px"></div>
     </div>
     <div class="sec">
-      <h3>Legend</h3>
+      <h3 data-i18n="kc.secLegend">Legend</h3>
       <div class="legend">
-        <div class="it"><span class="sw" style="background:#ef4444"></span>Covered phase (adversary acts here)</div>
-        <div class="it"><span class="sw" style="background:#334155"></span>Phase not covered</div>
-        <div class="it"><span class="sw" style="background:#7c83fd"></span>Technique used</div>
+        <div class="it"><span class="sw" style="background:#ef4444"></span><span data-i18n="kc.legCovered">Covered phase (adversary acts here)</span></div>
+        <div class="it"><span class="sw" style="background:#334155"></span><span data-i18n="kc.legNotCovered">Phase not covered</span></div>
+        <div class="it"><span class="sw" style="background:#7c83fd"></span><span data-i18n="kc.legTech">Technique used</span></div>
       </div>
-      <div class="kc-cov" style="margin-top:8px;color:#64748b">Phases left → right follow the ATT&amp;CK kill chain (Reconnaissance → Impact).</div>
+      <div class="kc-cov" style="margin-top:8px;color:#64748b" data-i18n="kc.legNote">Phases left → right follow the ATT&amp;CK kill chain (Reconnaissance → Impact).</div>
     </div>
     <div class="sec">
-      <h3>Options</h3>
+      <h3 data-i18n="kc.secOptions">Options</h3>
       <div class="kc-btns">
-        <button class="btn btn-ghost btn-sm" id="kc-zin" title="Zoom in">＋</button>
-        <button class="btn btn-ghost btn-sm" id="kc-zout" title="Zoom out">－</button>
-        <button class="btn btn-ghost btn-sm" id="kc-fit">Fit</button>
-        <button class="btn btn-ghost btn-sm" id="kc-export">Export SVG</button>
+        <button class="btn btn-ghost btn-sm" id="kc-zin" data-i18n-title="kc.zinTitle" title="Zoom in">＋</button>
+        <button class="btn btn-ghost btn-sm" id="kc-zout" data-i18n-title="kc.zoutTitle" title="Zoom out">－</button>
+        <button class="btn btn-ghost btn-sm" id="kc-fit" data-i18n="kc.fitBtn">Fit</button>
+        <button class="btn btn-ghost btn-sm" id="kc-export" data-i18n="kc.exportBtn">Export SVG</button>
       </div>
     </div>
   </div>

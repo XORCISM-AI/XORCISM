@@ -1,0 +1,14 @@
+{
+  "baseline": "800-53r5_high",
+  "os": "macOS 14.5",
+  "host": "mac-fleet-01",
+  "results": [
+    { "rule_id": "os_sip_enable", "title": "Enable System Integrity Protection (SIP)", "result": "pass", "severity": "high", "references": { "800-53r5": ["AC-3", "AC-6", "SC-7"] }, "discussion": "SIP restricts modification of protected files and directories." },
+    { "rule_id": "os_gatekeeper_enable", "title": "Enable Gatekeeper", "result": "pass", "severity": "medium", "references": { "800-53r5": ["CM-5", "SI-7"] }, "discussion": "Gatekeeper enforces code signing and verifies downloaded applications." },
+    { "rule_id": "os_firewall_enable", "title": "Enable the Application Firewall", "result": "fail", "severity": "high", "references": { "800-53r5": ["SC-7", "AC-4"] }, "discussion": "The macOS application firewall is disabled, exposing listening services on untrusted networks." },
+    { "rule_id": "os_filevault_enable", "title": "Enforce FileVault full-disk encryption", "result": "fail", "severity": "high", "references": { "800-53r5": ["SC-28", "SC-28(1)"] }, "discussion": "FileVault is not enabled; data at rest on this Mac is not encrypted." },
+    { "rule_id": "auth_pam_login_smartcard_enforce", "title": "Enforce Smart Card authentication", "result": "exempt", "severity": "medium", "references": { "800-53r5": ["IA-2(1)", "IA-2(2)"] }, "discussion": "Exempted: no smart-card infrastructure deployed." },
+    { "rule_id": "os_password_history_enforce", "title": "Enforce password history (15)", "result": "fail", "severity": "medium", "references": { "800-53r5": ["IA-5", "IA-5(1)"] }, "discussion": "Password history is not enforced, allowing reuse of recent passwords." },
+    { "rule_id": "audit_auditd_enabled", "title": "Enable security auditing (auditd)", "result": "pass", "severity": "high", "references": { "800-53r5": ["AU-2", "AU-3", "AU-12"] }, "discussion": "The audit subsystem is running and configured." }
+  ]
+}

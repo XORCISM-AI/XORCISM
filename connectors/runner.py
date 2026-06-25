@@ -399,6 +399,10 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_netflow(result))
     if result.get("alerts") or result.get("incidents"):
         counts.update(import_incidents(result))
+    if result.get("compliance"):
+        counts.update(import_compliance(result))
+    if result.get("wifi") or result.get("wifi_networks"):
+        counts.update(import_wifi(result))
     if result.get("emulation_results"):
         counts.update(import_emulation(result))
     if result.get("guardrail_violations"):
@@ -1562,6 +1566,149 @@ def record_devsecops_scan(tool: str, result: Dict[str, Any]) -> Dict[str, int]:
     con.commit()
     con.close()
     return {"devsecops_scan": 1, "devsecops_findings": findings}
+
+
+def import_compliance(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import a compliance / hardening scan into XORCISM.XCOMPLIANCE (used by the macos-security /
+    mSCP connector, and any connector returning a "compliance" block). Records ONE Compliance AUDIT
+    per baseline+host and ONE AUDITFINDING per FAILED rule (passing rules counted in the audit
+    description, not stored). Idempotent: AUDIT by AuditName(+tenant); AUDITFINDING by
+    (AuditID, Source="mscp:<rule_id>"). Stamps XORCISM_IMPORT_TENANT_ID. Raw sqlite3, worker-safe.
+
+    result["compliance"] = {benchmark, baseline, os, host,
+        results:[{rule_id, title, result:"pass"|"fail"|"exempt", severity, references(str), discussion}]}"""
+    from uuid import uuid4
+
+    c = result.get("compliance") or {}
+    rules = c.get("results") or []
+    counts = {"audits": 0, "compliance_findings": 0, "compliance_findings_updated": 0}
+    if not rules:
+        return counts
+    tid = _import_tenant_id()
+    source = str(result.get("source") or "Compliance").strip() or "Compliance"
+    benchmark = str(c.get("benchmark") or source)
+    baseline = str(c.get("baseline") or "baseline")
+    host = str(c.get("host") or "").strip()
+    os_name = str(c.get("os") or "")
+    total = len(rules)
+    failed = [r for r in rules if str(r.get("result")).lower() == "fail"]
+    passed = sum(1 for r in rules if str(r.get("result")).lower() == "pass")
+    exempt = sum(1 for r in rules if str(r.get("result")).lower() == "exempt")
+    audit_name = ("%s - %s%s" % (benchmark, baseline, (" (%s)" % host if host else "")))[:200]
+    status = "Compliant" if not failed else ("Major findings" if len(failed) > total * 0.25 else "Minor findings")
+    desc = ("%s baseline '%s'%s: %d/%d rules compliant (%d failed, %d exempt). Imported from %s." % (
+        benchmark, baseline, (" on %s" % host if host else ""), passed, total, len(failed), exempt, source))[:4000]
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS AUDIT (AuditID INTEGER PRIMARY KEY, AuditGUID TEXT, AuditDate TEXT,
+        AuditStatus TEXT, AuditorName TEXT, AuditDescription TEXT, AuditScope TEXT, AuditType TEXT,
+        AuditClosureDate TEXT, AuditName TEXT, AuditCategory TEXT, TenantID INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS AUDITFINDING (AuditFindingID INTEGER PRIMARY KEY, AuditFindingGUID TEXT,
+        FindingName TEXT, FindingDescription TEXT, FindingDate TEXT, FindingStatus TEXT, FindingStakeholder TEXT,
+        FindingCriticity TEXT, WorkflowStatus TEXT, Severity TEXT, RemediationPlan TEXT, RemediationOwnerPersonID INTEGER,
+        DueDate TEXT, AuditID INTEGER, Source TEXT)""")
+    row = cur.execute("SELECT AuditID FROM AUDIT WHERE AuditName=? AND IFNULL(TenantID,0)=IFNULL(?,0)", (audit_name, tid)).fetchone()
+    if row:
+        aid = row[0]
+        cur.execute("""UPDATE AUDIT SET AuditStatus=?, AuditorName=?, AuditDescription=?, AuditScope=?,
+            AuditType=?, AuditCategory=?, AuditDate=? WHERE AuditID=?""",
+            (status, source, desc, host or os_name, "Compliance", "macOS Hardening (mSCP)", _now(), aid))
+    else:
+        cur.execute("""INSERT INTO AUDIT (AuditGUID, AuditDate, AuditStatus, AuditorName, AuditDescription,
+            AuditScope, AuditType, AuditName, AuditCategory, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (str(uuid4()), _now(), status, source, desc, host or os_name, "Compliance", audit_name, "macOS Hardening (mSCP)", tid))
+        aid = cur.lastrowid
+        counts["audits"] += 1
+    for r in failed:
+        rid = str(r.get("rule_id") or "").strip()
+        if not rid:
+            continue
+        src = "mscp:%s" % rid
+        fdesc = str(r.get("discussion") or "")[:1500]
+        refs = str(r.get("references") or "")
+        if refs:
+            fdesc = (fdesc + ("\n\nNIST SP 800-53: %s" % refs)).strip()
+        sev = _norm_sev(r.get("severity") or "medium")
+        name = ("[%s] %s" % (rid, r.get("title") or rid))[:300]
+        ex = cur.execute("SELECT AuditFindingID FROM AUDITFINDING WHERE AuditID=? AND Source=?", (aid, src)).fetchone()
+        if ex:
+            cur.execute("""UPDATE AUDITFINDING SET FindingName=?, FindingDescription=?, FindingCriticity=?,
+                Severity=?, FindingDate=? WHERE AuditFindingID=?""", (name, fdesc, sev, sev, _now(), ex[0]))
+            counts["compliance_findings_updated"] += 1
+        else:
+            cur.execute("""INSERT INTO AUDITFINDING (AuditFindingGUID, FindingName, FindingDescription, FindingDate,
+                FindingStatus, FindingCriticity, WorkflowStatus, Severity, AuditID, Source)
+                VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (str(uuid4()), name, fdesc, _now(), "Open", sev, "New", sev, aid, src))
+            counts["compliance_findings"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+def import_wifi(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import discovered Wi-Fi networks into XORCISM.WIFINETWORK (used by the freeway connector and
+    any Wi-Fi survey connector). Stores raw observations (SSID/BSSID/auth/cipher/band/channel/signal/
+    WPS); Grade/RiskScore/Severity/Auth are left NULL on purpose — the /wifi-pentest module
+    (wifipentest.ts) is the single source of truth and grades these rows on read. Idempotent by
+    (BSSID, tenant). Stamps XORCISM_IMPORT_TENANT_ID. Raw sqlite3, worker-safe.
+
+    result["wifi"] = {source, networks:[{ssid, bssid, enc|auth|security, cipher, band, channel|chan,
+        signal, wps, radio}]} (also accepts top-level result["wifi_networks"])."""
+    from uuid import uuid4
+
+    w = result.get("wifi") or {}
+    nets = w.get("networks") or result.get("wifi_networks") or []
+    counts = {"wifi_networks": 0, "wifi_networks_updated": 0}
+    if not nets:
+        return counts
+    tid = _import_tenant_id()
+    source = ("import:%s" % str(w.get("source") or result.get("source") or "connector")).strip()[:60]
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS WIFINETWORK (NetworkID INTEGER PRIMARY KEY, NetworkGUID TEXT,
+        SSID TEXT, BSSID TEXT, Auth TEXT, AuthRaw TEXT, Cipher TEXT, Band TEXT, Channel TEXT, Signal INTEGER,
+        RadioType TEXT, Wps INTEGER, IsCurrent INTEGER DEFAULT 0, Grade TEXT, RiskScore INTEGER, Severity TEXT,
+        FindingsJSON TEXT, RecommendationsJSON TEXT, ToolsJSON TEXT, AttackJSON TEXT, Source TEXT,
+        ScanDate TEXT, TenantID INTEGER)""")
+
+    def _int(v: Any) -> Any:
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    for n in nets:
+        bssid = str(n.get("bssid") or "").strip().lower()
+        if not bssid:
+            continue
+        ssid = str(n.get("ssid") or "").strip() or "(hidden)"
+        authraw = str(n.get("enc") or n.get("auth") or n.get("authRaw") or n.get("security") or "")
+        cipher = str(n.get("cipher") or "")
+        band = str(n.get("band") or "")
+        channel = str(n.get("channel") or n.get("chan") or "")
+        signal = _int(n.get("signal"))
+        wv = n.get("wps")
+        wps = None if wv is None else (1 if (wv is True or str(wv).strip().lower() in ("1", "true", "yes", "on")) else 0)
+        vals = (ssid, bssid, authraw, cipher, band, channel, signal, str(n.get("radio") or ""), wps, source, _now())
+        row = cur.execute("SELECT NetworkID FROM WIFINETWORK WHERE BSSID=? AND IFNULL(TenantID,0)=IFNULL(?,0)", (bssid, tid)).fetchone()
+        if row:
+            cur.execute("""UPDATE WIFINETWORK SET SSID=?, BSSID=?, AuthRaw=?, Cipher=?, Band=?, Channel=?,
+                Signal=?, RadioType=?, Wps=?, Source=?, ScanDate=?,
+                Auth=NULL, Grade=NULL, RiskScore=NULL, Severity=NULL WHERE NetworkID=?""", (*vals, row[0]))
+            counts["wifi_networks_updated"] += 1
+        else:
+            cur.execute("""INSERT INTO WIFINETWORK (NetworkGUID, SSID, BSSID, AuthRaw, Cipher, Band, Channel,
+                Signal, RadioType, Wps, Source, ScanDate, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (str(uuid4()), *vals, tid))
+            counts["wifi_networks"] += 1
+    con.commit()
+    con.close()
+    return counts
 
 
 def import_findings(result: Dict[str, Any]) -> Dict[str, int]:

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — CTI-Expert (AI OSINT Investigation)</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="cte.pageTitle">XORCISM — CTI-Expert (AI OSINT Investigation)</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1060px}
@@ -34,22 +34,22 @@
   .ai-badge{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#3b2f63;color:#ddd6fe}
   .lic{font-size:11px;color:#64748b;margin-top:20px;border-top:1px solid #1e2133;padding-top:10px}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/osint-graph">&#128376;&#65039; OSINT Graph</a><a href="/ask">&#129302; Ask the model</a><a href="/stix-graph">&#128376; STIX</a><span class="spacer"></span><span class="title">&#129523; CTI-Expert · AI OSINT Investigation</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/osint-graph" data-i18n="cte.navOsint">&#128376;&#65039; OSINT Graph</a><a href="/ask" data-i18n="cte.navAsk">&#129302; Ask the model</a><a href="/stix-graph" data-i18n="cte.navStix">&#128376; STIX</a><span class="spacer"></span><span class="title" data-i18n="cte.navTitle">&#129523; CTI-Expert · AI OSINT Investigation</span></div>
 <div class="mw">
-  <h1>CTI-Expert — AI-orchestrated OSINT investigation</h1>
-  <div class="sub">A port of the <span class="mono">cti-expert</span> analyst skill to XORCISM's <b>local AI</b> (Ollama). Give a target (domain, email, username, IP, person, org, phone, crypto wallet); the local LLM runs the CTI methodology — <b>Acquire → Enrich → Assess → Deliver</b> — over the matching XORCISM OSINT connectors, grades each finding's source reliability (A–F), scores exposure 0–100, and writes STIX 2.1 observables + an INTSUM into your threat-intel exchange. Private by design — nothing leaves your infrastructure.</div>
+  <h1 data-i18n="cte.title">CTI-Expert — AI-orchestrated OSINT investigation</h1>
+  <div class="sub" data-i18n="cte.sub">A port of the cti-expert analyst skill to XORCISM's local AI (Ollama). Give a target (domain, email, username, IP, person, org, phone, crypto wallet); the local LLM runs the CTI methodology — Acquire → Enrich → Assess → Deliver — over the matching XORCISM OSINT connectors, grades each finding's source reliability (A–F), scores exposure 0–100, and writes STIX 2.1 observables + an INTSUM into your threat-intel exchange. Private by design — nothing leaves your infrastructure.</div>
   <div class="panel" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-    <input class="inp" id="t-target" placeholder="target — e.g. example.com, alice@acme.io, jdoe, 203.0.113.4" style="flex:1;min-width:240px">
+    <input class="inp" id="t-target" data-i18n-placeholder="cte.targetPh" placeholder="target — e.g. example.com, alice@acme.io, jdoe, 203.0.113.4" style="flex:1;min-width:240px">
     <select class="inp" id="t-kind">
-      <option value="">auto-detect type</option>
-      <option value="domain">domain</option><option value="email">email</option><option value="username">username</option>
-      <option value="ip">IP</option><option value="person">person</option><option value="org">organization</option>
-      <option value="phone">phone</option><option value="crypto">crypto wallet</option>
+      <option value="" data-i18n="cte.kindAuto">auto-detect type</option>
+      <option value="domain" data-i18n="cte.kindDomain">domain</option><option value="email" data-i18n="cte.kindEmail">email</option><option value="username" data-i18n="cte.kindUsername">username</option>
+      <option value="ip" data-i18n="cte.kindIp">IP</option><option value="person" data-i18n="cte.kindPerson">person</option><option value="org" data-i18n="cte.kindOrg">organization</option>
+      <option value="phone" data-i18n="cte.kindPhone">phone</option><option value="crypto" data-i18n="cte.kindCrypto">crypto wallet</option>
     </select>
-    <button class="btn" id="t-go">&#128269; Investigate</button>
+    <button class="btn" id="t-go" data-i18n="cte.investigateBtn">&#128269; Investigate</button>
   </div>
   <div id="result"></div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading CTI-Expert…</div></div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="cte.loading">Loading CTI-Expert…</div></div>
   <div class="lic">CTI-Expert methodology &amp; technique catalogue adapted from <a href="https://github.com/7onez/cti-expert" target="_blank" rel="noopener">github.com/7onez/cti-expert</a> (MIT, by Hieu Ngo). Analysis runs on your local Ollama model; collection uses XORCISM's existing OSINT connectors.</div>
 </div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/cti-expert.js"></script></body></html>

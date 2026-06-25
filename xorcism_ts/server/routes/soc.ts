@@ -1,7 +1,7 @@
 /** soc.ts (routes) — SOC Operations cockpit. RBAC on XINCIDENT.INCIDENT. */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { socDashboard, createShift, acknowledgeIncident, escalateIncident, attachPlaybook, completePlaybookStep, incidentPlaybook,
+import { socDashboard, createShift, deleteShift, acknowledgeIncident, escalateIncident, attachPlaybook, completePlaybookStep, incidentPlaybook,
   listPlaybooks, createPlaybook, updatePlaybook, deletePlaybook, addPlaybookStep, deletePlaybookStep } from "../soc";
 import * as xid from "../xid";
 
@@ -32,6 +32,17 @@ router.post("/soc/shift", (req: Request, res: Response) => {
     const out = createShift({ personId: b.personId != null ? Number(b.personId) : undefined, personName: b.personName ? String(b.personName) : undefined,
       tier: b.tier ? String(b.tier) : undefined, start: String(b.start), end: String(b.end), onCall: !!b.onCall }, ten(req));
     res.json({ ok: true, ...out });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+router.delete("/soc/shift/:id", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  try {
+    const ok = deleteShift(Number(req.params.id), ten(req));
+    if (!ok) return void res.status(404).json({ error: "shift not found" });
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "soc_shift_delete", resourceType: "SOCSHIFT", resourceKey: String(req.params.id), detail: "", ip: clientIp(req) });
+    res.json({ ok: true });
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
 });
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Surface drift</title>
+<title data-i18n="drift.pageTitle">XORCISM — Surface drift</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .df-wrap{max-width:980px;margin:0 auto;padding:18px}
@@ -27,18 +27,18 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/cti-watch">&#128225; CTI</a>
+  <a href="/cti-watch" data-i18n="drift.navCti">&#128225; CTI</a>
   <span class="spacer"></span>
-  <span class="title">&#128200; Surface drift</span>
+  <span class="title" data-i18n="drift.navTitle">&#128200; Surface drift</span>
 </div>
 
 <div class="df-wrap">
   <div class="df-head">
-    <h1>Attack-surface drift</h1>
-    <button class="btn btn-primary btn-sm" id="df-snap">📸 Take snapshot</button>
+    <h1 data-i18n="drift.title">Attack-surface drift</h1>
+    <button class="btn btn-primary btn-sm" id="df-snap" data-i18n="drift.takeSnapshot">📸 Take snapshot</button>
   </div>
-  <div class="df-sub">Snapshots your external surface and diffs consecutive captures — what <b>appeared</b>, <b>vanished</b>, or newly became <b>internet-exposed</b>. Pair with the OSINT discovery chain to turn discovery into continuous monitoring.</div>
-  <div id="df-body"><div class="df-empty">Loading…</div></div>
+  <div class="df-sub" data-i18n="drift.sub">Snapshots your external surface and diffs consecutive captures — what appeared, vanished, or newly became internet-exposed. Pair with the OSINT discovery chain to turn discovery into continuous monitoring.</div>
+  <div id="df-body"><div class="df-empty" data-i18n="drift.loading">Loading…</div></div>
 </div>
 
 <script src="/js/session-ui.js"></script>

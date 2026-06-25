@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — CTI watch</title>
+<title data-i18n="ctw.pageTitle">XORCISM — CTI watch</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .ct-wrap{max-width:1040px;margin:0 auto;padding:18px}
@@ -31,18 +31,18 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/exposure">&#127919; Exposures</a>
+  <a href="/exposure" data-i18n="ctw.navExposures">&#127919; Exposures</a>
   <span class="spacer"></span>
-  <span class="title">&#128225; CTI watch</span>
+  <span class="title" data-i18n="ctw.navTitle">&#128225; CTI watch</span>
 </div>
 
 <div class="ct-wrap">
   <div class="ct-head">
-    <h1>Threat intel that affects you</h1>
-    <div class="ct-sub">Cross-references live intelligence — <b>CISA KEV</b> (actively exploited) and your ingested <b>threat reports</b> — against your asset inventory, and surfaces only what hits <b>your</b> estate. One click opens a ticket.</div>
+    <h1 data-i18n="ctw.title">Threat intel that affects you</h1>
+    <div class="ct-sub" data-i18n="ctw.sub">Cross-references live intelligence — CISA KEV (actively exploited) and your ingested threat reports — against your asset inventory, and surfaces only what hits your estate. One click opens a ticket.</div>
   </div>
   <div class="ct-stats" id="ct-stats"></div>
-  <div id="ct-body"><div class="ct-empty">Matching intel against your inventory…</div></div>
+  <div id="ct-body"><div class="ct-empty" data-i18n="ctw.loading">Matching intel against your inventory…</div></div>
 </div>
 <div id="ct-toast"></div>
 

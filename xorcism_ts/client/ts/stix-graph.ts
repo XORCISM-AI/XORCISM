@@ -401,6 +401,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // Per-hunt / per-report pickers: populate from the catalogue and load just the one selected.
+  const fillPick = async (selId: string, table: string, idCol: string, labelCol: string): Promise<void> => {
+    try {
+      const r = await fetch(`/api/lookup?db=XTHREAT&table=${table}&idCol=${idCol}&labelCol=${labelCol}`);
+      if (!r.ok) return;
+      const list = (await r.json()) as { id: unknown; label: unknown }[];
+      const sel = $(selId) as HTMLSelectElement;
+      for (const o of (Array.isArray(list) ? list : [])) {
+        if (o.label == null || String(o.label).trim() === "") continue;
+        const opt = document.createElement("option");
+        opt.value = String(o.id); opt.textContent = String(o.label);
+        sel.appendChild(opt);
+      }
+    } catch { /* lookup unavailable */ }
+  };
+  void fillPick("sg-hunt-pick", "HUNT", "HuntID", "HuntName");
+  void fillPick("sg-report-pick", "THREATREPORT", "ThreatReportID", "ThreatReportName");
+  const loadOne = async (url: string, label: string): Promise<void> => {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+      const text = await r.text();
+      ($("sg-json") as HTMLTextAreaElement).value = text;
+      visualizeFromText(text);
+    } catch (e) { toast(label + ": " + String(e)); }
+  };
+  ($("sg-hunt-pick") as HTMLSelectElement).onchange = (e) => {
+    const id = (e.target as HTMLSelectElement).value;
+    if (id) void loadOne(`/api/stix/hunts?id=${encodeURIComponent(id)}`, "Hunt");
+  };
+  ($("sg-report-pick") as HTMLSelectElement).onchange = (e) => {
+    const id = (e.target as HTMLSelectElement).value;
+    if (id) void loadOne(`/api/stix/reports?id=${encodeURIComponent(id)}`, "Report");
+  };
+
   ($("sg-examples") as HTMLSelectElement).onchange = async (e) => {
     const name = (e.target as HTMLSelectElement).value;
     if (!name) return;

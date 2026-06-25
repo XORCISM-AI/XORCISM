@@ -1,7 +1,10 @@
 /** bug-bounty.ts — Bug Bounty management cockpit (/bug-bounty). Programmes + submissions inventory,
  * triage worklist and KPIs from /api/bug-bounty, with a guided "new program" modal. */
+import { initI18n, t } from "./i18n";
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
 
 interface Prog { id: number; name: string; platform: string; status: string; policyUrl: string; minReward: number | null; maxReward: number | null; currency: string; submissions: number; open: number; triaged: number; resolved: number; critical: number; high: number; scopes: number; paid: number; }
 interface Sub { id: number; program: string; title: string; severity: string; status: string; open: boolean; triaged: boolean; cvss: number | null; target: string; researcher: string; reward: number | null; currency: string; vulnerabilityId: number | null; submitted: string | null; ageTriage: number | null; }
@@ -17,7 +20,7 @@ const sevCls = (s: string): string => `sv-${["Critical", "High", "Medium", "Low"
 
 function progRow(p: Prog): string {
   return `<tr>
-    <td><span class="pname">${esc(p.name)}</span>${p.policyUrl ? ` <a href="${esc(p.policyUrl)}" target="_blank" rel="noopener" class="muted" style="font-size:11px">policy↗</a>` : ""}</td>
+    <td><span class="pname">${esc(p.name)}</span>${p.policyUrl ? ` <a href="${esc(p.policyUrl)}" target="_blank" rel="noopener" class="muted" style="font-size:11px">${t("bb.policyLink")}</a>` : ""}</td>
     <td><span class="plat">${esc(p.platform)}</span></td>
     <td>${esc(p.status)}</td>
     <td>${p.submissions}</td>
@@ -30,9 +33,9 @@ function progRow(p: Prog): string {
 function subRow(s: Sub): string {
   return `<tr>
     <td><span class="sev ${sevCls(s.severity)}">${esc(s.severity || "—")}</span></td>
-    <td>${esc(s.title)}${s.vulnerabilityId ? ` <a href="/?db=XVULNERABILITY&table=VULNERABILITY&editCol=VulnerabilityID&editVal=${s.vulnerabilityId}" class="muted" style="font-size:11px">→vuln</a>` : ""}</td>
+    <td>${esc(s.title)}${s.vulnerabilityId ? ` <a href="/?db=XVULNERABILITY&table=VULNERABILITY&editCol=VulnerabilityID&editVal=${s.vulnerabilityId}" class="muted" style="font-size:11px">${t("bb.toVuln")}</a>` : ""}</td>
     <td class="muted" style="font-size:12px">${esc(s.program)}</td>
-    <td><span class="st ${s.open ? "st-open" : "st-closed"}">${esc(s.status)}</span>${s.open && !s.triaged ? ` <span class="sev sv-Medium">triage</span>` : ""}</td>
+    <td><span class="st ${s.open ? "st-open" : "st-closed"}">${esc(s.status)}</span>${s.open && !s.triaged ? ` <span class="sev sv-Medium">${t("bb.triagePill")}</span>` : ""}</td>
     <td>${s.researcher ? esc(s.researcher) : "<span class='muted'>—</span>"}</td>
     <td>${s.reward ? money(s.reward, s.currency) : "<span class='muted'>—</span>"}</td>
   </tr>`;
@@ -42,32 +45,32 @@ function load(): Promise<void> {
   return fetch("/api/bug-bounty").then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d: Data) => {
     DATA = d; const s = d.summary;
     if (!d.programs.length) {
-      $("bb-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">No bug bounty programmes yet. Click <b>+ New program</b> to create one.</div>`;
+      $("bb-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">${t("bb.empty")}</div>`;
       return;
     }
     const cards = [
-      card("Programmes", String(s.programs), `${s.active} active`),
-      card("Submissions", String(s.submissions), `${s.open} open`, s.open ? "#fbbf24" : "#34d399"),
-      card("Awaiting triage", String(s.awaitingTriage), "need a first look", s.awaitingTriage ? "#f87171" : "#34d399"),
-      card("High / critical open", String(s.highOpen), "unresolved", s.highOpen ? "#f87171" : "#34d399"),
-      card("Rewards paid", money(s.paid, s.currency), "to researchers"),
-      card("Researchers", String(s.researchers), "engaged"),
+      card(t("bb.cProgrammes"), String(s.programs), fmt("bb.cProgrammes.foot", { n: s.active })),
+      card(t("bb.cSubmissions"), String(s.submissions), fmt("bb.cSubmissions.foot", { n: s.open }), s.open ? "#fbbf24" : "#34d399"),
+      card(t("bb.cTriage"), String(s.awaitingTriage), t("bb.cTriage.foot"), s.awaitingTriage ? "#f87171" : "#34d399"),
+      card(t("bb.cHighCrit"), String(s.highOpen), t("bb.cHighCrit.foot"), s.highOpen ? "#f87171" : "#34d399"),
+      card(t("bb.cPaid"), money(s.paid, s.currency), t("bb.cPaid.foot")),
+      card(t("bb.cResearchers"), String(s.researchers), t("bb.cResearchers.foot")),
     ].join("");
     const bySev = Object.entries(s.bySeverity || {}).sort((a: any, b: any) => b[1] - a[1]).map(([k, n]) => `<span class="bd"><span class="sev ${sevCls(k)}">${esc(k)}</span> <b>${n}</b></span>`).join("");
     const byPlat = Object.entries(s.byPlatform || {}).sort((a: any, b: any) => b[1] - a[1]).map(([k, n]) => `<span class="bd">${esc(k)} <b>${n}</b></span>`).join("");
     const work = d.findings.length
       ? `<ul class="worklist">${d.findings.slice(0, 40).map((f) => `<li><span class="sev ${sevCls(f.severity)}">${esc(f.severity)}</span> ${esc(f.label)}${f.program ? ` <span class="muted" style="font-size:11px;margin-left:auto">${esc(f.program)}</span>` : ""}</li>`).join("")}</ul>`
-      : `<div class="muted" style="padding:8px 0">✓ Nothing in the triage worklist — every submission is triaged and scoped.</div>`;
-    const progTable = `<table class="bb"><thead><tr><th>Program</th><th>Platform</th><th>Status</th><th>Subs</th><th>Open</th><th>Scope</th><th>Reward range</th><th>Paid</th></tr></thead><tbody>${d.programs.map(progRow).join("")}</tbody></table>`;
+      : `<div class="muted" style="padding:8px 0">${t("bb.noWork")}</div>`;
+    const progTable = `<table class="bb"><thead><tr><th>${t("bb.thProgram")}</th><th>${t("bb.thPlatform")}</th><th>${t("bb.thStatus")}</th><th>${t("bb.thSubs")}</th><th>${t("bb.thOpen")}</th><th>${t("bb.thScope")}</th><th>${t("bb.thReward")}</th><th>${t("bb.thPaid")}</th></tr></thead><tbody>${d.programs.map(progRow).join("")}</tbody></table>`;
     const subTable = d.submissions.length
-      ? `<table class="bb"><thead><tr><th>Sev</th><th>Title</th><th>Program</th><th>Status</th><th>Researcher</th><th>Reward</th></tr></thead><tbody>${d.submissions.slice(0, 100).map(subRow).join("")}</tbody></table>`
-      : `<div class="muted" style="padding:8px 0">No submissions yet. Add them under <a href="/?db=XVULNERABILITY&table=BUGBOUNTYSUBMISSION">BUGBOUNTYSUBMISSION</a>.</div>`;
+      ? `<table class="bb"><thead><tr><th>${t("bb.thSev")}</th><th>${t("bb.thTitle")}</th><th>${t("bb.thProgram")}</th><th>${t("bb.thStatus")}</th><th>${t("bb.thResearcher")}</th><th>${t("bb.thReward2")}</th></tr></thead><tbody>${d.submissions.slice(0, 100).map(subRow).join("")}</tbody></table>`
+      : `<div class="muted" style="padding:8px 0">${t("bb.noSubs")}</div>`;
     $("bb-body").innerHTML = `<div class="bb-cards">${cards}</div>
-      <div class="bb-section">By severity</div><div class="breakdown">${bySev || "<span class='muted'>—</span>"}</div>
-      <div class="bb-section">By platform</div><div class="breakdown">${byPlat}</div>
-      <div class="bb-section">Triage worklist (${d.findings.length})</div>${work}
-      <div class="bb-section">Programmes (${d.programs.length})</div>${progTable}
-      <div class="bb-section">Submissions (${s.submissions})</div>${subTable}`;
+      <div class="bb-section">${t("bb.secBySeverity")}</div><div class="breakdown">${bySev || "<span class='muted'>—</span>"}</div>
+      <div class="bb-section">${t("bb.secByPlatform")}</div><div class="breakdown">${byPlat}</div>
+      <div class="bb-section">${fmt("bb.secWorklist", { n: d.findings.length })}</div>${work}
+      <div class="bb-section">${fmt("bb.secProgrammes", { n: d.programs.length })}</div>${progTable}
+      <div class="bb-section">${fmt("bb.secSubmissions", { n: s.submissions })}</div>${subTable}`;
   }).catch((e) => { $("bb-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">⚠️ ${esc(e)}</div>`; });
 }
 
@@ -81,19 +84,20 @@ function closeModal(): void { $("bb-modal").classList.remove("open"); }
 async function create(): Promise<void> {
   const v = (id: string): string => ($(id) as HTMLInputElement | HTMLSelectElement).value;
   const name = v("bb-f-name").trim(); const err = $("bb-f-err");
-  if (!name) { err.textContent = "⚠️ Enter a program name."; return; }
-  const btn = $("bb-create") as HTMLButtonElement; btn.disabled = true; err.textContent = "Creating…";
+  if (!name) { err.textContent = t("bb.errName"); return; }
+  const btn = $("bb-create") as HTMLButtonElement; btn.disabled = true; err.textContent = t("bb.creating");
   try {
     const body = { name, platform: v("bb-f-platform"), status: v("bb-f-status"), currency: v("bb-f-currency"),
       minReward: v("bb-f-min") || null, maxReward: v("bb-f-max") || null, policyUrl: v("bb-f-policy").trim() || undefined, scope: v("bb-f-scope").trim() || undefined };
     const r = await fetch("/api/bug-bounty/program", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
-    closeModal(); await load(); toast("✅ Program created");
+    closeModal(); await load(); toast(t("bb.created"));
   } catch (e) { err.textContent = `⚠️ ${e}`; }
   finally { btn.disabled = false; }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initI18n();
   $("bb-new").addEventListener("click", openModal);
   $("bb-cancel").addEventListener("click", closeModal);
   $("bb-create").addEventListener("click", () => void create());

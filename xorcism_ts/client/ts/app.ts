@@ -2503,6 +2503,12 @@ FK_COLUMNS["ALERTFORASSET.AssetID"] = { db: "XORCISM", table: "ASSET", idCol: "A
 FK_COLUMNS["ALERTEVIDENCE.AlertID"] = { db: "XINCIDENT", table: "ALERT", idCol: "AlertID", labelCol: "AlertName", distinct: true };
 STATIC_DATALIST_COLUMNS["ALERTEVIDENCE.EvidenceType"] = ["File", "File hash", "Process", "URL", "IP address",
   "Domain", "Email", "Mailbox", "User account", "Registry key", "Command line", "Other"];
+// ── ALERT form polish: prominent alert title, wide modal, parent-incident picker,
+//    date-only CreatedDate, assigned-to autocomplete, and a MITRE ATT&CK technique picker. ──
+PROMINENT_INPUT_COLUMNS.add("ALERT.AlertName");
+WIDE_MODAL_TABLES.add("ALERT");
+FK_COLUMNS["ALERT.IncidentID"] = { db: "XINCIDENT", table: "INCIDENT", idCol: "IncidentID", labelCol: "IncidentName", distinct: true };
+DATALIST_COLUMNS["ALERT.AssignedTo"] = { db: "XORCISM", table: "PERSON", labelCol: "FullName" };
 
 // ── Bug bounty (XVULNERABILITY): platforms, statuses, scope, rewards ────
 STATIC_DATALIST_COLUMNS["BUGBOUNTYPROGRAM.Platform"] = ["HackerOne", "Bugcrowd", "Intigriti", "YesWeHack", "Synack", "Open Bug Bounty", "Self-hosted", "Other"];
@@ -2979,6 +2985,7 @@ const DATE_ONLY_PICKER_COLUMNS = new Set<string>([
   "ASSETVULNERABILITY.PatchedDate",
   "ASSETVULNERABILITY.TargetDate",
   "ASSETVULNERABILITYREMEDIATION.TargetDate",
+  "ALERT.CreatedDate",
 ]);
 function isDateOnlyPicker(table: string, col: string): boolean {
   return DATE_ONLY_PICKER_COLUMNS.has(`${table}.${col}`);
@@ -5983,6 +5990,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
   if (currentTable === "POLICY") appendPolicyAiDraftPanel(body, "ef_");
   // Generate the crisis-scenario Description with the local AI (CRISISSCENARIO form)
   if (currentTable === "CRISISSCENARIO") { appendCrisisScenarioAiPanel(body, "ef_"); appendCrisisAttackMapping(body, "ef_"); }
+  if (currentTable === "ALERT") appendCrisisAttackMapping(body, "ef_"); // ALERT.AttackTechniques → MITRE ATT&CK picker
 
   // Impacted assets (ALERTFORASSET) for the ALERT table (pre-checked) — Defender "Select entities"
   if (currentTable === "ALERT" && editAlertId) {
@@ -9517,6 +9525,7 @@ async function openInsertModal(): Promise<void> {
   if (currentTable === "POLICY") appendPolicyAiDraftPanel(body, "f_");
   // Generate the crisis-scenario Description with the local AI (CRISISSCENARIO form)
   if (currentTable === "CRISISSCENARIO") { appendCrisisScenarioAiPanel(body, "f_"); appendCrisisAttackMapping(body, "f_"); }
+  if (currentTable === "ALERT") appendCrisisAttackMapping(body, "f_"); // ALERT.AttackTechniques → MITRE ATT&CK picker
 
   // Many-to-many ASSET relation for the INCIDENT table + linked threat actor
   if (currentTable === "INCIDENT") {

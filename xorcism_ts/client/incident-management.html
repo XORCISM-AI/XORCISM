@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Incident Management</title>
+<title data-i18n="im.pageTitle">XORCISM — Incident Management</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .im-wrap{max-width:1280px;margin:0 auto;padding:18px}
@@ -43,24 +43,19 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/?db=XINCIDENT&amp;table=INCIDENT">&#9881;&#65039; Manage incidents</a>
-  <a href="/?db=XINCIDENT&amp;table=ALERT">&#128276; Alerts</a>
-  <a href="/incident-sla">&#9201;&#65039; SLA / RTO</a>
+  <a href="/?db=XINCIDENT&amp;table=INCIDENT" data-i18n="im.navManage">&#9881;&#65039; Manage incidents</a>
+  <a href="/?db=XINCIDENT&amp;table=ALERT" data-i18n="im.navAlerts">&#128276; Alerts</a>
+  <a href="/incident-sla" data-i18n="im.navSla">&#9201;&#65039; SLA / RTO</a>
   <span class="spacer"></span>
-  <span class="title">&#128680; Incident Management</span>
+  <span class="title" data-i18n="im.navTitle">&#128680; Incident Management</span>
 </div>
 
 <div class="im-wrap">
   <div>
-    <h1>Incident Management</h1>
-    <div class="im-sub">One governance view over the incident queue — severity, status, owner, age, scoped
-      assets, <b>SLA/RTO breach</b> and confirmed compromise. Each incident is checked for the response-hygiene
-      gaps that matter: <b>open critical incidents</b>, <b>SLA/RTO breaches</b>, <b>unassigned</b> or <b>stale</b>
-      tickets, unclassified / awaiting-determination, and unscoped incidents. Manage entries under
-      <a href="/?db=XINCIDENT&amp;table=INCIDENT">Manage incidents</a>; breach detail on the
-      <a href="/incident-sla">SLA / RTO</a> view.</div>
+    <h1 data-i18n="im.title">Incident Management</h1>
+    <div class="im-sub" data-i18n="im.sub">One governance view over the incident queue — severity, status, owner, age, scoped assets, SLA/RTO breach and confirmed compromise. Each incident is checked for the response-hygiene gaps that matter: open critical incidents, SLA/RTO breaches, unassigned or stale tickets, unclassified / awaiting-determination, and unscoped incidents. Manage entries under Manage incidents; breach detail on the SLA / RTO view.</div>
   </div>
-  <div id="im-body"><div class="muted" style="padding:24px;text-align:center">Building the incident queue…</div></div>
+  <div id="im-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="im.loading">Building the incident queue…</div></div>
 </div>
 
 <script src="/js/session-ui.js"></script>

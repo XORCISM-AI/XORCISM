@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Priority Intelligence Requirements</title>
+<title data-i18n="pir.pageTitle">XORCISM — Priority Intelligence Requirements</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .pir-wrap{max-width:1100px;margin:0 auto;padding:18px}
@@ -35,22 +35,19 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/?db=XTHREAT&amp;table=PIR">&#9881;&#65039; Manage PIRs</a>
-  <a href="/?db=XTHREAT&amp;table=THREATREPORT">&#128240; Reporting</a>
-  <a href="/threat-feeds">&#128225; Feeds</a>
+  <a href="/?db=XTHREAT&amp;table=PIR" data-i18n="pir.navManage">&#9881;&#65039; Manage PIRs</a>
+  <a href="/?db=XTHREAT&amp;table=THREATREPORT" data-i18n="pir.navReporting">&#128240; Reporting</a>
+  <a href="/threat-feeds" data-i18n="pir.navFeeds">&#128225; Feeds</a>
   <span class="spacer"></span>
-  <span class="title">&#127919; Priority Intelligence Requirements</span>
+  <span class="title" data-i18n="pir.navTitle">&#127919; Priority Intelligence Requirements</span>
 </div>
 
 <div class="pir-wrap">
   <div>
-    <h1>Priority Intelligence Requirements</h1>
-    <div class="pir-sub">PIRs are the standing questions that drive your collection. Each requirement's
-      <b>keywords</b> are matched against collected reporting (<code>THREATREPORT</code>) to show what's
-      <b>covered</b> and what's a <b>collection gap</b> — an active requirement with no reporting against it.
-      Define PIRs and their keywords under <a href="/?db=XTHREAT&amp;table=PIR">Manage PIRs</a>.</div>
+    <h1 data-i18n="pir.title">Priority Intelligence Requirements</h1>
+    <div class="pir-sub" data-i18n="pir.sub">PIRs are the standing questions that drive your collection. Each requirement's keywords are matched against collected reporting (THREATREPORT) to show what's covered and what's a collection gap — an active requirement with no reporting against it. Define PIRs and their keywords under Manage PIRs.</div>
   </div>
-  <div id="pir-body"><div class="muted" style="padding:24px;text-align:center">Measuring coverage…</div></div>
+  <div id="pir-body"><div class="muted" style="padding:24px;text-align:center" data-i18n="pir.loading">Measuring coverage…</div></div>
 </div>
 
 <script src="/js/session-ui.js"></script>

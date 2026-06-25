@@ -2,8 +2,11 @@
  * pir.ts — Priority Intelligence Requirements coverage register (/pir).
  * Renders each PIR with collection coverage (matching reporting) + gap flags, from /api/pir.
  */
+import { initI18n, t } from "./i18n";
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
 
 interface PirRow {
   pirId: number; name: string; description: string; priority: string; status: string;
@@ -18,14 +21,14 @@ interface PirRegister {
 const prioClass = (p: string): string => `p-${(p || "medium").toLowerCase()}`;
 
 function coverageCell(r: PirRow): string {
-  if (!r.measurable) return `<span class="cov-na">— <span class="muted">add keywords</span></span>`;
-  if (r.matches === 0) return `<span class="cov-gap">⚠ gap — 0 reports</span>`;
+  if (!r.measurable) return `<span class="cov-na">— <span class="muted">${t("pir.addKeywords")}</span></span>`;
+  if (r.matches === 0) return `<span class="cov-gap">${t("pir.gapZero")}</span>`;
   const recent = r.recent.map((x) => `<a href="/?db=XTHREAT&table=THREATREPORT">${esc(x.name)}</a>${x.date ? ` <span class="muted">(${esc(x.date)})</span>` : ""}`).join("<br>");
-  return `<span class="cov-ok">${r.matches} report${r.matches > 1 ? "s" : ""}</span><div class="recent">${recent}</div>`;
+  return `<span class="cov-ok">${fmt("pir.nReports", { n: r.matches })}</span><div class="recent">${recent}</div>`;
 }
 
 function rowHtml(r: PirRow): string {
-  const kws = r.keywords.length ? r.keywords.map((k) => `<span class="kw">${esc(k)}</span>`).join("") : `<span class="muted">none</span>`;
+  const kws = r.keywords.length ? r.keywords.map((k) => `<span class="kw">${esc(k)}</span>`).join("") : `<span class="muted">${t("pir.none")}</span>`;
   return `<tr class="${r.gap ? "gap-row" : ""}">
     <td><span class="prio ${prioClass(r.priority)}">${esc(r.priority)}</span></td>
     <td><div class="pirname">${esc(r.name)}</div>${r.description ? `<div class="qn">${esc(r.description)}</div>` : ""}</td>
@@ -49,27 +52,23 @@ async function load(): Promise<void> {
   const s = d.summary;
 
   if (!d.rows.length) {
-    $("pir-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">
-      No Priority Intelligence Requirements yet.
-      <a href="/?db=XTHREAT&table=PIR">Create your first PIR</a> — give it a name, a priority, and keywords to track.</div>`;
+    $("pir-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">${t("pir.empty")}</div>`;
     return;
   }
 
   const cards = [
-    card("Requirements", String(s.total), `${s.active} active`),
-    card("Covered", String(s.covered), "have matching reporting", s.covered ? "#34d399" : undefined),
-    card("Collection gaps", String(s.gaps), "active · keyworded · 0 reports", s.gaps ? "#f87171" : "#34d399"),
-    card("Need keywords", String(s.unmeasured), "active but not measurable", s.unmeasured ? "#fbbf24" : undefined),
+    card(t("pir.cRequirements"), String(s.total), fmt("pir.cRequirements.foot", { n: s.active })),
+    card(t("pir.cCovered"), String(s.covered), t("pir.cCovered.foot"), s.covered ? "#34d399" : undefined),
+    card(t("pir.cGaps"), String(s.gaps), t("pir.cGaps.foot"), s.gaps ? "#f87171" : "#34d399"),
+    card(t("pir.cUnmeasured"), String(s.unmeasured), t("pir.cUnmeasured.foot"), s.unmeasured ? "#fbbf24" : undefined),
   ].join("");
 
   const body = `<table class="pir"><thead><tr>
-      <th>Priority</th><th>Requirement</th><th>Owner</th><th>Status</th><th>Keywords</th><th>Coverage</th>
+      <th>${t("pir.thPriority")}</th><th>${t("pir.thRequirement")}</th><th>${t("pir.thOwner")}</th><th>${t("pir.thStatus")}</th><th>${t("pir.thKeywords")}</th><th>${t("pir.thCoverage")}</th>
     </tr></thead><tbody>${d.rows.map(rowHtml).join("")}</tbody></table>`;
 
   $("pir-body").innerHTML = `<div class="pir-cards">${cards}</div>${body}
-    <div class="legend">↳ Coverage matches each PIR's keywords against <code>THREATREPORT</code> text
-      (name, description, AI summary, CVE tags). A <span class="cov-gap">gap</span> is an active, keyworded
-      requirement with no reporting against it — a candidate for tasking new collection.</div>`;
+    <div class="legend">${t("pir.legend")}</div>`;
 }
 
-document.addEventListener("DOMContentLoaded", () => void load());
+document.addEventListener("DOMContentLoaded", () => { initI18n(); void load(); });

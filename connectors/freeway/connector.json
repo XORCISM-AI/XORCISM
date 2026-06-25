@@ -1,0 +1,14 @@
+{
+  "id": "freeway",
+  "name": "Freeway — Wi-Fi survey import",
+  "type": "import",
+  "category": "Wireless",
+  "description": "Imports a Freeway (github.com/FLOCK4H/Freeway, a Python/scapy Wi-Fi pentest suite) session export into the XORCISM Wi-Fi pentest module. Parses the networks/clients Freeway discovered (and flags APs for which it captured a PMKID / 4-way handshake — the WPA2 PSK is then offline-crackable) from a Freeway export JSON or a text monitor dump, and feeds them into XORCISM.WIFINETWORK (via runner.import_wifi) where /wifi-pentest grades each network A-F and maps it to ATT&CK + the Wi-Fi toolkit. The connector ingests Freeway output; it does not run Freeway. Offline: pass `file`, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:freeway",
+  "run": "run.py",
+  "mapping": "freeway",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Freeway export JSON ({networks, captures}) or a text/CSV monitor dump (BSSID SSID channel signal encryption per line)" }
+  ]
+}

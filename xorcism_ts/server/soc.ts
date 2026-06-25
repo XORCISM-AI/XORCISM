@@ -243,6 +243,13 @@ export function createShift(p: { personId?: number; personName?: string; tier?: 
   return { id };
 }
 
+export function deleteShift(shiftId: number, tenant: number | null): boolean {
+  if (!has("SOCSHIFT")) return false;
+  const guard = tenant != null ? ` AND TenantID = ${tenant}` : "";
+  const r = getDb("XINCIDENT").prepare(`DELETE FROM SOCSHIFT WHERE ShiftID = ?${guard}`).run(shiftId);
+  return r.changes > 0;
+}
+
 function incidentTenant(incidentId: number): boolean { return !!getDb("XINCIDENT").prepare("SELECT 1 FROM INCIDENT WHERE IncidentID = ?").get(incidentId); }
 
 export function acknowledgeIncident(incidentId: number, by: string, personId: number | null): boolean {

@@ -1,0 +1,16 @@
+{
+  "id": "x-osint",
+  "name": "X-OSINT — OSINT framework import",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports the output of X-OSINT (github.com/TermuxHackz/X-osint, a Termux/Linux OSINT framework — phone/email/username/domain intelligence, VIN OSINT, reverse phone/email, subdomain enumeration, email-from-name) into XORCISM's threat-intel exchange (XTHREAT.INTELEXCHANGE via runner.import_threat_intel). Parses either an X-OSINT case JSON ({target, kind, results:[{module,type,value,source}]}) or the raw console text of a run (observables are extracted with regex). Each discovered observable (email, subdomain, host, phone, account, URL) becomes an INTELEXCHANGE intel item (value as reference, X-OSINT module carried in tags). The native /cti-expert cockpit maps OSINT techniques (VIN / email-from-name) to this connector. Offline: pass `file`, or run with no config for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:x-osint",
+  "run": "run.py",
+  "mapping": "x-osint",
+  "parameters": [
+    { "name": "limit", "type": "int", "default": 500, "min": 1, "max": 5000, "help": "Maximum intel items to import" },
+    { "name": "target", "type": "string", "required": false, "help": "The subject the X-OSINT run was about (phone / email / username / domain) — used to label the imported intel when the file does not carry it." },
+    { "name": "file", "type": "file", "required": false, "help": "A saved X-OSINT case JSON or raw console-output text file to parse" }
+  ]
+}

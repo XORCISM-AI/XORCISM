@@ -5,7 +5,9 @@
  * Pick an adversary (ATT&CK group) to overlay the techniques it uses in each
  * phase, revealing its kill-chain coverage and progression. Data: /api/kill-chain.
  */
-import { initI18n } from "./i18n";
+import { initI18n, t } from "./i18n";
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), t(key));
 
 declare const d3: any;
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
@@ -74,7 +76,7 @@ function render(d: KC): void {
     g.append("text").attr("class", "ph-order").attr("x", x + 8).attr("y", HEAD_Y + 14).text(`${p.order + 1}. ${p.attackId}`);
     g.append("text").attr("class", "ph-name").attr("x", x + 8).attr("y", HEAD_Y + 30).text(trunc(p.name, 22));
     g.append("text").attr("class", "ph-meta").attr("x", x + 8).attr("y", HEAD_Y + 43)
-      .text(p.used.length ? `${p.used.length} / ${p.total} techniques` : `${p.total} techniques`);
+      .text(p.used.length ? fmt("kc.nTechniques", { u: p.used.length, t: p.total }) : fmt("kc.techniques", { t: p.total }));
 
     // technique chips for the selected adversary
     p.used.forEach((te, j) => {
@@ -96,8 +98,8 @@ function render(d: KC): void {
   svg.call(zoomB.transform, d3.zoomIdentity.translate(10, 0).scale(k));
 
   $("kc-cov").innerHTML = d.group
-    ? `<b>${d.group.name}</b> (${d.group.attackId}) — covers <b>${d.coverage.covered}/${d.coverage.total}</b> kill-chain phases · <b>${d.coverage.techniques}</b> techniques.`
-    : `Select an adversary to overlay its TTPs onto the kill chain.<br><span style="color:#64748b">Backbone: ${d.coverage.total} phases.</span>`;
+    ? fmt("kc.coverageGroup", { name: `<b>${d.group.name}</b>`, id: d.group.attackId, c: d.coverage.covered, t: d.coverage.total, n: d.coverage.techniques })
+    : fmt("kc.coverageNone", { n: d.coverage.total });
 }
 
 function applyGroup(): void {
@@ -106,7 +108,7 @@ function applyGroup(): void {
   const id = byName.get(raw.toLowerCase())
     || groups.find((g) => g.attackId.toLowerCase() === raw.toLowerCase())?.attackId
     || groups.find((g) => g.name.toLowerCase().includes(raw.toLowerCase()))?.attackId;
-  if (!id) { toast("No matching ATT&CK group."); return; }
+  if (!id) { toast(t("kc.noGroup")); return; }
   void loadGraph(id);
 }
 

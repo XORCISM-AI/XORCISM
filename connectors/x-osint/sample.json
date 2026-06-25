@@ -1,0 +1,16 @@
+{
+  "target": "example.com",
+  "kind": "domain",
+  "results": [
+    { "module": "subdomains", "type": "domain", "value": "mail.example.com", "source": "crt.sh" },
+    { "module": "subdomains", "type": "domain", "value": "vpn.example.com", "source": "crt.sh" },
+    { "module": "subdomains", "type": "domain", "value": "dev.example.com", "source": "dnsdumpster" },
+    { "module": "emails", "type": "email", "value": "admin@example.com", "source": "theHarvester" },
+    { "module": "emails", "type": "email", "value": "jdoe@example.com", "source": "hunter" },
+    { "module": "hosts", "type": "ip", "value": "93.184.216.34", "source": "dns" },
+    { "module": "accounts", "type": "username", "value": "examplecorp", "source": "sherlock" }
+  ],
+  "phones": [
+    { "value": "+1 202 555 0142", "source": "phone-osint" }
+  ]
+}

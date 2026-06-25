@@ -101,6 +101,7 @@ const entryPoints = [
   "client/ts/endpoint-query.ts",
   "client/ts/ctem.ts",
   "client/ts/cti-expert.ts",
+  "client/ts/wifi-pentest.ts",
   "client/ts/croc.ts",
   "client/ts/cyber-risk-hunting.ts",
   "client/ts/agents.ts",

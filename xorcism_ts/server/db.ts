@@ -5855,7 +5855,7 @@ export function ensureBugBountyTables(): void {
  * (via HUNTATTACK, `attack-pattern` nodes reusing the real StixID when known) and
  * to the IOCs (via HUNTIOC, `indicator` nodes). Loaded by the STIX Graph page.
  */
-export function getHuntsStixBundle(): { type: string; id: string; spec_version: string; objects: unknown[] } {
+export function getHuntsStixBundle(huntId?: number): { type: string; id: string; spec_version: string; objects: unknown[] } {
   const db = getDb("XTHREAT");
   const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const has = (n: string): boolean =>
@@ -5864,9 +5864,10 @@ export function getHuntsStixBundle(): { type: string; id: string; spec_version: 
   const bundle = { type: "bundle", id: `bundle--${randomUUID()}`, spec_version: "2.1", objects };
   if (!has("HUNT")) return bundle;
 
-  const hunts = db
-    .prepare("SELECT HuntID, HuntGUID, HuntName, HuntDescription, HuntReference, HuntSource, HuntStatus, HuntTool FROM HUNT")
-    .all() as Record<string, any>[];
+  const huntCols = "SELECT HuntID, HuntGUID, HuntName, HuntDescription, HuntReference, HuntSource, HuntStatus, HuntTool FROM HUNT";
+  const hunts = (huntId != null && Number.isFinite(huntId)
+    ? db.prepare(`${huntCols} WHERE HuntID = ?`).all(huntId)
+    : db.prepare(huntCols).all()) as Record<string, any>[];
   const huntStix = new Map<number, string>();
   for (const h of hunts) {
     const id = `x-hunt--${uuidRe.test(h.HuntGUID || "") ? h.HuntGUID : randomUUID()}`;
@@ -5936,7 +5937,7 @@ export function getHuntsStixBundle(): { type: string; id: string; spec_version: 
  * name/description are emitted as attack-pattern / vulnerability objects and added
  * to the report's object_refs (so the report links to them in the STIX Graph).
  */
-export function getReportsStixBundle(): { type: string; id: string; spec_version: string; objects: unknown[] } {
+export function getReportsStixBundle(reportId?: number): { type: string; id: string; spec_version: string; objects: unknown[] } {
   const db = getDb("XTHREAT");
   const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const has = (n: string): boolean =>
@@ -5980,9 +5981,10 @@ export function getReportsStixBundle(): { type: string; id: string; spec_version
     return vId;
   };
 
-  const reports = db
-    .prepare("SELECT ThreatReportID, ThreatReportGUID, ThreatReportName, ThreatReportDescription, CreatedDate FROM THREATREPORT")
-    .all() as Record<string, any>[];
+  const reportCols = "SELECT ThreatReportID, ThreatReportGUID, ThreatReportName, ThreatReportDescription, CreatedDate FROM THREATREPORT";
+  const reports = (reportId != null && Number.isFinite(reportId)
+    ? db.prepare(`${reportCols} WHERE ThreatReportID = ?`).all(reportId)
+    : db.prepare(reportCols).all()) as Record<string, any>[];
   for (const r of reports) {
     const id = `report--${uuidRe.test(r.ThreatReportGUID || "") ? r.ThreatReportGUID : randomUUID()}`;
     const text = `${r.ThreatReportName || ""} ${r.ThreatReportDescription || ""}`;
