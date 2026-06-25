@@ -13,7 +13,7 @@
  * notification anywhere in the app is now: declare the event here, then call dispatchEvent().
  */
 import { randomUUID } from "crypto";
-import { getDb, createNotification } from "./db";
+import { allocId, getDb, createNotification } from "./db";
 import { notifyTeams } from "./teams";
 import { emitLoopEvent } from "./croc";
 
@@ -108,7 +108,7 @@ export function upsertRule(userId: number, eventKey: string, patch: { enabled?: 
       .run(enabled, minLevel ?? existing.MinLevel ?? "info", now, existing.RuleID);
   } else {
     const def = BY_KEY.get(eventKey)!;
-    const id = (db.prepare("SELECT COALESCE(MAX(RuleID),0)+1 n FROM NOTIFICATIONRULE").get() as { n: number }).n;
+    const id = allocId(db, "NOTIFICATIONRULE", "RuleID");
     db.prepare("INSERT INTO NOTIFICATIONRULE (RuleID, RuleGUID, UserID, EventKey, Enabled, MinLevel, CreatedDate, UpdatedDate, TenantID) VALUES (?,?,?,?,?,?,?,?,?)")
       .run(id, randomUUID(), userId, eventKey, patch.enabled != null ? (patch.enabled ? 1 : 0) : (def.default ? 1 : 0), minLevel ?? "info", now, now, tenant);
   }

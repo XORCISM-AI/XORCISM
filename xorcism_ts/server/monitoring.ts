@@ -8,7 +8,7 @@
  * Read inventory + guided createMonitor + a status update (used by the optional checker / connector).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export const CHECK_TYPES = ["http", "ping", "tcp", "dns", "ssl", "server"];
 export const MON_STATUSES = ["up", "down", "warning", "paused", "unknown"];
@@ -114,7 +114,7 @@ export function createMonitor(
   const mc = cols("MONITORINGCHECK");
   if (!mc.size) throw new Error("MONITORINGCHECK table not available");
   const now = new Date().toISOString();
-  const nextId = (db.prepare("SELECT COALESCE(MAX(CheckID),0)+1 AS n FROM MONITORINGCHECK").get() as { n: number }).n;
+  const nextId = allocId(db, "MONITORINGCHECK", "CheckID");
   const type = (p.type || "http").toLowerCase();
   const candidate: Record<string, unknown> = {
     CheckID: nextId, CheckGUID: randomUUID(), AssetID: p.assetId ?? null,
@@ -244,7 +244,7 @@ export function updateMonitorStatus(checkId: number, status: string, responseTim
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='MONITORINGINCIDENT'").get()) {
     const wasDown = normStatus(prev.Status) === "down";
     if (st === "down" && !wasDown) {
-      const nid = (db.prepare("SELECT COALESCE(MAX(IncidentID),0)+1 AS n FROM MONITORINGINCIDENT").get() as { n: number }).n;
+      const nid = allocId(db, "MONITORINGINCIDENT", "IncidentID");
       db.prepare(`INSERT INTO MONITORINGINCIDENT (IncidentID, IncidentGUID, CheckID, AssetID, Title, Status, Severity, StartedAt, Source, CreatedDate, TenantID)
                   VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(nid, randomUUID(), checkId, prev.AssetID, `${prev.Name} is DOWN`, "down", "Critical", now, "monitor", now, tenant);
     } else if (st === "up" && wasDown) {

@@ -11,7 +11,7 @@
  * (XTHREAT.OBSERVABLE) + an INTELEXCHANGE intel entry. Surfaced at /cti-expert.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { ctiInvestigate, type CtiInvestigationResult } from "./ai";
 
 const now = (): string => new Date().toISOString();
@@ -133,7 +133,7 @@ function persist(target: string, kind: TargetKind, plan: Technique[], r: CtiInve
     const type = STIX_TYPE[o.type] || o.type || "x-osint";
     const existing = xt.prepare("SELECT ObservableID FROM OBSERVABLE WHERE Value=? AND ObservableType=? LIMIT 1").get(o.value, type) as { ObservableID: number } | undefined;
     if (existing) continue;
-    const id = ((xt.prepare("SELECT COALESCE(MAX(ObservableID),0)+1 AS n FROM OBSERVABLE").get() as { n: number }).n);
+    const id = (allocId(xt, "OBSERVABLE", "ObservableID"));
     obsIns.run(id, randomUUID(), `${type}--${randomUUID()}`, type, o.value, `CTI-Expert: ${kind} ${target}`, "cti-expert,osint", r.exposureScore, "cti-expert", now());
     obsCount++;
   }
@@ -145,7 +145,7 @@ function persist(target: string, kind: TargetKind, plan: Technique[], r: CtiInve
     xt.prepare("UPDATE INTELEXCHANGE SET IntelName=?, IntelDescription=?, AttackTags=?, IntelDate=? WHERE IntelID=?")
       .run(intelName, r.brief, r.attackTags.join(", "), today(), intelId);
   } else {
-    intelId = ((xt.prepare("SELECT COALESCE(MAX(IntelID),0)+1 AS n FROM INTELEXCHANGE").get() as { n: number }).n);
+    intelId = (allocId(xt, "INTELEXCHANGE", "IntelID"));
     xt.prepare(
       `INSERT INTO INTELEXCHANGE (IntelID, IntelGUID, IntelName, IntelDescription, CreatedDate, IntelReference, IntelSource, IntelAuthor, IntelDate, AttackTags, IntelTags, Views)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,0)`
@@ -167,7 +167,7 @@ function persist(target: string, kind: TargetKind, plan: Technique[], r: CtiInve
         PlanJSON=?, FindingsJSON=?, ObservablesJSON=?, Recommendations=?, AttackTags=?, Model=?, Offline=?, IntelID=?, CreatedDate=? WHERE InvestigationID=?`
     ).run(...fields, now(), id);
   } else {
-    id = ((xt.prepare("SELECT COALESCE(MAX(InvestigationID),0)+1 AS n FROM CTIINVESTIGATION").get() as { n: number }).n);
+    id = (allocId(xt, "CTIINVESTIGATION", "InvestigationID"));
     xt.prepare(
       `INSERT INTO CTIINVESTIGATION (InvestigationID, InvestigationGUID, Target, TargetKind, ExposureScore, Severity, Summary, Brief,
         PlanJSON, FindingsJSON, ObservablesJSON, Recommendations, AttackTags, Model, Offline, IntelID, CreatedDate, TenantID)

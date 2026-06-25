@@ -8,7 +8,7 @@
  * exploitation, asset blast-radius, remediation coverage, and a risk-ranked triage worklist.
  * Read inventory + two write actions (track a CVE against an asset, set a disposition).
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const SEV_RANK: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3, Info: 4 };
 // A link counts as "resolved" (no longer demanding triage) when its patch lifecycle is closed.
@@ -247,7 +247,7 @@ export function trackVulnerability(
   if (existing) return { id: existing.AssetVulnerabilityID, existed: true, cve };
 
   const now = new Date().toISOString();
-  const nextId = (xo.prepare("SELECT COALESCE(MAX(AssetVulnerabilityID),0)+1 AS n FROM ASSETVULNERABILITY").get() as { n: number }).n;
+  const nextId = allocId(xo, "ASSETVULNERABILITY", "AssetVulnerabilityID");
   const candidate: Record<string, unknown> = {
     AssetVulnerabilityID: nextId, AssetID: assetId, VulnerabilityID: vid,
     CreatedDate: now, ValidFromDate: now.slice(0, 10),

@@ -9,7 +9,7 @@
  * COMPLIANCEASSESSMENT against the existing FRAMEWORK model.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { JOURNEY_FR } from "./journeys_fr";
 
 /** Localize a catalogue string to the request language (currently fr; others fall back to English).
@@ -582,7 +582,7 @@ function spawnAssessment(f: FrameworkT, name: string, tenant: number | null): nu
     const ex = db.prepare("SELECT FrameworkID FROM FRAMEWORK WHERE Name = ? AND (TenantID = ? OR TenantID IS NULL) LIMIT 1").get(f.name, tenant) as { FrameworkID: number } | undefined;
     if (ex) fwId = ex.FrameworkID;
     else {
-      const id = (db.prepare("SELECT COALESCE(MAX(FrameworkID),0)+1 n FROM FRAMEWORK").get() as { n: number }).n;
+      const id = allocId(db, "FRAMEWORK", "FrameworkID");
       const rec: Record<string, unknown> = { FrameworkID: id, FrameworkGUID: randomUUID(), Name: f.name, Description: f.summary.slice(0, 500), Provider: f.provider, Locale: "EN", CreatedDate: new Date().toISOString(), TenantID: tenant };
       const keys = Object.keys(rec).filter((k) => fc.has(k));
       db.prepare(`INSERT INTO FRAMEWORK (${keys.map((k) => `"${k}"`).join(",")}) VALUES (${keys.map(() => "?").join(",")})`).run(...keys.map((k) => rec[k]));
@@ -590,7 +590,7 @@ function spawnAssessment(f: FrameworkT, name: string, tenant: number | null): nu
     }
     const cc = cols("COMPLIANCEASSESSMENT");
     if (!cc.size || fwId == null) return null;
-    const aid = (db.prepare("SELECT COALESCE(MAX(ComplianceAssessmentID),0)+1 n FROM COMPLIANCEASSESSMENT").get() as { n: number }).n;
+    const aid = allocId(db, "COMPLIANCEASSESSMENT", "ComplianceAssessmentID");
     const arec: Record<string, unknown> = { ComplianceAssessmentID: aid, ComplianceAssessmentGUID: randomUUID(), Name: name.slice(0, 300), FrameworkID: fwId, Status: "in_progress", CreatedDate: new Date().toISOString(), TenantID: tenant };
     const akeys = Object.keys(arec).filter((k) => cc.has(k));
     db.prepare(`INSERT INTO COMPLIANCEASSESSMENT (${akeys.map((k) => `"${k}"`).join(",")}) VALUES (${akeys.map(() => "?").join(",")})`).run(...akeys.map((k) => arec[k]));
@@ -607,7 +607,7 @@ export function startJourney(p: { framework: string; name?: string; scope?: stri
   const assessmentId = p.spawnAssessment ? spawnAssessment(f, name, tenant) : null;
 
   const jc = cols("COMPLIANCEJOURNEY");
-  const jid = (db.prepare("SELECT COALESCE(MAX(JourneyID),0)+1 n FROM COMPLIANCEJOURNEY").get() as { n: number }).n;
+  const jid = allocId(db, "COMPLIANCEJOURNEY", "JourneyID");
   const jrec: Record<string, unknown> = {
     JourneyID: jid, JourneyGUID: randomUUID(), FrameworkKey: f.key, FrameworkName: f.name, Name: name,
     Scope: (p.scope || "").slice(0, 2000), Owner: (p.owner || "").slice(0, 200), Status: "Active",
@@ -619,7 +619,7 @@ export function startJourney(p: { framework: string; name?: string; scope?: stri
 
   const sc = cols("COMPLIANCEJOURNEYSTEP");
   const ins = db.prepare(`INSERT INTO COMPLIANCEJOURNEYSTEP (StepID, JourneyID, PhaseOrder, Phase, StepOrder, Title, Description, Link, Status, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?)`);
-  let sid = (db.prepare("SELECT COALESCE(MAX(StepID),0)+1 n FROM COMPLIANCEJOURNEYSTEP").get() as { n: number }).n;
+  let sid = allocId(db, "COMPLIANCEJOURNEYSTEP", "StepID");
   if (sc.has("StepID")) {
     f.phases.forEach((ph, pi) => ph.steps.forEach((s, si) => {
       ins.run(sid++, jid, pi + 1, ph.name, si + 1, s.title, s.desc, s.link ?? null, "todo", tenant);

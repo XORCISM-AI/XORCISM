@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Security Knowledge Graph</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .kg-wrap{max-width:1500px;margin:0 auto;padding:14px 18px}
+  .kg-wrap h1{font-size:19px;margin:0 0 2px}.sub{color:#94a3b8;font-size:12.5px;margin-bottom:10px;max-width:1080px;line-height:1.5}
+  .kg-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .kg-bar input{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 11px;color:#e2e8f0;font-size:13px;flex:1;min-width:240px}
+  .kg-bar input:focus{outline:none;border-color:#22d3ee}
+  .btn{background:#06b6d4;border:none;color:#04212a;border-radius:8px;font-size:13px;font-weight:700;padding:8px 15px;cursor:pointer}.btn:hover{background:#22d3ee}
+  .kpi{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px}.kpi .k{background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:5px 10px;font-size:12px;color:#cbd5e1}.kpi .k b{color:#e2e8f0;font-size:14px}
+  .legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .lg{font-size:11px;border-radius:6px;padding:2px 9px;border:1px solid #2d3250;display:flex;align-items:center;gap:5px;color:#cbd5e1}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:12px}
+  #kg-graph{background:#0b0e1a;border:1px solid #2d3250;border-radius:12px;height:72vh;overflow:hidden}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:14px;font-size:13px;height:72vh;overflow:auto}
+  .answer{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#cbd5e1;margin-bottom:10px;line-height:1.5}
+  .neigh{margin:3px 0;padding:5px 8px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;cursor:pointer;font-size:12px}.neigh:hover{border-color:#22d3ee}
+  .muted{color:#64748b}.nm{font-weight:600;color:#e2e8f0}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/attack-path">&#128279; Attack Paths</a>
+  <a href="/osint-graph">&#128376; OSINT Graph</a>
+  <a href="/vulnerability-management">&#128027; Vulns</a>
+  <span class="spacer"></span>
+  <span class="title">&#128376;&#65039; Security Knowledge Graph</span>
+</div>
+<div class="kg-wrap">
+  <h1>Unified security knowledge graph</h1>
+  <div class="sub">One graph across your databases — <b>assets</b>, the <b>software</b> they run, the <b>vulnerabilities</b>
+    affecting them, the <b>risks</b> they carry and the <b>incidents</b> that hit them. Ask a question (a CVE, an asset
+    name, or <span class="mono">KEV</span>) to focus the blast radius, or click any node to walk its neighbours.</div>
+  <div class="kg-bar">
+    <input id="kg-q" placeholder="Ask: CVE-2021-44228 · an asset name · KEV exposure · crown jewels">
+    <button class="btn" id="kg-ask">Query</button>
+    <button class="btn" id="kg-reset" style="background:#1e2440;color:#cbd5e1;border:1px solid #2d3250">Full graph</button>
+  </div>
+  <div class="answer" id="kg-answer" style="display:none"></div>
+  <div class="kpi" id="kg-kpi"></div>
+  <div class="legend" id="kg-legend"></div>
+  <div class="grid">
+    <div id="kg-graph"></div>
+    <div class="panel" id="kg-side"><div class="muted">Click a node to inspect its neighbours and blast radius.</div></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="/js/session-ui.js"></script>
+<script src="/js/knowledge-graph.js"></script>
+</body></html>

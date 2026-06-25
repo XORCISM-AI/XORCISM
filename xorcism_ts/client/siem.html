@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — SIEM-lite</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1080px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 10px;text-transform:uppercase;letter-spacing:.5px}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}.sv-Info{background:#14532d;color:#bbf7d0}
+  .chip{display:inline-block;font-size:11px;background:#1e2440;border:1px solid #2d3250;border-radius:5px;padding:1px 7px;margin:1px;color:#cbd5e1}
+  .inp{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#e2e8f0;font-size:12px;width:100%;box-sizing:border-box;font-family:ui-monospace,monospace}
+  .inp:focus{outline:none;border-color:#22d3ee}
+  .btn{background:#06b6d4;border:none;color:#04212a;border-radius:7px;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer}.btn:hover{background:#22d3ee}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:8px 12px;cursor:pointer}.btn-sm2:hover{border-color:#22d3ee}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/croc-orchestrator">&#129302; Orchestrator</a>
+  <a href="/?db=XTHREAT&amp;table=SIGMARULE">&#128203; Sigma rules</a>
+  <a href="/purple-team">&#128737;&#65039; Purple team</a>
+  <span class="spacer"></span>
+  <span class="title">&#128225; SIEM-lite · log → Sigma → alert</span>
+</div>
+<div class="mw">
+  <h1>SIEM-lite — detection pipeline</h1>
+  <div class="sub">Paste log events (JSON) and XORCISM runs them through your <b>Sigma rule library</b> plus a built-in
+    baseline ruleset (Windows/Sysmon). Each match raises an <b>ALERT</b> — which feeds incidents and emits a
+    <b>LOOPEVENT</b>, so the CROC loop and the <a href="/croc-orchestrator">agentic orchestrator</a> pick it up and
+    propose a response. Closes the detect→respond loop with no external SIEM.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+
+  <div class="sec">Ingest logs</div>
+  <textarea class="inp" id="logs" rows="9" placeholder='[ { "source": "Sysmon", "EventID": 1, "Computer": "ws-12", "CommandLine": "powershell -enc ..." } ]'></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" id="ing">▶ Ingest &amp; detect</button>
+    <button class="btn-sm2" id="samp">Try sample logs</button>
+    <span class="muted" id="stat" style="font-size:12px;align-self:center"></span>
+  </div>
+  <div class="lic">Detection reuses the sigma.ts parser/AST (named selections, modifiers, <span class="mono">condition</span>
+    expressions). It is a pragmatic field/keyword evaluator — for production detection at scale, export the Sigma
+    bundle and run it in your SIEM. Alerts are idempotent per rule+host+command.</div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/siem.js"></script>
+</body></html>

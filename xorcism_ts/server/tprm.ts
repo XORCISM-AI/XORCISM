@@ -15,7 +15,7 @@ import { lookup } from "dns/promises";
 import net from "net";
 import tls from "tls";
 import https from "https";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const TIERS = ["Low", "Medium", "High", "Critical"] as const;
 const SEV_WEIGHT: Record<string, number> = { critical: 25, high: 15, medium: 8, low: 3, info: 0 };
@@ -135,7 +135,7 @@ async function probeDomain(host: string): Promise<{ issues: ProbeIssue[]; ok: bo
 // ── findings ──────────────────────────────────────────────────────────────────
 function insertFinding(vendorId: number, f: ProbeIssue & { source?: string }, tenant: number | null): void {
   const db = getDb("XCOMPLIANCE"); const fc = cols("TPRMFINDING");
-  const id = (db.prepare("SELECT COALESCE(MAX(FindingID),0)+1 n FROM TPRMFINDING").get() as { n: number }).n;
+  const id = allocId(db, "TPRMFINDING", "FindingID");
   const rec: Record<string, unknown> = {
     FindingID: id, FindingGUID: randomUUID(), VendorID: vendorId, Source: f.source || "external",
     Category: f.category, Title: f.title, Detail: f.detail, Severity: (f.severity || "info").toLowerCase(),
@@ -272,7 +272,7 @@ export function tprmDashboard(tenant: number | null): { vendors: any[]; question
 // ── create / mutate ──────────────────────────────────────────────────────────
 export function createVendor(p: Record<string, any>, tenant: number | null, createdBy?: string): { id: number } {
   const db = getDb("XCOMPLIANCE"); const vc = cols("TPRMVENDOR");
-  const id = (db.prepare("SELECT COALESCE(MAX(VendorID),0)+1 n FROM TPRMVENDOR").get() as { n: number }).n;
+  const id = allocId(db, "TPRMVENDOR", "VendorID");
   const inherent = inherentRisk(p.dataSensitivity, p.businessCriticality);
   const tier = tierOf(inherent);
   const rec: Record<string, unknown> = {

@@ -8,7 +8,7 @@
  * count) — never asset, control or finding detail.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { controlManagementInventory } from "./control53";
 import { monitoringInventory } from "./monitoring";
 
@@ -79,7 +79,7 @@ export function setTrustCenterConfig(tenant: number | null, p: Partial<TrustConf
   if (existing) {
     cc.prepare(`UPDATE TRUSTCENTER SET Slug=?, Enabled=?, CompanyName=?, Title=?, Intro=?, ContactEmail=?, Subprocessors=?, Frameworks=?, ShowControls=?, ShowUptime=?, ShowPolicies=?, UpdatedAt=? WHERE TrustCenterID=?`).run(...vals, existing.TrustCenterID);
   } else {
-    const id = (cc.prepare("SELECT COALESCE(MAX(TrustCenterID),0)+1 n FROM TRUSTCENTER").get() as { n: number }).n;
+    const id = allocId(cc, "TRUSTCENTER", "TrustCenterID");
     cc.prepare(`INSERT INTO TRUSTCENTER (TrustCenterID, TenantID, Slug, Enabled, CompanyName, Title, Intro, ContactEmail, Subprocessors, Frameworks, ShowControls, ShowUptime, ShowPolicies, UpdatedAt, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, tenant, ...vals, new Date().toISOString());
   }
   return next;

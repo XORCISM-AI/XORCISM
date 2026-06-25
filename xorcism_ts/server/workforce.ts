@@ -6,7 +6,7 @@
  * gaps, and per-person role profiles — so staffing maps to a recognized competency framework.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 type Role = { framework: "NICE" | "ECSF"; code: string; name: string; category: string; desc: string; skills: string };
 const r = (framework: "NICE" | "ECSF", code: string, name: string, category: string, desc: string, skills: string): Role => ({ framework, code, name, category, desc, skills });
@@ -70,7 +70,7 @@ export function assignRole(personId: number, workRoleId: number, p: { proficienc
   if (!db.prepare("SELECT 1 FROM PERSON WHERE PersonID = ?").get(personId)) return null;
   const ex = db.prepare("SELECT PersonWorkRoleID FROM PERSONWORKROLE WHERE PersonID = ? AND WorkRoleID = ?").get(personId, workRoleId) as { PersonWorkRoleID: number } | undefined;
   if (ex) { db.prepare("UPDATE PERSONWORKROLE SET Proficiency = ?, Primary_ = ? WHERE PersonWorkRoleID = ?").run(p.proficiency ?? "Proficient", p.primary ? 1 : 0, ex.PersonWorkRoleID); return { id: ex.PersonWorkRoleID }; }
-  const id = (db.prepare("SELECT COALESCE(MAX(PersonWorkRoleID),0)+1 n FROM PERSONWORKROLE").get() as { n: number }).n;
+  const id = allocId(db, "PERSONWORKROLE", "PersonWorkRoleID");
   db.prepare("INSERT INTO PERSONWORKROLE (PersonWorkRoleID, PersonID, WorkRoleID, Proficiency, Primary_, AssignedDate, TenantID) VALUES (?,?,?,?,?,?,?)")
     .run(id, personId, workRoleId, p.proficiency ?? "Proficient", p.primary ? 1 : 0, new Date().toISOString(), tenant);
   return { id };

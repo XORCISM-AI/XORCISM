@@ -11,7 +11,7 @@
  * the campaign opened. Read paths tolerate a partially-seeded instance.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { identityInventory } from "./identities";
 
 const COVERAGE_WINDOW_DAYS = 90; // a privileged identity is "covered" if recertified within this window
@@ -73,7 +73,7 @@ export function createCampaign(input: CreateCampaignInput, tenant: number | null
   const pop = selectScope(tenant, scope);
   const now = new Date().toISOString();
   const name = (input.name || `${CAMPAIGN_SCOPES.find((s) => s.key === scope)!.label} recertification`).slice(0, 200);
-  const cid = (db.prepare("SELECT COALESCE(MAX(CampaignID),0)+1 n FROM ACCESSCAMPAIGN").get() as { n: number }).n;
+  const cid = allocId(db, "ACCESSCAMPAIGN", "CampaignID");
   const ins = db.prepare(`INSERT INTO ACCESSCAMPAIGN (CampaignID, CampaignGUID, Name, Description, Scope, Status, DueDate, ItemCount, CreatedBy, CreatedDate, TenantID)
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
   const insItem = db.prepare(`INSERT INTO ACCESSREVIEWITEM (ItemGUID, CampaignID, IdentityID, IdentityName, Snapshot, Decision, Actioned, TenantID, CreatedDate)

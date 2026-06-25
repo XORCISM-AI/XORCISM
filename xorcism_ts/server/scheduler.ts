@@ -13,6 +13,7 @@ import {
 } from "./jobs";
 import { createAgentJob } from "./agents";
 import { matchCves } from "./cvematch";
+import { runScheduledBoardReports } from "./boardreport";
 import { cronMatches } from "./cron";
 import { targetInScope } from "./scope";
 import * as xid from "./xid";
@@ -125,6 +126,17 @@ function fireSchedule(s: Schedule, nowMin: string): void {
 
   // Recurring NVD CVE import: spawn the Python importer (incremental --recent-only) every hour.
   if (s.connector === "import-nvd-cve") { runCveImport(s); return; }
+
+  // Scheduled board report: generate per tenant + notify users (in-process, no job spawned).
+  if (s.connector === "board-report") {
+    markScheduleRun(s.ScheduleID, 0, sqlNow());
+    try {
+      let p: any = {}; try { p = JSON.parse(s.params || "{}"); } catch { p = {}; }
+      const r = runScheduledBoardReports(p && p.tenant != null ? Number(p.tenant) : undefined);
+      xid.addAudit({ userId: s.created_by, action: "board_report_scheduled", resourceType: "report", resourceKey: "board-report", detail: `${r.tenants} tenant(s), ${r.notified} user(s) notified` });
+    } catch (e) { console.warn(`[scheduler] board-report failed: ${(e as Error).message}`); }
+    return;
+  }
 
   // Re-validate the scope if the schedule targets something with an engagement.
   if (s.target) {

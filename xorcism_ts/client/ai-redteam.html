@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — LLM Red-Team / AI-BAS</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1080px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 10px;text-transform:uppercase;letter-spacing:.5px}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:top}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+  .g{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;font-size:13px;font-weight:800;font-family:ui-monospace,monospace}
+  .g-A{background:#14532d;color:#bbf7d0}.g-B{background:#155e54;color:#99f6e4}.g-C{background:#78350f;color:#fcd34d}.g-D{background:#7c2d12;color:#fed7aa}.g-F{background:#7f1d1d;color:#fecaca}
+  .out{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .out-fail{background:#7f1d1d;color:#fecaca}.out-pass{background:#14532d;color:#bbf7d0}.out-info{background:#1e2440;color:#94a3b8}
+  .owasp{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:#3b2f63;color:#ddd6fe}
+  .btn{background:#8b5cf6;border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer}.btn:hover{background:#a78bfa}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:5px 10px;cursor:pointer}.btn-sm2:hover{border-color:#a78bfa}
+  .cov{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  .covc{background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:8px 11px}.covc .cn{font-size:12px;color:#e2e8f0}.covc .cb{height:6px;border-radius:3px;margin-top:5px;background:#1e2133;overflow:hidden}.covc .cb i{display:block;height:6px}
+  .detail{background:#0f1117;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-top:8px}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/ai-systems">&#129504; AI inventory</a>
+  <a href="/a3m">&#129302; AI Attack Matrix</a>
+  <a href="/emulation">&#127919; BAS</a>
+  <span class="spacer"></span>
+  <span class="title">&#129302; LLM Red-Team · AI-BAS</span>
+</div>
+<div class="mw">
+  <h1>LLM red-team / AI-BAS</h1>
+  <div class="sub">The AI analogue of breach-and-attack simulation. Each registered <a href="/ai-systems">AI system</a> is
+    assessed against an <b>OWASP LLM Top 10</b> probe catalogue — prompt injection, sensitive-info disclosure, insecure
+    output handling, excessive agency, system-prompt leakage, misinformation, unbounded consumption. The offline
+    assessment grades whether the system's declared <b>guardrails</b> defend each category; import a real red-team run
+    (<span class="mono">garak</span> / <span class="mono">PyRIT</span> / <span class="mono">promptfoo</span>) to record actual outcomes.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+  <div id="rundetail"></div>
+  <div class="lic">Probe payloads are canonical, documented OWASP-LLM test cases for authorized testing of your OWN AI
+    systems. The offline mode is a control-coverage assessment (declared guardrails vs attack categories), not a live
+    attack — import tool results for ground truth.</div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/ai-redteam.js"></script>
+</body></html>

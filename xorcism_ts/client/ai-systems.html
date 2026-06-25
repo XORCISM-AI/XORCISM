@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AI System Inventory</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1080px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}.sec .spacer{flex:1}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:top}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-Critical{background:#7f1d1d;color:#fecaca}.sv-High{background:#78350f;color:#fcd34d}.sv-Medium{background:#1e3a5f;color:#bfdbfe}.sv-Low{background:#1e2133;color:#94a3b8}.sv-Info{background:#14532d;color:#bbf7d0}
+  .tier{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .tier-Prohibited{background:#7f1d1d;color:#fecaca}.tier-High{background:#78350f;color:#fcd34d}.tier-GPAI{background:#3b2f63;color:#ddd6fe}.tier-Limited{background:#1e3a5f;color:#bfdbfe}.tier-Minimal{background:#14532d;color:#bbf7d0}
+  .chip{display:inline-block;font-size:11px;background:#1e2440;border:1px solid #2d3250;border-radius:20px;padding:2px 9px;margin:2px;color:#cbd5e1}
+  .row-c{cursor:pointer}.row-c:hover td{background:#161a30}
+  .inp{background:#0f1117;border:1px solid #2d3250;border-radius:7px;padding:8px 10px;color:#e2e8f0;font-size:13px;width:100%;box-sizing:border-box}.inp:focus{outline:none;border-color:#a78bfa}
+  .btn{background:#8b5cf6;border:none;color:#fff;border-radius:7px;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer}.btn:hover{background:#a78bfa}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:6px 11px;cursor:pointer}.btn-sm2:hover{border-color:#a78bfa}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .modal{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .modal.open{display:flex}.modal .box{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:600px;max-width:100%;padding:20px 22px}
+  .modal h3{margin:0 0 12px;font-size:16px;color:#e2e8f0}.fld{margin-bottom:11px}.fld label{display:block;font-size:11px;color:#94a3b8;text-transform:uppercase;margin-bottom:4px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}.err{color:#f87171;font-size:12px;min-height:15px}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/reg-calendar">&#128197; Regulatory</a>
+  <a href="/asset-management">&#128187; Assets</a>
+  <a href="/a3m">&#129302; AI Attack Matrix</a>
+  <span class="spacer"></span>
+  <span class="title">&#129504; AI System Inventory · AI-BOM</span>
+</div>
+<div class="mw">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">AI system inventory &amp; model-risk register</h1>
+    <button class="btn-sm2" id="ai-demo">Load demo</button>
+    <button class="btn" id="ai-new">+ Register AI system</button>
+  </div>
+  <div class="sub">The inventory for your AI/LLM systems — the operational layer of AI-TRiSM. Each system records purpose,
+    model &amp; provider, hosting, data sensitivity, guardrails, governing frameworks (NIST AI RMF / ISO 42001 / CSA AICM)
+    and an <b>EU AI Act risk tier</b>; components form an <b>AI-BOM</b> (exportable as CycloneDX). The worklist surfaces
+    high-risk, production or personal-data systems lacking guardrails or governance.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+  <div class="lic">EU AI Act risk tiers are self-declared classifications to aid planning — confirm against the Act's
+    Annexes and your DPO/legal counsel. The AI-BOM follows the CycloneDX 1.6 ML-BOM shape.</div>
+</div>
+
+<div class="modal" id="m-modal">
+  <div class="box">
+    <h3>Register an AI system</h3>
+    <div class="fld"><label>Name</label><input class="inp" id="f-name" placeholder="e.g. Support copilot"></div>
+    <div class="fld"><label>Purpose</label><input class="inp" id="f-purpose" placeholder="What it does / the decision it informs"></div>
+    <div class="row2">
+      <div class="fld"><label>Provider</label><input class="inp" id="f-provider" placeholder="OpenAI / In-house / …"></div>
+      <div class="fld"><label>Model</label><input class="inp" id="f-model" placeholder="gpt-4o / xgboost-v3 / …"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Model type</label><input class="inp" id="f-mtype" placeholder="LLM / Classifier / Diffusion"></div>
+      <div class="fld"><label>Hosting</label><select class="inp" id="f-hosting"><option>SaaS</option><option>Self-hosted</option><option>Edge</option><option>Hybrid</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>EU AI Act risk tier</label><select class="inp" id="f-tier"><option>Prohibited</option><option>High</option><option>GPAI</option><option selected>Limited</option><option>Minimal</option></select></div>
+      <div class="fld"><label>Lifecycle</label><select class="inp" id="f-life"><option>Development</option><option>Staging</option><option selected>Production</option><option>Retired</option></select></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Data classification</label><input class="inp" id="f-data" placeholder="Public / Confidential / Restricted"></div>
+      <div class="fld"><label>Personal data?</label><select class="inp" id="f-pii"><option value="0">No</option><option value="1">Yes</option></select></div>
+    </div>
+    <div class="fld"><label>Guardrails (comma-separated)</label><input class="inp" id="f-guard" placeholder="input filter, PII redaction, human review"></div>
+    <div class="fld"><label>Governing frameworks (comma-separated)</label><input class="inp" id="f-fw" placeholder="NIST AI RMF, ISO 42001, AICM"></div>
+    <div class="fld"><label>Model endpoint (optional — for live AI-BAS probing)</label><input class="inp" id="f-endpoint" placeholder="https://api.openai.com/v1/chat/completions"></div>
+    <div class="err" id="f-err"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-sm2" id="m-cancel">Cancel</button>
+      <button class="btn" id="m-save">Register</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/ai-systems.js"></script>
+</body></html>

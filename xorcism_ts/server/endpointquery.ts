@@ -11,6 +11,7 @@
  *   questionResults() → groups answers into the answer grid (Tanium "Saved Question" view)
  */
 import { getAgentDb, listAgents, createAgentJob } from "./agents";
+import { allocId } from "./db";
 import { randomUUID } from "crypto";
 
 const nowSql = (): string => new Date().toISOString().replace("T", " ").slice(0, 19);
@@ -59,7 +60,7 @@ export function askQuestion(sensorId: string, opts: { filter?: string; userId?: 
   if (!sensor) return null;
   const db = getAgentDb();
   const online = listAgents().filter((a) => String((a as { status?: string }).status || "").toLowerCase() === "online");
-  const id = (db.prepare("SELECT COALESCE(MAX(QuestionID),0)+1 n FROM ENDPOINTQUESTION").get() as { n: number }).n;
+  const id = allocId(db, "ENDPOINTQUESTION", "QuestionID");
   const text = `Get ${sensor.name}${opts.filter ? ` containing "${opts.filter}"` : ""} from all machines`;
   db.prepare(`INSERT INTO ENDPOINTQUESTION (QuestionID, QuestionGUID, SensorID, SensorName, Text, Filter, AskedByUserID, AskedByName, TargetCount, Status, AskedAt, TenantID)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
@@ -80,7 +81,7 @@ export function recordAnswers(agent: string, questionId: number, values: string[
   const vals = (Array.isArray(values) ? values : [String(values)]).map((v) => String(v ?? "").slice(0, 400)).filter((v) => v !== "");
   // replace any prior answers from this agent for this question (latest wins)
   db.prepare("DELETE FROM ENDPOINTANSWER WHERE QuestionID=? AND Agent=?").run(questionId, agent);
-  let aid = (db.prepare("SELECT COALESCE(MAX(AnswerID),0)+1 n FROM ENDPOINTANSWER").get() as { n: number }).n;
+  let aid = allocId(db, "ENDPOINTANSWER", "AnswerID");
   const ins = db.prepare("INSERT INTO ENDPOINTANSWER (AnswerID, QuestionID, Agent, Value, CreatedAt) VALUES (?,?,?,?,?)");
   const tx = db.transaction(() => { for (const v of (vals.length ? vals : ["(none)"])) ins.run(aid++, questionId, agent, v, nowSql()); });
   tx();
@@ -140,10 +141,10 @@ export function seedEndpointQueryDemo(tenant: number): { questions: number } {
   const hosts = Array.from({ length: 18 }, (_, i) => `EP-${String(i + 1).padStart(3, "0")}`);
   const mk = (sensorId: string, filter: string | null, text: string, perHost: (h: string, i: number) => string[]): void => {
     const s = sensorById(sensorId)!;
-    const qid = (db.prepare("SELECT COALESCE(MAX(QuestionID),0)+1 n FROM ENDPOINTQUESTION").get() as { n: number }).n;
+    const qid = allocId(db, "ENDPOINTQUESTION", "QuestionID");
     db.prepare("INSERT INTO ENDPOINTQUESTION (QuestionID, QuestionGUID, SensorID, SensorName, Text, Filter, AskedByName, TargetCount, Status, AskedAt, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
       .run(qid, randomUUID(), s.id, s.name, text, filter, "demo", hosts.length, "complete", nowSql(), tenant);
-    let aid = (db.prepare("SELECT COALESCE(MAX(AnswerID),0)+1 n FROM ENDPOINTANSWER").get() as { n: number }).n;
+    let aid = allocId(db, "ENDPOINTANSWER", "AnswerID");
     const ins = db.prepare("INSERT INTO ENDPOINTANSWER (AnswerID, QuestionID, Agent, Value, CreatedAt) VALUES (?,?,?,?,?)");
     hosts.forEach((h, i) => { for (const v of perHost(h, i)) ins.run(aid++, qid, h, v, nowSql()); });
   };

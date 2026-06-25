@@ -9,7 +9,7 @@
  * and tracks completion + a conformance score. Mirrors the compliance-journey wizard (journeys.ts).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const ANSWERS = new Set(["", "yes", "no", "partial", "na"]);
 
@@ -183,7 +183,7 @@ export function startRun(
   const now = nowIso();
   const name = (p.name || `${qn.QuestionnaireName ?? "Questionnaire"} run`).slice(0, 300);
   const rc = cols("QUESTIONNAIRERUN");
-  const rid = (db.prepare("SELECT COALESCE(MAX(RunID),0)+1 n FROM QUESTIONNAIRERUN").get() as { n: number }).n;
+  const rid = allocId(db, "QUESTIONNAIRERUN", "RunID");
   const rrec: Record<string, unknown> = {
     RunID: rid, RunGUID: randomUUID(), QuestionnaireID: p.questionnaireId, QuestionnaireName: qn.QuestionnaireName ?? "",
     Name: name, Subject: (p.subject || "").slice(0, 300), Respondent: (p.respondent || "").slice(0, 200), Owner: (p.owner || "").slice(0, 200),
@@ -193,7 +193,7 @@ export function startRun(
   const rkeys = Object.keys(rrec).filter((k) => rc.has(k));
   const insertRun = db.prepare(`INSERT INTO QUESTIONNAIRERUN (${rkeys.map((k) => `"${k}"`).join(",")}) VALUES (${rkeys.map(() => "?").join(",")})`);
   const respCols = cols("QUESTIONNAIRERESPONSE");
-  let respId = (db.prepare("SELECT COALESCE(MAX(ResponseID),0)+1 n FROM QUESTIONNAIRERESPONSE").get() as { n: number }).n;
+  let respId = allocId(db, "QUESTIONNAIRERESPONSE", "ResponseID");
   const insertResp = db.prepare(
     `INSERT INTO QUESTIONNAIRERESPONSE (ResponseID, RunID, QuestionID, Section, DisplayOrder, Answer, TenantID) VALUES (?,?,?,?,?,?,?)`
   );

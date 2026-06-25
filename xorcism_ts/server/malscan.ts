@@ -20,7 +20,7 @@
  * to a CTI observable (XTHREAT.OBSERVABLE) and to a document (XORCISM.DOCUMENT).
  */
 import { createHash, randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { syncObservableById } from "./stixstore";
 import { readBlob } from "./blobstore";
 
@@ -371,7 +371,7 @@ export function storeScan(res: ScanResult, opts: { tenant: number | null; create
   let observableId = res.observableId ?? resolveObservableId(res.target);
   if (!observableId && opts.trackObservable) observableId = createObservable(res, opts.tenant);
 
-  const scanId = (db.prepare("SELECT COALESCE(MAX(ScanID),0)+1 n FROM MALWARESCAN").get() as { n: number }).n;
+  const scanId = allocId(db, "MALWARESCAN", "ScanID");
   db.prepare(`INSERT INTO MALWARESCAN (ScanID, ScanGUID, Target, TargetType, Md5, Sha1, Sha256, DocumentID, ObservableID,
       Verdict, Score, Positives, Total, EnginesQueried, EnginesLive, Summary, Source, TenantID, CreatedBy, CreatedDate)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
@@ -381,7 +381,7 @@ export function storeScan(res: ScanResult, opts: { tenant: number | null; create
 
   const ins = db.prepare(`INSERT INTO MALWARESCANENGINE (EngineResultID, ScanID, Engine, Verdict, Detection, Score, Positives, Total, Category, Link, Live, Raw, CreatedDate)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
-  let eid = (db.prepare("SELECT COALESCE(MAX(EngineResultID),0)+1 n FROM MALWARESCANENGINE").get() as { n: number }).n;
+  let eid = allocId(db, "MALWARESCANENGINE", "EngineResultID");
   for (const e of res.engines) {
     ins.run(eid++, scanId, e.engine, e.verdict, e.detection ?? null, e.score ?? null, e.positives ?? null, e.total ?? null,
       e.category ?? null, e.link ?? null, e.live ? 1 : 0, e.raw != null ? JSON.stringify(e.raw).slice(0, 1000) : null, now);
@@ -394,7 +394,7 @@ function createObservable(res: ScanResult, tenant: number | null): number | null
   try {
     const db = getDb("XTHREAT");
     const obsType = res.targetType === "hash" ? "file" : res.targetType === "url" ? "url" : res.targetType === "domain" ? "domain-name" : res.targetType === "ip" ? "ipv4-addr" : "file";
-    const id = (db.prepare("SELECT COALESCE(MAX(ObservableID),0)+1 n FROM OBSERVABLE").get() as { n: number }).n;
+    const id = allocId(db, "OBSERVABLE", "ObservableID");
     const now = new Date().toISOString();
     const score = res.verdict === "malicious" ? Math.max(70, res.score) : res.verdict === "suspicious" ? 50 : res.score;
     db.prepare(`INSERT INTO OBSERVABLE (ObservableID, ObservableGUID, ObservableType, Value, Description, Labels, Score, CreatedByRef, CreatedDate)

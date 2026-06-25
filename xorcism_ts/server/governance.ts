@@ -6,7 +6,7 @@
  * Management) with a per-tenant status + maturity, rolled up to a governance posture. Cross-links
  * to live evidence already in the platform (policies, the risk register, defined roles).
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 type GItem = { category: string; code: string; sub: string; title: string; desc: string };
 const g = (category: string, code: string, sub: string, title: string, desc: string): GItem => ({ category, code, sub, title, desc });
@@ -95,7 +95,7 @@ export function saveGovernanceStatus(itemId: number, p: { status?: string; matur
     vals.push(ex.StatusID);
     db.prepare(`UPDATE GOVERNANCESTATUS SET ${sets.join(", ")} WHERE StatusID = ?`).run(...vals);
   } else {
-    const id = (db.prepare("SELECT COALESCE(MAX(StatusID),0)+1 n FROM GOVERNANCESTATUS").get() as { n: number }).n;
+    const id = allocId(db, "GOVERNANCESTATUS", "StatusID");
     db.prepare("INSERT INTO GOVERNANCESTATUS (StatusID, ItemID, Status, Maturity, OwnerPersonID, Evidence, Notes, TenantID, UpdatedDate) VALUES (?,?,?,?,?,?,?,?,?)")
       .run(id, itemId, st ?? "Not implemented", p.maturity != null ? Math.max(0, Math.min(5, Math.round(p.maturity))) : null, p.ownerPersonId ?? null, String(p.evidence ?? "").slice(0, 1000), String(p.notes ?? "").slice(0, 1000), tenant, now);
   }

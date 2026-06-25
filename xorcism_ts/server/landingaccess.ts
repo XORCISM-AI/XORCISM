@@ -10,7 +10,7 @@
  * Restrictions live per-tenant in LANDINGACCESS; absence of a row means "open to everyone".
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { userCanPage } from "./auth";
 
 /** The canonical NICE Workforce Framework (SP 800-181 rev1, 2025) categories used as profiles. */
@@ -130,7 +130,7 @@ export function setAccess(tenant: number | null, itemType: string, itemKey: stri
   const clean = [...new Set((profiles || []).map((p) => String(p).trim()).filter((p) => NICE_PROFILES.includes(p)))];
   db.prepare("DELETE FROM LANDINGACCESS WHERE ItemType=? AND ItemKey=? AND (TenantID = ? OR (TenantID IS NULL AND ? IS NULL))").run(type, itemKey, tenant, tenant);
   if (clean.length) {
-    const id = (db.prepare("SELECT COALESCE(MAX(AccessID),0)+1 n FROM LANDINGACCESS").get() as { n: number }).n;
+    const id = allocId(db, "LANDINGACCESS", "AccessID");
     db.prepare("INSERT INTO LANDINGACCESS (AccessID, AccessGUID, ItemType, ItemKey, AllowedProfiles, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?)")
       .run(id, randomUUID(), type, itemKey, clean.join(","), new Date().toISOString(), tenant);
   }

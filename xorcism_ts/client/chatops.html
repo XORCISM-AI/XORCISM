@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — ChatOps console</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:900px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;line-height:1.5}
+  .quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .q{font-size:12px;background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:20px;padding:4px 11px;cursor:pointer}.q:hover{border-color:#22d3ee}
+  #log{background:#0b0e1a;border:1px solid #2d3250;border-radius:12px;padding:12px;height:54vh;overflow:auto;font-size:13px}
+  .msg{margin:8px 0;display:flex;gap:9px}.msg .av{width:26px;height:26px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .you .av{background:#1e3a5f;color:#bfdbfe}.bot .av{background:#0f3a2e;color:#6ee7b7}
+  .bub{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:8px 11px;color:#e2e8f0;white-space:pre-wrap;line-height:1.55;max-width:760px}
+  .you .bub{background:#13213a}
+  .bar{display:flex;gap:8px;margin-top:10px}
+  .bar input{flex:1;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:13px}.bar input:focus{outline:none;border-color:#22d3ee}
+  .btn{background:#06b6d4;border:none;color:#04212a;border-radius:8px;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}.btn:hover{background:#22d3ee}
+  code{font-family:ui-monospace,monospace;background:#0f1117;border:1px solid #2d3250;border-radius:4px;padding:0 4px;color:#a5b4fc;font-size:12px}
+  b{color:#e7ebf3}.muted{color:#64748b}
+  .lic{font-size:11px;color:#64748b;margin-top:16px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/croc-orchestrator">&#129302; Orchestrator</a>
+  <a href="/settings">&#9881;&#65039; Settings</a>
+  <span class="spacer"></span>
+  <span class="title">&#128172; ChatOps console</span>
+</div>
+<div class="mw">
+  <h1>ChatOps console</h1>
+  <div class="sub">Query XORCISM and act on it conversationally — the same command set that drives the Slack / Teams
+    integration. Try <code>posture</code>, <code>digest</code>, <code>exposures</code>, <code>obligations</code>,
+    <code>queue</code>, then <code>approve &lt;id&gt;</code>. This console uses your session; Slack/Teams use the
+    signed webhooks (see the docs).</div>
+  <div class="quick" id="quick"></div>
+  <div id="log"></div>
+  <div class="bar">
+    <input id="inp" placeholder="Type a command (e.g. posture) and hit Enter" autocomplete="off">
+    <button class="btn" id="send">Send</button>
+  </div>
+  <div class="lic">Slack: add a slash command pointing at <code>/api/chatops/slack/command</code> and interactivity at
+    <code>/api/chatops/slack/interactive</code>; set <code>SLACK_SIGNING_SECRET</code>. Approve/dismiss from chat needs
+    <code>CHATOPS_ALLOW_ACTIONS=1</code> and <code>CHATOPS_TENANT</code>.</div>
+</div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/chatops.js"></script>
+</body></html>

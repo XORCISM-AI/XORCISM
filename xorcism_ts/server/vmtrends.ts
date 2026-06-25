@@ -12,7 +12,7 @@
  * "100% patched = secure", "a quarterly scan is enough", "the open count is our KPI",
  * "VM is IT's problem"). Surfaced at /vm-report.
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { backlog, Inst } from "./voc";
 
 const today = (): string => new Date().toISOString().slice(0, 10);
@@ -67,7 +67,7 @@ function upsertSnapshot(tenant: number | null, date: string, p: Posture, source:
       RiskExposure=?, SlaCompliance=?, OverdueCount=?, MttrDays=?, Coverage=?, UnassignedOpen=?, Source=? WHERE SnapshotID=?`)
       .run(p.open, p.total, p.remediated, p.kevOpen, p.exploitableOpen, p.criticalOpen, p.highOpen, p.riskExposure, p.slaCompliance, p.overdue, p.mttrDays, p.coverage, p.unassignedOpen, source, ex.SnapshotID);
   } else {
-    const id = (xv.prepare("SELECT COALESCE(MAX(SnapshotID),0)+1 n FROM VMSNAPSHOT").get() as { n: number }).n;
+    const id = allocId(xv, "VMSNAPSHOT", "SnapshotID");
     xv.prepare(`INSERT INTO VMSNAPSHOT (SnapshotID, TenantID, SnapshotDate, OpenCount, TotalCount, RemediatedCount, KevOpen, ExploitableOpen,
       CriticalOpen, HighOpen, RiskExposure, SlaCompliance, OverdueCount, MttrDays, Coverage, UnassignedOpen, Source, CreatedDate)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)

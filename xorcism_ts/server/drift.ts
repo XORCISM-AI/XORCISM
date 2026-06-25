@@ -4,7 +4,7 @@
  * became internet-exposed since last time. Pairs with the OSINT discovery chain
  * (which grows the inventory) to turn discovery into continuous monitoring.
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 let ensured = false;
 export function ensureDriftTable(): void {
@@ -42,7 +42,7 @@ export function takeSnapshot(tenant: number | null, userId: number): { snapshotI
   const surf = captureSurface(tenant);
   const exposed = surf.filter((s) => s.exposed).length;
   const xo = getDb("XORCISM");
-  const id = (xo.prepare("SELECT COALESCE(MAX(SnapshotID),0)+1 m FROM XSURFACESNAPSHOT").get() as { m: number }).m;
+  const id = allocId(xo, "XSURFACESNAPSHOT", "SnapshotID");
   xo.prepare("INSERT INTO XSURFACESNAPSHOT (SnapshotID, TenantID, CreatedDate, CreatedBy, AssetCount, ExposedCount, Payload) VALUES (?,?,?,?,?,?,?)")
     .run(id, tenant, now(), userId, surf.length, exposed, JSON.stringify(surf).slice(0, 1_000_000));
   return { snapshotId: id, assets: surf.length, exposed };

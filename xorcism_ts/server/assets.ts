@@ -13,7 +13,7 @@
  * path replacing the raw explorer insert). Full ASSET CRUD stays in the schema-driven explorer.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export interface AssetRow {
   id: number;
@@ -234,7 +234,7 @@ export function createAsset(
   const env = (p.environment || "").toLowerCase();
   // Legacy quirk: ASSET.AssetID is INTEGER NOT NULL but NOT a PRIMARY KEY, so SQLite won't
   // auto-assign it (same as CPE/CPEFORASSET/COMPONENT) → allocate MAX+1 explicitly.
-  const nextId = (db.prepare("SELECT COALESCE(MAX(AssetID),0)+1 AS n FROM ASSET").get() as { n: number }).n;
+  const nextId = allocId(db, "ASSET", "AssetID");
   const candidate: Record<string, unknown> = {
     AssetID: nextId,
     AssetGUID: randomUUID(),

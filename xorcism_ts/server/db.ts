@@ -1,6 +1,13 @@
 /**
- * db.ts — SQLite connection pool using better-sqlite3 (synchronous API)
- * Replaces PowerShell Invoke-Sqlite / sqlite3.exe shell calls
+ * db.ts — SQLite connection pool with a PLUGGABLE synchronous driver.
+ *   • better-sqlite3 (default, zero-config) — a local file per logical DB.
+ *   • libsql / Turso (opt-in) — the SAME synchronous better-sqlite3-compatible API, but the local
+ *     file can be an embedded replica of a remote libSQL/Turso server (HA, replication, backups).
+ * Because both drivers expose the identical sync API, the ~1,964 `.prepare()` call sites across the
+ * server are unchanged. Select libsql with XORCISM_DB_DRIVER=libsql (after `npm i libsql`) and point
+ * a DB at a remote with LIBSQL_SYNC_URL (+ LIBSQL_AUTH_TOKEN), globally or per DB
+ * (LIBSQL_<NAME>_SYNC_URL). See docs/DATABASE_BACKENDS_STAGE2.md.
+ * Replaces PowerShell Invoke-Sqlite / sqlite3.exe shell calls.
  */
 
 import Database from "better-sqlite3";
@@ -33,19 +40,96 @@ export type DbName = (typeof DB_NAMES)[number];
 // One connection per database (lazy-created)
 const connections = new Map<string, Database.Database>();
 
+// ── Pluggable driver selection ────────────────────────────────────────────────
+type DbCtor = new (p: string, o?: Record<string, unknown>) => Database.Database;
+let _ctor: DbCtor | null = null;
+let _driver: "better-sqlite3" | "libsql" = "better-sqlite3";
+function dbCtor(): DbCtor {
+  if (_ctor) return _ctor;
+  const want = (process.env.XORCISM_DB_DRIVER || (process.env.LIBSQL_SYNC_URL ? "libsql" : "better-sqlite3")).toLowerCase();
+  if (want === "libsql") {
+    try {
+      // libsql exposes a better-sqlite3-compatible synchronous Database (with embedded replicas).
+      const libsql = require("libsql"); // eslint-disable-line @typescript-eslint/no-var-requires
+      _ctor = ((libsql.default ?? libsql) as unknown) as DbCtor;
+      _driver = "libsql";
+      console.log("[db] driver: libsql (synchronous, embedded-replica capable)");
+      return _ctor;
+    } catch (e) {
+      console.warn(`[db] XORCISM_DB_DRIVER=libsql but the 'libsql' package is not installed (${(e as Error).message}). Run 'npm i libsql'. Falling back to better-sqlite3.`);
+    }
+  }
+  _ctor = (Database as unknown) as DbCtor;
+  _driver = "better-sqlite3";
+  return _ctor;
+}
+/** The active DB driver ("better-sqlite3" | "libsql") — for diagnostics/health. */
+export function dbDriver(): string { dbCtor(); return _driver; }
+
 export function getDb(name: string): Database.Database {
   const upper = name.toUpperCase();
   if (connections.has(upper)) return connections.get(upper)!;
 
+  const Ctor = dbCtor();
   const dbPath = path.join(DB_DIR, `${upper}.db`);
-  if (!fs.existsSync(dbPath)) throw new Error(`Unknown database: ${name}`);
+  const opts: Record<string, unknown> = { readonly: false, fileMustExist: true };
 
-  const db = new Database(dbPath, { readonly: false, fileMustExist: true });
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-  db.pragma("busy_timeout = 5000"); // waits for the lock (e.g. during an import) instead of failing
+  // libsql embedded replica: the local file mirrors a remote libSQL/Turso DB, kept current by
+  // db.sync(). Configure per DB (LIBSQL_<NAME>_SYNC_URL) or globally (LIBSQL_SYNC_URL).
+  let replica = false;
+  if (_driver === "libsql") {
+    const syncUrl = process.env[`LIBSQL_${upper}_SYNC_URL`] || process.env.LIBSQL_SYNC_URL;
+    const authToken = process.env[`LIBSQL_${upper}_AUTH_TOKEN`] || process.env.LIBSQL_AUTH_TOKEN;
+    if (syncUrl) { opts.syncUrl = syncUrl; if (authToken) opts.authToken = authToken; delete opts.fileMustExist; replica = true; }
+  }
+
+  if (!replica && !fs.existsSync(dbPath)) throw new Error(`Unknown database: ${name}`);
+
+  const db = new Ctor(dbPath, opts);
+  try {
+    db.pragma("journal_mode = WAL");
+    db.pragma("foreign_keys = ON");
+    db.pragma("busy_timeout = 5000"); // waits for the lock (e.g. during an import) instead of failing
+  } catch { /* libsql embedded replicas manage journaling themselves; pragmas may be no-ops */ }
+  if (replica) { try { (db as unknown as { sync?: () => void }).sync?.(); } catch (e) { console.warn(`[db] ${upper} initial replica sync failed: ${(e as Error).message}`); } }
   connections.set(upper, db);
   return db;
+}
+
+/**
+ * Atomically allocate the next primary-key id for a table — the race-free replacement for the
+ * `SELECT COALESCE(MAX(id),0)+1` pattern. A per-`table.column` counter in XSEQ is bumped by a single
+ * `UPDATE … RETURNING` that also never drops below the table's live MAX (so it stays correct even
+ * when other writers — the Python importers, seed scripts — insert without the sequence). The UPDATE
+ * takes the write lock, so it is safe across processes / under libsql multi-writer (on the
+ * single-process better-sqlite3 default the old pattern was already safe; this makes it correct
+ * everywhere). Table/column are sanitized to identifier chars (defense in depth; they are constants).
+ */
+export function allocId(db: Database.Database, table: string, idCol: string): number {
+  const t = String(table).replace(/[^A-Za-z0-9_]/g, "");
+  const c = String(idCol).replace(/[^A-Za-z0-9_]/g, "");
+  const key = `${t}.${c}`;
+  try {
+    db.exec("CREATE TABLE IF NOT EXISTS XSEQ (SeqName TEXT PRIMARY KEY, Val INTEGER NOT NULL DEFAULT 0)");
+    db.prepare("INSERT OR IGNORE INTO XSEQ(SeqName, Val) VALUES (?, 0)").run(key);
+    const row = db.prepare(
+      `UPDATE XSEQ SET Val = MAX(Val + 1, (SELECT COALESCE(MAX("${c}"),0)+1 FROM "${t}")) WHERE SeqName=? RETURNING Val`
+    ).get(key) as { Val: number } | undefined;
+    if (row && Number.isInteger(row.Val)) return row.Val;
+  } catch { /* fall back to the legacy (single-process-safe) allocation below */ }
+  return (db.prepare(`SELECT COALESCE(MAX("${c}"),0)+1 AS n FROM "${t}"`).get() as { n: number }).n;
+}
+
+/** Periodically refresh libsql embedded replicas. No-op unless libsql + a sync URL are configured. */
+let _syncTimer: ReturnType<typeof setInterval> | null = null;
+export function startReplicaSync(): void {
+  const hasSyncUrl = !!process.env.LIBSQL_SYNC_URL || Object.keys(process.env).some((k) => /^LIBSQL_.*_SYNC_URL$/.test(k));
+  if (_syncTimer || dbDriver() !== "libsql" || !hasSyncUrl) return;
+  const secs = Math.max(5, Number(process.env.LIBSQL_SYNC_SECONDS) || 30);
+  _syncTimer = setInterval(() => {
+    for (const [nm, db] of connections) { try { (db as unknown as { sync?: () => void }).sync?.(); } catch (e) { console.warn(`[db] replica sync ${nm}: ${(e as Error).message}`); } }
+  }, secs * 1000);
+  console.log(`[db] libsql embedded-replica sync every ${secs}s`);
 }
 
 // "Schema" databases (referential / domain) built from the
@@ -178,7 +262,7 @@ export function seedTools(): void {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0)`
     );
     const tx = db.transaction((tools: { name: string; description: string; category: string; url: string }[]) => {
-      let id = (db.prepare('SELECT COALESCE(MAX(ToolID),0)+1 AS n FROM "TOOL"').get() as { n: number }).n;
+      let id = allocId(db, "TOOL", "ToolID");
       for (const t of tools) {
         insert.run(id++, randomUUID(), t.name.slice(0, 200), t.description || null,
           cols.has("Category") ? (t.category || null) : null, cols.has("ToolURL") ? (t.url || null) : null, now, now);
@@ -358,7 +442,7 @@ export function correlateCveToAssets(): {
       .map((x) => x.k)
   );
   let nextId =
-    (xo.prepare(`SELECT COALESCE(MAX(AssetVulnerabilityID), 0) + 1 AS n FROM ASSETVULNERABILITY`).get() as { n: number }).n;
+    allocId(xo, "ASSETVULNERABILITY", "AssetVulnerabilityID");
   const now = nowTs();
   const ins = xo.prepare(
     `INSERT INTO ASSETVULNERABILITY (AssetVulnerabilityID, AssetID, VulnerabilityID, CreatedDate, Status, TenantID)
@@ -409,7 +493,7 @@ export function recordAssetFinancialValue(
   }
   const now = nowTs();
   const nextId =
-    (db.prepare(`SELECT COALESCE(MAX(AssetFinancialValueID), 0) + 1 AS n FROM ASSETFINANCIALVALUE`).get() as { n: number }).n;
+    allocId(db, "ASSETFINANCIALVALUE", "AssetFinancialValueID");
   db.prepare(
     `INSERT INTO ASSETFINANCIALVALUE
        (AssetFinancialValueID, AssetID, FinancialValue, Currency, CreatedDate, ValidFrom, ValidUntil, PersonID)
@@ -438,7 +522,7 @@ export function getOrCreateCpe(name: string): { id: number; name: string; create
   const ex = db.prepare(`SELECT CPEID FROM CPE WHERE CPEName = ? LIMIT 1`).get(name) as
     | { CPEID: number } | undefined;
   if (ex) return { id: ex.CPEID, name, created: false };
-  const nextId = (db.prepare(`SELECT COALESCE(MAX(CPEID), 0) + 1 AS n FROM CPE`).get() as { n: number }).n;
+  const nextId = allocId(db, "CPE", "CPEID");
   db.prepare(`INSERT INTO CPE (CPEID, CPEName, CreatedDate) VALUES (?, ?, ?)`).run(nextId, name, nowTs());
   return { id: nextId, name, created: true };
 }
@@ -581,7 +665,7 @@ export function createQuestion(name: string): { id: number; name: string; create
   const ex = db.prepare("SELECT QuestionID FROM QUESTION WHERE QuestionName = ? LIMIT 1").get(name) as
     | { QuestionID: number } | undefined;
   if (ex) return { id: ex.QuestionID, name, created: false };
-  const id = (db.prepare("SELECT COALESCE(MAX(QuestionID),0)+1 AS n FROM QUESTION").get() as { n: number }).n;
+  const id = allocId(db, "QUESTION", "QuestionID");
   db.prepare(
     "INSERT INTO QUESTION (QuestionID, QuestionGUID, QuestionName, QuestionText, QuestionType, CreatedDate) VALUES (?,?,?,?,?,?)"
   ).run(id, randomUUID(), name, name, "boolean", nowTs());
@@ -603,7 +687,7 @@ export function importQuestionnaireFromExcel(
   const db = getDb("XCOMPLIANCE");
   const clean = (v: unknown): string => (v == null ? "" : String(v)).trim();
   const tx = db.transaction(() => {
-    const qId = (db.prepare("SELECT COALESCE(MAX(QuestionnaireID),0)+1 AS n FROM QUESTIONNAIRE").get() as { n: number }).n;
+    const qId = allocId(db, "QUESTIONNAIRE", "QuestionnaireID");
     const qName = clean(name) || clean(fileName) || `questionnaire_${qId}`;
     db.prepare(
       "INSERT INTO QUESTIONNAIRE (QuestionnaireID, QuestionnaireName, FileName, CreatedDate, TenantID) VALUES (?,?,?,?,?)"
@@ -644,7 +728,7 @@ export function createEvidence(name: string): { id: number; name: string; create
   const ex = db.prepare("SELECT EvidenceID FROM EVIDENCE WHERE EvidenceName = ? LIMIT 1").get(name) as
     | { EvidenceID: number } | undefined;
   if (ex) return { id: ex.EvidenceID, name, created: false };
-  const id = (db.prepare("SELECT COALESCE(MAX(EvidenceID),0)+1 AS n FROM EVIDENCE").get() as { n: number }).n;
+  const id = allocId(db, "EVIDENCE", "EvidenceID");
   db.prepare("INSERT INTO EVIDENCE (EvidenceID, EvidenceName, CreatedDate) VALUES (?,?,?)").run(id, name, nowTs());
   return { id, name, created: true };
 }
@@ -1917,7 +2001,7 @@ export function getOrCreateTag(name: string): number {
   const found = db.prepare("SELECT TagID FROM TAG WHERE TagValue = ? COLLATE NOCASE LIMIT 1").get(v) as
     | { TagID: number } | undefined;
   if (found) return found.TagID;
-  const id = (db.prepare("SELECT COALESCE(MAX(TagID),0)+1 AS n FROM TAG").get() as { n: number }).n;
+  const id = allocId(db, "TAG", "TagID");
   db.prepare("INSERT INTO TAG (TagID, TagGUID, TagValue, CreatedDate) VALUES (?,?,?,?)")
     .run(id, randomUUID(), v, nowTs());
   return id;
@@ -2321,7 +2405,7 @@ function ensureAssetLinkedToOrg(
     assetId = existing.AssetID;
     assetGuid = existing.AssetGUID || randomUUID();
   } else {
-    assetId = (xo.prepare(`SELECT COALESCE(MAX(AssetID),0)+1 AS n FROM "ASSET"`).get() as { n: number }).n;
+    assetId = allocId(xo, "ASSET", "AssetID");
     assetGuid = randomUUID();
     xo.prepare(
       `INSERT INTO "ASSET" (AssetID, AssetGUID, AssetName, AssetDescription, Enabled, CreatedDate, ValidFromDate, TenantID)
@@ -2330,7 +2414,7 @@ function ensureAssetLinkedToOrg(
     created = true;
   }
   if (!xo.prepare("SELECT 1 FROM ASSETFORORGANISATION WHERE AssetID = ? AND OrganisationID = ? LIMIT 1").get(assetId, organisationId)) {
-    const linkId = (xo.prepare("SELECT COALESCE(MAX(AssetForOrganisationID),0)+1 AS n FROM ASSETFORORGANISATION").get() as { n: number }).n;
+    const linkId = allocId(xo, "ASSETFORORGANISATION", "AssetForOrganisationID");
     xo.prepare(
       `INSERT INTO ASSETFORORGANISATION
          (AssetForOrganisationID, OrganisationAssetGUID, OrganisationID, OrganisationGUID, AssetID, AssetGUID, CreatedDate, ValidFromDate)
@@ -2356,7 +2440,7 @@ function ensureApplicationLinkedToOrg(
     applicationId = existing.ApplicationID;
     appGuid = existing.ApplicationGUID || randomUUID();
   } else {
-    applicationId = (xo.prepare(`SELECT COALESCE(MAX(ApplicationID),0)+1 AS n FROM "APPLICATION"`).get() as { n: number }).n;
+    applicationId = allocId(xo, "APPLICATION", "ApplicationID");
     appGuid = randomUUID();
     xo.prepare(
       `INSERT INTO "APPLICATION" (ApplicationID, ApplicationGUID, ApplicationName, ApplicationDescription, CreatedDate, ValidFromDate)
@@ -2365,7 +2449,7 @@ function ensureApplicationLinkedToOrg(
     created = true;
   }
   if (!xo.prepare("SELECT 1 FROM APPLICATIONFORORGANISATION WHERE ApplicationID = ? AND OrganisationID = ? LIMIT 1").get(applicationId, organisationId)) {
-    const linkId = (xo.prepare("SELECT COALESCE(MAX(OrganisationApplicationID),0)+1 AS n FROM APPLICATIONFORORGANISATION").get() as { n: number }).n;
+    const linkId = allocId(xo, "APPLICATIONFORORGANISATION", "OrganisationApplicationID");
     xo.prepare(
       `INSERT INTO APPLICATIONFORORGANISATION
          (OrganisationApplicationID, OrganisationApplicationGUID, OrganisationID, OrganisationGUID, ApplicationID, ApplicationGUID, CreatedDate, ValidFromDate)
@@ -6521,7 +6605,7 @@ export interface NotificationRow {
 /** Creates a notification for a user; returns its ID. */
 export function createNotification(n: NotificationInput): number {
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(NotificationID),0)+1 AS n FROM NOTIFICATION").get() as { n: number }).n;
+  const id = allocId(db, "NOTIFICATION", "NotificationID");
   db.prepare(
     `INSERT INTO NOTIFICATION
        (NotificationID, NotificationGUID, UserID, Title, NotificationMessage, Level, Link, Source, IsRead, ReadDate, CreatedDate, TenantID)
@@ -6676,7 +6760,7 @@ export function getThreatModelThreats(modelId: number): ThreatRow[] {
 export function addThreatModelThreat(modelId: number, t: Record<string, unknown>, tenant: number | null = null): number {
   const db = getDb("XORCISM");
   const hasTenant = tableHasTenantCol("XORCISM", "THREATMODELTHREAT");
-  const id = (db.prepare("SELECT COALESCE(MAX(ThreatModelThreatID),0)+1 AS n FROM THREATMODELTHREAT").get() as { n: number }).n;
+  const id = allocId(db, "THREATMODELTHREAT", "ThreatModelThreatID");
   const cols = ["ThreatModelThreatID", "ThreatModelID", "Title", "STRIDECategory", "Description",
     "ThreatAgentID", "AttackPattern", "Likelihood", "Impact", "RiskScore", "Status", "CreatedDate"];
   const vals: unknown[] = [id, modelId, t.Title ?? null, t.STRIDECategory ?? null, t.Description ?? null,

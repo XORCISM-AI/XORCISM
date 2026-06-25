@@ -17,7 +17,7 @@
  * Risk is expressed as the intersection of LIKELIHOOD and IMPACT. Everything is computed
  * per-tenant and read-only; nothing leaves the machine.
  */
-import { getDb, resolveUserOrganisationId } from "./db";
+import { getDb, resolveUserOrganisationId, notifyUsers } from "./db";
 import { enterpriseRiskBreakdown, organisationRiskHistory } from "./riskscore";
 import { topExposures } from "./fusion";
 import { attackPathGraph } from "./attackpath";
@@ -213,4 +213,50 @@ export function boardReport(tenant: number | null): BoardReport {
     resources,
     questions,
   };
+}
+
+/** Scheduled board-report delivery: generate the report per tenant and notify that tenant's users
+ *  with the headline posture + a link to /board-report. Best-effort; called by the scheduler when an
+ *  XSCHEDULE row with connector 'board-report' fires. Returns {tenants, notified}. */
+export function runScheduledBoardReports(onlyTenant?: number | null): { tenants: number; notified: number } {
+  let tenants = 0, notified = 0;
+  // resolve tenants (distinct ASSET.TenantID); null = global → super-admins
+  const targets: (number | null)[] = [];
+  if (onlyTenant !== undefined) targets.push(onlyTenant);
+  else {
+    try {
+      const xo = getDb("XORCISM");
+      const c = new Set((xo.prepare('PRAGMA table_info("ASSET")').all() as { name: string }[]).map((x) => x.name));
+      if (c.has("TenantID")) for (const r of xo.prepare("SELECT DISTINCT TenantID id FROM ASSET WHERE TenantID IS NOT NULL").all() as { id: number }[]) targets.push(r.id);
+    } catch { /* */ }
+    if (!targets.length) targets.push(null);
+  }
+  const usersOf = (tenant: number | null): number[] => {
+    try {
+      const xid = getDb("XID");
+      const uc = new Set((xid.prepare('PRAGMA table_info("XUSER")').all() as { name: string }[]).map((x) => x.name));
+      if (!uc.has("UserID")) return [];
+      if (tenant == null) {
+        const adminCol = uc.has("isSuperAdmin") ? "isSuperAdmin" : uc.has("IsSuperAdmin") ? "IsSuperAdmin" : null;
+        const sql = adminCol ? `SELECT UserID id FROM XUSER WHERE ${adminCol}=1` : "SELECT UserID id FROM XUSER LIMIT 5";
+        return (xid.prepare(sql).all() as { id: number }[]).map((r) => r.id);
+      }
+      if (!uc.has("TenantID")) return [];
+      return (xid.prepare("SELECT UserID id FROM XUSER WHERE TenantID=?").all(tenant) as { id: number }[]).map((r) => r.id);
+    } catch { return []; }
+  };
+  for (const t of targets) {
+    let rep: BoardReport;
+    try { rep = boardReport(t); } catch { continue; }
+    tenants++;
+    const users = usersOf(t);
+    if (!users.length) continue;
+    notified += notifyUsers(users, {
+      title: `Board report ready — posture ${rep.posture.score}/100 (${rep.posture.grade})`,
+      message: `Enterprise risk ${rep.posture.enterpriseRisk}; trend ${rep.trend.direction}. ${rep.criticalAssets.atRisk}/${rep.criticalAssets.total} crown jewels at risk. Open the full board report.`,
+      level: rep.posture.score >= 70 ? "success" : rep.posture.score >= 55 ? "info" : "warning",
+      link: "/board-report", source: "Scheduled board report", tenantId: t ?? null,
+    });
+  }
+  return { tenants, notified };
 }

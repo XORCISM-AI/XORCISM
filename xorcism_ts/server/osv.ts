@@ -12,7 +12,7 @@
  *   bulk UPDATEs target VULReferentialID (the only indexed column).
  *   VulnerabilityID is NOT auto-incremented → allocated via MAX(VulnerabilityID)+1.
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const OSV_API = (process.env.OSV_API_URL || "https://api.osv.dev").replace(/\/$/, "");
 const OSV_ID_RE = /^[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9.\-_]+$/; // CVE-…, GHSA-…, PYSEC-…, etc.
@@ -194,7 +194,7 @@ export function upsertVulnerability(
     return { action: "updated", vulnerabilityId: existing.VulnerabilityID, referential };
   }
 
-  const next = (db.prepare(`SELECT COALESCE(MAX(VulnerabilityID),0)+1 AS n FROM "VULNERABILITY"`).get() as { n: number }).n;
+  const next = allocId(db, "VULNERABILITY", "VulnerabilityID");
   data.VulnerabilityID = next;
   if (cols.has("CreatedDate")) data.CreatedDate = nowIso;
   if (cols.has("isEncrypted")) data.isEncrypted = 0;

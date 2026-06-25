@@ -13,7 +13,7 @@
 import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import path from "path";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { identityInventory } from "./identities";
 import { assetInventory } from "./assets";
 
@@ -529,7 +529,7 @@ export function createZtAssessment(p: { name?: string; scope?: string; owner?: s
   const db = getDb("XCOMPLIANCE");
   const signals = pillarSignals(tenant);
   const ac = colsOf("ZTMATURITYASSESSMENT");
-  const id = (db.prepare("SELECT COALESCE(MAX(AssessmentID),0)+1 n FROM ZTMATURITYASSESSMENT").get() as { n: number }).n;
+  const id = allocId(db, "ZTMATURITYASSESSMENT", "AssessmentID");
   const rec: Record<string, unknown> = {
     AssessmentID: id, AssessmentGUID: randomUUID(), Name: (p.name || `Zero Trust maturity — ${new Date().getFullYear()}`).slice(0, 300),
     Scope: (p.scope || "").slice(0, 2000), Owner: (p.owner || "").slice(0, 200), Status: "in_progress",
@@ -539,7 +539,7 @@ export function createZtAssessment(p: { name?: string; scope?: string; owner?: s
   const keys = Object.keys(rec).filter((k) => ac.has(k));
   const insA = db.prepare(`INSERT INTO ZTMATURITYASSESSMENT (${keys.join(",")}) VALUES (${keys.map(() => "?").join(",")})`);
   const ic = colsOf("ZTMATURITYITEM");
-  let iid = (db.prepare("SELECT COALESCE(MAX(ItemID),0)+1 n FROM ZTMATURITYITEM").get() as { n: number }).n;
+  let iid = allocId(db, "ZTMATURITYITEM", "ItemID");
   const insI = db.prepare(`INSERT INTO ZTMATURITYITEM (ItemID, AssessmentID, FunctionKey, Pillar, PillarKey, CurrentStage, TargetStage, AutoStage, TenantID) VALUES (?,?,?,?,?,?,?,?,?)`);
   const pillarName = (k: string) => ZT_PILLARS.find((x) => x.key === k)?.name ?? k;
   db.transaction(() => {

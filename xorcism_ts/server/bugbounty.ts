@@ -9,7 +9,7 @@
  * Read-only inventory + a guided createBugBountyProgram(); full CRUD stays in the schema-driven explorer.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const DB = "XVULNERABILITY";
 const CLOSED = /resolv|closed|duplicate|informativ|spam|reject|not[\s-]?applicable|out[\s-]?of[\s-]?scope|disclos/i;
@@ -169,7 +169,7 @@ export function createBugBountyProgram(
   const pc = cols("BUGBOUNTYPROGRAM");
   if (!pc.size) throw new Error("BUGBOUNTYPROGRAM table not available");
   const now = new Date().toISOString();
-  const nextId = (db.prepare("SELECT COALESCE(MAX(ProgramID),0)+1 AS n FROM BUGBOUNTYPROGRAM").get() as { n: number }).n;
+  const nextId = allocId(db, "BUGBOUNTYPROGRAM", "ProgramID");
   const candidate: Record<string, unknown> = {
     ProgramID: nextId, ProgramGUID: randomUUID(),
     Name: (p.name || "Untitled program").slice(0, 300),

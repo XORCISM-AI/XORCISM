@@ -4,6 +4,7 @@
  */
 
 import Database from "better-sqlite3";
+import { allocId } from "./db";
 import path from "path";
 import fs from "fs";
 
@@ -304,9 +305,7 @@ function createPersonForUser(displayName: string | null, email: string, tenantId
           { PersonID: number } | undefined
       )?.PersonID;
       if (!personId) {
-        personId = (
-          xdb.prepare(`SELECT COALESCE(MAX(PersonID),0)+1 AS n FROM "PERSON"`).get() as { n: number }
-        ).n;
+        personId = allocId(xdb, "PERSON", "PersonID");
         xdb
           .prepare(
             `INSERT INTO "PERSON" (PersonID, FirstName, FullName, email, CreatedDate)
@@ -361,9 +360,7 @@ function linkPersonToOrganisation(
   // idempotent: do not duplicate the (person, organisation) link
   if (xdb.prepare("SELECT 1 FROM PERSONFORORGANISATION WHERE PersonID=? AND OrganisationID=? LIMIT 1").get(personId, orgId))
     return;
-  const nextId = (
-    xdb.prepare("SELECT COALESCE(MAX(PersonOrganisationID),0)+1 AS n FROM PERSONFORORGANISATION").get() as { n: number }
-  ).n;
+  const nextId = allocId(xdb, "PERSONFORORGANISATION", "PersonOrganisationID");
   const today = new Date().toISOString().slice(0, 10);
   xdb
     .prepare(

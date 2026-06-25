@@ -19,7 +19,7 @@
  * Surfaced at /croc. Everything is best-effort + defensive (it must never break the notification path).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { topExposures } from "./fusion";
 import { notifyTeams } from "./teams";
 import { pushExternalTicket, externalTicketingConfigured, redactTargets, type OutboundTicket } from "./ticketing";
@@ -127,7 +127,7 @@ function executeActions(
       + (isConstrain ? "\n\nRecommended action: apply least-privilege / revoke standing privilege on the flagged identity." : "");
     try {
       const xt = getDb("XTICKET");
-      const tid = (xt.prepare("SELECT COALESCE(MAX(TicketID),0)+1 m FROM TICKET").get() as { m: number }).m;
+      const tid = allocId(xt, "TICKET", "TicketID");
       xt.prepare(
         `INSERT INTO TICKET (TicketID, TicketGUID, TicketNumber, Subject, Description, Status, Priority, Severity, TicketType, Tags, CreatedDate, UpdatedDate)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
@@ -228,7 +228,7 @@ export function emitLoopEvent(e: {
       external = fired.external;
       iam = fired.iam;
     }
-    const id = (db.prepare("SELECT COALESCE(MAX(LoopEventID),0)+1 n FROM LOOPEVENT").get() as { n: number }).n;
+    const id = allocId(db, "LOOPEVENT", "LoopEventID");
     db.prepare(
       `INSERT INTO LOOPEVENT (LoopEventID, LoopEventGUID, EventType, Source, Summary, Direction, Severity,
          AssetID, AttackID, DecidedAction, LatencyMs, CreatedDate, DecidedDate, TenantID)
@@ -255,7 +255,7 @@ export function listPolicies(tenant: number | null): any[] {
 export function addPolicy(tenant: number | null, p: { name: string; eventFilter?: string; minSeverity?: string; direction?: string; action: string; description?: string }): { id: number } {
   ensureCrocTables();
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(PolicyID),0)+1 n FROM LOOPPOLICY").get() as { n: number }).n;
+  const id = allocId(db, "LOOPPOLICY", "PolicyID");
   db.prepare(
     "INSERT INTO LOOPPOLICY (PolicyID, PolicyGUID, Name, EventFilter, MinSeverity, Direction, Action, Enabled, Description, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?,1,?,?,?)"
   ).run(id, randomUUID(), (p.name || "Policy").slice(0, 120), p.eventFilter || "*", p.minSeverity || "high",
@@ -503,7 +503,7 @@ export function accrueLoopHealth(tenant: number | null): void {
       db.prepare("UPDATE LOOPHEALTHSNAPSHOT SET MachineSpeedPct=?, MedianLatencyMs=?, Events=?, TicketsOpened=?, IamActions=?, ExternalTickets=?, ExposureBacklog=?, LoopHealth=?, EnterpriseScore=? WHERE SnapshotID=?")
         .run(m.machineSpeedPct, m.medianLatencyMs, m.events, m.ticketsOpened, m.iamActions, m.externalTickets, m.exposureBacklog, m.loopHealth, m.enterpriseScore, existing.SnapshotID);
     } else {
-      const id = (db.prepare("SELECT COALESCE(MAX(SnapshotID),0)+1 n FROM LOOPHEALTHSNAPSHOT").get() as { n: number }).n;
+      const id = allocId(db, "LOOPHEALTHSNAPSHOT", "SnapshotID");
       db.prepare("INSERT INTO LOOPHEALTHSNAPSHOT (SnapshotID, SnapDate, MachineSpeedPct, MedianLatencyMs, Events, TicketsOpened, IamActions, ExternalTickets, ExposureBacklog, LoopHealth, EnterpriseScore, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
         .run(id, day, m.machineSpeedPct, m.medianLatencyMs, m.events, m.ticketsOpened, m.iamActions, m.externalTickets, m.exposureBacklog, m.loopHealth, m.enterpriseScore, now(), tenant);
     }
@@ -767,7 +767,7 @@ export function seedCrocDemo(tenant: number): { events: number; snapshots: numbe
 
   // ── 24h loop feed: ~50 events spread across the last 24h, both directions, machine-speed decisions ──
   const tx = db.transaction(() => {
-    let id = (db.prepare("SELECT COALESCE(MAX(LoopEventID),0)+1 n FROM LOOPEVENT").get() as { n: number }).n;
+    let id = allocId(db, "LOOPEVENT", "LoopEventID");
     let ticketSeq = 41;
     const ins = db.prepare(
       `INSERT INTO LOOPEVENT (LoopEventID, LoopEventGUID, EventType, Source, Summary, Direction, Severity,
@@ -791,7 +791,7 @@ export function seedCrocDemo(tenant: number): { events: number; snapshots: numbe
 
   // ── 30-day resilience trend: the loop measurably IMPROVING over time ──
   const snapTx = db.transaction(() => {
-    let sid = (db.prepare("SELECT COALESCE(MAX(SnapshotID),0)+1 n FROM LOOPHEALTHSNAPSHOT").get() as { n: number }).n;
+    let sid = allocId(db, "LOOPHEALTHSNAPSHOT", "SnapshotID");
     const ins = db.prepare(
       `INSERT INTO LOOPHEALTHSNAPSHOT (SnapshotID, SnapDate, MachineSpeedPct, MedianLatencyMs, Events, TicketsOpened,
          IamActions, ExternalTickets, ExposureBacklog, LoopHealth, EnterpriseScore, CreatedDate, TenantID)

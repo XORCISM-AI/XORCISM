@@ -10,7 +10,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { execFileSync } from "child_process";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const DB_DIR = process.env.DB_DIR ?? "C:/Users/jerom/XORCISM_databases";
 const BLOB_DIR = process.env.XORCISM_BLOB_DIR ?? path.join(DB_DIR, "blobstore");
@@ -97,7 +97,7 @@ export function putBlob(buf: Buffer, opts: { name?: string; contentType?: string
     db.prepare("UPDATE FILEBLOB SET RefCount = RefCount + 1, LastSeen = ?, Size = ?, ContentType = COALESCE(ContentType, ?), OriginalName = COALESCE(OriginalName, ?), StoragePath = COALESCE(StoragePath, ?), Pinned = MAX(Pinned, ?) WHERE BlobID = ?")
       .run(now, buf.length, opts.contentType ?? null, opts.name ?? null, loc, opts.pin ? 1 : 0, ex.BlobID);
   } else {
-    const id = (db.prepare("SELECT COALESCE(MAX(BlobID),0)+1 n FROM FILEBLOB").get() as { n: number }).n;
+    const id = allocId(db, "FILEBLOB", "BlobID");
     db.prepare("INSERT INTO FILEBLOB (BlobID, Sha256, Size, ContentType, OriginalName, RefCount, Pinned, StoragePath, FirstSeen, LastSeen, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
       .run(id, sha, buf.length, opts.contentType ?? null, opts.name ?? null, 1, opts.pin ? 1 : 0, loc, now, now, now);
   }

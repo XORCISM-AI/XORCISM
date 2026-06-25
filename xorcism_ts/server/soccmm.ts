@@ -4,7 +4,7 @@
  * 0–5 maturity scale (CMMI-style) and an importance weight; rolls up to per-domain and overall
  * maturity, a radar, and an improvement worklist (low maturity × high importance).
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export const MATURITY = ["Non-existent", "Initial", "Managed", "Defined", "Quantitatively managed", "Optimizing"];
 
@@ -87,7 +87,7 @@ export function saveScore(aspectId: number, p: { maturity?: number; importance?:
     vals.push(ex.ScoreID);
     db.prepare(`UPDATE SOCCMMSCORE SET ${sets.join(", ")} WHERE ScoreID = ?`).run(...vals);
   } else {
-    const id = (db.prepare("SELECT COALESCE(MAX(ScoreID),0)+1 n FROM SOCCMMSCORE").get() as { n: number }).n;
+    const id = allocId(db, "SOCCMMSCORE", "ScoreID");
     db.prepare("INSERT INTO SOCCMMSCORE (ScoreID, AspectID, Maturity, Importance, Notes, AssessedDate, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?)")
       .run(id, aspectId, mat ?? 0, imp ?? 3, String(p.notes ?? "").slice(0, 1000), now, tenant, now);
   }

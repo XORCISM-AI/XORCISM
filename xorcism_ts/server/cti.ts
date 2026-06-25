@@ -4,7 +4,7 @@
  * YOU — then one-click opens a ticket. Threat intel that does something, not a feed.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export interface IntelMatch {
   cve: string; kev: boolean; epss: number | null; severity: string;
@@ -91,7 +91,7 @@ export function ticketForCve(tenant: number | null, cve: string, userEmail?: str
   const assetNames = (m?.assets || []).map((a) => a.name).join(", ");
   const subject = `CTI: ${cve.toUpperCase()} affects ${m?.assets.length || 0} asset(s)`;
   const desc = `${(m?.reasons || []).join("; ")}.\nAffected assets: ${assetNames || "—"}.\nAuto-opened by XORCISM CTI watch.`;
-  const ticketId = (xt.prepare("SELECT COALESCE(MAX(TicketID),0)+1 m FROM TICKET").get() as { m: number }).m;
+  const ticketId = allocId(xt, "TICKET", "TicketID");
   xt.prepare(
     `INSERT INTO TICKET (TicketID, TicketGUID, TicketNumber, Subject, Description, Status, Priority, Severity, TicketType, Tags, CreatedDate, UpdatedDate, RequesterEmail)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`

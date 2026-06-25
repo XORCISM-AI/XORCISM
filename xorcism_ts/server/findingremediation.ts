@@ -6,7 +6,7 @@
  * plan also nudges the parent finding's workflow/owner/due-date so the compliance worklist reflects
  * that remediation is under way. All in XCOMPLIANCE; tenant-checked.
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { randomUUID } from "crypto";
 
 const CLOSED = /implement|verif|clos|done|complet|resolv/i;
@@ -67,7 +67,7 @@ export function createFindingRemediation(findingId: number, p: { name?: string; 
   if (!f) throw new Error("finding not found");
   const rc = cols("AUDITFINDINGREMEDIATION");
   if (!rc.size) throw new Error("AUDITFINDINGREMEDIATION not available");
-  const id = (cc.prepare("SELECT COALESCE(MAX(RemediationID),0)+1 n FROM AUDITFINDINGREMEDIATION").get() as { n: number }).n;
+  const id = allocId(cc, "AUDITFINDINGREMEDIATION", "RemediationID");
   const status = REMEDIATION_STATUSES.includes(String(p.status)) ? String(p.status) : "Planned";
   const rec: Record<string, unknown> = {
     RemediationID: id, RemediationGUID: randomUUID(), AuditFindingID: findingId,

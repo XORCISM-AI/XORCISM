@@ -26,7 +26,7 @@ export interface SigmaRule {
 
 export type Target = "spl" | "kql" | "eql";
 
-type Cond =
+export type Cond =
   | { op: "match"; field: string; mods: string[]; values: unknown[] }
   | { op: "keyword"; values: string[] }
   | { op: "and" | "or"; items: Cond[] }
@@ -121,7 +121,7 @@ function resolveCondition(condition: string, selections: Record<string, Cond>): 
   return orExpr();
 }
 
-function buildCond(rule: SigmaRule): Cond {
+export function buildCond(rule: SigmaRule): Cond {
   const det = rule.detection || {};
   const selections: Record<string, Cond> = {};
   for (const [k, v] of Object.entries(det)) if (k !== "condition") selections[k] = selectionToCond(v);

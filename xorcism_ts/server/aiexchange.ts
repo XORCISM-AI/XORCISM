@@ -8,7 +8,7 @@
  * data, handles sensitive data) and returns the applicable, prioritized threats + controls.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export type Shape = "llm" | "agent" | "ml" | "tools" | "memory" | "autonomous" | "external" | "sensitive";
 type Threat = { ref: string; name: string; category: string; lifecycle: string; impact: string; desc: string; controls: string; appliesTo: Shape[] };
@@ -85,7 +85,7 @@ export function seedAiThreats(tenant: number | null): { threats: number } {
   const existing = new Set((db.prepare("SELECT Ref FROM AIEXCHANGETHREAT").all() as { Ref: string }[]).map((r) => String(r.Ref)));
   const toAdd = AI_THREATS.filter((th) => !existing.has(th.ref));
   if (!toAdd.length) return { threats: 0 };
-  let id = (db.prepare("SELECT COALESCE(MAX(ThreatID),0)+1 n FROM AIEXCHANGETHREAT").get() as { n: number }).n;
+  let id = allocId(db, "AIEXCHANGETHREAT", "ThreatID");
   const now = new Date().toISOString();
   const ins = db.prepare("INSERT INTO AIEXCHANGETHREAT (ThreatID, ThreatGUID, Ref, Name, Category, Lifecycle, Impact, Description, Controls, AppliesTo, Source, URL, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
   for (const th of toAdd) ins.run(id++, randomUUID(), th.ref, th.name, th.category, th.lifecycle, th.impact, th.desc, th.controls, th.appliesTo.join(","), "OWASP AI Exchange", "https://owaspai.org/", null, now);

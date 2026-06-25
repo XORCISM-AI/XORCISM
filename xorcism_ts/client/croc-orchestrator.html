@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Agentic CROC Orchestrator</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1080px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.5px}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+  .sev{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .sv-critical{background:#7f1d1d;color:#fecaca}.sv-high{background:#78350f;color:#fcd34d}.sv-medium{background:#1e3a5f;color:#bfdbfe}.sv-low{background:#1e2133;color:#94a3b8}
+  .pill{font-size:10px;font-weight:700;border-radius:20px;padding:2px 9px;background:#3b2f63;color:#ddd6fe}
+  .item{background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:13px 15px;margin-bottom:10px}
+  .item.crit{border-left:3px solid #f87171}.item.high{border-left:3px solid #fbbf24}
+  .rec{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 11px;font-size:13px;color:#e2e8f0;margin:8px 0;line-height:1.5}
+  .rationale{font-size:12px;color:#94a3b8;line-height:1.5}
+  .btn{border:none;border-radius:7px;font-size:12.5px;font-weight:700;padding:7px 14px;cursor:pointer}
+  .btn-approve{background:#10b981;color:#04241a}.btn-approve:hover{background:#34d399}
+  .btn-dismiss{background:#1e2440;color:#cbd5e1;border:1px solid #2d3250}.btn-dismiss:hover{border-color:#f87171;color:#fecaca}
+  .btn-run{background:#8b5cf6;color:#fff}.btn-run:hover{background:#a78bfa}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:7px 12px;cursor:pointer}.btn-sm2:hover{border-color:#a78bfa}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .conf{display:inline-block;height:6px;border-radius:3px;background:#22d3ee;vertical-align:middle}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/croc">&#128260; CROC loop</a>
+  <a href="/soc">&#128737;&#65039; SOC</a>
+  <a href="/knowledge-graph">&#128376;&#65039; Knowledge graph</a>
+  <span class="spacer"></span>
+  <span class="title">&#129302; Agentic CROC Orchestrator</span>
+</div>
+<div class="mw">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Agentic CROC orchestrator</h1>
+    <button class="btn-sm2" id="o-demo">Seed demo</button>
+    <button class="btn btn-run" id="o-run">⟳ Run now</button>
+  </div>
+  <div class="sub">The autonomous layer over the CROC loop. It watches the <b>LOOPEVENT</b> bus for new high/critical
+    signals, picks the right analyst copilot, and drafts a <b>verdict + recommended action</b> — queued here for your
+    approval. Nothing side-effectful runs without a human: the orchestrator triages at machine speed, you stay in the
+    loop. <b>Approve</b> records the decision (and notifies); <b>Dismiss</b> closes it.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+  <div class="lic">Proposals are generated deterministically from the event type (offline-safe) and labelled with the
+    copilot used. The background poller runs every ~2 min (set <span class="mono">XOR_ORCHESTRATOR=0</span> to disable).</div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/croc-orchestrator.js"></script>
+</body></html>

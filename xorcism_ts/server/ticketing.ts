@@ -17,7 +17,7 @@
  * the client (redactTargets masks them).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const now = (): string => new Date().toISOString();
 
@@ -79,7 +79,7 @@ export function addTarget(tenant: number | null, p: {
 }): { id: number } {
   ensureTicketingTargets();
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(TargetID),0)+1 n FROM TICKETINGTARGET").get() as { n: number }).n;
+  const id = allocId(db, "TICKETINGTARGET", "TargetID");
   const system: TicketSystem = p.system === "servicenow" ? "servicenow" : "jira";
   const minSev = p.minSeverity && SEV_RANK[String(p.minSeverity).toLowerCase()] != null ? String(p.minSeverity).toLowerCase() : "high";
   db.prepare(

@@ -8,7 +8,7 @@
  * THREATMODEL.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 function cols(table: string): Set<string> {
   try { return new Set((getDb("XORCISM").prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)); }
@@ -109,7 +109,7 @@ export function createAttackTree(p: { name: string; goal?: string; description?:
   const db = getDb("XORCISM");
   const now = new Date().toISOString();
   const tc = cols("ATTACKTREE");
-  const id = (db.prepare("SELECT COALESCE(MAX(AttackTreeID),0)+1 n FROM ATTACKTREE").get() as { n: number }).n;
+  const id = allocId(db, "ATTACKTREE", "AttackTreeID");
   const rec: Record<string, unknown> = { AttackTreeID: id, AttackTreeGUID: randomUUID(), Name: (p.name || "Attack tree").slice(0, 200),
     Goal: (p.goal || p.name || "").slice(0, 300), Description: (p.description || "").slice(0, 2000),
     ThreatModelID: p.threatModelId ?? null, CreatedDate: now, TenantID: tenant };
@@ -123,7 +123,7 @@ export function createAttackTree(p: { name: string; goal?: string; description?:
 function addNodeRaw(treeId: number, parentId: number | null, label: string, gate: string, description: string, likelihood: string, mitigated: boolean, tenant: number | null): number {
   const db = getDb("XORCISM");
   const nc = cols("ATTACKTREENODE");
-  const id = (db.prepare("SELECT COALESCE(MAX(AttackTreeNodeID),0)+1 n FROM ATTACKTREENODE").get() as { n: number }).n;
+  const id = allocId(db, "ATTACKTREENODE", "AttackTreeNodeID");
   const order = (db.prepare("SELECT COALESCE(MAX(SortOrder),0)+1 n FROM ATTACKTREENODE WHERE AttackTreeID=? AND ParentNodeID IS ?").get(treeId, parentId) as { n: number }).n;
   const rec: Record<string, unknown> = { AttackTreeNodeID: id, AttackTreeID: treeId, ParentNodeID: parentId,
     Label: (label || "Step").slice(0, 300), Gate: GATES.has(String(gate).toUpperCase()) ? String(gate).toUpperCase() : "",

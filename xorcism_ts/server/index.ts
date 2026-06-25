@@ -89,6 +89,20 @@ import ctiExpertRouter from "./routes/ctiexpert";
 import { ensureCtiExpertTables } from "./ctiexpert";
 import wifiPentestRouter from "./routes/wifipentest";
 import { ensureWifiTables } from "./wifipentest";
+import regObligationsRouter from "./routes/regobligations";
+import { ensureRegObligationTables, seedRegObligationCatalogue } from "./regobligations";
+import aiSystemsRouter from "./routes/aisystems";
+import { ensureAiSystemTables } from "./aisystems";
+import crocDigestRouter from "./routes/crocdigest";
+import kgraphRouter from "./routes/kgraph";
+import msspRouter from "./routes/mssp";
+import orchestratorRouter from "./routes/orchestrator";
+import { ensureOrchestratorTables, startOrchestrator } from "./orchestrator";
+import siemRouter from "./routes/siem";
+import { ensureSiemTables } from "./siem";
+import aibasRouter from "./routes/aibas";
+import { ensureAibasTables } from "./aibas";
+import chatopsRouter from "./routes/chatops";
 import teamsRouter from "./routes/teams";
 import { ensureTeamsTables } from "./teams";
 import crocRouter from "./routes/croc";
@@ -131,7 +145,7 @@ import epssRouter from "./routes/epss";
 import huntingRouter from "./routes/hunting";
 import threatFeedsRouter from "./routes/threatfeeds";
 import { antibot } from "./antibot";
-import { getJobDb, ensureCveSchedule } from "./jobs";
+import { getJobDb, ensureCveSchedule, ensureBoardReportSchedule } from "./jobs";
 import { startScheduler } from "./scheduler";
 import { ensureCveMatchTables, startCveMatcher } from "./cvematch";
 import { startMonitorChecker } from "./monitorcheck";
@@ -146,7 +160,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions, seedFeaturePageGrants } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureScaTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, startReplicaSync, dbDriver } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -193,8 +207,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // ── Middleware ────────────────────────────────────────────────────────────────
-app.use(express.json({ limit: "25mb" })); // large JSON imports
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+// stash the raw body so webhook receivers (ChatOps / Slack) can verify HMAC signatures
+const keepRaw = (req: Request, _res: Response, buf: Buffer): void => { (req as Request & { rawBody?: Buffer }).rawBody = buf; };
+app.use(express.json({ limit: "25mb", verify: keepRaw })); // large JSON imports
+app.use(express.urlencoded({ extended: true, limit: "25mb", verify: keepRaw }));
 app.use(antibot); // anti-bot / anti-scraping (rate + UA + bursts)
 app.use(loadUser); // populates req.user from the session cookie
 
@@ -283,6 +299,15 @@ app.use("/api", endpointQueryRouter); // Tanium-style real-time endpoint queryin
 app.use("/api", ctemRouter); // CTEM (ctem.org): standardized exposure-identifier taxonomy + 3-stage exposure cockpit
 app.use("/api", ctiExpertRouter); // CTI-Expert: AI-orchestrated OSINT investigation (cti-expert skill → local AI)
 app.use("/api", wifiPentestRouter); // Wi-Fi pentest: local Wi-Fi security assessment (netsh/nmcli survey → A–F grading + toolkit)
+app.use("/api", regObligationsRouter); // Regulatory calendar: obligations & deadlines (EU AI Act/DORA/NIS2/CRA/GDPR) → REGOBLIGATION
+app.use("/api", aiSystemsRouter); // AI system inventory + AI-BOM + model-risk register (AISYSTEM, XORCISM)
+app.use("/api", crocDigestRouter); // CROC daily digest ("standup"): cross-cutting deltas + prioritised actions
+app.use("/api", kgraphRouter); // Unified security knowledge graph (asset↔software↔vuln↔risk↔incident) + blast radius
+app.use("/api", msspRouter); // MSSP multi-tenant rollup (super-admin cross-tenant posture)
+app.use("/api", orchestratorRouter); // Agentic CROC orchestrator: LOOPEVENT → proposed actions → human approval (CROCACTION)
+app.use("/api", siemRouter); // SIEM-lite: log ingest → Sigma detection → ALERT + LOOPEVENT (SIEMEVENT, XINCIDENT)
+app.use("/api", aibasRouter); // LLM red-team / AI-BAS: OWASP-LLM probe assessment of registered AI systems (AIBASRUN/RESULT)
+app.use("/api", chatopsRouter); // Two-way ChatOps: query posture + approve orchestrator actions from Slack/Teams (signed) or the console
 app.use("/api", teamsRouter); // Microsoft Teams: alert/notification distribution (webhook targets + test)
 app.use("/api", crocRouter); // CROC: Continuous Defense Loop cockpit (event bus + pre-auth policies + bidirectional flow)
 app.use("/api", landingRouter); // landing-menu NICE filter + access config for the current user
@@ -511,6 +536,30 @@ app.get("/cti-expert", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/wifi-pentest", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "wifi-pentest.html"));
 });
+app.get("/reg-calendar", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "reg-calendar.html"));
+});
+app.get("/ai-systems", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-systems.html"));
+});
+app.get("/knowledge-graph", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "knowledge-graph.html"));
+});
+app.get("/mssp", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "mssp.html"));
+});
+app.get("/croc-orchestrator", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "croc-orchestrator.html"));
+});
+app.get("/siem", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "siem.html"));
+});
+app.get("/ai-redteam", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-redteam.html"));
+});
+app.get("/chatops", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "chatops.html"));
+});
 app.get("/croc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "croc.html"));
 });
@@ -725,6 +774,11 @@ ensureVmTrendsTables(); // VM posture history (VMSNAPSHOT) for the /vm-report ex
 ensureCtemTables(); // CTEM (ctem.org): exposure-identifier catalogue (CTEMIDENTIFIER) + tracked exposures (CTEMEXPOSURE)
 ensureCtiExpertTables(); // CTI-Expert: AI-orchestrated OSINT investigations (CTIINVESTIGATION, XTHREAT)
 ensureWifiTables(); // Wi-Fi pentest: local Wi-Fi security assessment results (WIFINETWORK, XORCISM)
+ensureRegObligationTables(); seedRegObligationCatalogue(); // Regulatory calendar: REGOBLIGATION + EU reference catalogue
+ensureAiSystemTables(); // AI system inventory + AI-BOM (AISYSTEM/AISYSTEMCOMPONENT, XORCISM)
+ensureOrchestratorTables(); startOrchestrator(); // Agentic CROC orchestrator (CROCACTION queue + LOOPEVENT poller; XOR_ORCHESTRATOR=0 to disable)
+ensureSiemTables(); // SIEM-lite: ingested-log buffer (SIEMEVENT, XINCIDENT) for the log→Sigma→ALERT pipeline
+ensureAibasTables(); // LLM red-team / AI-BAS run history (AIBASRUN/AIBASRESULT, XORCISM)
 ensureTeamsTables(); // Microsoft Teams webhook targets (TEAMSWEBHOOK, XORCISM) for alert/notification distribution
 ensureCrocTables(); seedCrocPolicies(null); // CROC Continuous Defense Loop: LOOPEVENT bus + LOOPPOLICY (seed default pre-auth policies)
 ensureTicketingTargets(); // CROC outbound ticketing (Jira/ServiceNow) destination store
@@ -763,6 +817,9 @@ seedData(); // pre-inserts reference data (e.g. VOCABULARY "XORCISM") — idempo
 seedCtemIdentifiers(); // ctem.org exposure-identifier catalogue (29 ids / 8 categories) — idempotent, additive by CtemId
 startStixStoreSync(); // reconcile STIXOBJECT from OBSERVABLE/IOC/INTELEXCHANGE at boot + every 10 min (catches connector/form writes)
 ensureCveSchedule(); // seeds the hourly NVD CVE import schedule (cron '0 * * * *'); XOR_CVE_IMPORT=0 to disable
+ensureBoardReportSchedule(); // seeds the monthly board-report schedule (cron '0 8 1 * *'); XOR_BOARD_REPORT=1 to enable
+console.log(`[db] active driver: ${dbDriver()}`); // better-sqlite3 (default) | libsql (XORCISM_DB_DRIVER=libsql)
+startReplicaSync(); // refresh libsql embedded replicas (no-op unless libsql + LIBSQL_SYNC_URL configured)
 startScheduler(); // fires the connectors' scheduled tasks (XSCHEDULE)
 startCveMatcher(); // hourly CVE→ASSET tech matcher ("New CVEs for ASSET") — catches every import path
 startMonitorChecker(); // live Asset-Monitoring prober (HTTP/TCP/DNS/SSL/ping due monitors); XOR_MONITOR=0 to disable

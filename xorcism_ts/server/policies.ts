@@ -10,7 +10,7 @@
  * Read-only; CRUD stays in the schema-driven explorer. Cross-DB (policies XORCISM,
  * documents XCOMPLIANCE), owners resolved against XORCISM.PERSON.
  */
-import { getDb, ensurePolicyAckTable, ensurePolicyVersionTable } from "./db";
+import { allocId, getDb, ensurePolicyAckTable, ensurePolicyVersionTable } from "./db";
 import { listUsers } from "./xid";
 import { randomUUID } from "crypto";
 
@@ -380,7 +380,7 @@ export function acknowledgePolicy(id: number, by: { userId: number; email?: stri
   const ver = ok.version;
   const existing = xo.prepare("SELECT 1 FROM POLICYACKNOWLEDGEMENT WHERE PolicyID = ? AND UserID = ? AND IFNULL(PolicyVersion,'1.0') = ?").get(id, by.userId, ver);
   if (existing) return { ok: true, already: true };
-  const aid = (xo.prepare("SELECT COALESCE(MAX(AcknowledgementID),0)+1 n FROM POLICYACKNOWLEDGEMENT").get() as { n: number }).n;
+  const aid = allocId(xo, "POLICYACKNOWLEDGEMENT", "AcknowledgementID");
   xo.prepare(`INSERT INTO POLICYACKNOWLEDGEMENT (AcknowledgementID, AcknowledgementGUID, PolicyID, UserID, UserEmail, UserName, PolicyVersion, AcknowledgedDate, Method, IPAddress, TenantID)
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(aid, randomUUID(), id, by.userId, by.email || null, by.name || null, ver, new Date().toISOString(), by.method || "app", by.ip || null, tenant);
   return { ok: true, already: false };
@@ -462,7 +462,7 @@ export function snapshotPolicyVersion(id: number, opts: { changeNote?: string; u
     const last = xo.prepare("SELECT Version FROM POLICYVERSION WHERE PolicyID = ? ORDER BY PolicyVersionID DESC LIMIT 1").get(id) as { Version: string } | undefined;
     if (last && norm(last.Version) === version) return null; // already snapshotted at this version
   }
-  const vid = (xo.prepare("SELECT COALESCE(MAX(PolicyVersionID),0)+1 n FROM POLICYVERSION").get() as { n: number }).n;
+  const vid = allocId(xo, "POLICYVERSION", "PolicyVersionID");
   xo.prepare(`INSERT INTO POLICYVERSION (PolicyVersionID, PolicyVersionGUID, PolicyID, Version, Status, PolicyName, PolicyContent, Scope, EffectiveDate, PublishedDate, ChangeNote, ChangedByUserID, ChangedByName, CreatedDate, TenantID)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(vid, randomUUID(), id, version, norm(p.Status), norm(p.PolicyName), p.PolicyContent != null ? String(p.PolicyContent) : null, p.Scope != null ? String(p.Scope) : null,

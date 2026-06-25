@@ -19,7 +19,7 @@
  * (Application.ReadWrite.All / User.ReadWrite.All) when armed.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const now = (): string => new Date().toISOString();
 const DEFAULT_LOGIN = "https://login.microsoftonline.com";
@@ -74,7 +74,7 @@ export function addIamTarget(tenant: number | null, p: {
 }): { id: number } {
   ensureIamTargets();
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(TargetID),0)+1 n FROM IAMTARGET").get() as { n: number }).n;
+  const id = allocId(db, "IAMTARGET", "TargetID");
   db.prepare(
     `INSERT INTO IAMTARGET (TargetID, TargetGUID, Name, TenantRef, ClientId, ClientSecret, Mode, LoginBase, GraphBase, EventFilter, Enabled, CreatedDate, TenantID)
      VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?)`

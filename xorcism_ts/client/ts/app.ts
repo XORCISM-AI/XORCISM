@@ -177,18 +177,27 @@ function isRichTextField(table: string, col: string): boolean {
 }
 
 // Rich-text columns rendered with a TALL editor (long documents, not short notes).
-const TALL_RICHTEXT_COLUMNS = new Set<string>(["POLICY.PolicyContent", "CRISISSCENARIO.Objectives"]);
+const TALL_RICHTEXT_COLUMNS = new Set<string>(["POLICY.PolicyContent", "CRISISSCENARIO.Objectives", "BUGBOUNTYSUBMISSION.Description"]);
 function richTextOpts(table: string, col: string): { minHeight?: number } | undefined {
   return TALL_RICHTEXT_COLUMNS.has(`${table}.${col}`) ? { minHeight: 340 } : undefined;
 }
 
 // Columns rendered as a PROMINENT input — the record's "title": large font, full width.
-const PROMINENT_INPUT_COLUMNS = new Set<string>(["POLICY.PolicyName", "CPE.CPEName", "RISKREGISTERENTRY.Title", "CRISISSCENARIO.ScenarioName", "AUDIT.AuditName"]);
+const PROMINENT_INPUT_COLUMNS = new Set<string>(["POLICY.PolicyName", "CPE.CPEName", "RISKREGISTERENTRY.Title", "CRISISSCENARIO.ScenarioName", "AUDIT.AuditName", "BUGBOUNTYSUBMISSION.Title"]);
 function isProminentInput(table: string, col: string): boolean {
   return PROMINENT_INPUT_COLUMNS.has(`${table}.${col}`);
 }
 const PROMINENT_INPUT_CSS =
   "width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 13px;color:var(--text);font-size:18px;font-weight:600";
+
+// Columns rendered FULL-WIDTH with a slightly larger, normal-styled input — for long
+// identifiers/URLs (e.g. a submission GUID) that need room but not the bold "title" styling.
+const WIDE_INPUT_COLUMNS = new Set<string>(["BUGBOUNTYSUBMISSION.SubmissionGUID"]);
+function isWideInput(table: string, col: string): boolean {
+  return WIDE_INPUT_COLUMNS.has(`${table}.${col}`);
+}
+const WIDE_INPUT_CSS =
+  "width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px";
 
 // Columns never shown in forms: handled server-side from
 // the session (e.g. TenantID, multi-tenant). Case-insensitive comparison.
@@ -210,7 +219,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -1605,6 +1614,10 @@ const GRID_LINK_COLUMNS: Record<string, GridLinkSpec[]> = {
   DOCUMENT: [
     { col: "DocumentName", srcCol: "DocumentID", db: "XCOMPLIANCE", table: "DOCUMENT", idCol: "DocumentID" },
   ],
+  // Title → edits this BUGBOUNTYSUBMISSION row itself (self-link). PK is SubmissionID.
+  BUGBOUNTYSUBMISSION: [
+    { col: "Title", srcCol: "SubmissionID", db: "XVULNERABILITY", table: "BUGBOUNTYSUBMISSION", idCol: "SubmissionID" },
+  ],
 };
 function getGridLink(table: string, col: string): GridLinkSpec | undefined {
   return (GRID_LINK_COLUMNS[table] ?? []).find((s) => s.col === col);
@@ -2971,6 +2984,10 @@ const DATE_PICKER_COLUMNS = new Set<string>([
   "RISKREGISTERENTRY.ReviewDate",
   "RISKREGISTERENTRY.TargetDate",
   "RISKREGISTERENTRY.ClosedDate",
+  // Bug bounty — submission lifecycle dates
+  "BUGBOUNTYSUBMISSION.SubmittedDate",
+  "BUGBOUNTYSUBMISSION.TriagedDate",
+  "BUGBOUNTYSUBMISSION.ResolvedDate",
 ]);
 
 function hasDatePicker(table: string, col: string): boolean {
@@ -2986,6 +3003,9 @@ const DATE_ONLY_PICKER_COLUMNS = new Set<string>([
   "ASSETVULNERABILITY.TargetDate",
   "ASSETVULNERABILITYREMEDIATION.TargetDate",
   "ALERT.CreatedDate",
+  "BUGBOUNTYSUBMISSION.SubmittedDate",
+  "BUGBOUNTYSUBMISSION.TriagedDate",
+  "BUGBOUNTYSUBMISSION.ResolvedDate",
 ]);
 function isDateOnlyPicker(table: string, col: string): boolean {
   return DATE_ONLY_PICKER_COLUMNS.has(`${table}.${col}`);
@@ -5941,8 +5961,9 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     input.placeholder = col.type;
     input.readOnly = col.pk === 1;
     const efProminent = isProminentInput(currentTable, col.name) && col.pk !== 1;
-    input.style.cssText = efProminent ? PROMINENT_INPUT_CSS : FIELD_INPUT_CSS;
-    if (efProminent) input.dataset.fullwidth = "1";
+    const efWide = isWideInput(currentTable, col.name) && col.pk !== 1;
+    input.style.cssText = efProminent ? PROMINENT_INPUT_CSS : efWide ? WIDE_INPUT_CSS : FIELD_INPUT_CSS;
+    if (efProminent || efWide) input.dataset.fullwidth = "1";
     if (col.pk === 1) input.style.opacity = "0.5";
     // Calendar icon for CreatedDate / ValidFromDate + date-picker columns
     if ((hasAutoDate(currentTable, col.name) || hasDatePicker(currentTable, col.name)) && col.pk !== 1) {
@@ -9474,8 +9495,9 @@ async function openInsertModal(): Promise<void> {
     input.id = `f_${col.name}`;
     input.placeholder = col.type;
     const fProminent = isProminentInput(currentTable, col.name);
-    input.style.cssText = fProminent ? PROMINENT_INPUT_CSS : INPUT_CSS;
-    if (fProminent) input.dataset.fullwidth = "1";
+    const fWide = isWideInput(currentTable, col.name);
+    input.style.cssText = fProminent ? PROMINENT_INPUT_CSS : fWide ? WIDE_INPUT_CSS : INPUT_CSS;
+    if (fProminent || fWide) input.dataset.fullwidth = "1";
     // Pre-fills (current date) + calendar icon for CreatedDate / ValidFromDate
     // and the per-table columns (e.g. VOCABULARY.DateModified)
     if (hasAutoDate(currentTable, col.name)) {

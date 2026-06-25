@@ -8,7 +8,7 @@
  * plus a remediation worklist (overdue training, repeat clickers, never-trained).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 function cols(table: string): Set<string> {
   try { return new Set((getDb("XORCISM").prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)); }
@@ -107,7 +107,7 @@ export function awarenessInventory(tenant: number | null): { trainings: any[]; p
 
 export function createTraining(p: { name: string; category?: string; provider?: string; duration?: number; required?: boolean; description?: string }, tenant: number | null): { id: number } {
   const db = getDb("XORCISM"); const tc = cols("TRAINING"); const now = new Date().toISOString();
-  const id = (db.prepare("SELECT COALESCE(MAX(TrainingID),0)+1 n FROM TRAINING").get() as { n: number }).n;
+  const id = allocId(db, "TRAINING", "TrainingID");
   const rec: Record<string, unknown> = { TrainingID: id, TrainingGUID: randomUUID(), TrainingName: (p.name || "Training").slice(0, 200),
     TrainingDescription: (p.description || "").slice(0, 2000), Category: p.category ?? null, Provider: p.provider ?? null,
     DurationMinutes: p.duration ?? null, Required: p.required ? 1 : 0, Status: "Active", CreatedDate: now, TenantID: tenant };
@@ -118,7 +118,7 @@ export function createTraining(p: { name: string; category?: string; provider?: 
 
 export function createPhishingSim(p: { name: string; theme?: string; difficulty?: string; description?: string }, tenant: number | null): { id: number } {
   const db = getDb("XORCISM"); const sc = cols("PHISHINGSIMULATION"); const now = new Date().toISOString();
-  const id = (db.prepare("SELECT COALESCE(MAX(PhishingSimulationID),0)+1 n FROM PHISHINGSIMULATION").get() as { n: number }).n;
+  const id = allocId(db, "PHISHINGSIMULATION", "PhishingSimulationID");
   const rec: Record<string, unknown> = { PhishingSimulationID: id, PhishingSimulationGUID: randomUUID(), Name: (p.name || "Phishing test").slice(0, 200),
     Theme: p.theme ?? null, Difficulty: p.difficulty ?? "Medium", Description: (p.description || "").slice(0, 2000), Status: "Draft", CreatedDate: now, TenantID: tenant };
   const keys = Object.keys(rec).filter((k) => sc.has(k));

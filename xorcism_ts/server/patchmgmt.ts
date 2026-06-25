@@ -9,7 +9,7 @@
  * patch-coverage %, mean-time-to-remediate (MTTR) and unpatched-KEV exposure. Read inventory +
  * two write actions (mark patched / create a remediation plan).
  */
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 import { randomUUID } from "crypto";
 
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -242,7 +242,7 @@ export function createRemediation(
   const rc = cols("XORCISM", "ASSETVULNERABILITYREMEDIATION");
   if (!rc.size) throw new Error("ASSETVULNERABILITYREMEDIATION table not available");
   const now = new Date().toISOString();
-  const nextId = (xo.prepare("SELECT COALESCE(MAX(AssetVulnerabilityRemediationID),0)+1 AS n FROM ASSETVULNERABILITYREMEDIATION").get() as { n: number }).n;
+  const nextId = allocId(xo, "ASSETVULNERABILITYREMEDIATION", "AssetVulnerabilityRemediationID");
   const candidate: Record<string, unknown> = {
     AssetVulnerabilityRemediationID: nextId,
     AssetVulnerabilityID: p.assetVulnId,
@@ -289,7 +289,7 @@ export function createRemediationTicket(
     const ex = xt.prepare("SELECT TicketID FROM TICKET WHERE Tags LIKE ?").get(`%${tag}%`) as { TicketID: number } | undefined;
     if (ex) return { ticketId: ex.TicketID, created: false };
   }
-  const id = (xt.prepare("SELECT COALESCE(MAX(TicketID),0)+1 n FROM TICKET").get() as { n: number }).n;
+  const id = allocId(xt, "TICKET", "TicketID");
   const now = new Date().toISOString();
   const prio = ticketPriority(p.priority);
   const field: Record<string, unknown> = {

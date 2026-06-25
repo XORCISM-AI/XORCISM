@@ -12,7 +12,7 @@
  *   - a per-control detail view (full text + crosswalks + implementation + linked POA&M).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 export const CONTROL_STATUSES = [
   "Implemented", "Partially Implemented", "Planned", "Not Implemented", "Not Applicable", "Inherited",
@@ -375,7 +375,7 @@ export function setControlImplementation(
       .run(...keys.map((k) => set[k]), existing.ControlImplementationID);
     return { ok: true };
   }
-  const nextId = (db.prepare("SELECT COALESCE(MAX(ControlImplementationID),0)+1 n FROM CONTROLIMPLEMENTATION").get() as { n: number }).n;
+  const nextId = allocId(db, "CONTROLIMPLEMENTATION", "ControlImplementationID");
   const insert: Record<string, unknown> = { ControlImplementationID: nextId, ControlID: controlId, ...set };
   if (c.has("ControlImplementationGUID")) insert.ControlImplementationGUID = randomUUID();
   if (c.has("CreatedDate")) insert.CreatedDate = now;
@@ -403,7 +403,7 @@ export function createPoam(
 
   const c = cols("CONTROLPOAM");
   const now = new Date().toISOString();
-  const nextId = (db.prepare("SELECT COALESCE(MAX(PoamID),0)+1 n FROM CONTROLPOAM").get() as { n: number }).n;
+  const nextId = allocId(db, "CONTROLPOAM", "PoamID");
   const row: Record<string, unknown> = {
     PoamID: nextId, PoamGUID: randomUUID(), ControlID: p.controlId != null && String(p.controlId) !== "" ? Number(p.controlId) : null,
     Title: title, WeaknessDescription: p.weaknessDescription ? String(p.weaknessDescription).trim() : null,

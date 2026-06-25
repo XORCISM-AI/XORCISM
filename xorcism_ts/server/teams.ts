@@ -12,7 +12,7 @@
  * is configured (table row or the TEAMS_WEBHOOK_URL env fallback).
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const now = (): string => new Date().toISOString();
 type Level = "info" | "success" | "warning" | "error";
@@ -128,7 +128,7 @@ export function redactUrl(u: string): string {
 export function addWebhook(tenant: number | null, p: { name?: string; url: string; format?: string; minLevel?: string; eventFilter?: string }): { id: number } {
   ensureTeamsTables();
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(WebhookID),0)+1 n FROM TEAMSWEBHOOK").get() as { n: number }).n;
+  const id = allocId(db, "TEAMSWEBHOOK", "WebhookID");
   const fmt = ["auto", "adaptivecard", "messagecard"].includes(String(p.format)) ? p.format : "auto";
   const minLevel = p.minLevel && LEVEL_RANK[String(p.minLevel)] != null ? p.minLevel : "info";
   db.prepare(

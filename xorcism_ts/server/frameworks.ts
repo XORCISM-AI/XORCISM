@@ -11,7 +11,7 @@
  * carries a VocabularyID column, so this module manages the rows + the mapping, no schema churn.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 function cols(table: string): Set<string> {
   try { return new Set((getDb("XORCISM").prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)); }
@@ -65,7 +65,7 @@ export function seedFrameworks(): void {
     const existing = new Set((db.prepare("SELECT FrameworkName FROM FRAMEWORK").all() as { FrameworkName: string }[]).map((r) => String(r.FrameworkName)));
     const toAdd = FRAMEWORK_SEED.filter((f) => !existing.has(f.name));
     if (!toAdd.length) return;
-    let id = (db.prepare("SELECT COALESCE(MAX(FrameworkID),0)+1 n FROM FRAMEWORK").get() as { n: number }).n;
+    let id = allocId(db, "FRAMEWORK", "FrameworkID");
     const tx = db.transaction(() => {
       for (const f of toAdd) {
         const rec: Record<string, unknown> = {
@@ -157,7 +157,7 @@ export function createFramework(p: { name: string; version?: string; description
   const name = p.name.trim();
   if (!name) throw new Error("name required");
   if (db.prepare("SELECT 1 FROM FRAMEWORK WHERE FrameworkName = ?").get(name)) throw new Error("a framework with this name already exists");
-  const id = (db.prepare("SELECT COALESCE(MAX(FrameworkID),0)+1 n FROM FRAMEWORK").get() as { n: number }).n;
+  const id = allocId(db, "FRAMEWORK", "FrameworkID");
   const rec: Record<string, unknown> = {
     FrameworkID: id, FrameworkName: name.slice(0, 200), FrameworkVersion: (p.version || "").slice(0, 60) || null,
     FrameworkDescription: (p.description || "").slice(0, 1000) || null,

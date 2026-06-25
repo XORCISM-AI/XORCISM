@@ -9,7 +9,7 @@
  * best-effort, never throws; nothing is posted unless a webhook is configured.
  */
 import { randomUUID } from "crypto";
-import { getDb } from "./db";
+import { allocId, getDb } from "./db";
 
 const now = (): string => new Date().toISOString();
 const SEV_RANK: Record<string, number> = { info: 0, informational: 0, success: 0, low: 1, medium: 2, moderate: 2, warning: 2, high: 3, error: 3, critical: 4 };
@@ -43,7 +43,7 @@ export function redactSoar(tenant: number | null): any[] {
 export function addSoar(tenant: number | null, p: { name?: string; url: string; apiKey?: string; minSeverity?: string; eventFilter?: string }): { id: number } {
   ensureSoarTables();
   const db = getDb("XORCISM");
-  const id = (db.prepare("SELECT COALESCE(MAX(WebhookID),0)+1 n FROM SOARWEBHOOK").get() as { n: number }).n;
+  const id = allocId(db, "SOARWEBHOOK", "WebhookID");
   const minSev = p.minSeverity && SEV_RANK[String(p.minSeverity).toLowerCase()] != null ? String(p.minSeverity).toLowerCase() : "high";
   db.prepare("INSERT INTO SOARWEBHOOK (WebhookID, WebhookGUID, Name, Url, ApiKey, MinSeverity, EventFilter, Enabled, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?,1,?,?)")
     .run(id, randomUUID(), (p.name || "n8n / SOAR").slice(0, 120), String(p.url || "").slice(0, 400), p.apiKey || null, minSev, p.eventFilter || null, now(), tenant);

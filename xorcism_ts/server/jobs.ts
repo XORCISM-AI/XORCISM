@@ -318,6 +318,21 @@ export function ensureCveSchedule(): number {
   return Number(info.lastInsertRowid);
 }
 
+/** Seed the monthly scheduled board-report (1st of month, 08:00). Opt-in: enabled only when
+ *  XOR_BOARD_REPORT is set (avoids unsolicited notifications). Handled in scheduler.ts. */
+export function ensureBoardReportSchedule(): number {
+  const db = getJobDb();
+  const existing = db.prepare("SELECT ScheduleID FROM XSCHEDULE WHERE connector = 'board-report' LIMIT 1").get() as { ScheduleID: number } | undefined;
+  if (existing) return existing.ScheduleID;
+  const enabled = process.env.XOR_BOARD_REPORT === "1" ? 1 : 0;
+  const info = db.prepare(
+    `INSERT INTO XSCHEDULE (connector, params, target, engagement_id, worker, cron, enabled, created_at, created_by)
+     VALUES ('board-report', '{}', NULL, NULL, NULL, '0 8 1 * *', ?, ?, NULL)`
+  ).run(enabled, nowSql());
+  console.log(`[scheduler] seeded monthly board-report schedule #${info.lastInsertRowid} (cron '0 8 1 * *', enabled=${enabled}; set XOR_BOARD_REPORT=1 to enable)`);
+  return Number(info.lastInsertRowid);
+}
+
 export function listSchedules(userId?: number): Schedule[] {
   if (userId != null) {
     return getJobDb()

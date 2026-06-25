@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Regulatory Calendar</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1080px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}.sec .spacer{flex:1}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:top}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc}
+  .st{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase;white-space:nowrap}
+  .st-Overdue{background:#7f1d1d;color:#fecaca}.st-Duesoon{background:#78350f;color:#fcd34d}.st-Upcoming{background:#1e3a5f;color:#bfdbfe}.st-Scheduled{background:#1e2440;color:#cbd5e1}.st-Met{background:#14532d;color:#bbf7d0}.st-Ongoing{background:#3b2f63;color:#ddd6fe}.st-Reference{background:#1e2133;color:#94a3b8}.st-Tracked{background:#1e2440;color:#cbd5e1}
+  .reg{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#0f1117;border:1px solid #2d3250;color:#cbd5e1}
+  .countdown{font-weight:700;font-family:ui-monospace,monospace}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}.panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .bd{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:4px 10px;color:#cbd5e1;display:inline-flex;gap:6px;align-items:center;margin:2px}.bd b{color:#e2e8f0}
+  .inp{background:#0f1117;border:1px solid #2d3250;border-radius:7px;padding:8px 10px;color:#e2e8f0;font-size:13px;width:100%;box-sizing:border-box}
+  .inp:focus{outline:none;border-color:#34d399}
+  .btn{background:#10b981;border:none;color:#04241a;border-radius:7px;font-size:13px;font-weight:700;padding:8px 16px;cursor:pointer}.btn:hover{background:#34d399}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:6px 11px;cursor:pointer}.btn-sm2:hover{border-color:#34d399}
+  .act{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:2px 7px;cursor:pointer}.act:hover{border-color:#34d399}
+  .modal{position:fixed;inset:0;background:rgba(4,6,15,.66);display:none;align-items:flex-start;justify-content:center;z-index:1000;overflow:auto;padding:40px 16px}
+  .modal.open{display:flex}.modal .box{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:560px;max-width:100%;padding:20px 22px}
+  .modal h3{margin:0 0 12px;font-size:16px;color:#e2e8f0}.fld{margin-bottom:11px}.fld label{display:block;font-size:11px;color:#94a3b8;text-transform:uppercase;margin-bottom:4px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}.err{color:#f87171;font-size:12px;min-height:15px}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/policy-management">&#128203; Policies</a>
+  <span class="spacer"></span>
+  <span class="title">&#128197; Regulatory Calendar</span>
+</div>
+<div class="mw">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <h1 style="flex:1">Regulatory obligations &amp; compliance calendar</h1>
+    <button class="btn" id="r-new">+ Add obligation</button>
+  </div>
+  <div class="sub">A deadline-driven view of the regulations that matter now — <b>EU AI Act</b>, <b>DORA</b>, <b>NIS2</b>,
+    <b>CRA</b>, <b>GDPR</b> — each obligation mapped to its article, due date, owner, status, control and evidence.
+    XORCISM ships a reference catalogue of the key EU milestones; add your own obligations and track status. Editing a
+    reference item adopts it into your organisation.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+  <div class="lic">Dates reflect official applicability/transposition dates as published; verify against the current
+    consolidated texts and your competent authority's guidance. This is a planning aid, not legal advice.</div>
+</div>
+
+<div class="modal" id="m-modal">
+  <div class="box">
+    <h3>Add a regulatory obligation</h3>
+    <div class="row2">
+      <div class="fld"><label>Regulation</label><input class="inp" id="f-reg" placeholder="e.g. EU AI Act"></div>
+      <div class="fld"><label>Reference</label><input class="inp" id="f-ref" placeholder="e.g. Art. 9"></div>
+    </div>
+    <div class="fld"><label>Title</label><input class="inp" id="f-title" placeholder="What must be done"></div>
+    <div class="fld"><label>Description</label><textarea class="inp" id="f-desc" rows="2"></textarea></div>
+    <div class="row2">
+      <div class="fld"><label>Due date</label><input class="inp" id="f-due" type="date"></div>
+      <div class="fld"><label>Owner</label><input class="inp" id="f-owner" placeholder="Team / person"></div>
+    </div>
+    <div class="row2">
+      <div class="fld"><label>Priority</label><select class="inp" id="f-prio"><option>Critical</option><option selected>High</option><option>Medium</option><option>Low</option></select></div>
+      <div class="fld"><label>Status</label><select class="inp" id="f-status"><option>Not started</option><option>In progress</option><option>Met</option><option>N/A</option></select></div>
+    </div>
+    <div class="fld"><label>Mapped control / framework</label><input class="inp" id="f-ctrl" placeholder="e.g. ISO 27001 A.5.7"></div>
+    <div class="err" id="f-err"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-sm2" id="m-cancel">Cancel</button>
+      <button class="btn" id="m-save">Save obligation</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/reg-calendar.js"></script>
+</body></html>
