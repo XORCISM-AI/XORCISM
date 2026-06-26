@@ -1,0 +1,15 @@
+{
+  "id": "oasis",
+  "name": "OASIS — AI SAST (Ollama security scanner)",
+  "type": "import",
+  "category": "appsec",
+  "description": "Imports an OASIS (Ollama Automated Security Intelligence Scanner, github.com/psyray/oasis) report. OASIS is an AI-powered SAST tool: it uses local Ollama LLMs + vector embeddings (a lightweight model flags suspicious code, a powerful model deep-analyzes it) to detect 24+ vulnerability classes — SQL injection, XSS, command injection, RCE, SSRF, path traversal, insecure deserialization, JWT flaws, sensitive-data exposure, auth/session issues, crypto weaknesses, CORS misconfig and more — across many languages. OASIS writes a SARIF 2.1.0 report under security_reports/<project>/<timestamp>/; this connector parses that SARIF (shared connectors/_sarif.py) so the scanned project becomes an ASSET and each finding a VULNERABILITY / ASSETVULNERABILITY (severity from the SARIF security-severity / level), and the run is recorded as a DevSecOps SAST scan. Read-only file import; no source or secrets leave the worker. Point 'file' at the .sarif OASIS produced.",
+  "intrusive": false,
+  "permission": "connector:oasis",
+  "run": "run.py",
+  "mapping": "oasis",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Path on the worker to the OASIS SARIF report (security_reports/<project>/<ts>/*.sarif). Omit to run the bundled sample." },
+    { "name": "project", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._/:@,\\\\-]+$", "help": "Application/asset name to attach the findings to (default: derived from the SARIF repository URI / tool name)." }
+  ]
+}

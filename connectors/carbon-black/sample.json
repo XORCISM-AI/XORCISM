@@ -1,0 +1,6 @@
+{
+  "results": [
+    { "id": "cbc-9001", "legacy_alert_id": "9001", "reason": "A known malware file was detected and terminated", "severity": 9, "category": "THREAT", "type": "CB_ANALYTICS", "device_name": "RETAIL-POS-04", "workflow": { "state": "OPEN" }, "ttps": ["MALWARE_DROP", "PROCESS_INJECTION"], "last_update_time": "2026-06-26T12:00:00Z" },
+    { "id": "cbc-9002", "legacy_alert_id": "9002", "reason": "Suspicious data transfer to an external host", "severity": 5, "category": "THREAT", "type": "CB_ANALYTICS", "device_name": "BACKOFFICE-WS-08", "workflow": { "state": "IN_PROGRESS" }, "ttps": ["NETWORK_ACCESS"], "last_update_time": "2026-06-26T12:20:00Z" }
+  ]
+}

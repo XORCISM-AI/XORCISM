@@ -62,6 +62,24 @@ export async function ollamaChat(messages: ChatMsg[], temperature = 0.2, timeout
   return (data.message?.content || "").trim();
 }
 
+/** The configured AI provider (env-driven, never entered in the UI). Local Ollama is the privacy-first
+ *  default; an org can point XORCISM at an OpenAI-compatible / Anthropic / Azure backend via env.
+ *  XOR_AI_PROVIDER=ollama|openai|anthropic|azure (default: inferred from which keys are set). */
+export function aiProviderInfo(): { provider: string; model: string; url: string; local: boolean; configured: boolean } {
+  const explicit = (process.env.XOR_AI_PROVIDER || "").toLowerCase().trim();
+  const hasOpenAI = !!(process.env.OPENAI_API_KEY || process.env.XOR_OPENAI_KEY);
+  const hasAnthropic = !!(process.env.ANTHROPIC_API_KEY || process.env.XOR_ANTHROPIC_KEY);
+  const hasAzure = !!(process.env.AZURE_OPENAI_KEY || process.env.AZURE_OPENAI_ENDPOINT);
+  const provider = explicit || (hasOpenAI ? "openai" : hasAnthropic ? "anthropic" : hasAzure ? "azure" : "ollama");
+  if (provider === "openai")
+    return { provider: "OpenAI-compatible", model: process.env.XOR_OPENAI_MODEL || "gpt-4o-mini", url: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1", local: false, configured: hasOpenAI };
+  if (provider === "anthropic")
+    return { provider: "Anthropic", model: process.env.XOR_ANTHROPIC_MODEL || "claude-3-5-sonnet", url: "https://api.anthropic.com", local: false, configured: hasAnthropic };
+  if (provider === "azure")
+    return { provider: "Azure OpenAI", model: process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4o-mini", url: process.env.AZURE_OPENAI_ENDPOINT || "", local: false, configured: hasAzure };
+  return { provider: "Ollama (local)", model: OLLAMA_MODEL, url: OLLAMA_URL, local: true, configured: true };
+}
+
 export async function ollamaStatus(): Promise<{ reachable: boolean; url: string; model: string; models: string[] }> {
   try {
     // short timeout so "is the local AI up?" fails fast (offline fallback) instead of hanging

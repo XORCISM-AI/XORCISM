@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AI Operations (Skills & Provenance)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1280px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1060px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid #2d3250;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:7px 14px;font-size:13px;color:#94a3b8;cursor:pointer;border-bottom:2px solid transparent}
+  .tab.on{color:#e2e8f0;border-bottom-color:#a855f7}
+  .block{background:#0f1222;border:1px solid #1e2133;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .block h2{font-size:14px;margin:0 0 10px;color:#cbd5e1}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:top}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}
+  .skgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .sk{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .sk h3{font-size:14px;margin:0 0 4px;color:#e2e8f0}.sk .d{font-size:12px;color:#94a3b8;line-height:1.4;min-height:34px}
+  .pill{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .k-skill{background:#3b2f63;color:#ddd6fe}.k-prompt{background:#1e3a5f;color:#bfdbfe}
+  .tag{display:inline-block;font-size:10px;background:#1e2133;color:#94a3b8;border-radius:5px;padding:1px 6px;margin:2px 3px 0 0}
+  .ht{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .t-delegate{background:#14532d;color:#bbf7d0}.t-consult{background:#1e3a5f;color:#bfdbfe}.t-transfer{background:#78350f;color:#fcd34d}.t-mandatory{background:#7f1d1d;color:#fecaca}.t-escalate{background:#3b2f63;color:#ddd6fe}
+  .btn{background:#3b2f63;color:#ddd6fe;border:1px solid #4c3a7a;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}.btn:hover{background:#4c3a7a}.btn:disabled{opacity:.5}
+  .btn.sm{padding:2px 7px;font-size:11px}
+  input,select,textarea{background:#13162a;color:#e2e8f0;border:1px solid #2d3250;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  textarea{width:100%;min-height:120px;resize:vertical}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal.on{display:flex}.modal .box{background:#0f1222;border:1px solid #2d3250;border-radius:12px;padding:18px;width:640px;max-width:94vw;max-height:90vh;overflow:auto}
+  .row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}.row>label{flex:1;font-size:11px;color:#94a3b8}.row>label input,.row>label select{width:100%;margin-top:3px}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+  a.code{color:#c4b5fd}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/ai-systems">&#129504; AI inventory</a>
+  <a href="/ai-redteam">&#128737; AI-BAS</a>
+  <a href="/llm-pentest">&#129529; LLM pentest</a>
+  <a href="/croc-orchestrator">&#129302; Orchestrator</a>
+  <span class="spacer"></span>
+  <span class="title">&#128279; AI Operations</span>
+</div>
+<div class="mw">
+  <h1>AI Operations — Skills, Provenance &amp; Agentic Flow</h1>
+  <div class="sub">Govern your <b>own</b> agentic AI (the counterpart to the AI inventory and AI-BAS). A reusable
+    <b>Skills &amp; Prompt library</b> the copilots draw from; an <b>AI activity log</b> recording every AI
+    decision (EU AI Act Art. 12 record-keeping · ISO 42001 · NIST AI RMF MANAGE-4); the <b>agent handover
+    routing</b> the CROC orchestrator uses; and the configured <b>AI provider</b> (local Ollama by default).</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+  <div class="lic">Skills are injected into copilot prompts when enabled. The activity log is an accountability
+    aid; AI output is reviewed, not auto-trusted. AI runs on the local provider unless configured otherwise — your data stays on your infrastructure.</div>
+</div>
+<div class="modal" id="modal"><div class="box" id="modalBox"></div></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/ai-skills.js"></script>
+</body></html>

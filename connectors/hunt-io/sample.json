@@ -1,0 +1,7 @@
+{
+  "data": [
+    { "ip": "45.61.136.10", "port": 443, "malware": "Cobalt Strike", "country": "US", "as_name": "AS-CHOOPA", "jarm": "2ad2ad0002ad2ad22c42d42d000000faabb8d8c1c8f0e8b6c0e6b6", "ja4s": "t130200_1301_a56c5b993250", "cert_subject": "CN=evil.example.net", "confidence": 95, "first_seen": "2026-06-20", "last_seen": "2026-06-26" },
+    { "ip": "193.42.33.77", "port": 8080, "malware": "Sliver", "country": "NL", "as_name": "M247", "jarm": "00000000000000000000000000000000000000000000000000000", "confidence": 90, "last_seen": "2026-06-26" },
+    { "ip": "104.21.5.200", "port": 2052, "malware": "AsyncRAT", "country": "DE", "as_name": "Hetzner", "cert_subject": "CN=cdn-update.duckdns.org", "confidence": 80, "last_seen": "2026-06-25" }
+  ]
+}

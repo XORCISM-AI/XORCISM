@@ -1,0 +1,31 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "OASIS",
+          "informationUri": "https://github.com/psyray/oasis",
+          "version": "0.6.1",
+          "rules": [
+            { "id": "sql_injection", "name": "SQL Injection", "shortDescription": { "text": "SQL Injection" }, "properties": { "security-severity": "8.6", "tags": ["security", "external/cwe/cwe-89"] } },
+            { "id": "command_injection", "name": "Command Injection", "shortDescription": { "text": "Command Injection" }, "properties": { "security-severity": "9.1", "tags": ["security", "external/cwe/cwe-78"] } },
+            { "id": "xss", "name": "Cross-Site Scripting", "shortDescription": { "text": "Cross-Site Scripting (XSS)" }, "properties": { "security-severity": "6.1", "tags": ["security", "external/cwe/cwe-79"] } },
+            { "id": "sensitive_data_exposure", "name": "Sensitive Data Exposure", "shortDescription": { "text": "Sensitive Data Exposure" }, "properties": { "security-severity": "7.5", "tags": ["security", "external/cwe/cwe-200"] } },
+            { "id": "ssrf", "name": "Server-Side Request Forgery", "shortDescription": { "text": "SSRF" }, "properties": { "security-severity": "8.2", "tags": ["security", "external/cwe/cwe-918"] } },
+            { "id": "insecure_deserialization", "name": "Insecure Deserialization", "shortDescription": { "text": "Insecure Deserialization" }, "properties": { "security-severity": "3.7", "tags": ["security", "external/cwe/cwe-502"] } }
+          ]
+        }
+      },
+      "results": [
+        { "ruleId": "sql_injection", "level": "error", "message": { "text": "User input is concatenated into a SQL query without parameterization." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app/models/user.py" }, "region": { "startLine": 88 } } }] },
+        { "ruleId": "command_injection", "level": "error", "message": { "text": "A shell command is built from untrusted request data." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app/tasks/export.py" }, "region": { "startLine": 45 } } }] },
+        { "ruleId": "xss", "level": "warning", "message": { "text": "Unescaped variable rendered into HTML output." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app/views/profile.html" }, "region": { "startLine": 12 } } }] },
+        { "ruleId": "sensitive_data_exposure", "level": "error", "message": { "text": "Hard-coded API key found in source." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "config/settings.py" }, "region": { "startLine": 7 } } }] },
+        { "ruleId": "ssrf", "level": "error", "message": { "text": "A user-controlled URL is fetched server-side." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app/integrations/webhook.py" }, "region": { "startLine": 33 } } }] },
+        { "ruleId": "insecure_deserialization", "level": "note", "message": { "text": "pickle.loads on data of uncertain provenance." }, "locations": [{ "physicalLocation": { "artifactLocation": { "uri": "app/cache/store.py" }, "region": { "startLine": 21 } } }] }
+      ]
+    }
+  ]
+}

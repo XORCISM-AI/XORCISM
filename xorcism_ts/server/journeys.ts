@@ -164,6 +164,52 @@ export const FRAMEWORKS: FrameworkT[] = [
     ],
   },
   {
+    key: "hds", name: "HDS (Hébergeur de Données de Santé)", provider: "ANS (France)", kind: "Certification", jurisdiction: "France",
+    summary: "The French mandatory certification for hosting personal health data (Art. L.1111-8 CSP). HDS builds on ISO/IEC 27001 + ISO/IEC 20000-1 and adds health-data-specific requirements across 6 certified hosting activities. Import the HDS catalogue (import_hds.py) to track the requirements as controls.",
+    effort: "9–15 months",
+    phases: [
+      { name: "Scope & certified activities", steps: [
+        st("Define the HDS scope & activities", "Determine which of the 6 HDS hosting activities you perform and the systems / health data in scope.", L.scope),
+        st("Inventory health-data assets & flows", "Catalogue the health-data assets, where they are hosted and how they flow.", L.assets),
+      ]},
+      { name: "ISO 27001 + 20000-1 foundation", steps: [
+        st("ISO/IEC 27001 ISMS over the hosting scope", "HDS requires an ISO/IEC 27001 certified ISMS covering the health-data hosting scope.", L.controls53),
+        st("ISO/IEC 20000-1 service management", "Operate IT service management for the hosting service.", L.assess),
+      ]},
+      { name: "Health-data requirements", steps: [
+        st("EU localisation & medical confidentiality", "Keep health data in the EU/EEA; enforce medical-secret confidentiality and need-to-know access.", L.policies),
+        st("GDPR Art. 28 processing agreement & DPO", "Sign the controller processing agreement, appoint a DPO and ensure GDPR compliance.", L.policies),
+        st("Reversibility & secure destruction", "Document return / migration of health data and certified destruction at end of contract.", L.evidence),
+        st("Subcontractors & traceability", "Flow HDS obligations down to subcontractors; log all access to health data.", L.tprm),
+      ]},
+      auditPhase("HDS certification audit (accredited body)"),
+    ],
+  },
+  {
+    key: "tisax", name: "TISAX (VDA-ISA)", provider: "ENX / VDA", kind: "Attestation", jurisdiction: "Automotive (global)",
+    summary: "The automotive-industry information-security assessment, based on the VDA-ISA catalogue and performed at assessment level AL1 / AL2 / AL3, leading to shareable TISAX labels on the ENX portal. Import the VDA-ISA catalogue (import_tisax.py).",
+    effort: "4–9 months",
+    phases: [
+      { name: "Scope & assessment level", steps: [
+        st("Define scope, locations & objectives", "Pick the assessment objectives (information security, prototype protection, data protection) and the level (AL1/AL2/AL3).", L.scope),
+        st("VDA-ISA self-assessment", "Complete the VDA-ISA self-assessment with its 0-5 maturity scale.", L.assess),
+      ]},
+      { name: "Information security (VDA-ISA)", steps: [
+        st("Implement the ISA control areas", "Policies & organization, HR, physical security, IT/cyber security, supplier relationships, compliance.", L.controls53),
+        st("Identity, access & cryptography", "Identity / access management and cryptographic key management.", L.identity),
+        st("Operations, network & malware protection", "Logging/monitoring, network segmentation, vulnerability & patch management.", L.vuln),
+      ]},
+      { name: "Prototype & data protection", steps: [
+        st("Prototype protection (if in scope)", "Physical & organizational protection of prototypes, vehicles, parts and events / shoots.", L.policies),
+        st("Data protection (GDPR Art. 28)", "Processing on behalf and handling of special categories of personal data.", L.policies),
+      ]},
+      { name: "Assessment & label", steps: [
+        st("Plausibility check / on-site audit", "AL2 remote evidence review or AL3 on-site audit by a TISAX auditor.", L.assess),
+        st("Obtain & share the TISAX label", "Receive the label on the ENX portal and share it with your partners.", L.trust),
+      ]},
+    ],
+  },
+  {
     key: "euaiact", name: "EU AI Act (Regulation (EU) 2024/1689)", provider: "European Union", kind: "Regulation", jurisdiction: "European Union",
     summary: "The EU Artificial Intelligence Act — the world's first horizontal, risk-based AI regulation. Obligations scale with risk: prohibited practices (Art. 5), high-risk AI systems (Art. 6 + Annex III) carrying the heaviest duties, transparency-risk systems (Art. 50) and minimal-risk. This journey walks a provider or deployer from AI governance and an AI-system inventory through risk classification, the Art. 9 risk-management system, technical documentation and the ancillary obligations (conformity assessment, CE marking, EU-database registration, post-market monitoring and serious-incident reporting). Import the EU AI Act control catalogue to track the obligations as controls.",
     effort: "9–18 months (phased: GPAI Aug 2025 · high-risk Aug 2026/2027)",

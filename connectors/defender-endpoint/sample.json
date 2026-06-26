@@ -1,0 +1,7 @@
+{
+  "value": [
+    { "id": "da637-001", "title": "Ransomware behavior detected", "severity": "High", "status": "New", "category": "Ransomware", "techniques": ["T1486"], "computerDnsName": "FIN-SRV-01.corp.local", "description": "Multiple files encrypted with a known ransomware pattern.", "alertCreationTime": "2026-06-26T10:01:00Z" },
+    { "id": "da637-002", "title": "Suspicious LDAP enumeration", "severity": "Medium", "status": "InProgress", "category": "Discovery", "techniques": ["T1087"], "computerDnsName": "IT-WS-22.corp.local", "description": "Account/group enumeration over LDAP.", "alertCreationTime": "2026-06-26T10:14:00Z" },
+    { "id": "da637-003", "title": "PUA blocked", "severity": "Informational", "status": "Resolved", "category": "Malware", "techniques": [], "computerDnsName": "MKT-LT-09.corp.local", "description": "Potentially unwanted application blocked.", "alertCreationTime": "2026-06-26T07:40:00Z" }
+  ]
+}

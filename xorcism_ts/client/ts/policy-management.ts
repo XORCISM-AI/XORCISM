@@ -9,7 +9,7 @@ function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
 function toast(m: string): void { const t = $("pp-toast"); t.textContent = m; t.className = "show"; setTimeout(() => { t.className = ""; }, 2800); }
 
-interface PolicyRow { id: number; name: string; reference: string; category: string; framework: string; language: string; status: string; version: string; owner: string | null; effectiveDate: string | null; reviewDate: string | null; reviewInDays: number | null; published: boolean; retired: boolean; publishedDate: string | null; requiresAck: boolean; accepted: number; ackTarget: number; ackRate: number | null; versions: number; score: number; issues: string[]; }
+interface PolicyRow { id: number; name: string; reference: string; docType?: string; parentId?: number | null; category: string; framework: string; language: string; status: string; version: string; owner: string | null; effectiveDate: string | null; reviewDate: string | null; reviewInDays: number | null; published: boolean; retired: boolean; publishedDate: string | null; requiresAck: boolean; accepted: number; ackTarget: number; ackRate: number | null; versions: number; score: number; issues: string[]; }
 interface DocumentRow { id: number; name: string; type: string; category: string; status: string; version: string; language: string; owner: string | null; reviewDate: string | null; validUntil: string | null; expired: boolean; issues: string[]; classification?: string; tlp?: string; }
 interface Finding { id: number; name: string; kind: "policy" | "document"; severity: "High" | "Medium" | "Low"; reason: string; label: string; }
 interface Pending { id: number; name: string; version: string; publishedDate: string | null; }
@@ -53,8 +53,9 @@ function policyHtml(r: PolicyRow): string {
   const issues = r.issues.length
     ? r.issues.map((i) => `<span class="tag${/due in|effective|version|acceptance/.test(i) ? " tag-w" : ""}">${esc(i)}</span>`).join("")
     : (r.retired ? `<span class="muted">retired</span>` : `<span class="s-lo">✓ ok</span>`);
+  const dt = r.docType && r.docType !== "Policy" ? `<span class="lang" title="document type" style="background:#3b2f63;color:#ddd6fe">${esc(r.docType)}</span>` : "";
   return `<tr>
-    <td><div class="pname">${esc(r.name)}${r.language !== "—" ? `<span class="lang">${esc(r.language)}</span>` : ""}</div>
+    <td><div class="pname">${esc(r.name)}${dt}${r.language !== "—" ? `<span class="lang">${esc(r.language)}</span>` : ""}</div>
       <div class="muted" style="font-size:11px">${esc(r.framework)}${r.reference !== "—" ? ` · <span class="ref">${esc(r.reference)}</span>` : ""}${r.publishedDate ? ` · published ${esc(r.publishedDate)}` : ""}</div></td>
     <td><span class="st ${stClass(r.status)}">${esc(r.status)}</span>${r.published && r.requiresAck ? ` <span class="tag" title="acknowledgement required">ack</span>` : ""}</td>
     <td>${esc(r.version)}</td>
@@ -226,7 +227,7 @@ async function load(): Promise<void> {
   }
 
   const cards = [
-    card("Policies", String(s.policies), `${s.published} published · ${s.retired} retired`),
+    card("Governed docs", String(s.policies), `${(s.byType && s.byType["Policy"]) || (s.policies - (s.standards || 0) - (s.procedures || 0) - (s.guidelines || 0))} policy · ${s.standards || 0} std · ${s.procedures || 0} proc · ${s.guidelines || 0} guide`),
     card("Published", String(s.published), s.policies ? `${Math.round((s.published / s.policies) * 100)}% of policies` : "—", s.published ? "#34d399" : undefined),
     card("Requiring ack", String(s.requiringAck), `${s.fullyAcknowledged} fully accepted`, s.requiringAck ? "#60a5fa" : undefined),
     card("Acceptance", s.requiringAck ? `${s.ackCoverage}%` : "—", `${s.completedAcks}/${s.requiredAcks} user acks`, s.requiringAck ? pctColor(s.ackCoverage) : undefined),

@@ -1542,7 +1542,7 @@ def import_emulation(result: Dict[str, Any]) -> Dict[str, int]:
 
 
 # DevSecOps: connectors whose findings are a pipeline security scan of a given class.
-_DEVSECOPS_TOOLS = {"semgrep": "SAST", "gitleaks": "Secrets", "trivy": "SCA", "burpwn": "DAST", "drogonsec": "SAST", "graphql-cop": "DAST"}
+_DEVSECOPS_TOOLS = {"semgrep": "SAST", "gitleaks": "Secrets", "trivy": "SCA", "burpwn": "DAST", "drogonsec": "SAST", "graphql-cop": "DAST", "oasis": "SAST"}
 
 
 def _norm_sev(s: Any) -> str:

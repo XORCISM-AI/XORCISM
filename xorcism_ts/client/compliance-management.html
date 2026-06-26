@@ -102,6 +102,18 @@
         </select>
       </div>
       <div class="fld">
+        <label data-i18n="cm.fAssess">Assessment</label>
+        <select id="cm-f-assess" title="Which dimension this audit assesses (ISAE 3000 / SOC 2)">
+          <option value="Operating Effectiveness">Operating effectiveness</option>
+          <option value="Design Assessment">Design assessment</option>
+          <option value="Documentation Assessment">Documentation assessment</option>
+          <option value="Combined (Design + Operating)">Combined (design + operating)</option>
+          <option value="Readiness Assessment">Readiness assessment</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fld">
         <label data-i18n="cm.fFramework">Framework / category</label>
         <input id="cm-f-category" list="cm-frameworks" data-i18n-placeholder="cm.fFrameworkPh" placeholder="e.g. ISO 27001" maxlength="120" autocomplete="off">
         <datalist id="cm-frameworks">

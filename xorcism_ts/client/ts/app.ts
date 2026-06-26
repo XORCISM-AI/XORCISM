@@ -86,6 +86,9 @@ const ENUM_COLUMNS: Record<string, string[]> = {
   ],
   // XCOMPLIANCE — audits / findings / reports
   "AUDIT.AuditType": ["Internal", "External", "Certification", "Surveillance", "Gap Assessment", "Tabletop Exercise"],
+  // Audit assessment dimension (ISAE 3000 / SOC 2): control design vs documentation adequacy vs operating effectiveness.
+  "AUDIT.AssessmentType": ["Design Assessment", "Documentation Assessment", "Operating Effectiveness", "Combined (Design + Operating)", "Readiness Assessment"],
+  "AUDITFINDING.AssessmentType": ["Design Assessment", "Documentation Assessment", "Operating Effectiveness"],
   // XCOMPLIANCE — crisis management / tabletop exercises
   "CRISISSCENARIO.ScenarioType": ["Ransomware", "Data Breach", "DDoS", "Insider Threat", "Supply Chain", "Cloud Account Compromise", "Business Email Compromise", "Phishing", "Physical / Environmental", "Third-Party Outage", "Other"],
   "CRISISSCENARIO.Severity": ["Critical", "High", "Medium", "Low"],
@@ -2437,7 +2440,7 @@ FK_COLUMNS["AUDITFINDING.RemediationOwnerPersonID"] = { db: "XORCISM", table: "P
 
 // ── Policy & document management metadata (ISO 42001 / 27001 / NIST AI RMF …) ──
 const DOC_LANGUAGES = ["en", "fr", "de", "es", "it", "nl", "pt", "ar"];
-const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27031:2011", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "NIST SP 800-53", "Secure Controls Framework (SCF)", "CSA CCM v4", "CSA AI Controls Matrix (AICM) v1.1", "OWASP ASVS 4.0.3", "PCI DSS v4.0", "ITMG IRCF v1.0", "CRI Profile v2.2", "EU AI Act", "DORA (EU 2022/2554)", "NIS2", "Référentiel Cyber France (ReCyF)", "SOC 2", "GDPR", "Data (Use and Access) Act 2025 (DUAA)", "CISA Zero Trust Maturity Model v2.0", "DoD Zero Trust"];
+const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27031:2011", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "NIST SP 800-53", "Secure Controls Framework (SCF)", "CSA CCM v4", "CSA AI Controls Matrix (AICM) v1.1", "OWASP ASVS 4.0.3", "PCI DSS v4.0", "ITMG IRCF v1.0", "CRI Profile v2.2", "EU AI Act", "DORA (EU 2022/2554)", "NIS2", "Référentiel Cyber France (ReCyF)", "SOC 2", "GDPR", "Data (Use and Access) Act 2025 (DUAA)", "CISA Zero Trust Maturity Model v2.0", "DoD Zero Trust", "HDS (Hébergeur de Données de Santé)", "TISAX (VDA-ISA)"];
 const DOC_CLASSIFICATION = ["Public", "Internal", "Confidential", "Restricted"];
 const DOC_CATEGORIES = ["AI Management System", "Information Security", "Privacy", "Data Governance", "Risk Management", "Operations", "Human Resources"];
 const DOC_TYPES = ["Policy", "Procedure", "Standard", "Guideline", "Record", "Report", "Evidence", "Form", "Plan"];
@@ -2459,6 +2462,11 @@ for (const t of ["POLICY", "DOCUMENT"]) {
   STATIC_DATALIST_COLUMNS[`${t}.TLP`] = DOC_TLP;
   GRID_VALUE_COLORS[`${t}.TLP`] = DOC_TLP_COLORS;
 }
+// Admiralty / NATO source grading (STANAG 2511) on intel exchanges, reports & actors — reliability A-F, credibility 1-6.
+for (const t of ["INTELEXCHANGE", "THREATREPORT", "THREATACTOR", "THREATCAMPAIGN"]) {
+  STATIC_DATALIST_COLUMNS[`${t}.SourceReliability`] = ["A", "B", "C", "D", "E", "F"];
+  STATIC_DATALIST_COLUMNS[`${t}.InfoCredibility`] = ["1", "2", "3", "4", "5", "6"];
+}
 // TaHiTI threat-hunting methodology (Targeted Hunting integrating Threat Intelligence) on HUNT.
 STATIC_DATALIST_COLUMNS["HUNT.TahitiPhase"] = ["Initiate", "Hunt", "Finalize"];
 STATIC_DATALIST_COLUMNS["HUNT.TahitiTrigger"] = ["Threat Intelligence", "Security Monitoring", "Other Hunt", "Red Teaming", "Security Incident", "Vulnerability / Threat Landscape", "Crown Jewel Analysis"];
@@ -2469,6 +2477,11 @@ GRID_VALUE_COLORS["DOCUMENT.Status"] = GRC_POLICY_COLORS;
 STATIC_DATALIST_COLUMNS["DOCUMENT.DocumentType"] = DOC_TYPES;
 FK_COLUMNS["DOCUMENT.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["DOCUMENT.RelatedPolicyID"] = { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", distinct: true };
+// ISO documentation pyramid: a governed POLICY record is a Policy / Standard / Procedure / Guideline,
+// and ParentPolicyID links a child to the document it implements (Procedure → Standard → Policy).
+STATIC_DATALIST_COLUMNS["POLICY.DocumentType"] = ["Policy", "Standard", "Procedure", "Guideline"];
+STATIC_DATALIST_DEFAULTS["POLICY.DocumentType"] = "Policy";
+FK_COLUMNS["POLICY.ParentPolicyID"] = { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", distinct: true };
 // PERSON org-chart / directory fields (Entra ID / AD aligned) — see /org-chart.
 FK_COLUMNS["PERSON.ManagerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 STATIC_DATALIST_COLUMNS["PERSON.EmployeeType"] = ["Employee", "Contractor", "Vendor", "Intern", "Service Account", "Guest"];

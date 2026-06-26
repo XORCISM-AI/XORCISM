@@ -1,0 +1,14 @@
+{
+  "id": "carbon-black",
+  "name": "VMware Carbon Black Cloud — EDR alerts",
+  "type": "import",
+  "category": "Endpoint Security",
+  "description": "Imports VMware Carbon Black Cloud (CBC) EDR alerts (CBC API /alerts/_search export) into XORCISM as security alerts (XINCIDENT.ALERT), with the impacted device linked as an ASSET and the threat category/TTPs kept as the classification. Severity is normalized from the CBC 1-10 scale. Idempotent by source+alert id. Offline: pass `file` = a Carbon Black alerts JSON, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:carbon-black",
+  "run": "run.py",
+  "mapping": "carbon-black",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A VMware Carbon Black Cloud alerts JSON export to parse" }
+  ]
+}

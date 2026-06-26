@@ -26800,4 +26800,20 @@ CREATE INDEX IF NOT EXISTS ix_llmpt_tenant ON "LLMPENTEST"("TenantID");
 CREATE INDEX IF NOT EXISTS ix_llmpt_sys ON "LLMPENTEST"("AISystemID");
 CREATE INDEX IF NOT EXISTS ix_llmptcase_eng ON "LLMPENTESTCASE"("EngagementID");
 
+-- AI Operations (aiskills.ts): governed Skills/Prompt library + AI activity provenance log + agent handover routing
+CREATE TABLE IF NOT EXISTS "AISKILL" (
+  "SkillID" INTEGER PRIMARY KEY, "SkillGUID" TEXT, "Kind" TEXT, "Name" TEXT, "Description" TEXT, "Tags" TEXT,
+  "Content" TEXT, "Source" TEXT, "Enabled" INTEGER DEFAULT 1, "Visibility" TEXT, "Version" INTEGER DEFAULT 1,
+  "UsedCount" INTEGER DEFAULT 0, "Category" TEXT, "CreatedDate" TEXT, "UpdatedDate" TEXT, "TenantID" INTEGER);
+CREATE TABLE IF NOT EXISTS "AIACTIVITY" (
+  "ActivityID" INTEGER PRIMARY KEY, "ActivityGUID" TEXT, "Actor" TEXT, "Action" TEXT, "Model" TEXT, "Provider" TEXT,
+  "SkillID" INTEGER, "EntityType" TEXT, "EntityKey" TEXT, "Summary" TEXT, "TokensIn" INTEGER, "TokensOut" INTEGER,
+  "Outcome" TEXT, "CreatedDate" TEXT, "TenantID" INTEGER);
+CREATE TABLE IF NOT EXISTS "AIHANDOVER" (
+  "RouteID" INTEGER PRIMARY KEY, "RouteGUID" TEXT, "FromAgent" TEXT, "ToAgent" TEXT, "Type" TEXT, "Trigger" TEXT,
+  "Enabled" INTEGER DEFAULT 1, "Notes" TEXT, "CreatedDate" TEXT, "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_aiskill_tenant ON "AISKILL"("TenantID");
+CREATE INDEX IF NOT EXISTS ix_aiactivity_tenant ON "AIACTIVITY"("TenantID","ActivityID");
+CREATE INDEX IF NOT EXISTS ix_aihandover_tenant ON "AIHANDOVER"("TenantID");
+
 COMMIT;

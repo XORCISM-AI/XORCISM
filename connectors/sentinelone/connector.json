@@ -1,0 +1,14 @@
+{
+  "id": "sentinelone",
+  "name": "SentinelOne — EDR threats",
+  "type": "import",
+  "category": "Endpoint Security",
+  "description": "Imports SentinelOne (Singularity) EDR/XDR threats (Singularity API /web/api/v2.1/threats export) into XORCISM as security alerts (XINCIDENT.ALERT), with the impacted endpoint linked as an ASSET and the threat classification kept as the alert classification. The confidence level (malicious/suspicious) is mapped to high/medium. Idempotent by source+threat id. Offline: pass `file` = a SentinelOne threats JSON, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:sentinelone",
+  "run": "run.py",
+  "mapping": "sentinelone",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A SentinelOne threats JSON export to parse" }
+  ]
+}

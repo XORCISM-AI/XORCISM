@@ -1,0 +1,15 @@
+{
+  "id": "strix",
+  "name": "Strix — autonomous AI pentest agent",
+  "type": "import",
+  "category": "Penetration Testing",
+  "description": "Imports findings from Strix (github.com/usestrix/strix), the open-source autonomous AI hacking agent. Strix runs AI agents that dynamically test a codebase, GitHub repo, web app or API like real pentesters — exploiting issues and validating them with a proof-of-concept (IDOR/auth bypass, SQL/NoSQL/command injection, SSRF/XXE/insecure deserialization, XSS/prototype pollution, business-logic flaws, JWT/session weaknesses, misconfigurations) — and writes results to strix_runs/<run-name>/. This connector parses the Strix findings JSON: the assessed target becomes an ASSET and each validated finding a VULNERABILITY / ASSETVULNERABILITY (severity from the finding, vuln class / CWE and PoC in the description). Apache-2.0. Offline: pass `file` = a Strix findings JSON, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:strix",
+  "run": "run.py",
+  "mapping": "strix",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Strix findings JSON (from strix_runs/<run>/) to parse" },
+    { "name": "target", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._/:@-]+$", "help": "Asset name to attach the findings to (default: derived from the Strix run)" }
+  ]
+}

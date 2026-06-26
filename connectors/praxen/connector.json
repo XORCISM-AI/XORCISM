@@ -1,0 +1,14 @@
+{
+  "id": "praxen",
+  "name": "Praxen — AI agent behavior verification",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports a Praxen (open-agent-ai-security.github.io/praxen, by Exabeam) AI agent behavior-verification report. Praxen checks that an agent does its declared job and only its job — comparing its Worker Remit against the agent's code/config/logs — and flags policy divergence, credential exposure, missing controls (rate limits, loop detection), capability drift (unauthorized tools / outbound destinations), hidden prompts and compound attack paths, mapped to the OWASP Top 10 for LLM Applications (2025) and Agentic AI (2026). This connector parses the machine-readable JSON report into (1) the agent as an ASSET with its findings as VULNERABILITY rows (import_findings) and (2) the OWASP-LLM result list ingested by the LLM red-team / AI-BAS module via POST /api/ai-redteam/import/<aiSystemId>. Offline: pass `file` = the praxen JSON report, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:praxen",
+  "run": "run.py",
+  "mapping": "praxen",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Praxen JSON report (from ./reports/) to parse" }
+  ]
+}

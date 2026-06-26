@@ -18,6 +18,8 @@ export interface PolicyRow {
   id: number;
   name: string;
   reference: string;
+  docType: string;               // ISO documentation pyramid: Policy / Standard / Procedure / Guideline
+  parentId: number | null;       // the parent governed document this implements (Procedure → Standard → Policy)
   category: string;
   framework: string;
   language: string;
@@ -79,8 +81,9 @@ export interface PolicyInventory {
     ackCoverage: number;         // completedAcks / requiredAcks (%)
     pendingAcks: number;         // requiredAcks − completedAcks
     fullyAcknowledged: number;   // published+requiresAck policies at 100% acceptance
+    standards: number; procedures: number; guidelines: number;  // ISO documentation pyramid counts
     byStatus: Record<string, number>; byFramework: Record<string, number>;
-    byCategory: Record<string, number>; byLanguage: Record<string, number>;
+    byCategory: Record<string, number>; byLanguage: Record<string, number>; byType: Record<string, number>;
   };
 }
 
@@ -91,7 +94,8 @@ const EMPTY: PolicyInventory = {
     overdueReview: 0, dueSoon: 0, noOwner: 0, noVersion: 0, notEffective: 0,
     documents: 0, expiredDocs: 0, docsNoOwner: 0, frameworks: 0, languages: 0, avgScore: 0,
     requiringAck: 0, ackTarget: 0, requiredAcks: 0, completedAcks: 0, ackCoverage: 0, pendingAcks: 0, fullyAcknowledged: 0,
-    byStatus: {}, byFramework: {}, byCategory: {}, byLanguage: {},
+    standards: 0, procedures: 0, guidelines: 0,
+    byStatus: {}, byFramework: {}, byCategory: {}, byLanguage: {}, byType: {},
   },
 };
 
@@ -207,6 +211,7 @@ export function policyInventory(tenant: number | null): PolicyInventory {
 
     return {
       id, name, reference: norm(p.PolicyReference) || "—",
+      docType: norm(p.DocumentType) || "Policy", parentId: p.ParentPolicyID != null ? Number(p.ParentPolicyID) : null,
       category: norm(p.Category) || "—", framework: norm(p.Framework) || "—",
       language: (norm(p.Language) || "—").toLowerCase(), status, version: version || "—",
       owner, effectiveDate, reviewDate, reviewInDays, published, retired,
@@ -260,7 +265,9 @@ export function policyInventory(tenant: number | null): PolicyInventory {
 
   const byStatus: Record<string, number> = {}, byFramework: Record<string, number> = {};
   const byCategory: Record<string, number> = {}, byLanguage: Record<string, number> = {};
+  const byType: Record<string, number> = {};
   for (const r of rows) {
+    byType[r.docType] = (byType[r.docType] || 0) + 1;
     byStatus[r.status] = (byStatus[r.status] || 0) + 1;
     if (r.framework !== "—") byFramework[r.framework] = (byFramework[r.framework] || 0) + 1;
     if (r.category !== "—") byCategory[r.category] = (byCategory[r.category] || 0) + 1;
@@ -299,7 +306,8 @@ export function policyInventory(tenant: number | null): PolicyInventory {
       languages: Object.keys(byLanguage).length,
       avgScore,
       requiringAck, ackTarget, requiredAcks, completedAcks, ackCoverage, pendingAcks, fullyAcknowledged,
-      byStatus, byFramework, byCategory, byLanguage,
+      standards: byType["Standard"] || 0, procedures: byType["Procedure"] || 0, guidelines: byType["Guideline"] || 0,
+      byStatus, byFramework, byCategory, byLanguage, byType,
     },
   };
 }

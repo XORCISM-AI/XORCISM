@@ -1,0 +1,18 @@
+{
+  "id": "rulezet",
+  "name": "Rulezet — detection-rule search (CVE / ATT&CK)",
+  "type": "import",
+  "category": "Threat Intelligence",
+  "description": "Searches Rulezet (rulezet.org), the open-source repository of ~197k community detection rules (YARA, Sigma, Suricata, Zeek, CRS, Nova, Wazuh, Elastic) covering 858+ ATT&CK techniques, and imports the matches into XORCISM's detection-content stores. Pass `cve` to find rules linked to a CVE (via the CIRCL Vulnerability-Lookup proxy GET /api/rulezet/search_rules_by_vulnerabilities/<cve>), `technique` for an ATT&CK technique (an attack-chain step), or `query` for free-text search. Sigma & other formats → XTHREAT.SIGMARULE, YARA → XTHREAT.YARARULE (idempotent), with the ATT&CK techniques kept as tags — feeding Threat-Informed Defense and Purple-Team detection coverage. Public API (no auth; optional RULEZET_TOKEN). Offline: pass `file` = a Rulezet JSON response, or run the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:rulezet",
+  "run": "run.py",
+  "mapping": "rulezet",
+  "parameters": [
+    { "name": "cve", "type": "string", "required": false, "pattern": "^CVE-[0-9]{4}-[0-9]{4,7}$", "help": "Find detection rules linked to this CVE (e.g. CVE-2020-27130)" },
+    { "name": "technique", "type": "string", "required": false, "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$", "help": "Find detection rules for this MITRE ATT&CK technique (e.g. T1059)" },
+    { "name": "query", "type": "string", "required": false, "help": "Free-text rule search (malware name, keyword, …)" },
+    { "name": "limit", "type": "int", "required": false, "default": 100, "min": 1, "max": 500, "help": "Max rules to import" },
+    { "name": "file", "type": "file", "required": false, "help": "A Rulezet JSON response to parse offline" }
+  ]
+}

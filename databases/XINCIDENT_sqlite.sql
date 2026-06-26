@@ -603,4 +603,14 @@ CREATE TABLE IF NOT EXISTS "REGINCIDENTREPORT" (
 CREATE INDEX IF NOT EXISTS ix_regincrep_inc ON "REGINCIDENTREPORT"("IncidentID");
 CREATE INDEX IF NOT EXISTS ix_regincrep_tenant ON "REGINCIDENTREPORT"("TenantID");
 
+-- Lightweight per-incident evidence file attachments. File bytes live in the content-addressed
+-- blob store (XORCISM.FILEBLOB, deduped by Sha256); this table is the per-incident registry only.
+-- For chain-of-custody evidence use CERT Operations (forensic cases). Tenant-scoped.
+CREATE TABLE IF NOT EXISTS "INCIDENTEVIDENCE" (
+  "EvidenceID" INTEGER PRIMARY KEY, "EvidenceGUID" TEXT, "IncidentID" INTEGER, "FileName" TEXT, "ContentType" TEXT,
+  "Sha256" TEXT, "Size" INTEGER, "Description" TEXT, "UploadedByUserID" INTEGER, "UploadedByName" TEXT,
+  "CreatedDate" TEXT, "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_incevidence_inc ON "INCIDENTEVIDENCE"("IncidentID");
+CREATE INDEX IF NOT EXISTS ix_incevidence_tenant ON "INCIDENTEVIDENCE"("TenantID");
+
 COMMIT;

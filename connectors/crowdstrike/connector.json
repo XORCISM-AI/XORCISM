@@ -1,0 +1,14 @@
+{
+  "id": "crowdstrike",
+  "name": "CrowdStrike Falcon — EDR detections",
+  "type": "import",
+  "category": "Endpoint Security",
+  "description": "Imports CrowdStrike Falcon endpoint detections / alerts (Falcon API /detects or /alerts export) into XORCISM as security alerts (XINCIDENT.ALERT), with the impacted endpoint linked as an ASSET and the ATT&CK tactic/technique kept as the classification. Severity is normalized from Falcon's 0-100 / Low-Critical scale. Idempotent by source+detection id. Offline: pass `file` = a Falcon detections JSON, or run with the bundled sample. Live API pulls (OAuth2 client id/secret via env) are a follow-up; this connector consumes the export.",
+  "intrusive": false,
+  "permission": "connector:crowdstrike",
+  "run": "run.py",
+  "mapping": "crowdstrike",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A CrowdStrike Falcon detections/alerts JSON export to parse" }
+  ]
+}

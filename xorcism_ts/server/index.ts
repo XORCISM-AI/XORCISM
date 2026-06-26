@@ -134,6 +134,8 @@ import aiDetectRouter from "./routes/aidetect";
 import { ensureAiDetectTables, seedAiUsageDemo } from "./aidetect";
 import llmPentestRouter from "./routes/llmpentest";
 import { ensureLlmPentestTables, seedLlmPentestDemo } from "./llmpentest";
+import aiSkillsRouter from "./routes/aiskills";
+import { ensureAiSkillsTables, seedAiSkillsDemo } from "./aiskills";
 import regIncidentRouter from "./routes/regincident";
 import { ensureRegIncidentTables } from "./regincident";
 import slsaRouter from "./routes/slsa";
@@ -339,6 +341,7 @@ app.use("/api", threatDebtRouter); // Adversary Opportunity Index (AOI): path-or
 app.use("/api", insuranceRouter); // Cyber Insurance Readiness: insurer control checklist mapped to live signals
 app.use("/api", aiDetectRouter); // AI runtime anomaly detection: usage telemetry → extraction/jailbreak/drift
 app.use("/api", llmPentestRouter); // LLM Application Penetration Test methodology (OWASP-LLM-2025 engagement tracker)
+app.use("/api", aiSkillsRouter); // AI Operations: Skills/Prompt library + AI activity log + agent handover routing
 app.use("/api", regIncidentRouter); // Regulatory incident-reporting obligations: DORA/NIS2/GDPR/CRA deadlines
 app.use("/api", slsaRouter); // SLSA supply-chain level tracker (build integrity L0-L3)
 app.use("/api", scaRouter); // SCA / SBOM: software composition analysis, CycloneDX/SPDX import-export + graph
@@ -577,6 +580,9 @@ app.get("/ai-redteam", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/llm-pentest", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "llm-pentest.html"));
+});
+app.get("/ai-skills", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-skills.html"));
 });
 app.get("/chatops", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "chatops.html"));
@@ -831,6 +837,7 @@ try { seedCrocDemo(3); } catch { /* demo only */ } // CROC value demo (tenant 3)
 try { seedThreatDebtDemo(3); } catch { /* demo only */ } // AOI demo (tenant 3): 30-day improving (paid-down) Adversary Opportunity Index history
 try { seedAiUsageDemo(3); } catch { /* demo only */ } // AI runtime detection demo (tenant 3): 30d usage baseline + an anomaly day (no-op if no AI systems)
 try { seedLlmPentestDemo(3); } catch { /* demo only */ } // LLM pentest demo (tenant 3): one OWASP-LLM-2025 engagement with a realistic mix of outcomes
+try { seedAiSkillsDemo(3); } catch { /* demo only */ } // AI Operations demo (tenant 3): 6 skills/prompts mirroring real copilots + sample activity
 try { seedSlsaDemo(3); } catch { /* demo only */ } // SLSA demo (tenant 3): 4 artifacts at varying build-integrity levels
 try { seedTprmDemo(3); } catch { /* demo only */ } // TPRM demo (tenant 3): 4 vendors with tiers, posture, conformance, findings
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store
@@ -853,6 +860,7 @@ ensureThreatDebtTables(); // Adversary Opportunity Index: THREATDEBTSNAPSHOT (AO
 ensureInsuranceTables(); // Cyber Insurance Readiness: CYBERINSURANCEPOLICY (carrier / limit / renewal record)
 ensureAiDetectTables(); // AI runtime detection: AIUSAGE telemetry + AIDETECTION
 ensureLlmPentestTables(); // LLM pentest methodology: LLMPENTEST engagement + LLMPENTESTCASE (OWASP-LLM-2025)
+ensureAiSkillsTables(); // AI Operations: AISKILL library + AIACTIVITY provenance log + AIHANDOVER routing
 ensureRegIncidentTables(); // Regulatory incident reporting: REGINCIDENTREPORT (DORA/NIS2/GDPR/CRA submissions)
 ensureSlsaTables(); // SLSA supply-chain tracker: SLSAARTIFACT (build-integrity levels L0-L3)
 ensureScaTables(); // SCA / SBOM: SBOM + enriched COMPONENT + COMPONENTDEPENDENCY (CycloneDX/SPDX over CPE inventory)

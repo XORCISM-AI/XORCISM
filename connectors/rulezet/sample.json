@@ -1,0 +1,16 @@
+{
+  "rules": [
+    { "id": "8f1c-sigma-001", "name": "Cisco ASA WebVPN Exploitation Attempt", "format": "sigma", "level": "high", "status": "stable", "author": "community",
+      "description": "Detects exploitation patterns associated with CVE-2020-27130 path traversal in Cisco ASA/FTD WebVPN.", "mitre_attack": ["T1190", "T1083"], "cve": ["CVE-2020-27130"],
+      "content": "title: Cisco ASA WebVPN Path Traversal\nlogsource:\n  category: webserver\ndetection:\n  sel:\n    cs-uri-query|contains: '+CSCOE+/'\n  condition: sel\nlevel: high",
+      "url": "https://rulezet.org/rules/8f1c-sigma-001" },
+    { "id": "8f1c-yara-002", "name": "Webshell_Generic_ASA", "format": "yara", "status": "experimental", "author": "community",
+      "description": "Generic webshell artifacts observed after CVE-2020-27130 exploitation.", "mitre_attack": ["T1505.003"], "cve": ["CVE-2020-27130"],
+      "content": "rule Webshell_Generic_ASA { strings: $a = \"+CSCOE+\" $b = \"eval(\" condition: all of them }",
+      "url": "https://rulezet.org/rules/8f1c-yara-002" },
+    { "id": "8f1c-suri-003", "name": "ET WEB Cisco ASA Directory Traversal", "format": "suricata", "level": "medium", "status": "stable", "author": "community",
+      "description": "Suricata signature for CVE-2020-27130 traversal over HTTP.", "mitre_attack": ["T1190"], "cve": ["CVE-2020-27130"],
+      "content": "alert http any any -> any any (msg:\"Cisco ASA WebVPN Traversal\"; content:\"+CSCOE+/\"; http_uri; sid:21002700; rev:1;)",
+      "url": "https://rulezet.org/rules/8f1c-suri-003" }
+  ]
+}

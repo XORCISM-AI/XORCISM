@@ -13,6 +13,7 @@
 import { randomUUID } from "crypto";
 import { allocId, getDb, createNotification } from "./db";
 import { emitLoopEvent } from "./croc";
+import { recordAiActivity } from "./aiskills";
 import { mobilizeToCtem, topOpenItemKeys } from "./threatdebt";
 import { dispatchSoar, soarDashboard, runSoarPlaybook } from "./soar";
 
@@ -77,6 +78,7 @@ export function runOrchestrator(): { scanned: number; proposed: number } {
      WHERE LoopEventID > ? AND LOWER(COALESCE(Severity,'')) IN ('high','critical') ORDER BY LoopEventID LIMIT 500`
   ).all(cursor) as any[];
   let proposed = 0, maxId = cursor;
+  const recs: { tenant: number | null; copilot: string; title: string; eventType: string }[] = [];
   const ins = db.prepare(
     `INSERT INTO CROCACTION (ActionID, ActionGUID, LoopEventID, EventType, Severity, Title, Copilot, Verdict,
        RecommendedAction, Rationale, Confidence, Status, AssetID, TenantID, CreatedDate)
@@ -90,11 +92,14 @@ export function runOrchestrator(): { scanned: number; proposed: number } {
       const p = propose(ev);
       const id = allocId(db, "CROCACTION", "ActionID");
       ins.run(id, randomUUID(), ev.LoopEventID, ev.EventType, ev.Severity, p.title.slice(0, 300), p.copilot, p.verdict, p.action, p.rationale, p.confidence, ev.AssetID ?? null, ev.TenantID ?? null, now());
+      recs.push({ tenant: ev.TenantID ?? null, copilot: p.copilot, title: p.title, eventType: ev.EventType });
       proposed++;
     }
     db.prepare("INSERT INTO ORCHCURSOR (Singleton, LastLoopEventID) VALUES (1, ?) ON CONFLICT(Singleton) DO UPDATE SET LastLoopEventID=excluded.LastLoopEventID").run(maxId);
   });
   tx();
+  // AI provenance: log each proposal (delegate → copilot) to the AI activity log (best-effort).
+  for (const r of recs) recordAiActivity(r.tenant, { actor: "croc-orchestrator", action: "orchestrator.propose", entityType: "LOOPEVENT", entityKey: r.eventType, summary: `Delegate → ${r.copilot}: ${r.title}`.slice(0, 580), outcome: "proposed" });
   return { scanned: events.length, proposed };
 }
 
@@ -143,6 +148,7 @@ function executeApprovedAction(a: any, tenant: number | null): string {
     try { const ex = mobilizeToCtem(tenant, { title: String(a.Title || "AOI paydown"), severity: a.Severity, ledgerKeys: topOpenItemKeys(tenant, 5) }); if (ex) parts.push(`tracked in CTEM (exposure #${ex.id})`); } catch { /* */ }
   }
   try { emitLoopEvent({ type: "croc.action_executed", source: "orchestrator", summary: `Executed: ${String(a.RecommendedAction).slice(0, 180)}`, severity: "info", tenant, assetId: a.AssetID ?? undefined }); parts.push("loop closed"); } catch { /* */ }
+  try { recordAiActivity(tenant, { actor: String(a.Copilot || "croc-orchestrator"), action: "orchestrator.execute", entityType: "CROCACTION", entityKey: String(a.ActionID), summary: `Executed approved action: ${String(a.Title || "").slice(0, 200)}`, outcome: "executed" }); } catch { /* */ }
   return parts.join("; ");
 }
 

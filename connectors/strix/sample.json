@@ -1,0 +1,10 @@
+{
+  "target": "https://shop.example.com",
+  "findings": [
+    { "id": "f-001", "title": "IDOR on /api/orders/{id} exposes other users' orders", "type": "Broken Access Control (IDOR)", "severity": "high", "validated": true, "url": "https://shop.example.com/api/orders/1043", "description": "Sequential order IDs are not authorization-checked; CWE-639.", "poc": "Authenticated as user A, GET /api/orders/1042 returns user B's order.", "remediation": "Enforce per-object ownership checks on the order endpoint." },
+    { "id": "f-002", "title": "SQL injection in product search", "type": "Injection", "severity": "critical", "validated": true, "url": "https://shop.example.com/search?q=", "description": "Error-based SQLi via the q parameter; CWE-89.", "poc": "q=' UNION SELECT version()-- returns the DB version.", "remediation": "Use parameterized queries." },
+    { "id": "f-003", "title": "SSRF in image-import feature", "type": "Server-Side Request Forgery", "severity": "high", "validated": true, "url": "https://shop.example.com/admin/import?url=", "description": "Server fetches an attacker-supplied URL; CWE-918.", "poc": "url=http://169.254.169.254/latest/meta-data/ returns cloud metadata." },
+    { "id": "f-004", "title": "Reflected XSS in error page", "type": "Cross-Site Scripting", "severity": "medium", "validated": true, "url": "https://shop.example.com/error?msg=", "description": "msg parameter reflected unescaped; CWE-79.", "poc": "msg=<script>alert(1)</script> executes." },
+    { "id": "f-005", "title": "JWT 'none' algorithm accepted", "type": "Authentication", "severity": "high", "validated": true, "url": "https://shop.example.com/api/auth", "description": "The API accepts unsigned JWTs (alg=none); CWE-347.", "poc": "Forged token with alg=none grants admin." }
+  ]
+}

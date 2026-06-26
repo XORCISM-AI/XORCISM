@@ -1,0 +1,6 @@
+{
+  "data": [
+    { "id": "1466", "threatInfo": { "threatId": "1466", "threatName": "Trojan.GenericKD", "classification": "Malware", "confidenceLevel": "malicious", "mitigationStatus": "mitigated", "mitreTactic": "Execution", "createdAt": "2026-06-26T11:00:00Z" }, "agentRealtimeInfo": { "agentComputerName": "DEV-WS-15" } },
+    { "id": "1467", "threatInfo": { "threatId": "1467", "threatName": "Suspicious Script Behavior", "classification": "Suspicious", "confidenceLevel": "suspicious", "mitigationStatus": "active", "mitreTactic": "Defense Evasion", "createdAt": "2026-06-26T11:18:00Z" }, "agentRealtimeInfo": { "agentComputerName": "OPS-SRV-02" } }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "cortex-xdr",
+  "name": "Palo Alto Cortex XDR — EDR/XDR alerts",
+  "type": "import",
+  "category": "Endpoint Security",
+  "description": "Imports Palo Alto Cortex XDR alerts (XDR API get_alerts export — alerts under reply.alerts.data) into XORCISM as security alerts (XINCIDENT.ALERT), with the impacted endpoint linked as an ASSET and the MITRE tactic/technique kept as the classification. Severity is normalized from low/medium/high/critical. Idempotent by source+alert id. Offline: pass `file` = a Cortex XDR alerts JSON, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:cortex-xdr",
+  "run": "run.py",
+  "mapping": "cortex-xdr",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Cortex XDR alerts JSON export (get_alerts) to parse" }
+  ]
+}

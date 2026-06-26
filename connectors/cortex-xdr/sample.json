@@ -1,0 +1,11 @@
+{
+  "reply": {
+    "alerts": {
+      "total_count": 2,
+      "data": [
+        { "alert_id": "551", "name": "Behavioral Threat Detected", "severity": "high", "status": "new", "mitre_tactic_id_and_name": "TA0002 - Execution", "mitre_technique_id_and_name": "T1059 - Command and Scripting Interpreter", "host_name": "FACTORY-PLC-GW", "description": "Suspicious process chain blocked by the agent.", "detection_timestamp": 1782900000000 },
+        { "alert_id": "552", "name": "Port Scan from Endpoint", "severity": "medium", "status": "under_investigation", "mitre_tactic_id_and_name": "TA0007 - Discovery", "mitre_technique_id_and_name": "T1046 - Network Service Discovery", "host_name": "ENG-WS-41", "description": "Outbound scanning detected from the host.", "detection_timestamp": 1782901200000 }
+      ]
+    }
+  }
+}

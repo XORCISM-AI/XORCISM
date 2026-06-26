@@ -4129,6 +4129,32 @@ export function getA3mMatrix(): A3mMatrix {
  *  - SIGHTING table (observation: "X seen by/at Y", counter + time window).
  * Idempotent (ALTER ADD COLUMN if absent; CREATE TABLE IF NOT EXISTS). Called at boot.
  */
+/** Admiralty / NATO source-grading scales (STANAG 2511): source reliability A-F, info credibility 1-6. */
+export const ADMIRALTY_RELIABILITY: Record<string, string> = {
+  A: "A — Completely reliable", B: "B — Usually reliable", C: "C — Fairly reliable",
+  D: "D — Not usually reliable", E: "E — Unreliable", F: "F — Reliability cannot be judged",
+};
+export const ADMIRALTY_CREDIBILITY: Record<string, string> = {
+  "1": "1 — Confirmed", "2": "2 — Probably true", "3": "3 — Possibly true",
+  "4": "4 — Doubtful", "5": "5 — Improbable", "6": "6 — Cannot be judged",
+};
+
+/** Combine an Admiralty source-reliability (A-F) and info-credibility (1-6) into a grade ("B2") and a
+ *  0-100 confidence. F / 6 ("cannot be judged") yield no confidence signal. */
+export function admiraltyGrade(reliability?: string | null, credibility?: string | null): { grade: string; confidence: number | null; label: string } {
+  const r = String(reliability || "").trim().toUpperCase().slice(0, 1);
+  const c = String(credibility || "").trim().slice(0, 1);
+  const rOk = r.length === 1 && "ABCDEF".includes(r), cOk = c.length === 1 && "123456".includes(c);
+  if (!rOk && !cOk) return { grade: "", confidence: null, label: "Ungraded" };
+  const grade = `${rOk ? r : "?"}${cOk ? c : "?"}`;
+  // A..E -> 5..1, F -> 0 (no judgement); 1..5 -> 5..1, 6 -> 0
+  const rScore = r === "F" ? null : rOk ? 5 - "ABCDE".indexOf(r) : null;
+  const cScore = c === "6" ? null : cOk ? 6 - Number(c) : null;
+  const parts = [rScore, cScore].filter((x): x is number => x !== null);
+  const confidence = parts.length ? Math.round((100 * parts.reduce((a, b) => a + b, 0)) / (5 * parts.length)) : null;
+  return { grade, confidence, label: `${ADMIRALTY_RELIABILITY[r] || "?"} / ${ADMIRALTY_CREDIBILITY[c] || "?"}` };
+}
+
 export function ensureOpenctiColumns(): void {
   const db = getDb("XTHREAT");
   const tableExists = (t: string): boolean =>
@@ -4163,6 +4189,11 @@ export function ensureOpenctiColumns(): void {
   for (const t of ["THREAT", "THREATACTOR", "THREATCAMPAIGN", "ATTACKGROUP", "ATTACKSOFTWARE",
     "ATTACKTECHNIQUE", "ATTACKMITIGATION", "HUNT", "HYPOTHESIS", "IOC", "THREATREPORT"]) {
     addCols(t, { WorkflowStatus: "TEXT" });
+  }
+
+  // Admiralty / NATO source-reliability grading on intel exchanges & reports (source A-F x credibility 1-6).
+  for (const t of ["INTELEXCHANGE", "THREATREPORT", "THREATACTOR", "THREATCAMPAIGN"]) {
+    addCols(t, { SourceReliability: "TEXT", InfoCredibility: "TEXT" });
   }
 
   db.exec(`
@@ -5057,7 +5088,14 @@ export function ensureGrcColumns(): void {
   addCols("XCOMPLIANCE", "AUDITFINDING", {
     WorkflowStatus: "TEXT", Severity: "TEXT", RemediationPlan: "TEXT",
     RemediationOwnerPersonID: "INTEGER", DueDate: "DATE",
+    // which assessment dimension produced this finding (design / documentation / operating effectiveness).
+    AssessmentType: "TEXT",
   });
+  // Audit assessment dimension (ISAE 3000 / SOC 2): an audit can assess control DESIGN (is the control
+  // designed to meet the objective), DOCUMENTATION (do the policy/procedure artefacts exist & are
+  // adequate), and/or OPERATING EFFECTIVENESS (does it operate over a period). Default 'Operating
+  // Effectiveness' is applied lazily by the compliance module, not here, to leave existing audits as-is.
+  addCols("XCOMPLIANCE", "AUDIT", { AssessmentType: "TEXT" });
   // Policy lifecycle (GRC) + document/management-system metadata (ISO 42001 / 27001 …).
   addCols("XORCISM", "POLICY", {
     Status: "TEXT", WorkflowStatus: "TEXT", Version: "TEXT", PolicyReference: "TEXT",
@@ -5068,7 +5106,12 @@ export function ensureGrcColumns(): void {
     Language: "TEXT", Scope: "TEXT", PolicyContent: "TEXT", ApprovedDate: "DATE",
     // publication + user-acceptance: when a policy was published and whether users must acknowledge it.
     PublishedDate: "DATE", RequiresAcknowledgement: "INTEGER",
+    // ISO documentation pyramid: a governed document is a Policy / Standard / Procedure / Guideline,
+    // and a child document implements a parent (Procedure → Standard → Policy). DocumentType defaults
+    // to 'Policy' for existing rows so the policy register is unchanged.
+    DocumentType: "TEXT", ParentPolicyID: "INTEGER",
   });
+  try { getDb("XORCISM").prepare("UPDATE POLICY SET DocumentType='Policy' WHERE DocumentType IS NULL OR DocumentType=''").run(); } catch { /* best-effort default */ }
   // Document register (records / evidence) lifecycle — mirror the policy fields so the
   // governance view can treat DOCUMENT as a controlled-document register.
   addCols("XCOMPLIANCE", "DOCUMENT", {

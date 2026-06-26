@@ -15,6 +15,7 @@ export interface AuditRow {
   id: number;
   name: string;
   type: string;
+  assessmentType: string;   // Design / Documentation / Operating Effectiveness / Combined / Readiness
   status: string;
   date: string | null;
   completed: boolean;
@@ -45,13 +46,14 @@ export interface ComplianceInventory {
     audits: number; inProgress: number; planned: number; completed: number; completionRate: number | null;
     findings: number; openFindings: number; highOpen: number; overdue: number; unassigned: number;
     policiesReview: number;
-    bySeverity: Record<string, number>; byStatus: Record<string, number>; byType: Record<string, number>;
+    designAssessments: number; documentationAssessments: number;
+    bySeverity: Record<string, number>; byStatus: Record<string, number>; byType: Record<string, number>; byAssessmentType: Record<string, number>;
   };
 }
 
 const EMPTY: ComplianceInventory = {
   rows: [], findings: [],
-  summary: { audits: 0, inProgress: 0, planned: 0, completed: 0, completionRate: null, findings: 0, openFindings: 0, highOpen: 0, overdue: 0, unassigned: 0, policiesReview: 0, bySeverity: {}, byStatus: {}, byType: {} },
+  summary: { audits: 0, inProgress: 0, planned: 0, completed: 0, completionRate: null, findings: 0, openFindings: 0, highOpen: 0, overdue: 0, unassigned: 0, policiesReview: 0, designAssessments: 0, documentationAssessments: 0, bySeverity: {}, byStatus: {}, byType: {}, byAssessmentType: {} },
 };
 
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -147,6 +149,7 @@ export function complianceInventory(tenant: number | null): ComplianceInventory 
     for (const w of worklist) if (w.kind === "finding" && w.audit === auditName.get(id)) score += SEV_WEIGHT[w.severity.toLowerCase()] ?? 3;
     return {
       id, name: auditName.get(id)!, type: String(a.AuditType ?? "").trim() || "—", status,
+      assessmentType: String(a.AssessmentType ?? "").trim() || "Operating Effectiveness",
       date: a.AuditDate ? String(a.AuditDate).slice(0, 10) : null, completed,
       findings: agg.total, open: agg.open, high: agg.high, overdue: agg.overdue, unassigned: agg.unassigned,
       score: Math.min(100, score),
@@ -164,7 +167,8 @@ export function complianceInventory(tenant: number | null): ComplianceInventory 
   for (const w of worklist) if (w.kind === "finding") bySeverity[w.severity] = (bySeverity[w.severity] || 0) + 1;
   const byStatus: Record<string, number> = {};
   const byType: Record<string, number> = {};
-  for (const r of rows) { byStatus[r.status] = (byStatus[r.status] || 0) + 1; byType[r.type] = (byType[r.type] || 0) + 1; }
+  const byAssessmentType: Record<string, number> = {};
+  for (const r of rows) { byStatus[r.status] = (byStatus[r.status] || 0) + 1; byType[r.type] = (byType[r.type] || 0) + 1; byAssessmentType[r.assessmentType] = (byAssessmentType[r.assessmentType] || 0) + 1; }
   const completed = rows.filter((r) => r.completed).length;
 
   return {
@@ -181,7 +185,9 @@ export function complianceInventory(tenant: number | null): ComplianceInventory 
       overdue: worklist.filter((w) => w.overdue && w.kind === "finding").length,
       unassigned: worklist.filter((w) => w.unassigned).length,
       policiesReview,
-      bySeverity, byStatus, byType,
+      designAssessments: byAssessmentType["Design Assessment"] || 0,
+      documentationAssessments: byAssessmentType["Documentation Assessment"] || 0,
+      bySeverity, byStatus, byType, byAssessmentType,
     },
   };
 }
@@ -194,7 +200,7 @@ export function complianceInventory(tenant: number | null): ComplianceInventory 
  */
 export function createAudit(
   p: { name: string; type?: string; category?: string; status?: string; auditor?: string;
-       scope?: string; description?: string; date?: string; closureDate?: string },
+       scope?: string; description?: string; date?: string; closureDate?: string; assessmentType?: string },
   tenant: number | null,
 ): { id: number } {
   const db = getDb("XCOMPLIANCE");
@@ -205,6 +211,7 @@ export function createAudit(
     AuditGUID: randomUUID(),
     AuditName: (p.name || "Untitled audit").slice(0, 300),
     AuditType: p.type ? String(p.type).slice(0, 80) : null,
+    AssessmentType: p.assessmentType ? String(p.assessmentType).slice(0, 80) : "Operating Effectiveness",
     AuditCategory: p.category ? String(p.category).slice(0, 120) : null,
     AuditStatus: (p.status || "Planned").slice(0, 60),
     AuditorName: p.auditor ? String(p.auditor).slice(0, 200) : null,

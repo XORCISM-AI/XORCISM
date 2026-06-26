@@ -1,0 +1,7 @@
+{
+  "resources": [
+    { "detection_id": "ldt:abc:1001", "display_name": "Credential Theft via LSASS Access", "severity": 90, "status": "new", "tactic": "Credential Access", "technique": "OS Credential Dumping", "device": { "hostname": "FIN-WS-07" }, "description": "Suspicious access to lsass.exe memory.", "created_timestamp": "2026-06-26T09:10:00Z" },
+    { "detection_id": "ldt:abc:1002", "display_name": "Malicious PowerShell Execution", "severity": 70, "status": "in_progress", "tactic": "Execution", "technique": "Command and Scripting Interpreter", "device": { "hostname": "HR-LT-12" }, "description": "Encoded PowerShell downloading a payload.", "created_timestamp": "2026-06-26T09:22:00Z" },
+    { "detection_id": "ldt:abc:1003", "display_name": "Known Malware Quarantined", "severity": 40, "status": "closed", "tactic": "Defense Evasion", "technique": "Masquerading", "device": { "hostname": "ENG-WS-03" }, "description": "PUP/Adware detected and quarantined.", "created_timestamp": "2026-06-26T08:05:00Z" }
+  ]
+}

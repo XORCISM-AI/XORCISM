@@ -1,0 +1,17 @@
+{
+  "id": "hunt-io",
+  "name": "Hunt.io — C2 & malicious-infrastructure CTI",
+  "type": "import",
+  "category": "Threat Intelligence",
+  "description": "Enriches your CTI from the Hunt.io API (api.hunt.io) — internet-wide scanning for malicious infrastructure: command-and-control (C2) servers, malware, SSL certificates, JARM/JA4 hashes and open directories. Two modes: pass `ip` to enrich a single IP (GET /v1/enrich/ip/{ip}), or run with no `ip` to pull the active-C2 feed (GET /v1/c2s). Each result becomes a XTHREAT.INTELEXCHANGE record (via runner.import_threat_intel, idempotent), with the malware family, AS/country, certificate and JARM/JA4 fingerprints and the C2 ATT&CK technique (T1071). API key via env HUNTIO_API_KEY (header token: ak_...). Offline: pass `file` = a Hunt.io JSON response, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:hunt-io",
+  "run": "run.py",
+  "mapping": "hunt-io",
+  "secrets": ["HUNTIO_API_KEY"],
+  "parameters": [
+    { "name": "ip", "type": "string", "required": false, "pattern": "^[0-9a-fA-F:.]+$", "help": "An IP address to enrich (GET /v1/enrich/ip/{ip}). Omit to pull the active-C2 feed." },
+    { "name": "limit", "type": "int", "required": false, "default": 200, "min": 1, "max": 1000, "help": "Max C2 records to import from the feed" },
+    { "name": "file", "type": "file", "required": false, "help": "A Hunt.io JSON response to parse offline (instead of calling the API)" }
+  ]
+}

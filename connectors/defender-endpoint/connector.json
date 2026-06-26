@@ -1,0 +1,14 @@
+{
+  "id": "defender-endpoint",
+  "name": "Microsoft Defender for Endpoint — EDR alerts",
+  "type": "import",
+  "category": "Endpoint Security",
+  "description": "Imports Microsoft Defender for Endpoint (MDE) alerts (Defender API / Microsoft Graph security alerts export) into XORCISM as security alerts (XINCIDENT.ALERT), with the impacted device linked as an ASSET and the ATT&CK category/technique kept as the classification. Severity is normalized from Informational/Low/Medium/High. Idempotent by source+alert id. Complements the Defender XDR incident alignment already in XORCISM. Offline: pass `file` = an MDE alerts JSON, or run with the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:defender-endpoint",
+  "run": "run.py",
+  "mapping": "defender-endpoint",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Microsoft Defender for Endpoint alerts JSON export to parse" }
+  ]
+}

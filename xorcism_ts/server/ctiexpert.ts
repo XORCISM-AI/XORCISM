@@ -48,6 +48,7 @@ export const TECHNIQUES: Technique[] = [
   { id: "link", name: "Link subjects / entity resolution", phase: "Enrich", kinds: KINDS },
   { id: "graph", name: "Relationship graph", phase: "Enrich", kinds: KINDS, connector: "osint-graph" },
   { id: "threat-check", name: "IOC reputation (CTI/threat-feed)", phase: "Enrich", kinds: ["domain", "ip", "email"], connector: "misp" },
+  { id: "huntio", name: "C2 & malicious-infrastructure enrichment (Hunt.io)", phase: "Enrich", kinds: ["ip", "domain"], connector: "hunt-io" },
   // ── Assess ──
   { id: "exposure", name: "Exposure risk scoring (0–100)", phase: "Assess", kinds: KINDS },
   { id: "threat-model", name: "Threat modeling", phase: "Assess", kinds: KINDS },

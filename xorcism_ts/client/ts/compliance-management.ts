@@ -31,7 +31,7 @@ function rowHtml(r: AuditRow): string {
     ? `<span class="pill p-open">${fmt("cm.open", { n: r.open })}</span>${r.high ? `<span class="pill p-high">${fmt("cm.high", { n: r.high })}</span>` : ""}${r.overdue ? `<span class="tag">${fmt("cm.overdueN", { n: r.overdue })}</span>` : ""}`
     : `<span class="pill p-clean">${t("cm.clean")}</span>`;
   return `<tr>
-    <td><div class="aname">${esc(r.name)}</div><div class="muted" style="font-size:11px">${esc(r.type)}${r.date ? ` · ${esc(r.date)}` : ""}</div></td>
+    <td><div class="aname">${esc(r.name)}</div><div class="muted" style="font-size:11px">${esc(r.type)}${r.assessmentType && r.assessmentType !== "Operating Effectiveness" ? ` · <span style="color:#c4b5fd">${esc(r.assessmentType)}</span>` : ""}${r.date ? ` · ${esc(r.date)}` : ""}</div></td>
     <td><span class="st ${stClass(r.status)}">${esc(r.status)}</span></td>
     <td>${r.findings}</td>
     <td>${posture}</td>
@@ -223,7 +223,7 @@ async function createAudit(): Promise<void> {
   btn.disabled = true; err.textContent = t("cm.creating");
   try {
     const body = {
-      name, type: v("cm-f-type"), category: v("cm-f-category").trim() || undefined, status: v("cm-f-status"),
+      name, type: v("cm-f-type"), assessmentType: v("cm-f-assess"), category: v("cm-f-category").trim() || undefined, status: v("cm-f-status"),
       auditor: v("cm-f-auditor").trim() || undefined, scope: v("cm-f-scope").trim() || undefined,
       description: v("cm-f-desc").trim() || undefined, date: v("cm-f-date") || undefined,
       closureDate: v("cm-f-closure") || undefined,
