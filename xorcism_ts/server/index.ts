@@ -80,7 +80,7 @@ import boardreportRouter from "./routes/boardreport";
 import privacyRouter from "./routes/privacy";
 import { ensurePrivacyTables, seedPrivacy } from "./privacy";
 import soarCockpitRouter from "./routes/soar";
-import { ensureSoarOpsTables, seedSoarOps } from "./soar";
+import { ensureSoarOpsTables, seedSoarOps, seedOdessaPlaybook } from "./soar";
 import { backfillPolicyVersions } from "./policies";
 import endpointQueryRouter from "./routes/endpointquery";
 import { ensureEndpointQueryTables, seedEndpointQueryDemo } from "./endpointquery";
@@ -127,6 +127,8 @@ import fairtefRouter from "./routes/fairtef";
 import devsecopsRouter from "./routes/devsecops";
 import riskRegisterRouter from "./routes/riskregister";
 import pqcmmRouter from "./routes/pqcmm";
+import ess8Router from "./routes/ess8";
+import { ensureEss8Tables, seedEss8Demo } from "./ess8";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -343,6 +345,7 @@ app.use("/api", fairtefRouter); // FAIR-TEF: threat/loss event frequency estimat
 app.use("/api", devsecopsRouter); // DevSecOps operations: pipeline security scans coverage + gates + posture
 app.use("/api", riskRegisterRouter); // Risk Register: inherent→residual posture + treatment worklist (CRQ/FAIR ALE)
 app.use("/api", pqcmmRouter); // PQCMM: post-quantum-crypto maturity assessment (quantum-readiness posture)
+app.use("/api", ess8Router); // Essential Eight: ASD maturity-model assessment (backed by the ACSC ISM import)
 app.use("/api", threatDebtRouter); // Adversary Opportunity Index (AOI): path-organized "threat debt" top-line + STOCK/FLOW
 app.use("/api", insuranceRouter); // Cyber Insurance Readiness: insurer control checklist mapped to live signals
 app.use("/api", aiDetectRouter); // AI runtime anomaly detection: usage telemetry → extraction/jailbreak/drift
@@ -690,6 +693,9 @@ app.get("/risk-register", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/pqcmm", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "pqcmm.html"));
 });
+app.get("/essential-eight", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "essential-eight.html"));
+});
 app.get("/adversary-opportunity", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "adversary-opportunity.html"));
 });
@@ -847,6 +853,9 @@ try { seedScaDemo(3); } catch { /* demo only */ } // SCA demo (tenant 3): a repr
 try { seedAiSkillsDemo(3); } catch { /* demo only */ } // AI Operations demo (tenant 3): 6 skills/prompts mirroring real copilots + sample activity
 try { seedSlsaDemo(3); } catch { /* demo only */ } // SLSA demo (tenant 3): 4 artifacts at varying build-integrity levels
 try { seedTprmDemo(3); } catch { /* demo only */ } // TPRM demo (tenant 3): 4 vendors with tiers, posture, conformance, findings
+try { seedOdessaPlaybook(3); } catch { /* idempotent */ } // ODESSA AI-IR Loop: 6-stage adversarial-AI incident-response SOAR playbook (tenant 3)
+try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
+try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store
 seedFeaturePageGrants([...FEATURE_PAGE_PATHS]); // full RBAC: per-boot top-up so base roles keep access to existing + newly-added feature pages
 ensureStixObjectStore(); // Lossless STIX retention: RawJson cols on OBSERVABLE/IOC/INTELEXCHANGE + STIXOBJECT + FTS5 index

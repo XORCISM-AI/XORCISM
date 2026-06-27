@@ -43,12 +43,14 @@ export const TECHNIQUES: Technique[] = [
   { id: "x-osint", name: "X-OSINT all-in-one (phone/email/subdomain)", phase: "Acquire", kinds: ["phone", "email", "domain", "username"], connector: "x-osint" },
   { id: "vin", name: "VIN / vehicle-identification OSINT", phase: "Acquire", kinds: ["person", "org"], connector: "x-osint" },
   { id: "email-from-name", name: "Email discovery from a name", phase: "Acquire", kinds: ["person", "org"], connector: "x-osint" },
+  { id: "drp", name: "Digital Risk Protection sweep (NADAR-CTI, 8 OSINT sources)", phase: "Acquire", kinds: ["domain", "org"], connector: "nadar-cti" },
   // ── Enrich ──
   { id: "crossref", name: "Cross-reference & pivot", phase: "Enrich", kinds: KINDS },
   { id: "link", name: "Link subjects / entity resolution", phase: "Enrich", kinds: KINDS },
   { id: "graph", name: "Relationship graph", phase: "Enrich", kinds: KINDS, connector: "osint-graph" },
   { id: "threat-check", name: "IOC reputation (CTI/threat-feed)", phase: "Enrich", kinds: ["domain", "ip", "email"], connector: "misp" },
   { id: "huntio", name: "C2 & malicious-infrastructure enrichment (Hunt.io)", phase: "Enrich", kinds: ["ip", "domain"], connector: "hunt-io" },
+  { id: "leak-monitor", name: "Credential-leak, breach & ransomware-mention monitoring", phase: "Enrich", kinds: ["domain", "org", "email"], connector: "nadar-cti" },
   // ── Assess ──
   { id: "exposure", name: "Exposure risk scoring (0–100)", phase: "Assess", kinds: KINDS },
   { id: "threat-model", name: "Threat modeling", phase: "Assess", kinds: KINDS },

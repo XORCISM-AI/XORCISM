@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Ask the Fleet</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="eq.pageTitle">XORCISM — Ask the Fleet</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1240px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
@@ -28,25 +28,25 @@
   .p-ok{background:#14532d;color:#bbf7d0}.p-asking{background:#78350f;color:#fcd34d}.p-none{background:#1e2133;color:#94a3b8}
   .cat{font-size:10px;border-radius:5px;padding:1px 7px;background:#1e2440;color:#a5b4fc}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/agents">&#129302; Agents</a><a href="/asset-management">&#128187; Assets</a><span class="spacer"></span><span class="title">&#128225; Ask the Fleet</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/agents" data-i18n="eq.navAgents">&#129302; Agents</a><a href="/asset-management" data-i18n="eq.navAssets">&#128187; Assets</a><span class="spacer"></span><span class="title" data-i18n="eq.navTitle">&#128225; Ask the Fleet</span></div>
 <div class="mw">
-  <h1>Ask the Fleet — real-time endpoint query</h1>
-  <div class="sub">Ask a question of every endpoint and get answers back in seconds, aggregated into an
-    <b>answer grid</b> (distinct value &times; number of endpoints). Questions are dispatched to the online XOR agent
-    fleet as live <b>sensors</b> and answered at the next check-in — the same model that made endpoint querying famous.</div>
+  <h1 data-i18n="eq.h1">Ask the Fleet — real-time endpoint query</h1>
+  <div class="sub" data-i18n="eq.sub">Ask a question of every endpoint and get answers back in seconds, aggregated into an
+    answer grid (distinct value × number of endpoints). Questions are dispatched to the online XOR agent
+    fleet as live sensors and answered at the next check-in — the same model that made endpoint querying famous.</div>
   <div id="cards" class="cards"></div>
   <div class="ask">
     <div class="ask-row">
-      <span class="muted">Get</span>
+      <span class="muted" data-i18n="eq.get">Get</span>
       <select id="q-sensor"></select>
-      <input type="text" id="q-filter" placeholder="filter (optional) — e.g. chrome, 3389">
-      <span class="muted">from all machines</span>
-      <button class="btn-go" id="q-ask">Ask &#9889;</button>
+      <input type="text" id="q-filter" data-i18n-placeholder="eq.filterPh" placeholder="filter (optional) — e.g. chrome, 3389">
+      <span class="muted" data-i18n="eq.fromAll">from all machines</span>
+      <button class="btn-go" id="q-ask" data-i18n="eq.askBtn">Ask &#9889;</button>
     </div>
     <div class="sensehint" id="q-hint"></div>
   </div>
   <div id="result"></div>
-  <div class="sec">Recent questions</div>
-  <div class="panel" id="recent"><div class="muted" style="padding:8px 0">Loading…</div></div>
+  <div class="sec" data-i18n="eq.recentSec">Recent questions</div>
+  <div class="panel" id="recent"><div class="muted" style="padding:8px 0" data-i18n="eq.loading">Loading…</div></div>
 </div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/endpoint-query.js"></script></body></html>

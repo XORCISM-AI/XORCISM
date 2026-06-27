@@ -11,6 +11,85 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **MLASTG / MLASVS imported** — `import_mlasvs.py` parses the MLASTG repo (bb1nfosec/MLASTG, the
+  "MLSec Application Security Testing Guide" — the ML/AI analogue of OWASP MASVS/MASTG) into a
+  committed JSON snapshot and loads its **MLASVS verification standard (114 L1/L2 controls** across
+  Data, Model, LLM, Supply Chain, Pipeline, Infrastructure and Governance, each with its MITRE ATLAS
+  mapping + MLASTG test reference) into `XORCISM.CONTROL` under Vocabulary **"MLASVS (MLASTG)"**.
+  Re-parse a fresh checkout via `--repo`. Added to the framework picker + a MLASTG TOOL catalogue entry.
+  Idempotent; launched on prod.
+- **Databricks AI Security Framework (DASF) imported** — `import_dasf.py` parses the published DASF
+  workbook (Google Sheets export) into a committed JSON snapshot (`importers/data/dasf.json`) and loads
+  it into XORCISM across three homes: **73 mitigation controls → `XORCISM.CONTROL`** (Vocabulary
+  "Databricks DASF", with control type / AI-lifecycle step / mitigated-risk ids), **97 AI-lifecycle
+  risks → `XTHREAT.DASFRISK` + `DASFCOMPONENT`** (per-risk component, mitigating controls, and
+  deployment-model applicability — Predictive ML / RAG / Fine-tuned / Pre-trained / Foundational LLMs;
+  mirrors the SAIF importer), and **46 third-party AI-security tools → `XORCISM.TOOL`** (Category "AI
+  Security", with URLs). Re-runnable on a fresh export via `--xlsx`. "Databricks DASF" added to the
+  framework picker. Idempotent; launched on prod.
+- **ACSC Information Security Manual (ISM) imported + Essential Eight cockpit** — analyzed the ASD/ACSC
+  Information Security Manual (June 2026, 261 pp) and built `import_ism.py`, which parses it into a
+  committed JSON snapshot (`importers/data/ism_controls.json`) and loads **49 cyber security principles
+  (GOV/IDE/PRO/DET/RES/REC) + 1101 security controls** into `XORCISM.CONTROL` under the Vocabulary
+  **"ACSC ISM"** (with security-classification applicability NC/OS/P/S/TS and Essential Eight maturity
+  mapping in each description). Re-runnable on newer editions via `--pdf`. "ACSC ISM" added to the
+  framework picker. **New feature derived from it:** an **ASD Essential Eight Maturity** cockpit
+  (`/essential-eight`, `ess8.ts`) — the 8 mitigation strategies × maturity levels ML0–ML3, with a
+  per-strategy self-assessment, the official overall scoring (lowest level achieved across all eight),
+  a gap worklist, and each strategy linked live to its backing ISM Essential-8 controls (122 mapped).
+  Fully localized (FR + EN, `ess8.*`), landing card (`landing.ess8`), RBAC + boot demo seed (tenant 3).
+- **ODESSA AI-IR Loop support** — integrated [ODESSA](https://github.com/Nate-Carroll-Cyber/ODESSA-AI-IR-Loop)
+  ("Operate In Darkness, Illuminate Threats"), an open-source **AI Incident Response** framework, as a
+  runnable **SOAR playbook**. Added a new `ai.adversarial` SOAR trigger ("Adversarial AI signal (model
+  interaction)") and an idempotent **"ODESSA AI-IR Loop"** builtin playbook whose six ordered steps are
+  the mandatory ODESSA cycle — Observation → Detection → Escalation → Source validation → Safeguard →
+  Assessment — mapped to SOAR actions, plus a TOOL catalogue entry. Seeded at boot for tenant 3.
+- **SOAR, Ask the Fleet & DevSecOps cockpits fully localized (FR)** — `/soar` (`soar.*`),
+  `/endpoint-query` (`eq.*`) and `/devsecops` (`dso.*`) were English-only; all now use the i18n layer
+  (FR + EN).
+- **Seven framework / regulation importers** — created and launched importers populating
+  **XORCISM.CONTROL** (idempotent, delete-then-insert by VocabularyID): **ISO/IEC 27002:2022** (93
+  controls, titles only), **CIS Critical Security Controls v8** (18 controls / 153 safeguards, new
+  `CIS Controls v8` vocab), **DORA** (Reg. (EU) 2022/2554, 64 articles), **NIS2** (Dir. (EU)
+  2022/2555, 46 articles), **EU AI Act** (Reg. (EU) 2024/1689, 60 compliance-relevant articles),
+  **GDPR** (Reg. (EU) 2016/679, 52 articles — new `GDPR` vocab), and **SOC 2 2017 TSC** (61 Trust
+  Services Criteria — new `SOC2` vocab). 394 controls total; the empty ISO 27002 / DORA / NIS2 / EU
+  AI Act vocabulary stubs are now populated. Copyrighted standards carry identifiers + titles only.
+- **ANSSI Dalton — control-framework connector** — new `dalton` connector + TOOL entry parses the
+  ANSSI Dalton matrix CSV (github.com/ANSSI-FR/dalton — thématique / verticale / pallier measures)
+  into **XORCISM.CONTROL** under the Vocabulary "ANSSI Dalton", via a new reusable **`controls`
+  import path** in the connector runner (`import_controls`, find-or-create vocab + upsert by id).
+- **Six AI/GRC cockpits + their landing cards fully localized (FR)** — `/reg-calendar` (`rc.*`),
+  `/ai-systems` (`ais.*`), `/ai-redteam` (`art.*`), `/llm-pentest` (`llmp.*`), `/ai-skills`
+  (`aiops.*`) and `/agents` (`agt.*`) were English-only; all now use the i18n layer (FR + EN). The
+  landing **Regulatory Calendar / AI System Inventory / LLM Red-Team / LLM Pentest Methodology / AI
+  Operations / Ask the Fleet** cards are translated too (`landing.regcal`/`aisystems`/`airedteam`/
+  `llmpentest`/`aiops`/`endpointquery`).
+- **Wider ASSETVULNERABILITYREMEDIATION form** — the explorer form now opens as a wide modal (added
+  to `WIDE_MODAL_TABLES`).
+- **NADAR-CTI connector — Digital Risk Protection ingestion** — new `nadar-cti` connector +
+  [TOOL](https://github.com/AdnanTL/NADAR-CTI) entry. NADAR-CTI scans 8 public OSINT sources
+  (crt.sh, Ransomware.live, GitHub, URLScan, paste sites, LeakIX, Have I Been Pwned, Shodan) for an
+  org's external exposure; the connector parses its JSON export and fans the multi-category findings
+  into XORCISM in **one pass**: discovered subdomains/exposed hosts → **ASSET**, Shodan CVEs / LeakIX
+  misconfig / exposed admin panels → **VULNERABILITY + ASSETVULNERABILITY**, and ransomware mentions /
+  credential leaks / breaches → **CTI (XTHREAT.INTELEXCHANGE**, ATT&CK-tagged T1486 / T1078).
+  Breached emails and credential leaks also feed the attack-chain engine. Wired into **/cti-expert**
+  (two Digital-Risk-Protection techniques) and a new **"Digital Risk Protection sweep (NADAR-CTI)"**
+  attack-chain playbook (DRP sweep → nmap the discovered hosts → CyberSentinel AI triage). All imports
+  idempotent.
+- **Wider ASSETVULNERABILITYREMEDIATION & TICKET forms** — both explorer forms now open as wide modals
+  (added to `WIDE_MODAL_TABLES`), matching the other long forms.
+- **Content hub & Wi-Fi Pentest fully localized** — `/content` (export/import cards for attack
+  playbooks, Sigma bundle, OpenVEX) and `/wifi-pentest` (posture grades, per-network worklist,
+  ATT&CK coverage, recommended toolkit, scan/import/demo actions and the import modal) were
+  English-only; both now use the i18n layer (`chub.*` / `wifi.*`, FR + EN).
+- **Wider TICKET form** — the `XTICKET / TICKET` explorer form now opens as a wide modal (added to
+  `WIDE_MODAL_TABLES`), matching the other long forms.
+- **Tool Catalogue fully localized** — `/tools` (the GitHub-style star catalogue) was English-only;
+  its chrome, stat cards, search/sort toolbar, category pills, star tooltips, empty states and
+  "load more" pager now use the i18n layer (`tcat.*`, FR + EN). *(Prefix is `tcat.` — `tc.` is the
+  Trust Center.)*
 - **Malware Scan, AI Threat Advisor & ChatOps fully localized** — `/malware-scan` (engine status,
   verdict badges, summary cards, worklist/document/history tables, scan controls), `/ai-threat-advisor`
   (system-shape checkboxes, advisor cards, OWASP catalogue) and `/chatops` (console chrome, welcome

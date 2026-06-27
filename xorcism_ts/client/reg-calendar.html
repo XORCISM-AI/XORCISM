@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Regulatory Calendar</title>
+<title data-i18n="rc.pageTitle">XORCISM — Regulatory Calendar</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
@@ -32,48 +32,48 @@
 </style></head><body>
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
-  <a href="/">&#8592; Explorer</a>
-  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
-  <a href="/policy-management">&#128203; Policies</a>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management" data-i18n="rc.navCompliance">&#9878;&#65039; Compliance</a>
+  <a href="/policy-management" data-i18n="rc.navPolicies">&#128203; Policies</a>
   <span class="spacer"></span>
-  <span class="title">&#128197; Regulatory Calendar</span>
+  <span class="title" data-i18n="rc.navTitle">&#128197; Regulatory Calendar</span>
 </div>
 <div class="mw">
   <div style="display:flex;align-items:flex-start;gap:12px">
-    <h1 style="flex:1">Regulatory obligations &amp; compliance calendar</h1>
-    <button class="btn" id="r-new">+ Add obligation</button>
+    <h1 style="flex:1" data-i18n="rc.h1">Regulatory obligations &amp; compliance calendar</h1>
+    <button class="btn" id="r-new" data-i18n="rc.addBtn">+ Add obligation</button>
   </div>
-  <div class="sub">A deadline-driven view of the regulations that matter now — <b>EU AI Act</b>, <b>DORA</b>, <b>NIS2</b>,
+  <div class="sub" data-i18n="rc.sub">A deadline-driven view of the regulations that matter now — <b>EU AI Act</b>, <b>DORA</b>, <b>NIS2</b>,
     <b>CRA</b>, <b>GDPR</b> — each obligation mapped to its article, due date, owner, status, control and evidence.
     XORCISM ships a reference catalogue of the key EU milestones; add your own obligations and track status. Editing a
     reference item adopts it into your organisation.</div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
-  <div class="lic">Dates reflect official applicability/transposition dates as published; verify against the current
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="rc.loading">Loading…</div></div>
+  <div class="lic" data-i18n="rc.lic">Dates reflect official applicability/transposition dates as published; verify against the current
     consolidated texts and your competent authority's guidance. This is a planning aid, not legal advice.</div>
 </div>
 
 <div class="modal" id="m-modal">
   <div class="box">
-    <h3>Add a regulatory obligation</h3>
+    <h3 data-i18n="rc.mTitle">Add a regulatory obligation</h3>
     <div class="row2">
-      <div class="fld"><label>Regulation</label><input class="inp" id="f-reg" placeholder="e.g. EU AI Act"></div>
-      <div class="fld"><label>Reference</label><input class="inp" id="f-ref" placeholder="e.g. Art. 9"></div>
+      <div class="fld"><label data-i18n="rc.fReg">Regulation</label><input class="inp" id="f-reg" data-i18n-placeholder="rc.fRegPh" placeholder="e.g. EU AI Act"></div>
+      <div class="fld"><label data-i18n="rc.fRef">Reference</label><input class="inp" id="f-ref" data-i18n-placeholder="rc.fRefPh" placeholder="e.g. Art. 9"></div>
     </div>
-    <div class="fld"><label>Title</label><input class="inp" id="f-title" placeholder="What must be done"></div>
-    <div class="fld"><label>Description</label><textarea class="inp" id="f-desc" rows="2"></textarea></div>
+    <div class="fld"><label data-i18n="rc.fTitle">Title</label><input class="inp" id="f-title" data-i18n-placeholder="rc.fTitlePh" placeholder="What must be done"></div>
+    <div class="fld"><label data-i18n="rc.fDesc">Description</label><textarea class="inp" id="f-desc" rows="2"></textarea></div>
     <div class="row2">
-      <div class="fld"><label>Due date</label><input class="inp" id="f-due" type="date"></div>
-      <div class="fld"><label>Owner</label><input class="inp" id="f-owner" placeholder="Team / person"></div>
+      <div class="fld"><label data-i18n="rc.fDue">Due date</label><input class="inp" id="f-due" type="date"></div>
+      <div class="fld"><label data-i18n="rc.fOwner">Owner</label><input class="inp" id="f-owner" data-i18n-placeholder="rc.fOwnerPh" placeholder="Team / person"></div>
     </div>
     <div class="row2">
-      <div class="fld"><label>Priority</label><select class="inp" id="f-prio"><option>Critical</option><option selected>High</option><option>Medium</option><option>Low</option></select></div>
-      <div class="fld"><label>Status</label><select class="inp" id="f-status"><option>Not started</option><option>In progress</option><option>Met</option><option>N/A</option></select></div>
+      <div class="fld"><label data-i18n="rc.fPrio">Priority</label><select class="inp" id="f-prio"><option value="Critical" data-i18n="rc.prioCritical">Critical</option><option value="High" selected data-i18n="rc.prioHigh">High</option><option value="Medium" data-i18n="rc.prioMedium">Medium</option><option value="Low" data-i18n="rc.prioLow">Low</option></select></div>
+      <div class="fld"><label data-i18n="rc.fStatus">Status</label><select class="inp" id="f-status"><option value="Not started" data-i18n="rc.stNotStarted">Not started</option><option value="In progress" data-i18n="rc.stInProgress">In progress</option><option value="Met" data-i18n="rc.stMet">Met</option><option value="N/A" data-i18n="rc.stNA">N/A</option></select></div>
     </div>
-    <div class="fld"><label>Mapped control / framework</label><input class="inp" id="f-ctrl" placeholder="e.g. ISO 27001 A.5.7"></div>
+    <div class="fld"><label data-i18n="rc.fCtrl">Mapped control / framework</label><input class="inp" id="f-ctrl" data-i18n-placeholder="rc.fCtrlPh" placeholder="e.g. ISO 27001 A.5.7"></div>
     <div class="err" id="f-err"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-      <button class="btn-sm2" id="m-cancel">Cancel</button>
-      <button class="btn" id="m-save">Save obligation</button>
+      <button class="btn-sm2" id="m-cancel" data-i18n="rc.cancel">Cancel</button>
+      <button class="btn" id="m-save" data-i18n="rc.saveBtn">Save obligation</button>
     </div>
   </div>
 </div>

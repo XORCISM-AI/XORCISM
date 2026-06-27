@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="ess8.pageTitle">XORCISM — Essential Eight Maturity</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1280px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1040px;line-height:1.5}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .note{font-size:12px;color:#94a3b8;background:#13162a;border:1px solid #2d3250;border-left:3px solid #8b5cf6;border-radius:8px;padding:8px 12px;margin-bottom:12px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133;vertical-align:top}table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:12px;color:#a5b4fc;text-decoration:none}.mono:hover{text-decoration:underline}
+  .st{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+  .st .sth{display:flex;align-items:center;gap:8px}.st .snm{font-weight:700;color:#e7ebf3;font-size:14px}
+  .ml{font-size:10px;font-weight:800;border-radius:5px;padding:1px 7px;font-family:ui-monospace,monospace}
+  .strow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .strow label{font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:5px}
+  .dn,.inp{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px}
+  .inp:focus,.dn:focus{outline:none;border-color:#8b5cf6}
+  .btn{background:#8b5cf6;border:none;color:#fff;border-radius:7px;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer}.btn:hover{background:#a78bfa}
+  .btn-sm2{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:4px 10px;cursor:pointer}.btn-sm2:hover{border-color:#8b5cf6}
+  .lvchips{display:inline-flex;gap:5px;margin-left:auto}.lvchip{font-size:10px;color:#94a3b8;background:#0f1117;border:1px solid #2d3250;border-radius:5px;padding:1px 6px}
+  .ctrlbox{margin-top:4px}
+  .lic{font-size:11px;color:#64748b;margin-top:22px;border-top:1px solid #1e2133;padding-top:10px;line-height:1.5}
+</style></head><body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management" data-i18n="ess8.navCompliance">&#9878;&#65039; Compliance</a>
+  <a href="/frameworks" data-i18n="ess8.navFrameworks">&#128218; Frameworks</a>
+  <a href="/?db=XORCISM&amp;table=CONTROL&amp;filterCol=ControlName&amp;filterVal=ISM-" data-i18n="ess8.navIsm">&#128221; ISM controls</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="ess8.navTitle">&#128737;&#65039; Essential Eight</span>
+</div>
+<div class="mw">
+  <h1 data-i18n="ess8.h1">Essential Eight Maturity Model</h1>
+  <div class="sub" data-i18n="ess8.sub">The ASD Essential Eight — eight baseline mitigation strategies from the ACSC Information Security
+    Manual, each assessed at Maturity Level 0–3. Set your current and target maturity per strategy; the overall maturity is
+    the lowest level achieved across all eight. Each strategy links to its backing ISM controls (imported from the ISM).</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="ess8.loading">Loading…</div></div>
+  <div class="lic" data-i18n="ess8.lic">The Essential Eight Maturity Model is published by the Australian Signals Directorate (ASD).
+    Maturity should be assessed as the lowest level achieved across all eight strategies. This is a self-assessment aid — for
+    assurance, validate each control against the ISM and your evidence.</div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/essential-eight.js"></script>
+</body></html>

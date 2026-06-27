@@ -3,6 +3,10 @@
  * Browse/search/filter/sort XORCISM's TOOL catalogue and star tools; data from /api/tools,
  * toggling via POST /api/tools/:id/star. Star counts are global; the filled star = you starred it.
  */
+// NB: import as T — `t` is used as a param in this file (card(t: Tool)).
+import { initI18n, t as T } from "./i18n";
+const fmt = (key: string, vars: Record<string, string | number>): string =>
+  Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), T(key));
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
 
@@ -25,11 +29,11 @@ function card(t: Tool): string {
       <div class="nm"><a href="${href}"${tgt}>${esc(t.name)}</a></div>
       ${t.category ? `<div class="cat">${esc(t.category)}</div>` : ""}
     </div></div>
-    ${t.description ? `<div class="desc">${esc(t.description)}</div>` : '<div class="desc muted">No description.</div>'}
+    ${t.description ? `<div class="desc">${esc(t.description)}</div>` : `<div class="desc muted">${T("tcat.noDesc")}</div>`}
     <div class="foot">
-      <span class="star${t.starred ? " on" : ""}" data-id="${t.id}" role="button" tabindex="0" title="${t.starred ? "Unstar" : "Star"} this tool">
+      <span class="star${t.starred ? " on" : ""}" data-id="${t.id}" role="button" tabindex="0" title="${esc(t.starred ? T("tcat.unstarTitle") : T("tcat.starTitle"))}">
         <span class="ic">${t.starred ? "★" : "☆"}</span><span class="ct">${t.starCount}</span></span>
-      ${isHttp ? `<a class="ext" href="${esc(t.url!)}" target="_blank" rel="noopener noreferrer">repo ↗</a>` : ""}
+      ${isHttp ? `<a class="ext" href="${esc(t.url!)}" target="_blank" rel="noopener noreferrer">${T("tcat.repo")}</a>` : ""}
     </div>
   </div>`;
 }
@@ -38,28 +42,28 @@ function statCards(s: Catalogue["summary"]): string {
   const c = (lbl: string, val: string, color?: string) =>
     `<div class="tc-card"><div class="lbl">${esc(lbl)}</div><div class="val"${color ? ` style="color:${color}"` : ""}>${val}</div></div>`;
   return `<div class="tc-cards">
-    ${c("Tools in catalogue", String(s.tools))}
-    ${c("★ Your stars", String(s.starred), s.starred ? "#f5c518" : undefined)}
-    ${c("Categories", String(s.categories))}
+    ${c(T("tcat.cTools"), String(s.tools))}
+    ${c(T("tcat.cStars"), String(s.starred), s.starred ? "#f5c518" : undefined)}
+    ${c(T("tcat.cCats"), String(s.categories))}
   </div>`;
 }
 
 function catPills(cats: Catalogue["categories"]): string {
   const pill = (cat: string, label: string, count: string) =>
     `<span class="tc-cat${state.category === cat ? " on" : ""}" data-cat="${esc(cat)}">${esc(label)}${count ? `<span class="n">${count}</span>` : ""}</span>`;
-  return `<div class="tc-cats">${pill("", "All", "")}${cats.map((c) => pill(c.category, c.category, String(c.count))).join("")}</div>`;
+  return `<div class="tc-cats">${pill("", T("tcat.all"), "")}${cats.map((c) => pill(c.category, c.category, String(c.count))).join("")}</div>`;
 }
 
 function skeleton(): void {
   $("tc-body").innerHTML = `<div id="tc-stats"></div>
     <div class="tc-bar">
-      <input type="search" id="tc-q" placeholder="Search tools by name or description…" autocomplete="off">
+      <input type="search" id="tc-q" placeholder="${esc(T("tcat.searchPh"))}" autocomplete="off">
       <select id="tc-sort">
-        <option value="stars">Most starred</option>
-        <option value="name">Name (A–Z)</option>
-        <option value="recent">Newest</option>
+        <option value="stars">${T("tcat.sortStars")}</option>
+        <option value="name">${T("tcat.sortName")}</option>
+        <option value="recent">${T("tcat.sortRecent")}</option>
       </select>
-      <span class="tc-toggle" id="tc-starred"><span class="ic">★</span> Starred only</span>
+      <span class="tc-toggle" id="tc-starred"><span class="ic">★</span> ${T("tcat.starredOnly")}</span>
     </div>
     <div id="tc-cats"></div>
     <div class="tc-grid" id="tc-grid"></div>
@@ -131,18 +135,19 @@ async function load(reset: boolean): Promise<void> {
 
   const grid = $("tc-grid");
   const html = d.tools.map(card).join("");
-  if (reset) grid.innerHTML = d.tools.length ? html : `<div class="muted" style="padding:24px;grid-column:1/-1;text-align:center">No tools match${state.starred ? " — you haven't starred any yet" : ""}.</div>`;
+  if (reset) grid.innerHTML = d.tools.length ? html : `<div class="muted" style="padding:24px;grid-column:1/-1;text-align:center">${state.starred ? T("tcat.noneStarred") : T("tcat.noneMatch")}</div>`;
   else grid.insertAdjacentHTML("beforeend", html);
   state.loaded = reset ? d.tools.length : state.loaded + d.tools.length;
   state.offset += d.tools.length;
 
   $("tc-more").innerHTML = state.loaded < state.total
-    ? `<button id="tc-loadmore">Load more (${state.loaded} of ${state.total})</button>` : "";
+    ? `<button id="tc-loadmore">${fmt("tcat.loadMore", { n: state.loaded, total: state.total })}</button>` : "";
   const lm = document.getElementById("tc-loadmore");
   if (lm) lm.addEventListener("click", () => { (lm as HTMLButtonElement).disabled = true; void load(false); });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  initI18n();
   const sp = new URLSearchParams(location.search);
   if (sp.get("category")) state.category = sp.get("category")!;
   if (sp.get("q")) state.q = sp.get("q")!;

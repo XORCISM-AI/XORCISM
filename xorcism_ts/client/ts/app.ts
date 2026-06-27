@@ -222,7 +222,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -2460,7 +2460,7 @@ FK_COLUMNS["AUDITFINDING.RemediationOwnerPersonID"] = { db: "XORCISM", table: "P
 
 // ── Policy & document management metadata (ISO 42001 / 27001 / NIST AI RMF …) ──
 const DOC_LANGUAGES = ["en", "fr", "de", "es", "it", "nl", "pt", "ar"];
-const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27031:2011", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "NIST SP 800-53", "Secure Controls Framework (SCF)", "CSA CCM v4", "CSA AI Controls Matrix (AICM) v1.1", "OWASP ASVS 4.0.3", "PCI DSS v4.0", "ITMG IRCF v1.0", "CRI Profile v2.2", "EU AI Act", "DORA (EU 2022/2554)", "NIS2", "Référentiel Cyber France (ReCyF)", "SOC 2", "GDPR", "Data (Use and Access) Act 2025 (DUAA)", "CISA Zero Trust Maturity Model v2.0", "DoD Zero Trust", "HDS (Hébergeur de Données de Santé)", "TISAX (VDA-ISA)"];
+const DOC_FRAMEWORKS = ["ISO/IEC 42001:2023", "ISO/IEC 27001:2022", "ISO/IEC 27031:2011", "ISO/IEC 27701:2019", "NIST AI RMF 1.0", "NIST SP 800-53", "Secure Controls Framework (SCF)", "CSA CCM v4", "CSA AI Controls Matrix (AICM) v1.1", "OWASP ASVS 4.0.3", "PCI DSS v4.0", "ITMG IRCF v1.0", "CRI Profile v2.2", "EU AI Act", "DORA (EU 2022/2554)", "NIS2", "Référentiel Cyber France (ReCyF)", "SOC 2", "GDPR", "Data (Use and Access) Act 2025 (DUAA)", "CISA Zero Trust Maturity Model v2.0", "DoD Zero Trust", "HDS (Hébergeur de Données de Santé)", "TISAX (VDA-ISA)", "ACSC ISM", "ASD Essential Eight", "Databricks DASF", "MLASVS (MLASTG)"];
 const DOC_CLASSIFICATION = ["Public", "Internal", "Confidential", "Restricted"];
 const DOC_CATEGORIES = ["AI Management System", "Information Security", "Privacy", "Data Governance", "Risk Management", "Operations", "Human Resources"];
 const DOC_TYPES = ["Policy", "Procedure", "Standard", "Guideline", "Record", "Report", "Evidence", "Form", "Plan"];

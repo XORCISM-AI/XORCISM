@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — LLM Red-Team / AI-BAS</title>
+<title data-i18n="art.pageTitle">XORCISM — LLM Red-Team / AI-BAS</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
@@ -27,23 +27,23 @@
 </style></head><body>
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
-  <a href="/">&#8592; Explorer</a>
-  <a href="/ai-systems">&#129504; AI inventory</a>
-  <a href="/a3m">&#129302; AI Attack Matrix</a>
-  <a href="/emulation">&#127919; BAS</a>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/ai-systems" data-i18n="art.navInventory">&#129504; AI inventory</a>
+  <a href="/a3m" data-i18n="art.navA3m">&#129302; AI Attack Matrix</a>
+  <a href="/emulation" data-i18n="art.navBas">&#127919; BAS</a>
   <span class="spacer"></span>
-  <span class="title">&#129302; LLM Red-Team · AI-BAS</span>
+  <span class="title" data-i18n="art.navTitle">&#129302; LLM Red-Team · AI-BAS</span>
 </div>
 <div class="mw">
-  <h1>LLM red-team / AI-BAS</h1>
-  <div class="sub">The AI analogue of breach-and-attack simulation. Each registered <a href="/ai-systems">AI system</a> is
-    assessed against an <b>OWASP LLM Top 10</b> probe catalogue — prompt injection, sensitive-info disclosure, insecure
+  <h1 data-i18n="art.h1">LLM red-team / AI-BAS</h1>
+  <div class="sub" data-i18n="art.sub">The AI analogue of breach-and-attack simulation. Each registered AI system is
+    assessed against an OWASP LLM Top 10 probe catalogue — prompt injection, sensitive-info disclosure, insecure
     output handling, excessive agency, system-prompt leakage, misinformation, unbounded consumption. The offline
-    assessment grades whether the system's declared <b>guardrails</b> defend each category; import a real red-team run
-    (<span class="mono">garak</span> / <span class="mono">PyRIT</span> / <span class="mono">promptfoo</span>) to record actual outcomes.</div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+    assessment grades whether the system's declared guardrails defend each category; import a real red-team run
+    (garak / PyRIT / promptfoo) to record actual outcomes.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="art.loading">Loading…</div></div>
   <div id="rundetail"></div>
-  <div class="lic">Probe payloads are canonical, documented OWASP-LLM test cases for authorized testing of your OWN AI
+  <div class="lic" data-i18n="art.lic">Probe payloads are canonical, documented OWASP-LLM test cases for authorized testing of your OWN AI
     systems. The offline mode is a control-coverage assessment (declared guardrails vs attack categories), not a live
     attack — import tool results for ground truth.</div>
 </div>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — DevSecOps Operations</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="dso.pageTitle">XORCISM — DevSecOps Operations</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
@@ -27,22 +27,22 @@
   .mbox h3{margin:0 0 12px;font-size:15px}.mbox label{display:block;font-size:12px;color:#94a3b8;margin:8px 0 3px}.mbox input,.mbox select{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:7px;font-size:13px;padding:6px 8px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}.btn{background:#38bdf8;border:none;color:#06283d;border-radius:8px;font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/sca">&#128230; SCA/SBOM</a><a href="/vulnerability-management">&#128737;&#65039; Vulns</a><a href="/pentest">&#9876;&#65039; Pentest</a><span class="spacer"></span><span class="title">&#128640; DevSecOps Operations</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/sca" data-i18n="dso.navSca">&#128230; SCA/SBOM</a><a href="/vulnerability-management" data-i18n="dso.navVulns">&#128737;&#65039; Vulns</a><a href="/pentest" data-i18n="dso.navPentest">&#9876;&#65039; Pentest</a><span class="spacer"></span><span class="title" data-i18n="dso.navTitle">&#128640; DevSecOps Operations</span></div>
 <div class="mw">
   <div style="display:flex;align-items:flex-start;gap:12px">
     <div style="flex:1">
-      <h1>DevSecOps Operations</h1>
-      <div class="sub">Run security in the <b>SDLC / CI-CD pipeline</b> as an operations function: an inventory of applications,
-        the <b>pipeline security scans</b> across the standard classes (<b>SAST · DAST · SCA · Secrets · IaC · Container</b>) with a
-        scan tool (semgrep, gitleaks, trivy, burpwn…) and finding counts, the <b>security-gate</b> policy, and the derived
-        <b>posture</b> — scan-type coverage, gate-pass rate, open critical/high — with a risk-ranked worklist.</div>
+      <h1 data-i18n="dso.h1">DevSecOps Operations</h1>
+      <div class="sub" data-i18n="dso.sub">Run security in the SDLC / CI-CD pipeline as an operations function: an inventory of applications,
+        the pipeline security scans across the standard classes (SAST · DAST · SCA · Secrets · IaC · Container) with a
+        scan tool (semgrep, gitleaks, trivy, burpwn…) and finding counts, the security-gate policy, and the derived
+        posture — scan-type coverage, gate-pass rate, open critical/high — with a risk-ranked worklist.</div>
     </div>
     <div style="display:flex;gap:8px;padding-top:4px">
-      <button class="btn-sm2" id="btn-newapp">&#43; Application</button>
-      <button class="btn-sm2" id="btn-scan">&#128269; Record scan</button>
+      <button class="btn-sm2" id="btn-newapp" data-i18n="dso.newAppBtn">&#43; Application</button>
+      <button class="btn-sm2" id="btn-scan" data-i18n="dso.recordScanBtn">&#128269; Record scan</button>
     </div>
   </div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading DevSecOps…</div></div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="dso.loading">Loading DevSecOps…</div></div>
 </div>
 <div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/devsecops.js"></script></body></html>

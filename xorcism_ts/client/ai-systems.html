@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — AI System Inventory</title>
+<title data-i18n="ais.pageTitle">XORCISM — AI System Inventory</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
@@ -31,56 +31,56 @@
 </style></head><body>
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
-  <a href="/">&#8592; Explorer</a>
-  <a href="/reg-calendar">&#128197; Regulatory</a>
-  <a href="/asset-management">&#128187; Assets</a>
-  <a href="/a3m">&#129302; AI Attack Matrix</a>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/reg-calendar" data-i18n="ais.navReg">&#128197; Regulatory</a>
+  <a href="/asset-management" data-i18n="ais.navAssets">&#128187; Assets</a>
+  <a href="/a3m" data-i18n="ais.navA3m">&#129302; AI Attack Matrix</a>
   <span class="spacer"></span>
-  <span class="title">&#129504; AI System Inventory · AI-BOM</span>
+  <span class="title" data-i18n="ais.navTitle">&#129504; AI System Inventory · AI-BOM</span>
 </div>
 <div class="mw">
   <div style="display:flex;align-items:flex-start;gap:12px">
-    <h1 style="flex:1">AI system inventory &amp; model-risk register</h1>
-    <button class="btn-sm2" id="ai-demo">Load demo</button>
-    <button class="btn" id="ai-new">+ Register AI system</button>
+    <h1 style="flex:1" data-i18n="ais.h1">AI system inventory &amp; model-risk register</h1>
+    <button class="btn-sm2" id="ai-demo" data-i18n="ais.demoBtn">Load demo</button>
+    <button class="btn" id="ai-new" data-i18n="ais.newBtn">+ Register AI system</button>
   </div>
-  <div class="sub">The inventory for your AI/LLM systems — the operational layer of AI-TRiSM. Each system records purpose,
+  <div class="sub" data-i18n="ais.sub">The inventory for your AI/LLM systems — the operational layer of AI-TRiSM. Each system records purpose,
     model &amp; provider, hosting, data sensitivity, guardrails, governing frameworks (NIST AI RMF / ISO 42001 / CSA AICM)
     and an <b>EU AI Act risk tier</b>; components form an <b>AI-BOM</b> (exportable as CycloneDX). The worklist surfaces
     high-risk, production or personal-data systems lacking guardrails or governance.</div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
-  <div class="lic">EU AI Act risk tiers are self-declared classifications to aid planning — confirm against the Act's
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="ais.loading">Loading…</div></div>
+  <div class="lic" data-i18n="ais.lic">EU AI Act risk tiers are self-declared classifications to aid planning — confirm against the Act's
     Annexes and your DPO/legal counsel. The AI-BOM follows the CycloneDX 1.6 ML-BOM shape.</div>
 </div>
 
 <div class="modal" id="m-modal">
   <div class="box">
-    <h3>Register an AI system</h3>
-    <div class="fld"><label>Name</label><input class="inp" id="f-name" placeholder="e.g. Support copilot"></div>
-    <div class="fld"><label>Purpose</label><input class="inp" id="f-purpose" placeholder="What it does / the decision it informs"></div>
+    <h3 data-i18n="ais.mTitle">Register an AI system</h3>
+    <div class="fld"><label data-i18n="ais.fName">Name</label><input class="inp" id="f-name" data-i18n-placeholder="ais.fNamePh" placeholder="e.g. Support copilot"></div>
+    <div class="fld"><label data-i18n="ais.fPurpose">Purpose</label><input class="inp" id="f-purpose" data-i18n-placeholder="ais.fPurposePh" placeholder="What it does / the decision it informs"></div>
     <div class="row2">
-      <div class="fld"><label>Provider</label><input class="inp" id="f-provider" placeholder="OpenAI / In-house / …"></div>
-      <div class="fld"><label>Model</label><input class="inp" id="f-model" placeholder="gpt-4o / xgboost-v3 / …"></div>
+      <div class="fld"><label data-i18n="ais.fProvider">Provider</label><input class="inp" id="f-provider" placeholder="OpenAI / In-house / …"></div>
+      <div class="fld"><label data-i18n="ais.fModel">Model</label><input class="inp" id="f-model" placeholder="gpt-4o / xgboost-v3 / …"></div>
     </div>
     <div class="row2">
-      <div class="fld"><label>Model type</label><input class="inp" id="f-mtype" placeholder="LLM / Classifier / Diffusion"></div>
-      <div class="fld"><label>Hosting</label><select class="inp" id="f-hosting"><option>SaaS</option><option>Self-hosted</option><option>Edge</option><option>Hybrid</option></select></div>
+      <div class="fld"><label data-i18n="ais.fMtype">Model type</label><input class="inp" id="f-mtype" placeholder="LLM / Classifier / Diffusion"></div>
+      <div class="fld"><label data-i18n="ais.fHosting">Hosting</label><select class="inp" id="f-hosting"><option value="SaaS">SaaS</option><option value="Self-hosted" data-i18n="ais.hSelf">Self-hosted</option><option value="Edge" data-i18n="ais.hEdge">Edge</option><option value="Hybrid" data-i18n="ais.hHybrid">Hybrid</option></select></div>
     </div>
     <div class="row2">
-      <div class="fld"><label>EU AI Act risk tier</label><select class="inp" id="f-tier"><option>Prohibited</option><option>High</option><option>GPAI</option><option selected>Limited</option><option>Minimal</option></select></div>
-      <div class="fld"><label>Lifecycle</label><select class="inp" id="f-life"><option>Development</option><option>Staging</option><option selected>Production</option><option>Retired</option></select></div>
+      <div class="fld"><label data-i18n="ais.fTier">EU AI Act risk tier</label><select class="inp" id="f-tier"><option value="Prohibited" data-i18n="ais.tProhibited">Prohibited</option><option value="High" data-i18n="ais.tHigh">High</option><option value="GPAI">GPAI</option><option value="Limited" selected data-i18n="ais.tLimited">Limited</option><option value="Minimal" data-i18n="ais.tMinimal">Minimal</option></select></div>
+      <div class="fld"><label data-i18n="ais.fLife">Lifecycle</label><select class="inp" id="f-life"><option value="Development" data-i18n="ais.lDev">Development</option><option value="Staging" data-i18n="ais.lStaging">Staging</option><option value="Production" selected data-i18n="ais.lProd">Production</option><option value="Retired" data-i18n="ais.lRetired">Retired</option></select></div>
     </div>
     <div class="row2">
-      <div class="fld"><label>Data classification</label><input class="inp" id="f-data" placeholder="Public / Confidential / Restricted"></div>
-      <div class="fld"><label>Personal data?</label><select class="inp" id="f-pii"><option value="0">No</option><option value="1">Yes</option></select></div>
+      <div class="fld"><label data-i18n="ais.fData">Data classification</label><input class="inp" id="f-data" placeholder="Public / Confidential / Restricted"></div>
+      <div class="fld"><label data-i18n="ais.fPii">Personal data?</label><select class="inp" id="f-pii"><option value="0" data-i18n="ais.no">No</option><option value="1" data-i18n="ais.yes">Yes</option></select></div>
     </div>
-    <div class="fld"><label>Guardrails (comma-separated)</label><input class="inp" id="f-guard" placeholder="input filter, PII redaction, human review"></div>
-    <div class="fld"><label>Governing frameworks (comma-separated)</label><input class="inp" id="f-fw" placeholder="NIST AI RMF, ISO 42001, AICM"></div>
-    <div class="fld"><label>Model endpoint (optional — for live AI-BAS probing)</label><input class="inp" id="f-endpoint" placeholder="https://api.openai.com/v1/chat/completions"></div>
+    <div class="fld"><label data-i18n="ais.fGuard">Guardrails (comma-separated)</label><input class="inp" id="f-guard" placeholder="input filter, PII redaction, human review"></div>
+    <div class="fld"><label data-i18n="ais.fFw">Governing frameworks (comma-separated)</label><input class="inp" id="f-fw" placeholder="NIST AI RMF, ISO 42001, AICM"></div>
+    <div class="fld"><label data-i18n="ais.fEndpoint">Model endpoint (optional — for live AI-BAS probing)</label><input class="inp" id="f-endpoint" placeholder="https://api.openai.com/v1/chat/completions"></div>
     <div class="err" id="f-err"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-      <button class="btn-sm2" id="m-cancel">Cancel</button>
-      <button class="btn" id="m-save">Register</button>
+      <button class="btn-sm2" id="m-cancel" data-i18n="ais.cancel">Cancel</button>
+      <button class="btn" id="m-save" data-i18n="ais.registerBtn">Register</button>
     </div>
   </div>
 </div>

@@ -130,6 +130,7 @@ export const SOAR_TRIGGERS = [
   { id: "alert.high", label: "High/critical alert", severity: "high" },
   { id: "exposure.kev", label: "New KEV exposure on an asset", severity: "high" },
   { id: "phishing.reported", label: "Phishing reported", severity: "medium" },
+  { id: "ai.adversarial", label: "Adversarial AI signal (model interaction)", severity: "high" },
   { id: "manual", label: "Manual / on-demand", severity: "info" },
 ];
 
@@ -287,4 +288,28 @@ export function seedSoarOps(tenant: number): { playbooks: number } {
   runSoarPlaybook(p1, tenant, { mode: "simulate", triggerRef: "demo" });
   runSoarPlaybook(p2, tenant, { mode: "simulate", triggerRef: "demo" });
   return { playbooks: 3 };
+}
+
+/** ODESSA — AI Incident Response loop (github.com/Nate-Carroll-Cyber/ODESSA-AI-IR-Loop).
+ * Seeds the mandatory 6-stage ODESSA cycle as a runnable SOAR playbook fired on an adversarial-AI
+ * signal: Observation -> Detection -> Escalation -> Source validation -> Safeguard -> Assessment.
+ * "Operate In Darkness, Illuminate Threats." Idempotent: a no-op once the playbook exists. */
+export function seedOdessaPlaybook(tenant: number | null): { id: number } | { skipped: true } {
+  ensureSoarOpsTables();
+  const db = xi();
+  const name = "ODESSA AI-IR Loop";
+  const ex = db.prepare("SELECT PlaybookID FROM SOARPLAYBOOK WHERE Name = ? AND TenantID IS ?").get(name, tenant) as { PlaybookID: number } | undefined;
+  if (ex) return { skipped: true };
+  return createSoarPlaybook({
+    name, triggerType: "ai.adversarial", category: "AI Incident Response",
+    description: "ODESSA AI Incident Response loop — the mandatory 6-stage cycle run on an adversarial-AI signal around model interaction: Observation -> Detection -> Escalation -> Source validation -> Safeguard -> Assessment. \"Operate In Darkness, Illuminate Threats.\" (Nate-Carroll-Cyber/ODESSA-AI-IR-Loop)",
+    actions: [
+      { actionType: "run-automation", name: "1 · Observation", params: "Collect signals around the model interaction (prompts, outputs, tool calls, retrieval, identities)" },
+      { actionType: "run-automation", name: "2 · Detection", params: "Detect adversarial signals: prompt injection, jailbreak, sensitive-data exfiltration, anomalous tool/agency use" },
+      { actionType: "escalate", name: "3 · Escalation", params: "Raise the AI risk assessment to the next SOC tier per the ODESSA escalation criteria" },
+      { actionType: "enrich-ioc", name: "4 · Source validation", params: "Validate the authenticity / provenance of the signal and any indicators before acting" },
+      { actionType: "block-indicator", name: "5 · Safeguard", params: "Enforce safeguards: block the adversarial input, tighten the model's guardrails, or isolate the agent" },
+      { actionType: "create-ticket", name: "6 · Assessment", params: "Assess pre/post-interaction impact, document the ODESSA cycle outcome, and feed back into detection" },
+    ],
+  }, tenant);
 }

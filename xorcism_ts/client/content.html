@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Content hub</title>
+<title data-i18n="chub.pageTitle">XORCISM — Content hub</title>
 <link rel="stylesheet" href="/css/style.css">
 <style>
   .co-wrap{max-width:1000px;margin:0 auto;padding:18px}
@@ -23,36 +23,36 @@
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
-  <a href="/pentest">&#129529; Pentesting</a>
+  <a href="/pentest" data-i18n="chub.navPentest">&#129529; Pentesting</a>
   <span class="spacer"></span>
-  <span class="title">&#129513; Content hub</span>
+  <span class="title" data-i18n="chub.navTitle">&#129513; Content hub</span>
 </div>
 
 <div class="co-wrap">
   <div class="co-head">
-    <h1>Content hub</h1>
-    <div class="co-sub">Share and reuse XORCISM content as portable files — attack playbooks, the Sigma detection library, and an OpenVEX document. Import playbooks from teammates or the community.</div>
+    <h1 data-i18n="chub.h1">Content hub</h1>
+    <div class="co-sub" data-i18n="chub.sub">Share and reuse XORCISM content as portable files — attack playbooks, the Sigma detection library, and an OpenVEX document. Import playbooks from teammates or the community.</div>
   </div>
   <div class="grid">
     <div class="cc">
-      <div class="ic">🔗</div><h2>Attack playbooks</h2>
-      <p>Tool-chaining playbooks (recon → exploit → impact). Portable JSON; import community recipes.</p>
+      <div class="ic">🔗</div><h2 data-i18n="chub.pbTitle">Attack playbooks</h2>
+      <p data-i18n="chub.pbDesc">Tool-chaining playbooks (recon → exploit → impact). Portable JSON; import community recipes.</p>
       <div class="acts">
-        <button class="btn btn-primary btn-sm" data-export="/api/pentest/playbooks/export" data-name="xorcism-attack-chains.json">⬇ Export</button>
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">⬆ Import<input type="file" accept="application/json,.json" id="co-pb-import" style="display:none"></label>
+        <button class="btn btn-primary btn-sm" data-export="/api/pentest/playbooks/export" data-name="xorcism-attack-chains.json" data-i18n="chub.export">⬇ Export</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0">⬆ <span data-i18n="chub.import">Import</span><input type="file" accept="application/json,.json" id="co-pb-import" style="display:none"></label>
       </div>
       <div class="cnt" id="co-pb-cnt"></div>
     </div>
     <div class="cc">
-      <div class="ic">🛡️</div><h2>Sigma detection rules</h2>
-      <p>Your detection library — share rules (with ATT&CK tags, log sources, queries) as a bundle.</p>
-      <div class="acts"><button class="btn btn-primary btn-sm" data-export="/api/content/sigma-export" data-name="xorcism-sigma-rules.json">⬇ Export bundle</button></div>
+      <div class="ic">🛡️</div><h2 data-i18n="chub.sigTitle">Sigma detection rules</h2>
+      <p data-i18n="chub.sigDesc">Your detection library — share rules (with ATT&CK tags, log sources, queries) as a bundle.</p>
+      <div class="acts"><button class="btn btn-primary btn-sm" data-export="/api/content/sigma-export" data-name="xorcism-sigma-rules.json" data-i18n="chub.exportBundle">⬇ Export bundle</button></div>
       <div class="cnt" id="co-sig-cnt"></div>
     </div>
     <div class="cc">
-      <div class="ic">📄</div><h2>OpenVEX</h2>
-      <p>Vulnerability Exploitability eXchange — which CVEs affect your products vs false-positives/fixed.</p>
-      <div class="acts"><button class="btn btn-primary btn-sm" data-export="/api/vex/export" data-name="xorcism-openvex.json">⬇ Export VEX</button></div>
+      <div class="ic">📄</div><h2 data-i18n="chub.vexTitle">OpenVEX</h2>
+      <p data-i18n="chub.vexDesc">Vulnerability Exploitability eXchange — which CVEs affect your products vs false-positives/fixed.</p>
+      <div class="acts"><button class="btn btn-primary btn-sm" data-export="/api/vex/export" data-name="xorcism-openvex.json" data-i18n="chub.exportVex">⬇ Export VEX</button></div>
     </div>
   </div>
 </div>

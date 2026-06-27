@@ -58,6 +58,7 @@ const CARD_RELEVANCE: Record<string, string[]> = {
   "/attack-path": ["Cyberspace Effects", "Protection & Defense"],
   "/soc": ["Protection & Defense"],
   "/soc-cmm": ["Protection & Defense"],
+  "/essential-eight": ["Oversight & Governance", "Protection & Defense"],
   "/crisis-management": ["Protection & Defense", "Oversight & Governance"],
 };
 
@@ -78,7 +79,7 @@ export const CARDS: { href: string; group: string }[] = [
   ...["/voc", "/vm-report", "/ctem", "/easm", "/bug-bounty", "/vulnerability-management", "/exposure", "/exploitdb", "/attack-path", "/drift", "/pqcmm", "/?db=XVULNERABILITY&table=BUGBOUNTYPROGRAM"].map((href) => ({ href, group: "exposure" })),
   ...["/?db=XTHREAT&table=THREAT", "/cti-expert", "/threat-informed-defense", "/hunting", "/pir", "/cti-watch", "/kill-chain", "/threat-model", "/attack-tree", "/ransomware", "/tools?category=OSINT", "/osint-graph", "/team-ops", "/ai-threat-advisor", "/malware-scan"].map((href) => ({ href, group: "threat" })),
   ...["/croc", "/cyber-risk-hunting", "/investment-advisor", "/risk-register", "/fair-mam", "/fair-tef", "/ebios", "/asset-monitoring", "/patch-management", "/ot-security", "/nist-800-30", "/tprm"].map((href) => ({ href, group: "risk" })),
-  ...["/governance", "/compliance-journeys", "/control-management", "/frameworks", "/compliance-management", "/policy-management", "/privacy", "/trust-center", "/assurance"].map((href) => ({ href, group: "compliance" })),
+  ...["/governance", "/compliance-journeys", "/control-management", "/frameworks", "/compliance-management", "/policy-management", "/privacy", "/trust-center", "/assurance", "/essential-eight"].map((href) => ({ href, group: "compliance" })),
   ...["/agents", "/ai-guardrails", "/endpoint-query", "/devsecops", "/soc-cmm", "/cert-ops", "/soc", "/soar", "/incident-management", "/incident-sla", "/crisis-management", "/pentest", "/?db=XTICKET&table=TICKET", "/content", "/security-awareness"].map((href) => ({ href, group: "operations" })),
   ...["/connectors", "/api-docs", "/tools"].map((href) => ({ href, group: "platform" })),
 ];

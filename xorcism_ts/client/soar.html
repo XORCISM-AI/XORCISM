@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — SOAR</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="soar.pageTitle">XORCISM — SOAR</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1300px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1040px}
@@ -32,19 +32,19 @@
   .dlg input,.dlg select,.dlg textarea{width:100%;box-sizing:border-box;background:#13162a;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:7px 9px;font-size:13px;margin-top:3px;font-family:inherit}
   .arow{display:flex;gap:6px;margin-top:6px}.arow select{flex:1}.arow input{flex:2}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/soc">&#128737;&#65039; SOC</a><a href="/incident-management">&#128680; Incidents</a><a href="/connectors?connector=n8n">&#128279; n8n</a><span class="spacer"></span><span class="title">&#9881;&#65039; SOAR</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/soc" data-i18n="soar.navSoc">&#128737;&#65039; SOC</a><a href="/incident-management" data-i18n="soar.navIncidents">&#128680; Incidents</a><a href="/connectors?connector=n8n" data-i18n="soar.navN8n">&#128279; n8n</a><span class="spacer"></span><span class="title" data-i18n="soar.navTitle">&#9881;&#65039; SOAR</span></div>
 <div class="mw">
   <div style="display:flex;align-items:flex-start;gap:12px">
     <div style="flex:1">
-      <h1>SOAR — Security Orchestration, Automation &amp; Response</h1>
-      <div class="sub">Automate response: define <b>playbooks</b> (a trigger → an ordered set of actions) from a built-in
-        <b>action catalogue</b> (enrich, notify, ticket, isolate, block, escalate, run-automation), then <b>run</b> them.
-        Runs default to <b>simulate</b> (dry-run, no side effects) for safe design; the live outbound rung dispatches to
+      <h1 data-i18n="soar.h1">SOAR — Security Orchestration, Automation &amp; Response</h1>
+      <div class="sub" data-i18n="soar.sub">Automate response: define playbooks (a trigger → an ordered set of actions) from a built-in
+        action catalogue (enrich, notify, ticket, isolate, block, escalate, run-automation), then run them.
+        Runs default to simulate (dry-run, no side effects) for safe design; the live outbound rung dispatches to
         the configured n8n / SOAR webhooks.</div>
     </div>
-    <div class="no-print" style="display:flex;gap:8px;padding-top:4px"><button class="btn-sm2" id="btn-new">+ New playbook</button></div>
+    <div class="no-print" style="display:flex;gap:8px;padding-top:4px"><button class="btn-sm2" id="btn-new" data-i18n="soar.newBtn">+ New playbook</button></div>
   </div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading SOAR cockpit…</div></div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="soar.loading">Loading SOAR cockpit…</div></div>
 </div>
 <div class="modal" id="modal"><div class="dlg" id="dlg"></div></div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/soar.js"></script></body></html>

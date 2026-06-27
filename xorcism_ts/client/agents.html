@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — Agents</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="agt.pageTitle">XORCISM — Agents</title><link rel="stylesheet" href="/css/style.css">
 <style>
   .mw{max-width:1340px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
   .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
@@ -33,11 +33,11 @@
   .fl{font-size:11px;border-radius:5px;padding:1px 6px;margin-right:4px}.fl-high,.fl-critical{background:#7f1d1d;color:#fecaca}.fl-medium{background:#78350f;color:#fcd34d}.fl-low,.fl-info{background:#1e2133;color:#94a3b8}
   .triage{cursor:pointer}.triage:hover{background:#13162a}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/croc">&#8734; CROC</a><a href="/soc">&#128737;&#65039; SOC</a><a href="/asset-management">&#128187; Assets</a><a href="/oval-scan">&#9989; OVAL</a><span class="spacer"></span><span class="title">&#129302; Agents</span></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/croc" data-i18n="agt.navCroc">&#8734; CROC</a><a href="/soc" data-i18n="agt.navSoc">&#128737;&#65039; SOC</a><a href="/asset-management" data-i18n="agt.navAssets">&#128187; Assets</a><a href="/oval-scan" data-i18n="agt.navOval">&#9989; OVAL</a><span class="spacer"></span><span class="title" data-i18n="agt.navTitle">&#129302; Agents</span></div>
 <div class="mw">
-  <h1>Agents — your XOR sensing &amp; response fleet</h1>
-  <div class="sub">Every enrolled XOR agent: status, last check-in, platform — and task it directly. Launch a scan (config/OVAL, vulnerabilities, inventory, threat hunt, EDR/Rustinel, YARA, forensic triage or BAS emulation); the agent picks it up at its next check-in and reports back here.</div>
-  <div id="body"><div class="muted" style="padding:24px;text-align:center">Loading agents…</div></div>
-  <div class="lic">XOR agent: enroll with <span class="mono">xor_agent.py --enroll</span> (key <span class="mono">XOR_ENROLL_KEY</span>); it checks in for queued jobs and posts results to the token API. Scans are queued here and executed at the agent's next check-in.</div>
+  <h1 data-i18n="agt.h1">Agents — your XOR sensing &amp; response fleet</h1>
+  <div class="sub" data-i18n="agt.sub">Every enrolled XOR agent: status, last check-in, platform — and task it directly. Launch a scan (config/OVAL, vulnerabilities, inventory, threat hunt, EDR/Rustinel, YARA, forensic triage or BAS emulation); the agent picks it up at its next check-in and reports back here.</div>
+  <div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="agt.loadingAgents">Loading agents…</div></div>
+  <div class="lic" data-i18n="agt.lic">XOR agent: enroll with xor_agent.py --enroll (key XOR_ENROLL_KEY); it checks in for queued jobs and posts results to the token API. Scans are queued here and executed at the agent's next check-in.</div>
 </div>
 <div id="toast"></div><script src="/js/session-ui.js"></script><script src="/js/agents.js"></script></body></html>
