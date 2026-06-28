@@ -1902,6 +1902,34 @@ export function getAssetCpes(assetId: number): { CPEID: number; CPEName: string 
     .all(assetId) as { CPEID: number; CPEName: string }[];
 }
 
+export interface VulnCpeRow { CPEID: number; CPEName: string; KnownVulnerable: boolean }
+/** CPEs affected by a vulnerability: XVULNERABILITY.VULNERABILITYFORCPE → name resolved in XORCISM.CPE. */
+export function getVulnerabilityCpes(vulnerabilityId: number): VulnCpeRow[] {
+  let links: { CPEID: number; isKnownVulnerable: number | null }[] = [];
+  try {
+    links = getDb("XVULNERABILITY")
+      .prepare("SELECT CPEID, isKnownVulnerable FROM VULNERABILITYFORCPE WHERE VulnerabilityID = ? AND CPEID IS NOT NULL")
+      .all(vulnerabilityId) as { CPEID: number; isKnownVulnerable: number | null }[];
+  } catch { return []; } // VULNERABILITYFORCPE absent / DB unavailable
+  if (!links.length) return [];
+  const ids = [...new Set(links.map((l) => Number(l.CPEID)))];
+  const nameById = new Map<number, string>();
+  try {
+    const ph = ids.map(() => "?").join(",");
+    for (const c of getDb("XORCISM").prepare(`SELECT CPEID, CPEName FROM CPE WHERE CPEID IN (${ph})`).all(...ids) as { CPEID: number; CPEName: string }[])
+      nameById.set(Number(c.CPEID), c.CPEName);
+  } catch { /* CPE names optional — fall back to #id */ }
+  const byId = new Map<number, VulnCpeRow>();
+  for (const l of links) {
+    const id = Number(l.CPEID);
+    const kv = l.isKnownVulnerable == null ? true : Number(l.isKnownVulnerable) === 1;
+    const ex = byId.get(id);
+    if (!ex) byId.set(id, { CPEID: id, CPEName: nameById.get(id) || `#${id}`, KnownVulnerable: kv });
+    else if (kv) ex.KnownVulnerable = true;
+  }
+  return [...byId.values()].sort((a, b) => a.CPEName.localeCompare(b.CPEName));
+}
+
 // ── ASSET ↔ OVAL definitions (XORCISM.ASSETOVALDEFINITION ↔ XOVAL.OVALDEFINITION) ──
 export interface AssetOvalRow {
   AssetOVALDefinitionID: number;

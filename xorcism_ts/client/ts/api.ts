@@ -293,6 +293,8 @@ export const api = {
   },
   getAssetCpes: (assetId: number) =>
     request<{ CPEID: number; CPEName: string }[]>(`/api/asset-cpes?assetId=${assetId}`),
+  getVulnerabilityCpes: (vulnerabilityId: number) =>
+    request<{ CPEID: number; CPEName: string; KnownVulnerable: boolean }[]>(`/api/vulnerability-cpes?vulnerabilityId=${vulnerabilityId}`),
   setAssetCpes: (assetId: number, cpeIds: number[]) =>
     request<{ ok: boolean }>("/api/asset-cpes", "PUT", { assetId, cpeIds }),
   getAssetVulnerabilities: (assetId: number) =>

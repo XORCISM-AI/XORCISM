@@ -6138,6 +6138,7 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     await appendAssetOrgPanel(body, aid);
     await appendAssetPersonPanel(body, aid);
   } else if (currentTable === "VULNERABILITY") {
+    await appendVulnCpeTable(body, Number(row["VulnerabilityID"]) || null);
     appendTagsPanel(body, "Tags (VULNERABILITYTAG)", Number(row["VulnerabilityID"]) || null,
       api.getVulnerabilityTags, api.setVulnerabilityTags, null);
   } else if (currentTable === "THREATMODEL") {
@@ -7225,6 +7226,29 @@ async function appendCpeTable(body: HTMLElement, assetId: number | null): Promis
   } else {
     box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("link.saveFirst")}</div>`;
   }
+}
+
+// Read-only table of the CPEs affected by a vulnerability (XVULNERABILITY.VULNERABILITYFORCPE → CPE).
+async function appendVulnCpeTable(body: HTMLElement, vulnId: number | null): Promise<void> {
+  const esc = (s: unknown): string => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const div = document.createElement("div");
+  div.style.marginTop = "12px";
+  const label = document.createElement("label");
+  label.textContent = t("vulncpe.title");
+  label.style.cssText = "font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px";
+  const box = document.createElement("div");
+  box.style.cssText = "max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--bg)";
+  div.appendChild(label); div.appendChild(box); body.appendChild(div);
+  if (!vulnId) { box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("link.saveFirst")}</div>`; return; }
+  let rows: { CPEID: number; CPEName: string; KnownVulnerable: boolean }[] = [];
+  try { rows = await api.getVulnerabilityCpes(vulnId); }
+  catch { box.innerHTML = `<div style="padding:8px;color:var(--danger);font-size:12px">${t("vulncpe.error")}</div>`; return; }
+  if (!rows.length) { box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("vulncpe.none")}</div>`; return; }
+  label.textContent = `${t("vulncpe.title")} (${rows.length})`;
+  box.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">${rows.map((r) => `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:5px 8px;font-family:ui-monospace,monospace;word-break:break-all">${esc(r.CPEName)}</td>
+    <td style="padding:5px 8px;text-align:right;white-space:nowrap">${r.KnownVulnerable ? `<span style="color:var(--danger);font-weight:600">${t("vulncpe.known")}</span>` : `<span style="color:var(--text-dim)">${t("vulncpe.maybe")}</span>`}</td>
+  </tr>`).join("")}</table>`;
 }
 
 // Fills (or reloads) the table of OVAL definitions linked to the asset (ASSETOVALDEFINITION)

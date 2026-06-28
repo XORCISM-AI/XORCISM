@@ -78,6 +78,7 @@ import {
   removeAssetOval,
   getAssetCpes,
   setAssetCpes,
+  getVulnerabilityCpes,
   getAssetVulnerabilities,
   searchVulnerabilities,
   setAssetVulnerabilities,
@@ -1131,6 +1132,16 @@ router.get("/asset-cpes", (req: Request, res: Response) => {
   // Isolation: the targeted asset must belong to the caller's tenant.
   if (!parentTenantOr403(req, res, "XORCISM", "ASSET", "AssetID", assetId, "read")) return;
   res.json(getAssetCpes(assetId));
+});
+
+// GET /api/vulnerability-cpes?vulnerabilityId=N — CPEs affected by a vulnerability (VULNERABILITYFORCPE).
+// VULNERABILITY is a global reference table (no TenantID) — the affected-CPE list is shared reference data.
+router.get("/vulnerability-cpes", (req: Request, res: Response) => {
+  const vid = Number(req.query.vulnerabilityId);
+  if (!vid) return void res.status(400).json({ error: "vulnerabilityId requis" });
+  if (!userCan(req.user, "read", "XVULNERABILITY", "VULNERABILITY"))
+    return deny(req, res, "read", "XVULNERABILITY", "VULNERABILITY");
+  res.json(getVulnerabilityCpes(vid));
 });
 
 // GET /api/asset-vulnerabilities?assetId=N — linked vulnerabilities (ASSETVULNERABILITY)
