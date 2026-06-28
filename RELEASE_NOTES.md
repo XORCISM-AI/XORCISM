@@ -11,6 +11,14 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **ISO/IEC 42001:2023 journey — full standard coverage** — the AI Management System (AIMS) compliance
+  journey (`/compliance-journeys`) was expanded from a thin 5-phase outline to a complete walkthrough of the
+  standard: **8 phases · 37 deep-linked steps** covering every clause (4 Context · 5 Leadership · 6 Planning
+  · 7 Support · 8 Operation · 9 Performance evaluation · 10 Improvement, down to each sub-clause 4.1→10.2)
+  plus the Annex A control objectives (A.2 Policies … A.10 Third-party & customer relationships). Each step
+  deep-links into the module that does the work (scope, risk register, AI risk & impact assessment, controls,
+  policies, AI guardrails, TPRM, evidence, audit). Fully bilingual (EN/FR). Built from a structural read of
+  the standard — clause numbers/titles only, original summaries (no normative text reproduced).
 - **Vulnerability Assessment (Vulners-style) + Vulners connector** — integrated the missing Vulners.com
   capabilities. New **`/vuln-assessment`** page turns a **software inventory** into a decision-ready
   vulnerability report (their *Assessment / SBOM Analyzer / Library Audit*): paste OS packages

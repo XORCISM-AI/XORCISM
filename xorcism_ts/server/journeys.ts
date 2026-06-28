@@ -109,31 +109,62 @@ export const FRAMEWORKS: FrameworkT[] = [
   },
   {
     key: "iso42001", name: "ISO/IEC 42001:2023", provider: "ISO/IEC", kind: "Certification", jurisdiction: "International",
-    summary: "AI Management System (AIMS). The certifiable standard for governing the responsible development and use of AI systems.",
+    summary: "AI Management System (AIMS). The certifiable standard for governing the responsible development and use of AI systems — a full walkthrough of clauses 4–10 plus the Annex A control objectives (A.2–A.10).",
     effort: "6–12 months",
     phases: [
-      { name: "Scope & AI Inventory", steps: [
-        st("Define the AIMS scope", "Document the boundaries of the AI management system and the AI systems in scope.", L.scope),
-        st("Inventory AI systems", "Catalogue AI systems / models / agents, their purpose, data and owners.", L.identity),
+      { name: "4 · Context of the organization", steps: [
+        st("4.1 Organization & its context", "Capture the internal and external issues relevant to the AIMS, including the organization's role(s) — AI provider, developer, deployer or user.", L.context),
+        st("4.2 Needs of interested parties", "Identify interested parties (regulators, customers, users, affected individuals, society) and their relevant needs and expectations for the AI systems.", L.context),
+        st("4.3 Scope of the AIMS", "Determine and document the boundaries and applicability of the AI management system and the AI systems it covers.", L.scope),
+        st("4.4 AI management system", "Establish, implement, maintain and continually improve the AIMS and its processes.", L.assess),
+        st("Inventory the AI systems", "Catalogue the AI systems / models / agents in scope — purpose, data, role and owner (supports A.4.2 / A.6.2).", L.agents),
       ]},
-      { name: "Leadership & AI Policy", steps: [
-        st("AI governance & roles", "Assign AIMS roles, accountability and an AI governance body (clause 5).", L.identity),
-        st("AI policies", "Adopt the AIMS policies (responsible AI, data, transparency…) — 10 AIMS policies are seedable.", L.policies),
+      { name: "5 · Leadership · AI policy (A.2, A.3)", steps: [
+        st("5.1 Leadership & commitment", "Secure top-management commitment to the AIMS and the responsible use of AI, integrated with business processes.", L.identity),
+        st("5.2 AI policy (A.2.2–A.2.4)", "Establish and approve the AI policy, align it with other organizational policies, and review it at planned intervals.", L.policies),
+        st("5.3 Roles & responsibilities (A.3.2–A.3.3)", "Assign and communicate AIMS roles, responsibilities and authorities, and put in place a process to report concerns.", L.identity),
       ]},
-      { name: "AI Risk & Impact", steps: [
-        st("AI risk assessment", "Assess risks of the AI systems (safety, bias, robustness, privacy, security).", L.riskReg),
-        st("AI system impact assessment", "Run the AI impact assessment on individuals and society (Annex B / clause 6).", L.assess),
+      { name: "6 · Planning — AI risk & impact (A.5)", steps: [
+        st("6.1.1 Risks & opportunities", "Plan actions to address the risks and opportunities relevant to the AIMS and its intended outcomes.", L.riskReg),
+        st("6.1.2 AI risk assessment", "Define and run a repeatable AI risk assessment process (safety, fairness/bias, robustness, transparency, privacy, security).", L.riskReg),
+        st("6.1.3 AI risk treatment & SoA", "Select Annex A controls to treat the assessed risks and produce the Statement of Applicability (justify each control).", L.controlsTable),
+        st("6.1.4 AI system impact assessment (A.5)", "Assess the potential impacts of AI systems on individuals, groups and society, and document the results.", L.assess),
+        st("6.2 AI objectives & planning", "Set measurable AI objectives and plan how to achieve them (resources, responsibilities, timing, evaluation).", L.riskReg),
+        st("6.3 Planning of changes", "Plan and control changes to the AIMS in a structured way.", L.config),
       ]},
-      { name: "Controls Implementation", steps: [
-        st("Implement Annex A AIMS controls", "Implement the ISO 42001 Annex A controls across the AI lifecycle.", L.controls53),
-        st("Data & model governance", "Govern training data, model documentation and change management.", L.evidence),
+      { name: "7 · Support & resources (A.4)", steps: [
+        st("7.1 Resources (A.4.2–A.4.6)", "Identify and document the resources for AI systems — data, tooling, system/computing and human resources.", L.assets),
+        st("7.2 Competence", "Determine and ensure the competence of people whose work affects AIMS performance.", L.awareness),
+        st("7.3 Awareness", "Make staff aware of the AI policy, their AIMS contribution and the implications of not conforming.", L.awareness),
+        st("7.4 Communication", "Determine the internal and external communications relevant to the AIMS.", L.policies),
+        st("7.5 Documented information", "Create, update and control the documented information the AIMS requires.", L.evidence),
+      ]},
+      { name: "Annex A · AI lifecycle controls (A.6–A.10)", steps: [
+        st("A.6 AI system life cycle", "Set management direction for responsible AI development and apply lifecycle controls — requirements, design & development documentation, verification & validation, deployment, operation & monitoring, technical documentation and event logging.", L.controls53),
+        st("A.7 Data for AI systems", "Govern the data used to develop and operate AI — acquisition, quality, provenance and preparation.", L.sca),
+        st("A.8 Information for interested parties", "Provide system documentation and user information, external reporting and incident communication for the AI systems.", L.trust),
+        st("A.9 Responsible use of AI", "Establish processes and objectives for the responsible use of AI and define the intended use of each system.", L.aiguard),
+        st("A.10 Third-party & customer relationships", "Allocate responsibilities and manage AI suppliers and customers across the value chain.", L.tprm),
         st("Map to AI threats", "Reference the Agentic AI Attack Matrix / SAIF for AI-specific threats and mitigations.", "/a3m"),
       ]},
-      { name: "Operations & Evidence", steps: [
-        st("Monitor AI performance", "Monitor AI systems in operation (drift, incidents, human oversight).", L.monitoring),
-        st("Collect evidence", "Gather evidence of AIMS operation for the audit.", L.evidence),
+      { name: "8 · Operation", steps: [
+        st("8.1 Operational planning & control", "Plan, implement and control the processes needed to meet AIMS requirements and the actions from clause 6.", L.config),
+        st("8.2 AI risk assessment (operational)", "Perform AI risk assessments at planned intervals and when significant changes occur.", L.riskReg),
+        st("8.3 AI risk treatment (operational)", "Implement the AI risk treatment plan and keep documented results.", L.controls53),
+        st("8.4 AI system impact assessment (operational)", "Perform AI system impact assessments at planned intervals and on change.", L.assess),
+        st("Runtime AI guardrails & oversight", "Operate runtime guardrails and human oversight over the AI systems in production.", L.aiguard),
       ]},
-      auditPhase("AIMS certification audit"),
+      { name: "9 · Performance evaluation", steps: [
+        st("9.1 Monitoring, measurement & analysis", "Monitor, measure, analyse and evaluate the AIMS and the performance of the AI systems (incl. drift and incidents).", L.monitoring),
+        st("9.2 Internal audit", "Plan and run internal audits of the AIMS at planned intervals; record results and corrective actions.", L.assess),
+        st("9.3 Management review", "Hold a management review of the AIMS (status, objectives, risks, incidents, audit results, improvements).", L.assess),
+      ]},
+      { name: "10 · Improvement & certification", steps: [
+        st("10.1 Continual improvement", "Continually improve the suitability, adequacy and effectiveness of the AIMS.", L.assess),
+        st("10.2 Nonconformity & corrective action", "React to nonconformities, correct them and act to prevent recurrence.", L.incident),
+        st("Evidence pack & readiness", "Assemble the AIMS evidence pack (policies, risk & impact assessments, SoA, records) and confirm audit readiness.", L.evidence),
+        st("AIMS certification audit", "Engage the certification body and complete the Stage 1 & Stage 2 assessment.", L.assess),
+      ]},
     ],
   },
   {
