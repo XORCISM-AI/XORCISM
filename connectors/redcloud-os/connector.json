@@ -1,0 +1,16 @@
+{
+  "id": "redcloud-os",
+  "name": "RedCloud-OS — Cloud adversary simulation",
+  "type": "import",
+  "category": "Cloud Security",
+  "description": "Imports a RedCloud-OS (github.com/RedCloudOS) cloud red-team engagement into the XORCISM model. RedCloud-OS is a 'Cloud Adversary Simulation Operating System for Red Teams' that bundles the leading cloud attack tools across AWS / Azure / GCP / Kubernetes (Pacu, ScoutSuite, Prowler, cloud_enum, CloudBrute, cloudfox, PMapper, heimdall, AWeSomeUserFinder, AzureHound, Oh365UserFinder, ROADtools, gcp_scanner, GCPBucketBrute, GCPTokenReuse, peirates, EKSHolmes, KubiScan, BloodHound, gitleaks) and organises them by kill-chain phase (Enumeration, Initial Access, Credential Access, Privilege Escalation, Persistence, Defense Evasion, Lateral Movement, Exfiltration). Pass the engagement output as the 'file': either a RedCloud-OS engagement bundle ({engagement, csp, assets[], findings[]}) or a raw native export — the connector auto-detects ScoutSuite (scoutsuite_results JS/JSON), Prowler (OCSF or v3 JSON), and BloodHound/AzureHound/PMapper-style graph JSON (nodes/edges). Each discovered cloud resource / identity becomes an ASSET (tagged by CSP and kind); each misconfiguration, exposure or attack-path edge becomes a cloud-attack VULN, severity-ranked and ATT&CK-tagged (T1078/T1098/T1190/T1530/T1552/T1556/T1562/T1580). Read-only import (no live cloud or DB access in run.py — worker-safe). Drives the 'Cloud adversary simulation (RedCloud-OS)' attack-chain playbook.",
+  "intrusive": false,
+  "permission": "connector:redcloud-os",
+  "run": "run.py",
+  "mapping": "redcloud-os",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a RedCloud-OS engagement bundle JSON, or a raw ScoutSuite / Prowler / BloodHound-graph export." },
+    { "name": "target", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._:@/-]+$", "help": "Engagement / cloud-account label for the export (default: the bundle metadata, else the file name)." },
+    { "name": "csp", "type": "string", "required": false, "pattern": "^(aws|azure|gcp|k8s|kubernetes|multi)$", "help": "Cloud provider override: aws | azure | gcp | k8s | multi (default: auto-detected per finding)." }
+  ]
+}
