@@ -322,28 +322,55 @@ export const FRAMEWORKS: FrameworkT[] = [
   },
   {
     key: "soc2", name: "SOC 2 (Type II)", provider: "AICPA", kind: "Attestation", jurisdiction: "United States",
-    summary: "AICPA Trust Services Criteria attestation. The de-facto report SaaS vendors provide to customers; Type II covers a 3–12 month operating period.",
+    summary: "AICPA Trust Services Criteria attestation covering the Common Criteria (CC1–CC9) plus optional Availability, Confidentiality, Processing Integrity and Privacy categories. The de-facto report SaaS vendors provide to customers; Type II covers a 3–12 month operating period.",
     effort: "3–9 months + observation window",
     phases: [
-      { name: "Scope & Criteria", steps: [
-        st("Select Trust Services Criteria", "Security is mandatory; add Availability, Confidentiality, Processing Integrity and/or Privacy.", L.scope),
-        st("Write the system description", "Describe the system, boundaries, infrastructure, data and subservice organizations.", L.trust),
+      { name: "Scope & system description", steps: [
+        st("Choose report type & period", "Decide Type I (design at a point in time) vs Type II (operating effectiveness over a 3–12 month window) and set the period.", L.scope),
+        st("Select Trust Services Categories", "Security (the Common Criteria) is mandatory; add Availability, Confidentiality, Processing Integrity and/or Privacy as relevant.", L.scope),
+        st("Define the system boundary", "Scope the system: infrastructure, software, people, procedures and data that are in and out of scope.", L.assets),
+        st("Identify subservice organizations", "List subservice organizations and choose carve-out vs inclusive method; map complementary user-entity controls.", L.tprm),
+        st("Write the system description", "Draft the section III system description: services, components, boundaries, commitments and data flows.", L.trust),
       ]},
-      { name: "Controls & Policies", steps: [
-        st("Map controls to the TSC", "Map your controls to the Common Criteria (CC1–CC9) and the selected categories.", L.controls53),
-        st("Policies & procedures", "Publish the policies the TSC expect (access, change, incident, vendor, BCP…).", L.policies),
-        st("Risk assessment", "Perform and document a risk assessment (CC3).", L.riskReg),
+      { name: "CC1–CC2 · Control environment & communication", steps: [
+        st("CC1 Control environment", "Establish integrity and ethics, board / owner oversight, organisational structure, authority and accountability (COSO).", L.identity),
+        st("CC1 HR & competence", "Run background checks, role definitions, onboarding, performance and disciplinary processes for personnel.", L.identity),
+        st("CC2 Communication & information", "Define internal and external communication of objectives, responsibilities and security commitments.", L.policies),
       ]},
-      { name: "Operate the Controls", steps: [
-        st("Access & change management", "Operate logical access, onboarding/offboarding and change controls.", L.identity),
-        st("Monitoring & incidents", "Operate monitoring, alerting and incident response (CC7).", L.incident),
-        st("Awareness training", "Run security awareness training for personnel (CC1/CC2).", L.awareness),
-        st("Vendor management", "Manage subservice organizations and vendor risk.", L.assess),
+      { name: "CC3–CC4 · Risk assessment & monitoring", steps: [
+        st("CC3 Risk assessment", "Set objectives, identify and analyse risks (including fraud) and assess the impact of significant change.", L.riskReg),
+        st("CC4 Monitoring of controls", "Perform ongoing and separate evaluations and communicate control deficiencies to the right owners.", L.monitoring),
       ]},
-      { name: "Readiness & Audit", steps: [
-        st("Readiness assessment (Type I)", "Run a readiness/gap assessment and remediate before the observation window.", L.assess),
-        st("Observation period", "Operate controls consistently across the audit window and collect evidence each period.", L.evidence),
-        st("Type II examination", "Engage a licensed CPA firm to perform the SOC 2 Type II examination.", L.assess),
+      { name: "CC5–CC6 · Control activities & access", steps: [
+        st("CC5 Control activities", "Select and develop control activities and technology general controls that mitigate risk to objectives.", L.controls53),
+        st("CC6 Logical access", "Provision and deprovision access, enforce least privilege, authentication and MFA across systems.", L.identity),
+        st("CC6 Encryption & credentials", "Protect data at rest and in transit, and manage keys and credential storage.", L.config),
+        st("CC6 Physical access", "Restrict physical access to facilities and assets and manage media handling and disposal.", L.assets),
+      ]},
+      { name: "CC7–CC9 · Operations, change & risk mitigation", steps: [
+        st("CC7 Detection & monitoring", "Detect and monitor for vulnerabilities and anomalies across the production environment.", L.vuln),
+        st("CC7 Incident response", "Operate incident detection, response, recovery and customer-communication processes.", L.incident),
+        st("CC8 Change management", "Authorise, design, test and approve changes to infrastructure, data and software.", L.config),
+        st("CC9 Risk mitigation & BCP", "Mitigate business-disruption risk and recover operations after a disruption.", L.crisis),
+        st("CC9 Vendor & business-partner risk", "Assess and manage risks arising from vendors and business partners on an ongoing basis.", L.tprm),
+      ]},
+      { name: "Additional category criteria", steps: [
+        st("Availability (A1)", "Manage capacity, environmental protections, backup and recovery to meet availability commitments.", L.crisis),
+        st("Confidentiality (C1)", "Identify, protect and dispose of confidential information per commitments and requirements.", L.assets),
+        st("Processing Integrity (PI1)", "Ensure processing is complete, valid, accurate, timely and authorised.", L.config),
+        st("Privacy (P1–P8)", "Operate notice, choice and consent, collection, use / retention / disposal, access, disclosure, quality and monitoring controls.", "/privacy"),
+      ]},
+      { name: "Operate controls & build the evidence trail", steps: [
+        st("Publish the SOC 2 policy set", "Publish the policies the criteria expect: access, change, incident, risk, vendor, BCP and data classification.", L.policies),
+        st("Security awareness", "Run recurring security awareness training and track completion (CC1 / CC2).", L.awareness),
+        st("Collect evidence each period", "Capture tickets, logs, approvals and reviews continuously across the observation window.", L.evidence),
+        st("Subservice & vendor monitoring", "Collect and review subservice SOC reports and vendor evidence throughout the period.", L.tprm),
+      ]},
+      { name: "Readiness, Type I & Type II examination", steps: [
+        st("Readiness / gap assessment", "Run a readiness assessment against the selected criteria and remediate gaps before the audit.", L.assess),
+        st("SOC 2 Type I report", "Optionally obtain a Type I report attesting that controls are suitably designed at a point in time.", L.assess),
+        st("Operate across the observation window", "Run the controls consistently for the full Type II period (typically 3–12 months).", L.monitoring),
+        st("Type II examination by a CPA", "Engage a licensed CPA firm to test operating effectiveness and issue the SOC 2 Type II report.", L.assess),
       ]},
     ],
   },
