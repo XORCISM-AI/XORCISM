@@ -129,6 +129,7 @@ const entryPoints = [
   "client/ts/network-sessions.ts",
   "client/ts/osint-graph.ts",
   "client/ts/hunting.ts",
+  "client/ts/questionnaire-assistant.ts",
 ];
 
 const shared = {

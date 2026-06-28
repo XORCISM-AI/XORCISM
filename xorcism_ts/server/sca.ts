@@ -277,6 +277,140 @@ function vulnerableCpeIds(): Set<number> {
   } catch { return new Set(); }
 }
 
+// ──────────────── reachability-based prioritization (Endor/Snyk-style) ────────────────
+// A vulnerable dependency only matters if it is actually *reachable* in the running application. We
+// derive reachability from each component's SBOM scope (dev/test/optional → not runtime-reachable) and
+// then propagate it across the dependency graph (a transitive dep pulled in by a runtime parent is
+// reachable too). Reachable + exploitable (KEV/EPSS/CVSS) findings are prioritized; unreachable ones are
+// deprioritized — the "noise reduction" headline of the SCA-reachability tools.
+export type Reach = "reachable" | "unreachable" | "unknown";
+export interface ScaPriorityFinding {
+  componentId: number; name: string; version: string | null; scope: string | null;
+  sbomId: number | null; assetId: number | null; cpe: string | null;
+  reach: Reach; cvss: number | null; kev: boolean; epss: number | null; vulnCount: number;
+  priority: number; bucket: "act" | "scheduled" | "deferred" | "review";
+}
+export interface ScaPriority {
+  findings: ScaPriorityFinding[];
+  summary: {
+    vulnerable: number; reachable: number; unreachable: number; unknown: number;
+    act: number; scheduled: number; deferred: number; review: number;
+    noiseReductionPct: number; reachablePct: number;
+  };
+}
+
+const REACH_UNREACHABLE = new Set(["dev", "development", "devdependencies", "test", "optional", "provided", "excluded", "build"]);
+const REACH_RUNTIME = new Set(["", "runtime", "required", "compile", "direct", "implementation", "production"]);
+
+function exploitByCpe(cpeIds: number[]): Map<number, { cvss: number | null; kev: boolean; epss: number | null; vulns: number }> {
+  const out = new Map<number, { cvss: number | null; kev: boolean; epss: number | null; vulns: number }>();
+  if (!cpeIds.length) return out;
+  try {
+    const xv = getDb("XVULNERABILITY");
+    if (!has(xv, "VULNERABILITYFORCPE") || !has(xv, "VULNERABILITY")) return out;
+    for (let i = 0; i < cpeIds.length; i += 500) {
+      const chunk = cpeIds.slice(i, i + 500);
+      const ph = chunk.map(() => "?").join(",");
+      const rows = xv.prepare(
+        `SELECT fc.CPEID cid, MAX(v.CVSSBaseScore) cvss, MAX(COALESCE(v.KEV,0)) kev, MAX(v.EPSS) epss, COUNT(*) n
+         FROM VULNERABILITYFORCPE fc JOIN VULNERABILITY v ON v.VulnerabilityID = fc.VulnerabilityID
+         WHERE fc.CPEID IN (${ph}) AND COALESCE(fc.isKnownVulnerable,1)=1
+         GROUP BY fc.CPEID`
+      ).all(...chunk) as { cid: number; cvss: number | null; kev: number; epss: number | null; n: number }[];
+      for (const r of rows) out.set(Number(r.cid), { cvss: r.cvss, kev: Number(r.kev) > 0, epss: r.epss, vulns: r.n });
+    }
+  } catch { /* XVULNERABILITY unavailable */ }
+  return out;
+}
+
+export function scaPriority(tenant: number | null): ScaPriority {
+  const xo = getDb("XORCISM");
+  const empty: ScaPriority = { findings: [], summary: { vulnerable: 0, reachable: 0, unreachable: 0, unknown: 0, act: 0, scheduled: 0, deferred: 0, review: 0, noiseReductionPct: 0, reachablePct: 0 } };
+  if (!has(xo, "COMPONENT")) return empty;
+  const compCols = colset(xo, "COMPONENT");
+  const compTw = tenant != null && compCols.has("TenantID") ? `WHERE TenantID = ${tenant}` : "";
+  type C = { id: number; sbomId: number | null; bomRef: string | null; cpeId: number | null; scope: string | null; name: string; version: string | null; cpe: string | null; assetId: number | null };
+  const comps = xo.prepare(
+    `SELECT ComponentID id, SbomID sbomId, BOMRef bomRef, CPEID cpeId, Scope scope, Name name, Version version, CPE cpe, AssetID assetId FROM COMPONENT ${compTw}`
+  ).all() as C[];
+  if (!comps.length) return empty;
+
+  // dependency edges per sbom → adjacency (FromRef -> [ToRef])
+  const edgesBySbom = new Map<number, Map<string, string[]>>();
+  if (has(xo, "COMPONENTDEPENDENCY")) {
+    for (const e of xo.prepare(`SELECT SbomID sbomId, FromRef f, ToRef t FROM COMPONENTDEPENDENCY`).all() as { sbomId: number; f: string; t: string }[]) {
+      if (!edgesBySbom.has(e.sbomId)) edgesBySbom.set(e.sbomId, new Map());
+      const m = edgesBySbom.get(e.sbomId)!;
+      (m.get(e.f) || m.set(e.f, []).get(e.f)!).push(e.t);
+    }
+  }
+
+  const scopeReach = (s: string | null): Reach => {
+    const v = String(s || "").trim().toLowerCase();
+    if (REACH_UNREACHABLE.has(v)) return "unreachable";
+    if (REACH_RUNTIME.has(v)) return "reachable";
+    return "unknown";
+  };
+  const reach = new Map<number, Reach>();
+  for (const c of comps) reach.set(c.id, scopeReach(c.scope));
+
+  // graph propagation: a component reachable from a runtime-scoped seed (and not explicitly unreachable)
+  // becomes reachable — captures transitive deps with unknown scope that runtime parents pull in.
+  const refKey = (sbomId: number | null, ref: string | null): string => `${sbomId} ${ref}`;
+  const byRef = new Map<string, C>();
+  for (const c of comps) if (c.bomRef) byRef.set(refKey(c.sbomId, c.bomRef), c);
+  for (const [sbomId, adj] of edgesBySbom) {
+    const queue: string[] = [];
+    for (const c of comps) if (c.sbomId === sbomId && reach.get(c.id) === "reachable" && c.bomRef) queue.push(c.bomRef);
+    const seen = new Set<string>(queue);
+    while (queue.length) {
+      const ref = queue.shift()!;
+      for (const to of adj.get(ref) || []) {
+        if (seen.has(to)) continue;
+        seen.add(to);
+        const child = byRef.get(refKey(sbomId, to));
+        if (child && reach.get(child.id) !== "unreachable") { reach.set(child.id, "reachable"); queue.push(to); }
+      }
+    }
+  }
+
+  const vulnSet = vulnerableCpeIds();
+  const vulnComps = comps.filter((c) => c.cpeId != null && vulnSet.has(Number(c.cpeId)));
+  const expl = exploitByCpe([...new Set(vulnComps.map((c) => Number(c.cpeId)))]);
+  const reachFactor: Record<Reach, number> = { reachable: 1, unknown: 0.5, unreachable: 0.15 };
+
+  const findings: ScaPriorityFinding[] = vulnComps.map((c) => {
+    const r = reach.get(c.id) || "unknown";
+    const e = expl.get(Number(c.cpeId)) || { cvss: null, kev: false, epss: null, vulns: 1 };
+    const sev = (e.cvss ?? 5) / 10;
+    const exploit = e.kev ? 1 : Math.min(1, 0.15 + (e.epss ?? 0));
+    let priority = Math.round(100 * reachFactor[r] * (0.6 * sev + 0.4 * exploit));
+    if (e.kev && r === "reachable") priority = Math.max(priority, 90);
+    let bucket: ScaPriorityFinding["bucket"];
+    if (r === "unreachable") bucket = "deferred";
+    else if (r === "unknown") bucket = "review";
+    else if (e.kev || (e.cvss ?? 0) >= 9 || (e.epss ?? 0) >= 0.5) bucket = "act";
+    else bucket = "scheduled";
+    return { componentId: c.id, name: c.name, version: c.version, scope: c.scope, sbomId: c.sbomId, assetId: c.assetId, cpe: c.cpe, reach: r, cvss: e.cvss, kev: e.kev, epss: e.epss, vulnCount: e.vulns, priority, bucket };
+  }).sort((a, b) => b.priority - a.priority);
+
+  const cnt = (f: (x: ScaPriorityFinding) => boolean): number => findings.filter(f).length;
+  const vulnerable = findings.length;
+  const unreachable = cnt((x) => x.reach === "unreachable");
+  const reachable = cnt((x) => x.reach === "reachable");
+  const unknown = cnt((x) => x.reach === "unknown");
+  return {
+    findings,
+    summary: {
+      vulnerable, reachable, unreachable, unknown,
+      act: cnt((x) => x.bucket === "act"), scheduled: cnt((x) => x.bucket === "scheduled"),
+      deferred: cnt((x) => x.bucket === "deferred"), review: cnt((x) => x.bucket === "review"),
+      noiseReductionPct: vulnerable ? Math.round((unreachable / vulnerable) * 100) : 0,
+      reachablePct: vulnerable ? Math.round((reachable / vulnerable) * 100) : 0,
+    },
+  };
+}
+
 // ─────────────────────────────── inventory ───────────────────────────────
 
 /** Full SCA inventory: SBOM documents, components, license/type/supplier breakdowns + worklist. */

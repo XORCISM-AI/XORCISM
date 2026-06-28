@@ -216,6 +216,7 @@ async function load(focusSbom: number | null): Promise<void> {
   $("sc-body").innerHTML = `<div class="sc-cards">${cards}</div>
     ${importPanel}
     ${charts}
+    <div id="sc-reach"></div>
     <div class="sc-section">${fmt("sca.sec.sboms", { n: d.sboms.length })}</div>${sbomTable}
     <div class="sc-section">${t("sca.sec.graph")}</div>
     <div id="sc-graph"></div>
@@ -243,6 +244,44 @@ async function load(focusSbom: number | null): Promise<void> {
   document.querySelectorAll<HTMLElement>("[data-del]").forEach((el) => el.addEventListener("click", () => void delSbom(Number(el.dataset.del))));
 
   void renderGraph(focusSbom);
+  void loadReach();
+}
+
+// ── reachability-based prioritization panel (Endor/Snyk-style) ──────────────────────
+interface ReachFinding { name: string; version: string | null; scope: string | null; reach: string; cvss: number | null; kev: boolean; epss: number | null; vulnCount: number; priority: number; bucket: string; }
+interface ScaPriorityResp { findings: ReachFinding[]; summary: { vulnerable: number; reachable: number; unreachable: number; unknown: number; act: number; scheduled: number; deferred: number; review: number; noiseReductionPct: number; reachablePct: number }; }
+const reachColor = (r: string): string => r === "reachable" ? "#ef4444" : r === "unreachable" ? "#64748b" : "#f59e0b";
+const bucketColor = (b: string): string => b === "act" ? "#ef4444" : b === "scheduled" ? "#f59e0b" : b === "deferred" ? "#64748b" : "#38bdf8";
+
+async function loadReach(): Promise<void> {
+  const host = document.getElementById("sc-reach"); if (!host) return;
+  let d: ScaPriorityResp;
+  try { const r = await fetch("/api/sca/priority"); if (!r.ok) throw new Error(`HTTP ${r.status}`); d = await r.json(); }
+  catch { host.innerHTML = ""; return; }
+  const s = d.summary;
+  if (!s.vulnerable) {
+    host.innerHTML = `<div class="sc-panel"><div class="sc-section" style="margin-top:0">${t("sca.reach.title")}</div><div class="muted">${t("sca.reach.none")}</div></div>`;
+    return;
+  }
+  const badge = (txt: string, color: string): string => `<span style="background:${color}22;color:${color};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600">${txt}</span>`;
+  const rows = d.findings.slice(0, 40).map((f) => `<tr>
+    <td><b>${esc(f.name)}</b> <span class="muted">${esc(f.version || "")}</span>${f.scope ? ` <span class="muted" style="font-size:10px">[${esc(f.scope)}]</span>` : ""}</td>
+    <td style="color:${reachColor(f.reach)};font-weight:600">${esc(t("sca.reach.r." + f.reach) || f.reach)}</td>
+    <td>${f.kev ? `<span style="color:#ef4444;font-weight:700">KEV</span> ` : ""}${f.cvss != null ? `CVSS ${esc(f.cvss)}` : ""}${f.epss != null ? ` · EPSS ${(f.epss * 100).toFixed(0)}%` : ""}</td>
+    <td style="text-align:right;font-weight:700">${f.priority}</td>
+    <td>${badge(esc(t("sca.reach.b." + f.bucket) || f.bucket), bucketColor(f.bucket))}</td>
+  </tr>`).join("");
+  host.innerHTML = `<div class="sc-panel">
+    <div class="sc-section" style="margin-top:0">${t("sca.reach.title")}</div>
+    <div class="muted" style="font-size:12px;margin:-4px 0 10px">${t("sca.reach.sub")}</div>
+    <div class="sc-cards" style="margin-bottom:12px">
+      ${card(t("sca.reach.noise"), s.noiseReductionPct + "%", fmt("sca.reach.noise.f", { u: s.unreachable, v: s.vulnerable }), "#34d399")}
+      ${card(t("sca.reach.act"), String(s.act), t("sca.reach.act.f"), s.act ? "#ef4444" : "#34d399")}
+      ${card(t("sca.reach.scheduled"), String(s.scheduled), t("sca.reach.scheduled.f"), "#f59e0b")}
+      ${card(t("sca.reach.deferred"), String(s.deferred), fmt("sca.reach.deferred.f", { n: s.review }), "#64748b")}
+    </div>
+    <table class="sc"><thead><tr><th>${t("sca.reach.th.dep")}</th><th>${t("sca.reach.th.reach")}</th><th>${t("sca.reach.th.risk")}</th><th style="text-align:right">${t("sca.reach.th.prio")}</th><th>${t("sca.reach.th.bucket")}</th></tr></thead><tbody>${rows}</tbody></table>
+  </div>`;
 }
 
 async function loadAssets(): Promise<void> {

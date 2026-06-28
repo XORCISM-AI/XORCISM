@@ -6,7 +6,7 @@
  */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { parseSbom, importSbom, scaInventory, scaGraph, exportCycloneDX, exportSPDX, deleteSbom } from "../sca";
+import { parseSbom, importSbom, scaInventory, scaGraph, scaPriority, exportCycloneDX, exportSPDX, deleteSbom } from "../sca";
 import * as xid from "../xid";
 
 const router = Router();
@@ -17,6 +17,13 @@ router.get("/sca", (req: Request, res: Response) => {
   if (!req.user) return void res.status(401).json({ error: "auth" });
   if (!userCan(req.user, "read", "XORCISM", "ASSET")) return void res.status(403).json({ error: "forbidden" });
   res.json(scaInventory(tenantOf(req)));
+});
+
+// GET /api/sca/priority — reachability-based prioritization of vulnerable dependencies (Endor/Snyk-style)
+router.get("/sca/priority", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XORCISM", "ASSET")) return void res.status(403).json({ error: "forbidden" });
+  res.json(scaPriority(tenantOf(req)));
 });
 
 // GET /api/sca/graph?sbom=<id> — composition graph (SBOM → components + dependency edges)

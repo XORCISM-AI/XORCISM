@@ -33,6 +33,7 @@ import attackPathRouter from "./routes/attackpath";
 import purpleTeamRouter from "./routes/purpleteam";
 import ransomwareRouter from "./routes/ransomware";
 import assuranceRouter from "./routes/assurance";
+import qaaRouter from "./routes/qaa";
 import slaRouter from "./routes/sla";
 import { ensureSlaColumns } from "./sla";
 import pirRouter from "./routes/pir";
@@ -308,6 +309,7 @@ app.use("/api", attackPathRouter); // attack-path & choke-point graph (reachabil
 app.use("/api", purpleTeamRouter); // purple-team: chain ATT&CK detection coverage (Sigma) + rule generation
 app.use("/api", ransomwareRouter); // ransomware-to-$ scenario simulator (BIA/FAIR impact + D3FEND controls)
 app.use("/api", assuranceRouter); // continuously-proven compliance (control assurance from live telemetry)
+app.use("/api", qaaRouter); // security questionnaire auto-answer (drafts from the knowledge base + local AI)
 app.use("/api", slaRouter); // incident SLA view: incidents measured against asset-defined resolution SLAs
 app.use("/api", pirRouter); // Priority Intelligence Requirements coverage register
 app.use("/api", identitiesRouter); // IAM: identity inventory (human + non-human) + governance findings
@@ -699,6 +701,9 @@ app.get("/ransomware", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/assurance", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "assurance.html"));
+});
+app.get("/questionnaire-assistant", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "questionnaire-assistant.html"));
 });
 app.get("/incident-sla", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "incident-sla.html"));

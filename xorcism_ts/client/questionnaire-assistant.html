@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="qa.pageTitle">XORCISM — Security questionnaire assistant</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .qa-wrap{max-width:1080px;margin:0 auto;padding:18px}
+  .qa-head h1{font-size:20px;margin:0 0 2px}
+  .qa-sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:860px}
+  .qa-panel{border:1px solid #2d3250;border-radius:10px;padding:14px;margin-bottom:14px;background:#13162a}
+  .qa-panel textarea{width:100%;min-height:120px;background:#0d0f1d;border:1px solid #2d3250;border-radius:8px;color:#e2e8f0;padding:10px;font-size:13px;font-family:inherit;box-sizing:border-box}
+  .qa-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .qa-go{background:#7c3aed;color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer}
+  .qa-go[disabled]{opacity:.6;cursor:default}
+  .qa-ai{font-size:12px;color:#64748b}
+  .qa-ai.up{color:#34d399}
+  .qa-item{border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#13162a}
+  .qa-q{font-size:14px;font-weight:600;color:#e2e8f0;margin-bottom:6px}
+  .qa-a{font-size:13px;color:#cbd5e1;white-space:pre-wrap}
+  .qa-a textarea{width:100%;min-height:64px;background:#0d0f1d;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;padding:7px;font-size:13px;font-family:inherit;box-sizing:border-box}
+  .qa-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .conf{font-size:11px;border-radius:6px;padding:2px 8px;font-weight:600}
+  .conf.high{background:#064e3b;color:#6ee7b7}.conf.medium{background:#78350f;color:#fcd34d}.conf.low{background:#7f1d1d;color:#fecaca}
+  .src{font-size:11px;color:#64748b;font-family:ui-monospace,monospace}
+  .tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2133;color:#94a3b8}
+  .qa-save{background:#1e2940;color:#93c5fd;border:1px solid #2d3250;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .muted{color:#64748b}
+  .qa-sec{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+  table.qa{width:100%;border-collapse:collapse;font-size:12px}
+  table.qa th,table.qa td{text-align:left;padding:6px 8px;border-bottom:1px solid #20243c;vertical-align:top}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management" data-i18n="qa.navComp">&#128203; Compliance</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="qa.navTitle">&#128221; Questionnaire assistant</span>
+</div>
+
+<div class="qa-wrap">
+  <div class="qa-head">
+    <h1 data-i18n="qa.title">Security questionnaire assistant</h1>
+    <div class="qa-sub" data-i18n="qa.sub">Paste the customer security-questionnaire questions (one per line). XORCISM drafts answers from <b>your own knowledge base</b> — the reusable answer library, published policies and controls, and the live control-assurance posture — with sources and a confidence level. Everything stays local. Accept good answers to grow the library.</div>
+  </div>
+
+  <div class="qa-panel">
+    <textarea id="qa-input" placeholder="e.g.&#10;Do you encrypt customer data at rest?&#10;Do you run regular penetration tests?&#10;How do you detect and respond to security incidents?"></textarea>
+    <div class="qa-row">
+      <button id="qa-run" class="qa-go" data-i18n="qa.draft">Draft answers</button>
+      <span id="qa-status" class="qa-ai"></span>
+    </div>
+  </div>
+
+  <div id="qa-results"></div>
+
+  <div class="qa-sec" data-i18n="qa.libTitle">Answer library</div>
+  <div id="qa-library"><div class="muted" data-i18n="qa.loading">Loading…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/questionnaire-assistant.js"></script>
+</body>
+</html>

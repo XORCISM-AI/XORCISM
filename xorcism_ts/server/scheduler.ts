@@ -13,6 +13,7 @@ import {
 } from "./jobs";
 import { createAgentJob } from "./agents";
 import { matchCves } from "./cvematch";
+import { controlAssurance, ensureAssuranceTables } from "./assurance";
 import { runScheduledBoardReports } from "./boardreport";
 import { cronMatches } from "./cron";
 import { targetInScope } from "./scope";
@@ -189,5 +190,13 @@ export function startScheduler(): void {
     try { tickSchedules(); } catch (e) { console.warn(`[scheduler] tick: ${(e as Error).message}`); }
   }, 30_000);
   if (typeof timer.unref === "function") timer.unref();
+
+  // Continuous control monitoring: persist a global control-assurance snapshot so the page has a
+  // trend + drift baseline even when nobody opens it (recordSnapshot throttles to one per 12 h).
+  try { ensureAssuranceTables(); } catch { /* */ }
+  const assureTick = (): void => { try { controlAssurance(null); } catch (e) { console.warn(`[assurance] snapshot: ${(e as Error).message}`); } };
+  const bootT = setTimeout(assureTick, 60_000); if (typeof bootT.unref === "function") bootT.unref();
+  const assureTimer = setInterval(assureTick, 6 * 3600_000); if (typeof assureTimer.unref === "function") assureTimer.unref();
+
   console.log("[scheduler] démarré (tick 30s)");
 }

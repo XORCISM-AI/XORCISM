@@ -27,6 +27,20 @@
   .metric{font-size:13px;color:#cbd5e1}
   .evi{font-size:11px;color:#64748b;margin-top:3px}
   .muted{color:#64748b}
+  /* continuous-monitoring additions: framework readiness, trend, drift */
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+  .fw-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:4px}
+  .fw{border:1px solid #2d3250;border-radius:10px;padding:11px 13px;background:#13162a}
+  .fw-top{display:flex;justify-content:space-between;align-items:baseline}
+  .fw-lbl{font-size:13px;font-weight:600;color:#e2e8f0}
+  .fw-pct{font-size:18px;font-weight:700}
+  .fw .sbar{max-width:none;margin:7px 0 0}
+  .drift-ok{font-size:13px;color:#6ee7b7;background:#0c2a20;border:1px solid #14532d;border-radius:8px;padding:9px 12px}
+  .drift-row{display:flex;align-items:center;gap:10px;border:1px solid #2d3250;border-radius:8px;padding:8px 12px;margin-bottom:6px;background:#13162a;font-size:13px}
+  .drift-row.down{border-color:#7f1d1d}.drift-row.up{border-color:#14532d}
+  .drift-row .nm{font-weight:600;color:#e2e8f0}
+  .drift-row .tag{margin-left:auto;font-size:11px;border-radius:6px;padding:2px 8px;font-weight:600}
+  .drift-row .tag.up{background:#064e3b;color:#6ee7b7}.drift-row .tag.down{background:#7f1d1d;color:#fecaca}
 </style>
 </head>
 <body>
