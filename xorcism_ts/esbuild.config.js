@@ -131,28 +131,73 @@ const entryPoints = [
   "client/ts/hunting.ts",
 ];
 
-const ctx = esbuild.context({
-  entryPoints,
+const shared = {
   bundle: true,
   outdir: "dist/client/js",
   platform: "browser",
   target: ["es2020"],
   sourcemap: true,
-  // Minify in production. Each page bundle inlines the multi-language i18n dict, so unminified
-  // every page shipped ~900 KB+ of JS (app.js ~1.4 MB) — the main cause of slow first loads.
-  // Minified is ~3× smaller; gzip on the wire (see index.ts) cuts it ~6× more.
-  // Set XOR_NO_MINIFY=1 for readable bundles when debugging the client.
+  // Minify in production. Set XOR_NO_MINIFY=1 for readable bundles when debugging the client.
   minify: process.env.XOR_NO_MINIFY !== "1",
   legalComments: "none",
   charset: "utf8", // keeps UTF-8 in the output (instead of escaping \uXXXX) — multilingual i18n
   logLevel: "info",
-}).then(async (ctx) => {
+};
+
+// The multilingual i18n dictionary (i18n.ts, ~700 KB of string data) is imported by 100+ page bundles.
+// Inlining it into every bundle made each page ship ~600 KB of duplicated strings (and it shipped TWICE
+// per page: in session-ui.js AND the page bundle). This plugin rewrites every `import … from "./i18n"`
+// in the page bundles to read from a single global (window.XORI18N), so the dictionary is built ONCE as
+// /js/i18n.js, downloaded once, and cached across every page. Page bundles drop to a fraction of their
+// size and navigation becomes near-instant. The page <script> tags load /js/i18n.js first. Keeps classic
+// (IIFE) script output — no ESM/module-type change needed.
+const i18nGlobalPlugin = {
+  name: "i18n-global",
+  setup(build) {
+    build.onResolve({ filter: /^\.\/i18n$/ }, () => ({ path: "i18n-global", namespace: "i18n-global" }));
+    build.onLoad({ filter: /.*/, namespace: "i18n-global" }, () => ({
+      loader: "js",
+      contents:
+        "const M = globalThis.XORI18N;\n" +
+        "export const SUPPORTED = M.SUPPORTED, getLang = M.getLang, lang = M.lang, t = M.t,\n" +
+        "  setLang = M.setLang, applyTranslations = M.applyTranslations,\n" +
+        "  createLanguageSelect = M.createLanguageSelect, initLanguageSelector = M.initLanguageSelector,\n" +
+        "  initI18n = M.initI18n;\n",
+    }));
+  },
+};
+
+// Pre-compress the built bundles once (brotli + gzip) so the server can serve the precompressed bytes
+// directly — smaller than on-the-fly gzip (brotli-11) and removes the per-request compression CPU from
+// the synchronous hot path. The server falls back to live compression for anything not precompressed.
+function precompress() {
+  const zlib = require("zlib");
+  const dir = path.join(__dirname, "dist/client/js");
+  let n = 0;
+  for (const f of fs.readdirSync(dir)) {
+    if (!/\.(js|css)$/.test(f)) continue;
+    const buf = fs.readFileSync(path.join(dir, f));
+    fs.writeFileSync(path.join(dir, f + ".gz"), zlib.gzipSync(buf, { level: 9 }));
+    fs.writeFileSync(path.join(dir, f + ".br"),
+      zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }));
+    n++;
+  }
+  console.log(`[esbuild] pre-compressed ${n} bundles (.gz + .br)`);
+}
+
+Promise.all([
+  // 1) the shared i18n dictionary → window.XORI18N (one file, cached across all pages)
+  esbuild.context({ ...shared, entryPoints: ["client/ts/i18n.ts"], globalName: "XORI18N" }),
+  // 2) all page bundles, with i18n externalised to that global
+  esbuild.context({ ...shared, entryPoints, plugins: [i18nGlobalPlugin] }),
+]).then(async (ctxs) => {
   if (watch) {
-    await ctx.watch();
+    await Promise.all(ctxs.map((c) => c.watch()));
     console.log("[esbuild] watching for changes...");
   } else {
-    await ctx.rebuild();
-    await ctx.dispose();
+    await Promise.all(ctxs.map((c) => c.rebuild()));
+    await Promise.all(ctxs.map((c) => c.dispose()));
+    precompress();
     console.log("[esbuild] build complete");
   }
-}).catch(() => process.exit(1));
+}).catch((e) => { console.error(e); process.exit(1); });

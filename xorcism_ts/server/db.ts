@@ -90,6 +90,13 @@ export function getDb(name: string): Database.Database {
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
     db.pragma("busy_timeout = 5000"); // waits for the lock (e.g. during an import) instead of failing
+    // Performance pragmas (safe with WAL). synchronous=NORMAL drops a fsync per commit (durable under
+    // WAL, only loses the last txn on OS crash — acceptable here); a larger page cache + memory temp
+    // store + memory-mapped I/O cut read latency on the synchronous hot path that serves page queries.
+    db.pragma("synchronous = NORMAL");
+    db.pragma("cache_size = -16000");   // ~16 MB page cache per connection (negative = KiB)
+    db.pragma("temp_store = MEMORY");    // temp B-trees / sorts in RAM, not on disk
+    db.pragma("mmap_size = 268435456");  // 256 MB memory-mapped I/O (fewer read syscalls)
   } catch { /* libsql embedded replicas manage journaling themselves; pragmas may be no-ops */ }
   if (replica) { try { (db as unknown as { sync?: () => void }).sync?.(); } catch (e) { console.warn(`[db] ${upper} initial replica sync failed: ${(e as Error).message}`); } }
   connections.set(upper, db);

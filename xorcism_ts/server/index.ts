@@ -6,6 +6,7 @@ import "express-async-errors";
 import express, { Request, Response, NextFunction } from "express";
 import compression from "compression";
 import path from "path";
+import fs from "fs";
 import explorerRouter from "./routes/explorer";
 import biaRouter from "./routes/bia";
 import authRouter from "./routes/auth";
@@ -241,6 +242,31 @@ app.use(antibot); // anti-bot / anti-scraping (rate + UA + bursts)
 app.use(loadUser); // populates req.user from the session cookie
 
 // Static resources (public — needed by the login page)
+// Serve pre-compressed bundles (brotli/gzip produced at build by esbuild.config.js) directly: smaller
+// than on-the-fly gzip and no per-request compression CPU. Falls through to express.static (which the
+// compression() middleware above still gzips live) when no precompressed variant fits the request.
+const JS_DIR = path.join(__dirname, "../../dist/client/js");
+app.use("/js", (req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const rel = req.path.replace(/^\/+/, "");
+  if (!/\.(js|css)$/.test(rel) || rel.includes("..")) return next();
+  const ae = String(req.headers["accept-encoding"] || "");
+  const enc = /\bbr\b/.test(ae) ? "br" : /\bgzip\b/.test(ae) ? "gzip" : null;
+  if (!enc) return next();
+  const file = path.join(JS_DIR, rel + (enc === "br" ? ".br" : ".gz"));
+  if (!file.startsWith(JS_DIR)) return next();
+  let stat: import("fs").Stats;
+  try { stat = fs.statSync(file); } catch { return next(); }
+  const etag = `W/"${stat.size.toString(16)}-${stat.mtimeMs.toString(16)}"`;
+  res.setHeader("Vary", "Accept-Encoding");
+  res.setHeader("Content-Type", rel.endsWith(".css") ? "text/css; charset=utf-8" : "text/javascript; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+  res.setHeader("ETag", etag);
+  if (req.headers["if-none-match"] === etag) { res.statusCode = 304; return res.end(); }
+  res.setHeader("Content-Encoding", enc);
+  if (req.method === "HEAD") return res.end();
+  fs.createReadStream(file).pipe(res);
+});
 app.use("/js", express.static(path.join(__dirname, "../../dist/client/js")));
 app.use("/css", express.static(path.join(__dirname, "../../client/css")));
 app.use(

@@ -11,6 +11,20 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **Performance — much faster page loads & navigation.** Three deep changes:
+  - **Shared i18n bundle (the big one).** The 11-language i18n dictionary (~700 KB) was being inlined into
+    *every* page bundle **and** into `session-ui.js` (loaded on every page) — so each page shipped ~1.9 MB
+    of mostly-duplicated strings. It's now built **once** as `/js/i18n.js` (a `window.XORI18N` global) and
+    externalized from all 107 page bundles via an esbuild plugin; pages load it first and the browser caches
+    it across the whole app. Result: **`dashboard.js` 983 KB → 31 KB, `session-ui.js` 976 KB → 24 KB**, etc.
+    A page that used to ship ~1.9 MB now ships **~222 KB brotli on first visit** and **~7–30 KB per
+    subsequent navigation** (the shared chunk is already cached) — navigation is near-instant.
+  - **Brotli/gzip pre-compression.** Bundles are brotli-11 + gzip-9 compressed at build; a new `/js`
+    middleware serves the precompressed bytes directly (smaller than on-the-fly gzip — `i18n.js` 953 KB →
+    **210 KB brotli** — and removes per-request compression CPU from the synchronous hot path), falling back
+    to live compression otherwise.
+  - **SQLite tuning.** Added `synchronous=NORMAL`, `cache_size=16 MB`, `temp_store=MEMORY` and
+    `mmap_size=256 MB` (on top of the existing WAL) to speed reads/writes on the query hot path.
 - **Agentless & offline host scan (Cyberwatch-style credentialed scan)** — added the one acquisition
   method XORCISM was missing: a **credentialed agentless host scan**. Instead of an agent, an admin
   **SSH** (Linux/Unix) or **WinRM/PowerShell** (Windows) session — or an **air-gapped collector** for
