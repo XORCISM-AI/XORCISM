@@ -91,6 +91,7 @@ import ctiExpertRouter from "./routes/ctiexpert";
 import { ensureCtiExpertTables } from "./ctiexpert";
 import threatCopilotRouter from "./routes/threatcopilot";
 import crqRouter from "./routes/crq";
+import vulnAuditRouter from "./routes/vulnaudit";
 import wifiPentestRouter from "./routes/wifipentest";
 import { ensureWifiTables } from "./wifipentest";
 import regObligationsRouter from "./routes/regobligations";
@@ -326,6 +327,7 @@ app.use("/api", ctemRouter); // CTEM (ctem.org): standardized exposure-identifie
 app.use("/api", ctiExpertRouter); // CTI-Expert: AI-orchestrated OSINT investigation (cti-expert skill → local AI)
 app.use("/api", threatCopilotRouter); // Threat-Intel Copilot (Exvora-inspired): decision-ready triage + multi-mode analyst
 app.use("/api", crqRouter); // CRQ decision support (Gartner-aligned): operationalize FAIR/CRQ ALE into decisions
+app.use("/api", vulnAuditRouter); // Vulnerability Assessment (Vulners-style): software inventory → enriched vuln report
 app.use("/api", wifiPentestRouter); // Wi-Fi pentest: local Wi-Fi security assessment (netsh/nmcli survey → A–F grading + toolkit)
 app.use("/api", regObligationsRouter); // Regulatory calendar: obligations & deadlines (EU AI Act/DORA/NIS2/CRA/GDPR) → REGOBLIGATION
 app.use("/api", aiSystemsRouter); // AI system inventory + AI-BOM + model-risk register (AISYSTEM, XORCISM)
@@ -452,6 +454,9 @@ app.get("/d3fend", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/ask", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ask.html"));
 });
+app.get("/cloud-attacks", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "mitigant.html"));
+});
 app.get("/a3m", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "a3m.html"));
 });
@@ -574,6 +579,9 @@ app.get("/threat-copilot", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/crq", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "crq.html"));
+});
+app.get("/vuln-assessment", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "vuln-assessment.html"));
 });
 app.get("/wifi-pentest", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "wifi-pentest.html"));

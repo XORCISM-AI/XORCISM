@@ -1,0 +1,15 @@
+{
+  "id": "cyberarkhound",
+  "name": "CyberArkHound — CyberArk PAM attack paths",
+  "type": "import",
+  "category": "Identity Security",
+  "description": "Imports a CyberArkHound (github.com/jazofra/CyberArkHound) export into the XORCISM model. CyberArkHound is 'BloodHound for CyberArk': it exports CyberArk PVWA / Privilege Cloud data (users, groups, safes, accounts, platforms, PSM servers, CCP application IDs and the safe membership/permission matrix) into a BloodHound-compatible OpenGraph JSON of privilege-escalation and credential-access paths. Run CyberArkHound against your vault and pass the resulting OpenGraph JSON as the 'file'. Each CyberArk entity (safe, account, user, group, AppID, PSM server) becomes an ASSET; each privilege-escalation / credential-access edge (HasAccessTo, CanGrantAccessTo, CanRetrieveViaCCP, CanHijackViaReconcile, CanApprove, LinkedTo) and each surfaced misconfiguration (unrestricted CCP AppID, safe without CPM, wildcard AllowedSafes, PSM without session monitoring) becomes an identity-attack VULN (ATT&CK-tagged: T1078/T1098/T1187/T1528/T1555). Read-only import (no DB access in run.py, worker-safe). Drives the 'CyberArk PAM attack paths (CyberArkHound)' attack-chain playbook.",
+  "intrusive": false,
+  "permission": "connector:cyberarkhound",
+  "run": "run.py",
+  "mapping": "cyberarkhound",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a CyberArkHound OpenGraph JSON export (--output export.json)." },
+    { "name": "target", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._:@/-]+$", "help": "Vault / PVWA name for the export (default: the export metadata, else the file name)." }
+  ]
+}

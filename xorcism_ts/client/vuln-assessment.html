@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Vulnerability Assessment</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .va-wrap{max-width:1240px;margin:0 auto;padding:18px}
+  .va-wrap h1{font-size:20px;margin:0 0 2px}
+  .va-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .va-grid{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+  @media(max-width:880px){.va-grid{grid-template-columns:1fr}}
+  .va-panel{background:#13162a;border:1px solid #2d3250;border-radius:12px;padding:14px 16px}
+  .va-panel h2{font-size:12px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px}
+  #va-input{width:100%;box-sizing:border-box;min-height:300px;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-family:ui-monospace,Consolas,monospace;font-size:12px;resize:vertical}
+  .va-actions{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .btn-run{background:#7c83fd;color:#0b0d18;border:none;border-radius:8px;font-size:13px;font-weight:700;padding:9px 18px;cursor:pointer}
+  .btn-run:hover{background:#9aa0ff}.btn-ghost{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:8px;font-size:12.5px;padding:8px 12px;cursor:pointer}
+  .muted{color:#64748b}.hint{font-size:11px;color:#64748b;margin-top:8px;line-height:1.5}
+  .va-cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .va-card{flex:1;min-width:96px;background:#0f1322;border:1px solid #2d3250;border-radius:10px;padding:10px 12px}
+  .va-card .n{font-size:22px;font-weight:800}.va-card .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .comp{border:1px solid #232843;border-radius:9px;margin:8px 0;background:#0f1117;overflow:hidden}
+  .comp-head{display:flex;gap:10px;align-items:center;padding:8px 11px;background:#141832;cursor:pointer}
+  .comp-head .prod{font-weight:600;color:#e2e8f0}.comp-head .ver{font-size:11px;color:#7dd3fc;font-family:ui-monospace,monospace}
+  .comp-head .cnt{margin-left:auto;font-size:11.5px;color:#94a3b8}
+  table.va{width:100%;border-collapse:collapse;font-size:12px}
+  table.va th,table.va td{text-align:left;padding:5px 9px;border-bottom:1px solid #1a1e30}
+  table.va th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cve{color:#7dd3fc;font-family:ui-monospace,monospace}
+  .pill{font-size:9.5px;font-weight:700;border-radius:20px;padding:1px 8px}
+  .Act{background:rgba(248,113,113,.16);color:#fca5a5}.Prioritise{background:rgba(251,191,36,.16);color:#fcd34d}.Track{background:rgba(52,211,153,.16);color:#6ee7b7}
+  .kev{color:#f87171;font-weight:700}.expl{color:#fb923c}
+  .scorebar{display:inline-block;height:7px;border-radius:4px;background:linear-gradient(90deg,#34d399,#fbbf24,#f87171);vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/vulnerability-management">&#128737; Vuln mgmt</a>
+  <a href="/exposure">&#127919; Exposure</a>
+  <a href="/sca">&#128230; SCA / SBOM</a>
+  <a href="/exploitdb">&#128165; Exploit-DB</a>
+  <span class="title">&#129516; Vulnerability Assessment</span>
+</div>
+<div class="va-wrap">
+  <h1>Vulnerability Assessment</h1>
+  <div class="va-sub">Turn a <b>software inventory</b> into a decision-ready vulnerability report — the Vulners-style audit.
+    Paste OS packages (<code>dpkg -l</code>, <code>rpm -qa</code>), language packages (pip / npm / PURL), CPE URIs, or plain
+    <code>product version</code> lines. Each component is matched against XORCISM's enriched vulnerability store and scored with
+    CVSS, EPSS, CISA KEV, SSVC and Exploit-DB availability into <b>Act / Prioritise / Track</b>. Runs entirely on your data.</div>
+  <div class="va-grid">
+    <div class="va-panel">
+      <h2>Software inventory</h2>
+      <textarea id="va-input" spellcheck="false" placeholder="openssl 1.0.1&#10;log4j 2.14.1&#10;pkg:npm/lodash@4.17.4&#10;cpe:2.3:a:apache:http_server:2.4.49&#10;ii  curl  7.68.0-1ubuntu2  amd64"></textarea>
+      <div class="va-actions">
+        <button class="btn-run" id="va-run">▷ Assess</button>
+        <button class="btn-ghost" id="va-sample">Load sample</button>
+        <span class="muted" id="va-status" style="font-size:12px"></span>
+      </div>
+      <div class="hint">Supported: <code>dpkg -l</code> · <code>rpm -qa</code> · pip <code>name==ver</code> · npm <code>name@ver</code> ·
+        PURL <code>pkg:eco/name@ver</code> · CPE 2.2/2.3 · <code>product version</code> · bare product. Matched at product level;
+        confirm version applicability per CVE.</div>
+    </div>
+    <div class="va-panel" id="va-out"><div class="muted" style="padding:24px;text-align:center">Paste an inventory and click <b>Assess</b>.</div></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/vuln-assessment.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "id": "graphspy",
+  "name": "GraphSpy — Entra ID / M365 attack tool",
+  "type": "import",
+  "category": "Identity Security",
+  "description": "Imports a GraphSpy (github.com/RedByte1337/GraphSpy) engagement export into the XORCISM model. GraphSpy is an initial-access & post-exploitation tool for Entra ID / Microsoft 365 (device-code phishing, access/refresh/PRT token abuse, OneDrive/SharePoint/Outlook/Teams exfiltration, MFA-method persistence). Export your GraphSpy session to JSON (tenant, enumerated users/groups/roles, devices, captured tokens, device codes, MFA methods, findings) and pass it as the 'file'. The tenant, users and devices become ASSETs; each captured token, successful device-code phish, weak/over-privileged MFA posture and PRT export becomes an identity-attack VULN (ATT&CK-tagged: T1528/T1550/T1078/T1114/T1187). Read-only import (no DB access in run.py, worker-safe). Drives the 'Microsoft 365 / Entra ID attack (GraphSpy)' attack-chain playbook.",
+  "intrusive": false,
+  "permission": "connector:graphspy",
+  "run": "run.py",
+  "mapping": "graphspy",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to a GraphSpy engagement export (.json) — see README for the schema." },
+    { "name": "target", "type": "string", "required": false, "pattern": "^[A-Za-z0-9 ._:@/-]+$", "help": "Tenant / engagement name (default: the export's tenant, else the file name)." }
+  ]
+}

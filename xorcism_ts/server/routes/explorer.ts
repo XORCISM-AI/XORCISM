@@ -49,6 +49,7 @@ import {
   searchAttackTechniques,
   getD3fendMatrix,
   getA3mMatrix,
+  getMitigantMatrix,
   getHuntsStixBundle,
   getReportsStixBundle,
   getThreatTtps,
@@ -896,6 +897,14 @@ router.get("/a3m/matrix", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XTHREAT", "A3MTECHNIQUE"))
     return deny(req, res, "read", "XTHREAT", "A3MTECHNIQUE");
   try { res.json(getA3mMatrix()); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// GET /api/mitigant/matrix — Mitigant Threat Catalog (cloud/AWS attack matrix): tactics → techniques
+router.get("/mitigant/matrix", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XTHREAT", "MITIGANTTECHNIQUE"))
+    return deny(req, res, "read", "XTHREAT", "MITIGANTTECHNIQUE");
+  try { res.json(getMitigantMatrix()); }
   catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 

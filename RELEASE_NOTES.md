@@ -11,6 +11,56 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **Vulnerability Assessment (Vulners-style) + Vulners connector** — integrated the missing Vulners.com
+  capabilities. New **`/vuln-assessment`** page turns a **software inventory** into a decision-ready
+  vulnerability report (their *Assessment / SBOM Analyzer / Library Audit*): paste OS packages
+  (`dpkg -l` / `rpm -qa`), language packages (pip / npm / **PURL**), **CPE** URIs, or `product version`
+  lines and each component is matched against XORCISM's own enriched store
+  (`XVULNERABILITY.VULNERABILITYFORCPE`) and scored with CVSS, EPSS, CISA KEV, SSVC and **Exploit-DB**
+  availability into **Act / Prioritise / Track** — 100% offline. New `server/vulnaudit.ts` (`parseInventory`
+  + `assessInventory`), `POST /api/vuln-assessment`, landing card, EN/FR. Plus a **`vulners` connector** +
+  TOOL entry that queries the Vulners API (**search / id / audit** modes — Lucene search, CVE lookup, and the
+  agentless OS-package audit → VULNERABILITY; needs `VULNERS_API_KEY`, or normalises a saved response offline)
+  for broader coverage and precise version-range matching.
+- **CyberArkHound (CyberArk PAM attack paths) — TOOL + connector + attack chain** — added
+  [CyberArkHound](https://github.com/jazofra/CyberArkHound) ("BloodHound for CyberArk": exports CyberArk
+  PVWA / Privilege Cloud data — safes, accounts, users, groups, CCP AppIDs, PSM servers + the safe
+  membership/permission matrix — into a BloodHound OpenGraph JSON of privilege-escalation / credential-access
+  paths) to the TOOL catalogue, plus a **`cyberarkhound` connector** that ingests the OpenGraph JSON →
+  CyberArk entities as ASSETs and each attack-path edge (HasAccessTo, CanGrantAccessTo, CanRetrieveViaCCP,
+  CanHijackViaReconcile, CanApprove, LinkedTo) + misconfiguration (unrestricted CCP AppID, safe without CPM,
+  wildcard AllowedSafes, PSM without session monitoring) as an identity-attack VULN (ATT&CK-tagged
+  T1078/T1098/T1187/T1528/T1555; severity raised toward privileged targets / unrestricted CCP), plus a
+  **"CyberArk PAM attack paths (CyberArkHound)"** attack-chain playbook (`chain.ts`) that escalates findings
+  to CyberSentinel AI for ATT&CK mapping — feeding exposure / attack-path / ITDR.
+- **ASD/ACSC "AI & ML — Supply chain risks and mitigations" (2025) — document + control framework** —
+  ingested the Australian Signals Directorate guidance (co-sealed by CCCS, CSA-SG, NIS-KR, NCO-JP, NCSC-NZ,
+  NCSC-UK, NSA; CC BY 4.0) into the **DOCUMENT** register (PDF stored in the content-addressed blob store,
+  TLP:CLEAR / Public, framework-tagged) and imported its mitigations as the selectable control framework
+  **"ASD AI/ML Supply Chain (2025)"** — `import_asd_ai_supplychain.py` → `XORCISM.CONTROL` (VocabID 48, **32
+  controls** across 6 components: cross-cutting supply-chain risk management, AI data, ML models, AI software,
+  AI infrastructure/hardware, third-party services), each carrying the risk it mitigates and the NIST
+  Adversarial ML / MITRE ATLAS (AI Supply Chain Compromise) mappings. Added to the framework picker
+  (control register, compliance journeys, document tagging). Complements the AI-security suite (AISVS, MLASVS,
+  DASF, SAIF, AICM).
+- **Mitigant Cloud Attacks Matrix — `/cloud-attacks`** — imported the **Mitigant Threat Catalog**
+  (threats.mitigant.io, derived from the AWS Threat Technique Catalog): **139 AWS cloud attack techniques
+  across 12 tactics**, each with a severity, AWS service (41 distinct), MITRE ATT&CK technique id,
+  executable **AWS CLI commands** (256) and the **CloudTrail events** they generate (354, for detection).
+  New importer `import_mitigant.py` (committed snapshot → `XTHREAT.MITIGANTTACTIC` / `MITIGANTTECHNIQUE`,
+  idempotent full-replace) + a matrix view at `/cloud-attacks` (tactics as columns, severity-coloured cells,
+  filter by keyword / AWS service / severity, click a technique for its description, commands and CloudTrail
+  events) via `GET /api/mitigant/matrix`. Cross-linked from the ATT&CK / D3FEND / A3M matrices + a landing
+  card. EN/FR. Mirrors the A3M / D3FEND matrix integrations.
+- **GraphSpy (Entra ID / M365 attack tool) — TOOL + connector + attack chain** — added
+  [GraphSpy](https://github.com/RedByte1337/GraphSpy) (initial-access & post-exploitation for Entra ID /
+  Microsoft 365: device-code phishing, access/refresh/PRT token abuse, OneDrive/SharePoint/Outlook/Teams
+  exfiltration, MFA-method persistence) to the TOOL catalogue, plus a **`graphspy` connector** that ingests
+  a GraphSpy engagement export (JSON) → tenant/users/devices as ASSETs and captured tokens, successful
+  device-code phishes, over-privileged weak-MFA users and PRT exports as identity-attack VULNs
+  (ATT&CK-tagged T1528/T1550/T1078/T1114), plus a **"Microsoft 365 / Entra ID attack (GraphSpy)"**
+  attack-chain playbook (`chain.ts`) that seeds GraphSpy and escalates any finding to CyberSentinel AI for
+  ATT&CK mapping — feeding the exposure / attack-path / ITDR pipelines.
 - **Cloud Management: AWS compliance checker + CloudTrail & AWS Config** — `/cloud-security` gains a built-in
   **CIS AWS Foundations** checker. Upload an AWS posture snapshot (or produce it with the new `aws-config` /
   `aws-cloudtrail` data or the `aws-compliance` connector) and it scores: IAM **password policy** (length/reuse/

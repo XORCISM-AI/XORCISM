@@ -3947,6 +3947,19 @@ export function ensureThreatTables(): void {
       A3MTechniqueID INTEGER PRIMARY KEY, AATID TEXT UNIQUE, Name TEXT, Description TEXT,
       TacticName TEXT, MatrixOrder INTEGER, URL TEXT);
     CREATE INDEX IF NOT EXISTS ix_a3mtech_tactic ON A3MTECHNIQUE(TacticName);
+    -- Mitigant Threat Catalog — cloud (AWS) attack-technique matrix (threats.mitigant.io,
+    -- derived from the AWS Threat Technique Catalog), populated by import_mitigant.py.
+    CREATE TABLE IF NOT EXISTS MITIGANTTACTIC (
+      MitigantTacticID INTEGER PRIMARY KEY, TacticKey TEXT UNIQUE, Name TEXT, MitreTacticID TEXT, MatrixOrder INTEGER);
+    -- TechID is NOT unique: the catalog legitimately repeats a technique id across (and within)
+    -- tactics, so the matrix keeps all rows; the importer does a full replace.
+    CREATE TABLE IF NOT EXISTS MITIGANTTECHNIQUE (
+      MitigantTechniqueID INTEGER PRIMARY KEY, TechID TEXT, Title TEXT, Description TEXT,
+      TacticKey TEXT, Severity TEXT, Service TEXT, MitreID TEXT, Commands TEXT, CloudTrail TEXT,
+      MatrixOrder INTEGER, URL TEXT);
+    CREATE INDEX IF NOT EXISTS ix_mitiganttech_tactic ON MITIGANTTECHNIQUE(TacticKey);
+    CREATE INDEX IF NOT EXISTS ix_mitiganttech_service ON MITIGANTTECHNIQUE(Service);
+    CREATE INDEX IF NOT EXISTS ix_mitiganttech_id ON MITIGANTTECHNIQUE(TechID);
     -- SAIF — Google Secure AI Framework risk map (saif.google), populated by import_saif.py.
     CREATE TABLE IF NOT EXISTS SAIFCOMPONENT (
       SaifComponentID INTEGER PRIMARY KEY, Name TEXT UNIQUE, Description TEXT,
@@ -4147,6 +4160,38 @@ export function getA3mMatrix(): A3mMatrix {
   const ordered = tactics.map((t) => t.name);
   for (const k of byTactic.keys()) if (!ordered.includes(k)) ordered.push(k);
   return { tactics: ordered.map((name) => ({ name, techniques: byTactic.get(name) ?? [] })).filter((t) => t.techniques.length || tactics.some((x) => x.name === t.name)) };
+}
+
+export interface MitigantTech { techId: string; title: string; description: string | null; severity: string | null; service: string | null; mitre: string | null; commands: string[]; cloudtrail: string[]; }
+export interface MitigantMatrix {
+  tactics: { key: string; name: string; mitre: string | null; techniques: MitigantTech[] }[];
+  summary: { techniques: number; tactics: number; services: number; bySeverity: Record<string, number> };
+}
+
+/** Mitigant Threat Catalog: cloud (AWS) attack tactics (matrix order) → techniques (with AWS CLI commands + CloudTrail events). */
+export function getMitigantMatrix(): MitigantMatrix {
+  const db = getDb("XTHREAT");
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='MITIGANTTECHNIQUE'").get())
+    return { tactics: [], summary: { techniques: 0, tactics: 0, services: 0, bySeverity: {} } };
+  const tactics = db.prepare("SELECT TacticKey AS key, Name AS name, MitreTacticID AS mitre FROM MITIGANTTACTIC ORDER BY CASE WHEN MatrixOrder IS NULL THEN 1 ELSE 0 END, MatrixOrder, Name").all() as { key: string; name: string; mitre: string | null }[];
+  const techs = db.prepare("SELECT TechID AS techId, Title AS title, Description AS description, TacticKey AS tac, Severity AS severity, Service AS service, MitreID AS mitre, Commands AS commands, CloudTrail AS cloudtrail FROM MITIGANTTECHNIQUE ORDER BY CASE WHEN MatrixOrder IS NULL THEN 1 ELSE 0 END, MatrixOrder, TechID").all() as { techId: string; title: string; description: string | null; tac: string; severity: string | null; service: string | null; mitre: string | null; commands: string | null; cloudtrail: string | null }[];
+  const parse = (s: string | null): string[] => { try { const a = JSON.parse(s || "[]"); return Array.isArray(a) ? a.map(String) : []; } catch { return []; } };
+  const byTactic = new Map<string, MitigantTech[]>();
+  const services = new Set<string>(); const bySeverity: Record<string, number> = {};
+  for (const t of techs) {
+    if (!byTactic.has(t.tac)) byTactic.set(t.tac, []);
+    byTactic.get(t.tac)!.push({ techId: t.techId, title: t.title, description: t.description, severity: t.severity, service: t.service, mitre: t.mitre, commands: parse(t.commands), cloudtrail: parse(t.cloudtrail) });
+    if (t.service) services.add(t.service);
+    const sev = String(t.severity || "unknown").toLowerCase(); bySeverity[sev] = (bySeverity[sev] || 0) + 1;
+  }
+  const known = new Map(tactics.map((t) => [t.key, t] as const));
+  const order = tactics.map((t) => t.key);
+  for (const k of byTactic.keys()) if (!order.includes(k)) order.push(k);
+  const out = order.map((key) => {
+    const t = known.get(key);
+    return { key, name: t?.name || key.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), mitre: t?.mitre ?? null, techniques: byTactic.get(key) ?? [] };
+  }).filter((t) => t.techniques.length || known.has(t.key));
+  return { tactics: out, summary: { techniques: techs.length, tactics: out.length, services: services.size, bySeverity } };
 }
 
 /**

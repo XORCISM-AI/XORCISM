@@ -1512,6 +1512,16 @@ CREATE TABLE IF NOT EXISTS A3MTECHNIQUE (
         A3MTechniqueID INTEGER PRIMARY KEY, AATID TEXT UNIQUE, Name TEXT, Description TEXT,
         TacticName TEXT, MatrixOrder INTEGER, URL TEXT);
 CREATE INDEX IF NOT EXISTS ix_a3mtech_tactic ON A3MTECHNIQUE(TacticName);
+-- Mitigant Threat Catalog — cloud (AWS) attack-technique matrix (threats.mitigant.io), populated by import_mitigant.py.
+CREATE TABLE IF NOT EXISTS MITIGANTTACTIC (
+        MitigantTacticID INTEGER PRIMARY KEY, TacticKey TEXT UNIQUE, Name TEXT, MitreTacticID TEXT, MatrixOrder INTEGER);
+CREATE TABLE IF NOT EXISTS MITIGANTTECHNIQUE (
+        MitigantTechniqueID INTEGER PRIMARY KEY, TechID TEXT, Title TEXT, Description TEXT,
+        TacticKey TEXT, Severity TEXT, Service TEXT, MitreID TEXT, Commands TEXT, CloudTrail TEXT,
+        MatrixOrder INTEGER, URL TEXT);
+CREATE INDEX IF NOT EXISTS ix_mitiganttech_tactic ON MITIGANTTECHNIQUE(TacticKey);
+CREATE INDEX IF NOT EXISTS ix_mitiganttech_service ON MITIGANTTECHNIQUE(Service);
+CREATE INDEX IF NOT EXISTS ix_mitiganttech_id ON MITIGANTTECHNIQUE(TechID);
 -- LLM ATT&CK Navigator (Anthropic) — AI-enablement layer over MITRE ATT&CK, populated by import_llm_attack.py.
 CREATE TABLE IF NOT EXISTS LLMATTACKTECHNIQUE (
         LLMAttackTechniqueID INTEGER PRIMARY KEY,

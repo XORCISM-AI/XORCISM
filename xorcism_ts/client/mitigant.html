@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Cloud Attacks Matrix (Mitigant)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .att-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 16px}
+  .att-toolbar h2{margin:0;font-size:18px;color:#e2e8f0}
+  .att-toolbar input,.att-toolbar select{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:6px 9px}
+  .att-toolbar input{min-width:240px}
+  .att-stats{font-size:12px;color:#94a3b8}
+  .matrix{display:flex;gap:8px;overflow-x:auto;padding:0 16px 24px;align-items:flex-start}
+  .att-col{flex:0 0 220px;width:220px;background:#13162a;border:1px solid #2d3250;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;max-height:80vh}
+  .att-col-head{padding:8px 10px;border-bottom:1px solid #2d3250;background:#171b30;position:sticky;top:0}
+  .att-tac-name{font-size:12.5px;font-weight:600;color:#22d3ee;line-height:1.2}
+  .att-tac-meta{font-size:10px;color:#64748b;margin-top:2px}
+  .att-col-body{overflow-y:auto;padding:4px}
+  .att-cell{border:1px solid #232843;border-left-width:3px;border-radius:5px;margin:3px 0;background:#0f1117;padding:5px 7px;cursor:pointer}
+  .att-cell:hover{background:#161a2e;border-color:#3a4170}
+  .att-id{color:#64748b;font-size:10px;font-family:ui-monospace,Consolas,monospace}
+  .att-cell .tn{color:#cbd5e1;font-size:11.5px;line-height:1.3;margin-top:2px}
+  .att-cell .meta{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+  .sev{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;border-radius:4px;padding:1px 5px}
+  .svc{font-size:9.5px;color:#7dd3fc;background:#0c2030;border-radius:4px;padding:1px 5px}
+  .sev-critical{background:#7f1d1d;color:#fecaca}.cell-critical{border-left-color:#ef4444}
+  .sev-high{background:#78350f;color:#fcd34d}.cell-high{border-left-color:#f59e0b}
+  .sev-medium{background:#1e3a5f;color:#bfdbfe}.cell-medium{border-left-color:#3b82f6}
+  .sev-low{background:#1e2133;color:#94a3b8}.cell-low{border-left-color:#475569}
+  .sev-unknown{background:#1e2133;color:#94a3b8}.cell-unknown{border-left-color:#334155}
+  /* detail modal */
+  .mit-bg{display:none;position:fixed;inset:0;background:rgba(4,6,15,.7);z-index:1200;align-items:flex-start;justify-content:center;overflow:auto;padding:46px 16px}
+  .mit-bg.open{display:flex}
+  .mit-modal{background:#13162a;border:1px solid #2d3250;border-radius:14px;width:min(760px,96vw);padding:20px 22px}
+  .mit-modal h3{margin:0 0 4px;font-size:17px;color:#e2e8f0}
+  .mit-modal .mid{font-family:ui-monospace,monospace;color:#7dd3fc;font-size:12px}
+  .mit-modal .lead{font-size:13px;color:#cbd5e1;line-height:1.55;margin:8px 0 12px}
+  .mit-modal .row{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#94a3b8;margin-bottom:10px}
+  .mit-modal .row b{color:#e2e8f0;font-weight:600}
+  .mit-modal .sech{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#94a3b8;margin:12px 0 4px}
+  .mit-modal pre{background:#0b0d14;border:1px solid #2d3250;border-radius:8px;padding:9px 11px;color:#cbd5e1;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;white-space:pre-wrap;overflow:auto;max-height:240px;margin:0}
+  .mit-modal .ct{display:inline-block;font-size:11px;color:#fcd34d;background:#1c1606;border:1px solid #3a2d09;border-radius:5px;padding:2px 7px;margin:2px 4px 0 0;font-family:ui-monospace,monospace}
+  .mit-close{float:right;background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/attack">&#127919; ATT&amp;CK</a>
+  <a href="/d3fend">&#128737;&#65039; D3FEND</a>
+  <a href="/a3m">&#129302; A3M</a>
+  <a href="/cloud-attacks" style="color:#22d3ee">&#9729;&#65039; Cloud Attacks</a>
+  <a href="/cloud-security">&#9729;&#65039; Cloud Security</a>
+</div>
+
+<div class="att-toolbar">
+  <h2>&#9729;&#65039; Cloud Attacks Matrix <span style="font-size:12px;color:#64748b;font-weight:400">— Mitigant Threat Catalog (AWS)</span></h2>
+  <input id="mit-search" type="search" placeholder="Filter (ID, technique, MITRE, service)…">
+  <select id="mit-service"><option value="">All services</option></select>
+  <select id="mit-severity">
+    <option value="">All severities</option>
+    <option value="critical">Critical</option><option value="high">High</option>
+    <option value="medium">Medium</option><option value="low">Low</option>
+  </select>
+  <span class="att-stats" id="mit-stats"></span>
+</div>
+<div class="matrix" id="mit-matrix"></div>
+
+<div class="mit-bg" id="mit-bg">
+  <div class="mit-modal" id="mit-modal"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/session-ui.js"></script>
+<script src="/js/mitigant.js"></script>
+</body>
+</html>

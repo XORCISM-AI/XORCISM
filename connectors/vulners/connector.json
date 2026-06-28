@@ -1,0 +1,21 @@
+{
+  "id": "vulners",
+  "name": "Vulners — vulnerability intelligence (search / id / audit)",
+  "type": "import",
+  "category": "Vulnerability Intelligence",
+  "description": "Queries the Vulners (vulners.com) vulnerability-intelligence database and imports the results as VULNERABILITY findings. Modes: 'search' (a Vulners Lucene query or product+version), 'id' (fetch a specific CVE/bulletin), and 'audit' (a Linux host: OS + version + installed packages -> the CVEs that affect them, Vulners' agentless package audit). Each result becomes a VULN enriched with CVSS, the referenced CVE(s), exploit availability and a fix where Vulners provides one; the audit target host becomes an ASSET. Requires a Vulners API key (param 'apiKey' or env VULNERS_API_KEY); for offline use, pass a saved Vulners JSON response via 'file'. Read-only import (no DB access in run.py, worker-safe). Complements the in-app /vuln-assessment (which audits a software inventory against XORCISM's own enriched store).",
+  "intrusive": false,
+  "permission": "connector:vulners",
+  "run": "run.py",
+  "mapping": "vulners",
+  "parameters": [
+    { "name": "mode", "type": "string", "required": false, "pattern": "^(search|id|audit)$", "help": "search | id | audit (default: search, or audit when os+packages are given)." },
+    { "name": "query", "type": "string", "required": false, "help": "search: a Vulners Lucene query or product, e.g. 'affectedSoftware.name:openssl' or 'type:exploit log4j'." },
+    { "name": "cve", "type": "string", "required": false, "pattern": "^[A-Za-z0-9:_.-]+$", "help": "id: a CVE / Vulners bulletin id, e.g. CVE-2021-44228." },
+    { "name": "os", "type": "string", "required": false, "help": "audit: OS family, e.g. 'ubuntu' / 'centos' / 'debian'." },
+    { "name": "osversion", "type": "string", "required": false, "help": "audit: OS version, e.g. '22.04'." },
+    { "name": "packages", "type": "string", "required": false, "help": "audit: newline-separated installed packages (e.g. `dpkg-query -W -f='${Package} ${Version} ${Architecture}\\n'` or `rpm -qa`)." },
+    { "name": "apiKey", "type": "secret", "required": false, "help": "Vulners API key (or set env VULNERS_API_KEY)." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: path to a saved Vulners JSON response to normalise instead of calling the API." }
+  ]
+}
