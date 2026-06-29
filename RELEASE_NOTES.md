@@ -11,6 +11,45 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **AI-era exposure prioritization** (`fusion.ts`). The exposure-fusion score now reflects the post-AI
+  reality that exploitation can follow disclosure within hours: each exposure carries an **AI-era patch
+  window** (`hours` when KEV / in-the-wild / public exploit + high EPSS · `days` · `weeks`) and an
+  **internet-facing / reachability** factor (+12 when an affected asset is public-facing) — moving
+  prioritization beyond CVSS toward demonstrated exploitability + reachability + business context.
+- **Saudi NCA Essential Cybersecurity Controls (ECC) + journey.** Imported the NCA ECC-1:2018 framework as
+  a CONTROL vocabulary (`import_nca_ecc.py` — 5 domains + 29 subdomains; copyright-safe numbering + titles
+  + original summaries), and added a **5-phase NCA ECC compliance journey** (`/compliance-journeys`,
+  EN + FR) running Governance → Defence → Resilience → Third-Party & Cloud → ICS, each step deep-linking
+  to the XORCISM feature that delivers it. The framework is consumable in `/frameworks`, the compliance
+  journey and control mapping.
+
+- **AI Control Library — the operational layer of AI governance** (`/ai-control-library`, `aicontrol.ts`).
+  Most organisations have AI policies, principles and risk registers but no structured, reusable control
+  library — so risks never become repeatable, testable, auditable controls. This module fills that gap:
+  - **Reusable AI controls** with the full mature-library schema — identifier, **control objective**,
+    risk domain(s) addressed, **control type (Preventive / Detective / Corrective)**, control statement,
+    **AI lifecycle phase**, owner, **required evidence**, **testing method**, **monitoring frequency**,
+    related policies and **framework references**.
+  - Organised by the **six layers** (AI lifecycle × risk domain × objective × activity × evidence ×
+    ownership), with a **lifecycle × risk-domain coverage matrix** highlighting gaps.
+  - **Maturity score** + the common control-library **failure-mode checks** the blog warns about — controls
+    with no measurable objective, no owner, no evidence, no testing method, no monitoring frequency or no
+    framework mapping, and uncovered lifecycle phases / risk domains.
+  - An **org-tailorable starter library** (15 controls across all 7 lifecycle phases and 8 risk domains)
+    **mapped to ISO/IEC 42001, the NIST AI RMF, CSA AICM and the EU AI Act** — design for your risk context,
+    then map to frameworks (not a mirror of any single one).
+  - Per-control status assessment; an implemented control with its required evidence is recorded as a
+    discrete audit-evidence artifact. Reuses XORCISM's CONTROL/VOCABULARY, EVIDENCE and AI subsystems.
+  - **Apply controls to AI systems + per-system coverage**: library controls can be applied to specific
+    AI systems (`AISYSTEM`), with a per-system coverage view (applied / implemented / coverage %) so each
+    AI system's governance posture is visible — not just the library in the abstract.
+  - **Feeds Control Assurance & the audit package**: a new **"AI governance control library"** control
+    (SOC 2 CC1.2 / ISO 42001 A.6.2 / NIST CSF GV.OC) is computed live from library maturity, so AI
+    governance now appears on `/assurance`, in the Audit & Accreditation package and its OSCAL SSP.
+  - **AI-narrated governance report**: `GET /api/ai-control-library?format=md` (and a download button)
+    produces a Markdown report — executive summary (local AI, offline fallback) + library maturity &
+    hygiene gaps + the control table + per-AI-system coverage.
+
 - **EU Cyber Resilience Act (CRA) conformity cockpit + CRANE integration.** A new module
   (`/cra-compliance`, `cra.ts`) that operationalises the model of **CRANE**
   (github.com/cra-norm-engine/crane) on top of XORCISM's existing SBOM / vulnerability / evidence /

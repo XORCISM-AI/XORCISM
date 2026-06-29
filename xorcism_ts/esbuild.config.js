@@ -91,6 +91,7 @@ const entryPoints = [
   "client/ts/zero-trust.ts",
   "client/ts/authz-governance.ts",
   "client/ts/cra-compliance.ts",
+  "client/ts/ai-control-library.ts",
   "client/ts/itdr.ts",
   "client/ts/identity-governance.ts",
   "client/ts/soc.ts",

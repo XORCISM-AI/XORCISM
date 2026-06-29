@@ -12,6 +12,7 @@ import { getDb } from "./db";
 import { topExposures } from "./fusion";
 import { assessAuthzPosture } from "./authzgov";
 import { craDashboard } from "./cra";
+import { aiControlLibrary } from "./aicontrol";
 
 export type CtlStatus = "proven" | "partial" | "gap" | "attest";
 export interface FwRef { fw: string; ref: string; }
@@ -46,6 +47,7 @@ const CONTROL_FRAMEWORKS: Record<string, FwRef[]> = {
   resilience: [{ fw: "soc2", ref: "A1.2" }, { fw: "iso27001", ref: "A.8.13" }, { fw: "nistcsf", ref: "RC.RP-01" }],
   apiauthz:   [{ fw: "soc2", ref: "CC6.3" }, { fw: "iso27001", ref: "A.5.15/A.8.3" }, { fw: "nistcsf", ref: "PR.AA-05" }],
   craproduct: [{ fw: "soc2", ref: "CC8.1" }, { fw: "iso27001", ref: "A.8.25/A.8.28" }, { fw: "nistcsf", ref: "PR.PS-01" }],
+  aigov:      [{ fw: "soc2", ref: "CC1.2" }, { fw: "iso27001", ref: "ISO 42001 A.6.2" }, { fw: "nistcsf", ref: "GV.OC" }],
 };
 
 // Baseline of common, high-signal ATT&CK techniques used to measure detection & TID coverage.
@@ -204,6 +206,18 @@ export function controlAssurance(tenant: number | null): Assurance {
       controls.push({ id: "craproduct", name: "CRA product conformity", iso: "A.8.25/A.8.28", nist: "PR.PS", status: byScore(cd.summary.avgConformity), score: cd.summary.avgConformity, metric: `${cd.summary.avgConformity}% avg Annex I conformity across ${cd.summary.products} product(s)`, evidence: ev });
     }
   } catch { /* CRA tables not ready */ }
+
+  // 11. AI governance — AI control library maturity (/ai-control-library)
+  try {
+    const lib = aiControlLibrary(tenant);
+    if (lib.summary.total === 0) {
+      controls.push({ id: "aigov", name: "AI governance control library", iso: "ISO 42001 A.6.2", nist: "GV", status: "attest", score: 0, metric: "no AI control library defined", evidence: ["Seed and operate the AI control library in /ai-control-library"] });
+    } else {
+      const ev = [`${lib.summary.implemented}/${lib.summary.total} AI controls implemented`];
+      if (lib.gaps.noOwner || lib.gaps.noEvidence) ev.push(`${lib.gaps.noOwner} without owner · ${lib.gaps.noEvidence} without evidence`);
+      controls.push({ id: "aigov", name: "AI governance control library", iso: "ISO 42001 A.6.2", nist: "GV", status: byScore(lib.summary.maturityPct), score: lib.summary.maturityPct, metric: `${lib.summary.maturityPct}% AI control library maturity (${lib.summary.total} controls)`, evidence: ev });
+    }
+  } catch { /* AI control tables not ready */ }
 
   for (const c of controls) c.frameworks = CONTROL_FRAMEWORKS[c.id] || [];
   const tally = (st: CtlStatus) => controls.filter((c) => c.status === st).length;

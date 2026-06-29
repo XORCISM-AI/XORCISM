@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AI Control Library</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ai-wrap{max-width:1180px;margin:0 auto;padding:18px}
+  .ai-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:940px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 14px;min-width:110px}
+  .kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:12px;border-radius:6px;padding:3px 9px;background:#13162a;border:1px solid #2d3250;color:#cbd5e1}
+  .chip.bad{background:#7f1d1d;color:#fecaca;border-color:#7f1d1d}.chip.ok{background:#064e3b;color:#6ee7b7;border-color:#14532d}
+  table.ai{width:100%;border-collapse:collapse;font-size:12px}
+  table.ai th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:5px 7px}
+  table.ai td{border-bottom:1px solid #1e2133;padding:5px 7px;color:#e2e8f0;vertical-align:top}
+  .mtx td,.mtx th{text-align:center;padding:4px 6px;font-size:11px}
+  .mtx td.lc{text-align:left;color:#cbd5e1;white-space:nowrap}
+  .cell{display:inline-block;min-width:20px;border-radius:4px;padding:1px 6px}
+  .muted{color:#64748b}.tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2133;color:#94a3b8}
+  .t-Preventive{color:#6ee7b7}.t-Detective{color:#93c5fd}.t-Corrective{color:#fcd34d}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:14px}
+  .fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:#94a3b8}
+  .fld input,.fld select,.fld textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:8px}
+  .btn-ai{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .bar{height:8px;border-radius:4px;background:#1e2133;overflow:hidden;width:120px;display:inline-block;vertical-align:middle}.bar>i{display:block;height:100%}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/control-management">&#9989; Controls</a>
+  <a href="/ai-guardrails">&#129302; AI guardrails</a>
+  <span class="spacer"></span>
+  <span class="title">&#129504; AI Control Library</span>
+</div>
+
+<div class="ai-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px">AI Control Library</h1>
+  <div class="ai-sub">The operational layer of AI governance: reusable, testable, auditable controls that translate AI risks into standardized control objectives, activities, ownership, evidence and monitoring — across the AI lifecycle. Organised by the six layers (lifecycle × risk domain × objective × activity × evidence × ownership), mapped to ISO/IEC 42001, NIST AI RMF, CSA AICM and the EU AI Act. Design controls for your risk context, then map to frameworks — not a mirror of any single one.</div>
+
+  <div id="ai-kpis" class="kpis"></div>
+  <div id="ai-gaps" class="chips"></div>
+  <div style="margin:0 0 8px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn-ai" id="ai-seed">＋ Seed starter AI control library</button>
+    <a class="btn-ai" id="ai-report" href="/api/ai-control-library?format=md" style="text-decoration:none">📄 Download governance report</a>
+  </div>
+
+  <div class="sect-h">Coverage — AI lifecycle × risk domain</div>
+  <div id="ai-matrix" style="overflow-x:auto"></div>
+
+  <div class="sect-h">Per-AI-system coverage</div>
+  <div id="ai-syscov" style="overflow-x:auto"></div>
+
+  <div class="sect-h">Controls</div>
+  <div id="ai-controls" style="overflow-x:auto"></div>
+
+  <details class="card2" style="margin-top:14px"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#e7ebf3">＋ Add a control</summary>
+    <div class="row" style="margin-top:8px">
+      <div class="fld"><label>Identifier</label><input id="c-ref" placeholder="AI-FAIR-02"></div>
+      <div class="fld"><label>Control type</label><select id="c-type"></select></div>
+      <div class="fld"><label>Lifecycle phase</label><select id="c-lc"></select></div>
+      <div class="fld"><label>Risk domain</label><select id="c-dom"></select></div>
+    </div>
+    <div class="fld" style="margin-bottom:8px"><label>Control objective</label><input id="c-obj" placeholder="Desired governance outcome"></div>
+    <div class="fld" style="margin-bottom:8px"><label>Control statement</label><textarea id="c-stmt" rows="2"></textarea></div>
+    <div class="row">
+      <div class="fld"><label>Owner</label><select id="c-owner"></select></div>
+      <div class="fld"><label>Monitoring frequency</label><select id="c-freq"></select></div>
+      <div class="fld"><label>Testing method</label><input id="c-test"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>Required evidence</label><input id="c-ev"></div>
+      <div class="fld"><label>Framework refs (comma)</label><input id="c-fw" placeholder="ISO 42001 A.6.2.4, NIST AI RMF MEASURE-2.11"></div>
+    </div>
+    <button class="btn-ai" id="c-add">Add control</button>
+  </details>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/ai-control-library.js"></script>
+</body>
+</html>

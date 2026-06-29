@@ -14,8 +14,17 @@ import { exploitsForCve } from "./exploitdb";
 export interface FusionScore {
   VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null;
   exploits: number; itw: boolean; assets: number; maxValue: number | null;
+  publicFacing?: boolean; window?: "hours" | "days" | "weeks";
   score: number; priority: number; factors: string[];
   assetIds?: number[]; // the AssetIDs this exposure sits on (for attack-path reachability)
+}
+
+// AI-era patch window: with AI-assisted exploitation the median time-to-exploit has collapsed to hours,
+// so the operative remediation window depends on demonstrated exploitability, not just severity.
+function patchWindow(v: { kev: number; itw: boolean; exploits: number; epss: number | null }): "hours" | "days" | "weeks" {
+  if (v.kev || v.itw || (v.exploits > 0 && (v.epss ?? 0) >= 0.5)) return "hours";
+  if (v.exploits > 0 || (v.epss != null && v.epss >= 0.1)) return "days";
+  return "weeks";
 }
 
 const CVE_RX = /CVE-\d{4}-\d{3,7}/i;
@@ -25,7 +34,7 @@ function colset(db: ReturnType<typeof getDb>, table: string): Set<string> {
 }
 
 /** Compute the fused score + breakdown from the raw signals. */
-function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null; exploits: number; itw: boolean; assets: number; maxValue: number | null }): FusionScore {
+function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null; exploits: number; itw: boolean; assets: number; maxValue: number | null; publicFacing?: boolean }): FusionScore {
   const factors: string[] = [];
   let score = 0;
   if (v.epss != null && v.epss > 0) { const p = Math.round(v.epss * 40); score += p; factors.push(`EPSS ${(v.epss * 100).toFixed(1)}% (+${p})`); }
@@ -36,9 +45,14 @@ function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; ke
   score = Math.min(100, score);
   const blast = Math.min(18, v.assets * 3);
   const valPts = v.maxValue && v.maxValue > 0 ? Math.min(18, Math.log10(v.maxValue + 1) * 6) : 0;
-  const priority = Math.min(100, Math.round(score * 0.7 + blast + valPts));
+  // internet-facing / reachable assets raise real-world exploitability (reachability over abstract severity)
+  const expoPts = v.publicFacing ? 12 : 0;
+  const priority = Math.min(100, Math.round(score * 0.7 + blast + valPts + expoPts));
   if (v.assets) factors.push(`${v.assets} affected asset${v.assets > 1 ? "s" : ""}`);
-  return { ...v, score, priority, factors };
+  if (v.publicFacing) factors.push("internet-facing / reachable (+12)");
+  const window = patchWindow(v);
+  factors.push(window === "hours" ? "AI-era window: remediate within HOURS" : window === "days" ? "AI-era window: remediate within days" : "AI-era window: weeks");
+  return { ...v, publicFacing: !!v.publicFacing, window, score, priority, factors };
 }
 
 function cveOf(ref: string): string | null { const m = (ref || "").match(CVE_RX); return m ? m[0].toUpperCase() : null; }
@@ -60,11 +74,12 @@ function itwCves(cves: string[]): Set<string> {
 /** Fusion score for a single vulnerability (id). */
 export function fusionForVuln(vid: number): FusionScore | null {
   const xo = getDb("XORCISM");
+  const pub = colset(xo, "ASSET").has("PublicFacing") ? ", MAX(COALESCE(a.PublicFacing,0)) pub" : ", 0 pub";
   const agg = xo.prepare(
-    `SELECT COUNT(DISTINCT av.AssetID) assets, MAX(COALESCE(a.BusinessValue, a.RiskScore, 0)) maxValue
+    `SELECT COUNT(DISTINCT av.AssetID) assets, MAX(COALESCE(a.BusinessValue, a.RiskScore, 0)) maxValue${pub}
      FROM ASSETVULNERABILITY av JOIN ASSET a ON a.AssetID=av.AssetID
      WHERE av.VulnerabilityID=? AND COALESCE(av.FalsePositive,0)=0`
-  ).get(vid) as { assets: number; maxValue: number | null } | undefined;
+  ).get(vid) as { assets: number; maxValue: number | null; pub: number } | undefined;
   let ref = `Vuln #${vid}`, cvss: number | null = null, kev = 0, epss: number | null = null;
   try {
     const xv = getDb("XVULNERABILITY");
@@ -77,7 +92,7 @@ export function fusionForVuln(vid: number): FusionScore | null {
   const cve = cveOf(ref);
   const exploits = cve ? exploitsForCve(cve).length : 0;
   const itw = cve ? itwCves([cve]).has(cve) : false;
-  return fuse({ VulnerabilityID: vid, ref, cvss, kev, epss, exploits, itw, assets: agg?.assets || 0, maxValue: agg?.maxValue ?? null });
+  return fuse({ VulnerabilityID: vid, ref, cvss, kev, epss, exploits, itw, assets: agg?.assets || 0, maxValue: agg?.maxValue ?? null, publicFacing: Number(agg?.pub) > 0 });
 }
 
 /** Per-vuln exploitability (0–100, no blast radius) for a set of ids. Reused by the attack-path engine. */
@@ -120,13 +135,14 @@ export function topExposures(tenant: number | null, limit = 50): { results: Fusi
   const aCols = colset(xo, "ASSET");
   const tenantClause = tenant != null && aCols.has("TenantID") ? "AND (a.TenantID = ? OR a.TenantID IS NULL)" : "";
   const args = tenant != null && aCols.has("TenantID") ? [tenant] : [];
+  const pub = aCols.has("PublicFacing") ? "MAX(COALESCE(a.PublicFacing,0))" : "0";
   const agg = xo.prepare(
     `SELECT av.VulnerabilityID vid, COUNT(DISTINCT av.AssetID) assets, MAX(COALESCE(a.BusinessValue, a.RiskScore, 0)) maxValue,
-            GROUP_CONCAT(DISTINCT av.AssetID) assetIds
+            ${pub} pub, GROUP_CONCAT(DISTINCT av.AssetID) assetIds
      FROM ASSETVULNERABILITY av JOIN ASSET a ON a.AssetID=av.AssetID
      WHERE COALESCE(av.FalsePositive,0)=0 ${tenantClause}
      GROUP BY av.VulnerabilityID LIMIT 8000`
-  ).all(...args) as { vid: number; assets: number; maxValue: number | null; assetIds: string | null }[];
+  ).all(...args) as { vid: number; assets: number; maxValue: number | null; pub: number; assetIds: string | null }[];
   if (!agg.length) return { results: [], scanned: 0 };
 
   const meta = new Map<number, { ref: string; cvss: number | null; kev: number; epss: number | null }>();
@@ -155,7 +171,7 @@ export function topExposures(tenant: number | null, limit = 50): { results: Fusi
     const fs = fuse({
       VulnerabilityID: r.vid, ref, cvss: m?.cvss ?? null, kev: m?.kev || 0, epss: m?.epss ?? null,
       exploits: cve ? exploitsForCve(cve).length : 0, itw: cve ? itw.has(cve) : false,
-      assets: r.assets, maxValue: r.maxValue,
+      assets: r.assets, maxValue: r.maxValue, publicFacing: Number(r.pub) > 0,
     });
     fs.assetIds = String(r.assetIds || "").split(",").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);
     return fs;

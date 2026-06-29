@@ -55,6 +55,10 @@ const L = {
   pentest: "/pentest",
   regIncident: "/reg-incident-reporting",
   regCalendar: "/reg-calendar",
+  ot: "/ot-security",
+  cloud: "/cloud-security",
+  backup: "/?db=XORCISM&table=ASSET",
+  soc: "/soc",
 } as const;
 
 export type StepT = { title: string; desc: string; link?: string };
@@ -584,6 +588,36 @@ export const FRAMEWORKS: FrameworkT[] = [
         st("Continuous SBOM & CVE monitoring", "Continuously monitor the released SBOM against new CVEs/KEV over the support period and ship security updates.", L.sca),
         st("Support period & lifecycle", "Maintain the declared support period (≥ 5 years unless justified) and re-assess conformity on any substantial modification.", L.cra),
         st("Track CRA deadlines", "Track the CRA milestones (reporting from 11 Sep 2026, full applicability 11 Dec 2027) in the regulatory calendar.", L.regCalendar),
+      ]},
+    ],
+  },
+  {
+    key: "nca-ecc", name: "NCA Essential Cybersecurity Controls (ECC)", provider: "Saudi Arabia — NCA (ECC-1:2018)", kind: "Regulation", jurisdiction: "Saudi Arabia",
+    summary: "The Saudi National Cybersecurity Authority's baseline framework — 5 main domains, 29 subdomains and 114 controls — mandatory for government and critical-national-infrastructure organisations. This journey runs the 5 domains in order: cybersecurity governance, defence, resilience, third-party & cloud, and industrial control systems. Import the NCA ECC catalogue to track the subdomains as controls and map your existing controls to it.",
+    effort: "4–9 months",
+    phases: [
+      { name: "1 · Cybersecurity Governance (ECC-1)", steps: [
+        st("Cybersecurity strategy, management & policies (1-1→1-3)", "Approve a resourced cybersecurity strategy, stand up an independent cybersecurity function, and publish policies & procedures.", L.policies),
+        st("Roles, risk management & compliance (1-4→1-7)", "Assign roles, run a cybersecurity risk-management methodology, embed cybersecurity in projects and ensure regulatory compliance.", L.riskReg),
+        st("Review, audit, HR & awareness (1-8→1-10)", "Periodically review & audit cybersecurity, address it across the HR lifecycle, and run an awareness & training programme.", L.awareness),
+      ]},
+      { name: "2 · Cybersecurity Defence (ECC-2)", steps: [
+        st("Asset & identity/access management (2-1, 2-2)", "Maintain an asset inventory with owners; enforce least-privilege identity & access management with periodic review.", L.assets),
+        st("System, email, network & mobile protection (2-3→2-6)", "Harden systems, protect email, segment & secure networks, and secure mobile/BYOD devices.", L.config),
+        st("Data protection, cryptography & backup (2-7→2-9)", "Classify & protect data, apply approved cryptography & key management, and run protected, tested backups.", L.controls53),
+        st("Vulnerability management & penetration testing (2-10, 2-11)", "Continuously identify and remediate vulnerabilities and run periodic penetration testing of critical/internet-facing systems.", L.vuln),
+        st("Logging, monitoring & incident management (2-12, 2-13)", "Centralise event logging & monitoring and operate detection, response and threat management.", L.soc),
+        st("Physical & web application security (2-14, 2-15)", "Protect processing facilities physically and secure external web applications.", L.pentest),
+      ]},
+      { name: "3 · Cybersecurity Resilience (ECC-3)", steps: [
+        st("Cybersecurity in business continuity (3-1)", "Integrate cybersecurity into business-continuity management — resilient systems, incident continuity and recovery objectives.", L.crisis),
+      ]},
+      { name: "4 · Third-Party & Cloud Cybersecurity (ECC-4)", steps: [
+        st("Third-party cybersecurity (4-1)", "Set cybersecurity requirements in third-party contracts and assess & monitor providers before and during the engagement.", L.tprm),
+        st("Cloud computing & hosting cybersecurity (4-2)", "Apply cybersecurity requirements for cloud/hosting — data location, segregation and provider assurance.", L.cloud),
+      ]},
+      { name: "5 · Industrial Control Systems Cybersecurity (ECC-5)", steps: [
+        st("ICS / OT protection (5-1)", "Protect OT/ICS environments — segregation from IT, hardening, access control and monitoring (IEC 62443 / NIST 800-82).", L.ot),
       ]},
     ],
   },
