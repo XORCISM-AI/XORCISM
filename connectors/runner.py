@@ -454,6 +454,10 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_signins(result))
     if result.get("zt_policies"):
         counts.update(import_zt_policies(result))
+    if any(result.get(k) for k in ("authz_gateways", "authz_pdps", "authz_policies")):
+        counts.update(import_authz(result))
+    if result.get("cra_products"):
+        counts.update(import_cra_products(result))
     if result.get("monitors") or result.get("monitoring_incidents"):
         counts.update(import_monitoring(result))
     if result.get("documents"):
@@ -1093,6 +1097,225 @@ def import_zt_policies(result: Dict[str, Any]) -> Dict[str, int]:
                      RequireMfa, RequireCompliantDevice, Block, PolicyGUID, CreatedDate, TenantID)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (*common, str(uuid4()), _now(), tid))
             counts["zt_policies"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+def import_authz(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import an API Authorization Governance inventory into XORCISM (AUTHZGATEWAY / AUTHZPDP / AUTHZPOLICY,
+    behind /authz-governance). Used by the OPA / Cedar / AuthZEN connectors. Idempotent by (Name, Source).
+    Result keys (all lists of dicts):
+        authz_pdps:      {"name","engine","endpoint","authzen_compliant"(bool),"status","notes"}
+        authz_gateways:  {"name","gateway_type","authn_methods"(list|csv),"authz_model","pdp_name",
+                          "base_url","environment","deny_by_default"(bool),"decision_logging"(bool),"notes"}
+        authz_policies:  {"name","engine","language","source","content_hash","version",
+                          "default_deny"(bool),"versioned"(bool),"tested"(bool),"pdp_name","notes"}"""
+    counts = {"authz_pdps": 0, "authz_gateways": 0, "authz_policies": 0}
+    if not any(result.get(k) for k in ("authz_gateways", "authz_pdps", "authz_policies")):
+        return counts
+    tid = _import_tenant_id()
+    src = result.get("source") or "authz-connector"
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    # schemas kept in sync with ensureAuthzTables() in authzgov.ts
+    cur.execute("""CREATE TABLE IF NOT EXISTS AUTHZPDP(PdpID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Engine TEXT,
+        Endpoint TEXT, AuthzenCompliant INTEGER, Status TEXT, Notes TEXT, Source TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS AUTHZGATEWAY(GatewayID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, GatewayType TEXT,
+        AuthnMethods TEXT, AuthzModel TEXT, PdpID INTEGER, BaseUrl TEXT, Environment TEXT, DenyByDefault INTEGER,
+        DecisionLogging INTEGER, Notes TEXT, Source TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS AUTHZPOLICY(PolicyID INTEGER PRIMARY KEY AUTOINCREMENT, PdpID INTEGER, Name TEXT,
+        Engine TEXT, Language TEXT, Source TEXT, ContentHash TEXT, Version TEXT, DefaultDeny INTEGER, Versioned INTEGER,
+        Tested INTEGER, Notes TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    now = _now()
+    b = lambda v: None if v is None else (1 if v else 0)  # noqa: E731
+    csv = lambda v: (",".join(v) if isinstance(v, list) else v)  # noqa: E731
+
+    pdp_ids: Dict[str, int] = {}
+    for it in (result.get("authz_pdps") or []):
+        name = it.get("name")
+        if not name:
+            continue
+        row = cur.execute("SELECT PdpID FROM AUTHZPDP WHERE Name=? AND Source=?", (name, src)).fetchone()
+        if row:
+            pdp_ids[name] = row[0]
+            continue
+        cur.execute("""INSERT INTO AUTHZPDP (Name, Engine, Endpoint, AuthzenCompliant, Status, Notes, Source, TenantID, CreatedDate)
+            VALUES (?,?,?,?,?,?,?,?,?)""", (name, it.get("engine") or "other", it.get("endpoint"),
+            b(it.get("authzen_compliant")), it.get("status") or "unknown", it.get("notes"), src, tid, now))
+        pdp_ids[name] = cur.lastrowid
+        counts["authz_pdps"] += 1
+
+    # ensure the AssetID column exists (legacy AUTHZGATEWAY guard), then link each gateway to an ASSET
+    gw_cols = {r[1] for r in cur.execute("PRAGMA table_info(AUTHZGATEWAY)").fetchall()}
+    if "AssetID" not in gw_cols:
+        try:
+            cur.execute("ALTER TABLE AUTHZGATEWAY ADD COLUMN AssetID INTEGER")
+        except sqlite3.OperationalError:
+            pass
+    asset_cols = {r[1] for r in cur.execute("PRAGMA table_info(ASSET)").fetchall()} if cur.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSET'").fetchone() else set()
+
+    def _ensure_asset(aname: str, url: Any) -> Optional[int]:
+        if not asset_cols or "AssetID" not in asset_cols or "AssetName" not in asset_cols:
+            return None
+        row = cur.execute("SELECT AssetID FROM ASSET WHERE AssetName=?", (aname,)).fetchone()
+        if row:
+            return row[0]
+        aid = (cur.execute("SELECT COALESCE(MAX(AssetID),0) FROM ASSET").fetchone()[0] or 0) + 1
+        rec = {"AssetID": aid, "AssetName": aname, "CreatedDate": now}
+        if "AssetGUID" in asset_cols:
+            rec["AssetGUID"] = str(uuid4())
+        if "AssetDescription" in asset_cols:
+            rec["AssetDescription"] = "API gateway (PEP) imported by the API authorization-governance connector."
+        if "PublicFacing" in asset_cols:
+            rec["PublicFacing"] = 1
+        if "websiteurl" in asset_cols and url:
+            rec["websiteurl"] = url
+        if "TenantID" in asset_cols:
+            rec["TenantID"] = tid
+        keys = [k for k in rec if k in asset_cols]
+        cur.execute(f"INSERT INTO ASSET ({','.join(keys)}) VALUES ({','.join('?'*len(keys))})", [rec[k] for k in keys])
+        return aid
+
+    from uuid import uuid4  # noqa: E402 (local import; only when gateways present)
+    for it in (result.get("authz_gateways") or []):
+        name = it.get("name")
+        if not name:
+            continue
+        if cur.execute("SELECT 1 FROM AUTHZGATEWAY WHERE Name=? AND Source=?", (name, src)).fetchone():
+            continue
+        asset_id = _ensure_asset(name, it.get("base_url"))
+        cur.execute("""INSERT INTO AUTHZGATEWAY (Name, GatewayType, AuthnMethods, AuthzModel, PdpID, BaseUrl, Environment,
+            DenyByDefault, DecisionLogging, AssetID, Notes, Source, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (name, it.get("gateway_type") or "other", csv(it.get("authn_methods")), it.get("authz_model") or "none",
+             pdp_ids.get(it.get("pdp_name")), it.get("base_url"), it.get("environment"), b(it.get("deny_by_default")),
+             b(it.get("decision_logging")), asset_id, it.get("notes"), src, tid, now))
+        counts["authz_gateways"] += 1
+
+    evidence_rows: List[str] = []  # policy-as-code → discrete audit evidence (XCOMPLIANCE.EVIDENCE)
+    for it in (result.get("authz_policies") or []):
+        name = it.get("name")
+        if not name:
+            continue
+        if cur.execute("SELECT 1 FROM AUTHZPOLICY WHERE Name=? AND Source=? AND Engine=?", (name, src, it.get("engine") or "other")).fetchone():
+            continue
+        cur.execute("""INSERT INTO AUTHZPOLICY (PdpID, Name, Engine, Language, Source, ContentHash, Version, DefaultDeny,
+            Versioned, Tested, Notes, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (pdp_ids.get(it.get("pdp_name")), name, it.get("engine") or "other", it.get("language"), it.get("source") or src,
+             it.get("content_hash"), it.get("version"), b(it.get("default_deny")), b(it.get("versioned")),
+             b(it.get("tested")), it.get("notes"), tid, now))
+        counts["authz_policies"] += 1
+        flags = ", ".join(f for f in ("default-deny" if it.get("default_deny") else "", "versioned" if it.get("versioned") else "", "tested" if it.get("tested") else "") if f)
+        evidence_rows.append(f"Authorization policy: {name} ({it.get('engine') or 'other'})" + (f" — {flags}" if flags else ""))
+
+    con.commit()
+    con.close()
+
+    # record each policy as a discrete audit-evidence artifact (XCOMPLIANCE.EVIDENCE; idempotent by name)
+    if evidence_rows:
+        try:
+            ec = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+            ec.execute("PRAGMA busy_timeout=15000")
+            ecur = ec.cursor()
+            ecur.execute("CREATE TABLE IF NOT EXISTS EVIDENCE (EvidenceID INTEGER PRIMARY KEY, EvidenceName TEXT, CreatedDate TEXT)")
+            for ename in evidence_rows:
+                if ecur.execute("SELECT 1 FROM EVIDENCE WHERE EvidenceName=?", (ename,)).fetchone():
+                    continue
+                eid = (ecur.execute("SELECT COALESCE(MAX(EvidenceID),0) FROM EVIDENCE").fetchone()[0] or 0) + 1
+                ecur.execute("INSERT INTO EVIDENCE (EvidenceID, EvidenceName, CreatedDate) VALUES (?,?,?)", (eid, ename, now))
+            ec.commit()
+            ec.close()
+        except sqlite3.Error:
+            pass
+    return counts
+
+
+# CRA Annex I requirement catalogue (kept in sync with CRA_REQUIREMENTS in xorcism_ts/server/cra.ts).
+_CRA_REQS = [
+    ("Annex I.1.(2)(a)", "product", "No known exploitable vulnerabilities"),
+    ("Annex I.1.(2)(b)", "product", "Secure by default configuration"),
+    ("Annex I.1.(2)(c)", "product", "Security updates"),
+    ("Annex I.1.(2)(d)", "product", "Protection from unauthorised access"),
+    ("Annex I.1.(2)(e)", "product", "Confidentiality of data"),
+    ("Annex I.1.(2)(f)", "product", "Integrity of data"),
+    ("Annex I.1.(2)(g)", "product", "Data minimisation"),
+    ("Annex I.1.(2)(h)", "product", "Availability of essential functions"),
+    ("Annex I.1.(2)(i)", "product", "Minimise impact on other devices"),
+    ("Annex I.1.(2)(j)", "product", "Limit attack surfaces"),
+    ("Annex I.1.(2)(k)", "product", "Reduce impact of incidents"),
+    ("Annex I.1.(2)(l)", "product", "Security-relevant logging & monitoring"),
+    ("Annex I.1.(2)(m)", "product", "Secure data & configuration removal"),
+    ("Annex I.2.(1)", "vuln-handling", "Identify & document components (SBOM)"),
+    ("Annex I.2.(2)", "vuln-handling", "Remediate vulnerabilities without delay"),
+    ("Annex I.2.(3)", "vuln-handling", "Regular security testing & review"),
+    ("Annex I.2.(4)", "vuln-handling", "Publicly disclose fixed vulnerabilities"),
+    ("Annex I.2.(5)", "vuln-handling", "Coordinated vulnerability disclosure policy"),
+    ("Annex I.2.(6)", "vuln-handling", "Facilitate vulnerability reporting"),
+    ("Annex I.2.(7)", "vuln-handling", "Secure update distribution"),
+    ("Annex I.2.(8)", "vuln-handling", "Disseminate free security patches with advisory"),
+    ("Annex V", "conformity", "EU declaration of conformity (CE marking)"),
+    ("Annex VII", "conformity", "Technical documentation"),
+]
+
+
+def import_cra_products(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import a CRANE export into XCOMPLIANCE: products with digital elements + releases + the Annex I
+    requirement matrix (schemas kept in sync with ensureCraTables() in cra.ts). Idempotent by product
+    name + source. Each product seeds the full Annex I matrix (status gap), then provided assessments
+    (by ref) are applied."""
+    counts = {"cra_products": 0, "cra_releases": 0}
+    items = result.get("cra_products") or []
+    if not items:
+        return counts
+    tid = _import_tenant_id()
+    src = result.get("source") or "crane"
+    now = _now()
+    con = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS CRAPRODUCT(ProductID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Description TEXT,
+        Class TEXT, Manufacturer TEXT, SupportUntil TEXT, ConformityRoute TEXT, TargetSL TEXT, AssetID INTEGER, Status TEXT, Source TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS CRARELEASE(ReleaseID INTEGER PRIMARY KEY AUTOINCREMENT, ProductID INTEGER, Version TEXT,
+        ReleaseDate TEXT, Status TEXT, SbomId INTEGER, Notes TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS CRAREQUIREMENT(ReqID INTEGER PRIMARY KEY AUTOINCREMENT, ProductID INTEGER, ReqRef TEXT,
+        ReqTitle TEXT, Part TEXT, Status TEXT, Evidence TEXT, TenantID INTEGER, CreatedDate TEXT)""")
+    valid = {"met", "partial", "gap", "na"}
+    for p in items:
+        name = p.get("name")
+        if not name:
+            continue
+        if cur.execute("SELECT 1 FROM CRAPRODUCT WHERE Name=? AND Source=?", (name, src)).fetchone():
+            continue
+        # tolerate older CRAPRODUCT without TargetSL
+        prod_cols = {r[1] for r in cur.execute("PRAGMA table_info(CRAPRODUCT)").fetchall()}
+        if "TargetSL" not in prod_cols:
+            try:
+                cur.execute("ALTER TABLE CRAPRODUCT ADD COLUMN TargetSL TEXT")
+            except sqlite3.OperationalError:
+                pass
+        cur.execute("""INSERT INTO CRAPRODUCT (Name, Description, Class, Manufacturer, SupportUntil, ConformityRoute, TargetSL, Status, Source, TenantID, CreatedDate)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)""", (name, p.get("description"), p.get("class") or "default", p.get("manufacturer"),
+            p.get("support_until"), p.get("conformity_route"), p.get("target_sl") or None, "draft", src, tid, now))
+        pid = cur.lastrowid
+        counts["cra_products"] += 1
+        # seed Annex I matrix
+        provided = {str(q.get("ref")): str(q.get("status") or "gap") for q in (p.get("requirements") or []) if isinstance(q, dict)}
+        ev = {str(q.get("ref")): q.get("evidence") for q in (p.get("requirements") or []) if isinstance(q, dict)}
+        for ref, part, title in _CRA_REQS:
+            st = provided.get(ref, "gap")
+            if st not in valid:
+                st = "gap"
+            cur.execute("INSERT INTO CRAREQUIREMENT (ProductID, ReqRef, ReqTitle, Part, Status, Evidence, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?)",
+                        (pid, ref, title, part, st, ev.get(ref), tid, now))
+        for r in (p.get("releases") or []):
+            if not isinstance(r, dict) or not r.get("version"):
+                continue
+            cur.execute("INSERT INTO CRARELEASE (ProductID, Version, ReleaseDate, Status, SbomId, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?)",
+                        (pid, r.get("version"), r.get("release_date"), r.get("status") or "draft",
+                         r.get("sbom_id") if isinstance(r.get("sbom_id"), int) else None, tid, now))
+            counts["cra_releases"] += 1
     con.commit()
     con.close()
     return counts

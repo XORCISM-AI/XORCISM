@@ -15,6 +15,8 @@ import { createAgentJob } from "./agents";
 import { matchCves } from "./cvematch";
 import { controlAssurance, ensureAssuranceTables } from "./assurance";
 import { recordAuditSnapshot } from "./auditpack";
+import { listRegressionPdps, runAuthzTestSuite, recordSuiteRun, buildRequest, normalizeDecision, type DecisionRequest, type Decision } from "./authzgov";
+import { dispatchEvent } from "./notifrules";
 import { runScheduledBoardReports } from "./boardreport";
 import { cronMatches } from "./cron";
 import { targetInScope } from "./scope";
@@ -203,6 +205,31 @@ export function startScheduler(): void {
   const auditTick = (): void => { try { recordAuditSnapshot(null); } catch (e) { console.warn(`[auditpack] snapshot: ${(e as Error).message}`); } };
   const auditBoot = setTimeout(auditTick, 90_000); if (typeof auditBoot.unref === "function") auditBoot.unref();
   const auditTimer = setInterval(auditTick, 24 * 3600_000); if (typeof auditTimer.unref === "function") auditTimer.unref();
+
+  // API authorization: re-run the BOLA/BFLA battery against opted-in PDPs (RegressionEnabled + http endpoint),
+  // persist a pass-rate trend and alert on regression. No-op when no PDP opts in.
+  const authzRegressionTick = async (): Promise<void> => {
+    try {
+      const pdps = listRegressionPdps();
+      for (const p of pdps) {
+        const evaluate = async (engine: string, dr: DecisionRequest): Promise<{ decision: Decision; raw?: unknown }> => {
+          try {
+            const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 5000);
+            const resp = await fetch(p.endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(buildRequest(engine, dr)), signal: ctrl.signal });
+            clearTimeout(to); const raw = await resp.json().catch(() => ({}));
+            return { decision: normalizeDecision(engine, raw), raw };
+          } catch { return { decision: "error" }; }
+        };
+        const report = await runAuthzTestSuite(p.tenant, { engine: p.engine, pdpId: p.pdpId, evaluate });
+        const run = recordSuiteRun(p.tenant, { engine: p.engine, endpoint: p.endpoint, pdpId: p.pdpId, total: report.total, passed: report.passed, failed: report.failed, errors: report.errors, findings: report.findings.length }, "scheduled");
+        if (run.regressed && report.findings.length) {
+          try { dispatchEvent("authz.regression", { tenant: p.tenant, level: "warning", title: `Authorization regression: ${p.name}`, message: `${report.findings.length} BOLA/BFLA test(s) now allowed by the PDP (was ${run.prevFailed} fail, now ${report.failed}).`, link: "/authz-governance" }); } catch { /* best-effort */ }
+        }
+      }
+    } catch (e) { console.warn(`[authz] regression: ${(e as Error).message}`); }
+  };
+  const authzBoot = setTimeout(() => void authzRegressionTick(), 120_000); if (typeof authzBoot.unref === "function") authzBoot.unref();
+  const authzTimer = setInterval(() => void authzRegressionTick(), 24 * 3600_000); if (typeof authzTimer.unref === "function") authzTimer.unref();
 
   console.log("[scheduler] démarré (tick 30s)");
 }

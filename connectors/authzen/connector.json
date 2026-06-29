@@ -1,0 +1,14 @@
+{
+  "id": "authzen",
+  "name": "AuthZEN PDP — authorization inventory",
+  "type": "import",
+  "category": "Identity & Access",
+  "description": "Imports an AuthZEN-conformant authorization inventory into XORCISM's API Authorization Governance (/authz-governance): the Policy Decision Point (PDP) exposing the OpenID Foundation AuthZEN Authorization API 1.0 (POST /access/v1/evaluation), its policies, and the API gateways (PEP) that call it. AuthZEN (https://openid.net/wg/authzen/) is the vendor-neutral standard that lets any enforcement point talk to any decision point — so PDPs imported here are marked AuthZEN-conformant. Worker-safe & offline: pass `file` = an inventory JSON, or run with no config for the bundled sample. Normalized to authz_pdps / authz_gateways / authz_policies.",
+  "intrusive": false,
+  "permission": "connector:authzen",
+  "run": "run.py",
+  "mapping": "authzen",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An inventory JSON {pdps,gateways,policies}. Omit for the bundled sample." }
+  ]
+}

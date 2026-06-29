@@ -11,6 +11,87 @@ EXISTS + additive ALTER) — upgrading is in-place and never drops data.
 
 ## [Unreleased]
 
+- **EU Cyber Resilience Act (CRA) conformity cockpit + CRANE integration.** A new module
+  (`/cra-compliance`, `cra.ts`) that operationalises the model of **CRANE**
+  (github.com/cra-norm-engine/crane) on top of XORCISM's existing SBOM / vulnerability / evidence /
+  reporting subsystems:
+  - **Products with digital elements (PDE) + releases** — registry with class (Annex III/IV: default /
+    Class I / Class II / critical), manufacturer, support period and conformity route; releases with
+    version, status and SBOM link.
+  - **Annex I requirement matrix** per product — Part I (product security, a–m) + Part II (vulnerability
+    handling, 1–8) + conformity (Annex V/VII), each assessable met/partial/gap/na with evidence (a met
+    requirement is recorded as a discrete audit-evidence artifact).
+  - **Release-readiness gate** — a CRA-aligned checklist (SBOM attached, no known exploitable vulns,
+    vulnerability-handling process, coordinated disclosure, support period ≥ 5 years, EU declaration of
+    conformity, technical documentation) with a conformity score and support-period status.
+  - **CRA imported as a CONTROL vocabulary** (`import_cra.py`, 29 controls — Annex I Part I+II,
+    Art. 13/14 reporting 24h/72h/14d, conformity) — copyright-safe (refs + titles + original summaries).
+  - **`crane` connector + TOOL** — imports a CRANE export (products / releases / Annex I assessments) →
+    `XCOMPLIANCE.CRAPRODUCT / CRARELEASE / CRAREQUIREMENT` via `runner.import_cra_products`.
+  - Reuses the SBOM (`/sca`), vulnerability, evidence and Art. 14 reg-incident reporting
+    (`/reg-incident-reporting`) subsystems rather than duplicating them.
+  - **Live SBOM→CVE gate**: the "no known exploitable vulnerabilities" gate item (Annex I.1.(2)(a)) now
+    correlates the latest release's linked SBOM against XORCISM's vulnerability data (`sbomVulnSummary`),
+    failing the gate when a component carries a critical/KEV CVE (falls back to the requirement status
+    when no SBOM is linked).
+  - **Feeds Control Assurance & the audit package**: a new **"CRA product conformity"** control (SOC 2
+    CC8.1 / ISO 27001 A.8.25·A.8.28 / NIST CSF PR.PS) is computed live from the CRA cockpit, so CRA
+    conformity now appears on `/assurance`, in the Audit & Accreditation package and its OSCAL SSP.
+  - **AI-narrated CRA conformity report**: `GET /api/cra?format=md` (and a download button) produces a
+    Markdown report — executive summary (local AI, offline fallback) + portfolio table + per-product
+    release-readiness gate + open Annex I requirements.
+  - CRA milestones in the regulatory calendar (`/reg-calendar`) now reference the CRA control vocabulary.
+  - **Class-aware conformity route + target Security Level** (Compass Security CRA guidance): each product
+    carries a **target IEC 62443 Security Level (SL1–SL4)**, and the release gate now checks the
+    **conformity-assessment route is appropriate to the class** (Critical / Important Class II require a
+    third party / notified body; default & Class I self-assess) plus that a target SL is defined — 9 gate
+    items in total. The required route per class is shown on each product.
+  - **Deeper CRA compliance journey** (`/compliance-journeys`): the EU CRA journey is rewritten as a
+    7-phase practitioner path — scope & classification → risk & threat modeling (+ target SL) → gap
+    analysis & secure-by-design → technical security testing (DevSecOps/pentest) → vulnerability handling
+    (24h/72h/14d) → conformity assessment & CE marking → post-market vigilance — each step deep-linking to
+    the XORCISM feature that delivers it, fully translated EN/FR.
+
+- **API Authorization Governance — gateways (PEP), policy engines (PDP), OPA / Cedar / AuthZEN.**
+  A new cockpit (`/authz-governance`, `authzgov.ts`) to **inventory and assess** the authorization
+  architecture protecting your APIs — the **PEP / PDP / PAP** model of NIST SP 800-207 and the modern
+  policy engines that implement it.
+  - **Inventory**: API gateways (Kong/Apigee/APIM/Envoy/NGINX/…), policy decision points
+    (**OPA** / **Cedar / Amazon Verified Permissions** / **AuthZEN** / SpiceDB / Casbin), and policies —
+    registered in-app or imported by the new **`opa`, `cedar`, `authzen` connectors** (worker-safe,
+    offline file/sample → `AUTHZGATEWAY / AUTHZPDP / AUTHZPOLICY`).
+  - **Posture assessment** scored against the **OWASP API Security Top 10** (the authZ classes —
+    BOLA/BFLA/Broken-AuthN/Misconfig), **NIST CSF 2.0 PR.AA** and **NIST 800-207 ZT**: strong edge
+    authentication, externalized/centralized authorization, deny-by-default, object- & function-level
+    authorization, policy-as-code, decision logging, PDP fail-closed, AuthZEN conformance, and
+    governance coverage (flagging **ungoverned ingress**).
+  - **Decision evaluator (PEP test harness)**: builds the exact **OPA** (`input`), **Cedar** (PARC) or
+    **AuthZEN** (`/access/v1/evaluation`) request from a subject/action/resource/context, optionally
+    calls a live PDP, and **normalizes permit/deny across engines** — recording each test against an
+    expected outcome. The interop core means any enforcement point can be checked against any decision point.
+  - **BOLA/BFLA test battery**: a curated set of OWASP **negative authorization** tests (a regular user
+    reaching another user's object → API1 BOLA; a privileged function → API5 BFLA) run against a PDP —
+    every test must be **denied**; any "allow" is flagged as a High broken-authorization finding
+    (`POST /api/authz-governance/test-suite`, "Run BOLA/BFLA test battery" button).
+  - **OWASP API Security Top 10 (2023)** imported as a **CONTROL vocabulary**
+    (`import_owasp_api_top10.py`, 10 controls) — the framework the posture maps to.
+  - **Gateways are linked to ASSET**: a registered/imported gateway becomes an asset (public-facing) so it
+    appears in the inventory and attack surface.
+  - **TOOL catalogue + attack chain**: OPA, Cedar/AVP, AuthZEN and Topaz added to the tool catalogue, and a
+    new **"API authorization assessment (BOLA/BFLA)"** playbook in the tool-chaining engine.
+  - **AuthZ posture feeds Control Assurance & the audit package**: a new **"API authorization governance"**
+    control (mapped to SOC 2 CC6.3 / ISO 27001 A.5.15·A.8.3 / NIST CSF PR.AA) is computed live from the
+    `/authz-governance` posture, so it now appears on `/assurance`, in the **Audit & Accreditation package**
+    and its **OSCAL SSP** automatically.
+  - **Scheduled regression suite + trend**: every BOLA/BFLA battery run is persisted (`AUTHZSUITERUN`) for a
+    pass-rate trend (sparkline on the page); a PDP can opt into a **daily scheduled re-run** ("Scheduled
+    regression" toggle) that re-tests it and raises an **`authz.regression`** notification when a test that
+    previously passed is now allowed.
+  - **Per-PDP trend, policy evidence & topology graph**: each PDP shows its own **pass-rate sparkline**;
+    every registered/imported authorization policy is recorded as a discrete **audit evidence artifact**
+    (so policy-as-code appears in the Audit & Accreditation package's evidence index); and a layered
+    **PEP → PDP → policy topology graph** visualizes the architecture, flagging **ungoverned ingress** in red.
+
 - **Audit & Accreditation package — one traceable, AI-narrated report (audit / regulatory / risk / BIA).**
   A new generator (`auditpack.ts`, `GET /api/audit-package?format=json|md`, "📄 Generate audit &
   accreditation package" button on `/assurance`) assembles what XORCISM already holds into **audit-ready

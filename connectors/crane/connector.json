@@ -1,0 +1,14 @@
+{
+  "id": "crane",
+  "name": "CRANE — EU Cyber Resilience Act compliance",
+  "type": "import",
+  "category": "Compliance",
+  "description": "Imports a CRANE (github.com/cra-norm-engine/crane) export into XORCISM's EU Cyber Resilience Act conformity cockpit (/cra-compliance): products with digital elements + their releases, the Annex I essential-requirement assessments (Part I product security + Part II vulnerability handling) and support-period / conformity metadata → XCOMPLIANCE.CRAPRODUCT / CRARELEASE / CRAREQUIREMENT. CRANE is a self-hosted CRA compliance platform (product/release management, SBOM analysis, vulnerability + VEX, Annex I matrix, evidence for CE marking). Worker-safe & offline: pass `file` = a CRANE products export (its /api/v1 product list, or an {products:[...]} JSON), or run with no config for the bundled sample. Normalized to cra_products.",
+  "intrusive": false,
+  "permission": "connector:crane",
+  "run": "run.py",
+  "mapping": "crane",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A CRANE products export JSON ({products:[...]} or a list). Omit for the bundled sample." }
+  ]
+}

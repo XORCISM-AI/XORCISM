@@ -60,6 +60,8 @@ export const EVENT_TYPES: EventType[] = [
     label: "Audit / assessment due", description: "A scheduled audit or assessment is approaching its due date." },
   { key: "policy.regression", category: "Compliance", level: "warning", default: true,
     label: "Policy control regressed", description: "A policy requirement that previously passed now fails on-prem/cloud/hybrid evidence." },
+  { key: "authz.regression", category: "Compliance", level: "warning", default: true,
+    label: "Authorization regression", description: "A scheduled BOLA/BFLA authorization test that previously passed is now allowed by the PDP." },
 ];
 const BY_KEY = new Map(EVENT_TYPES.map((e) => [e.key, e]));
 export function isEvent(key: string): boolean { return BY_KEY.has(key); }

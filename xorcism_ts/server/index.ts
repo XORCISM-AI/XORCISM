@@ -68,6 +68,8 @@ import tprmRouter from "./routes/tprm";
 import { seedTprmDemo } from "./tprm";
 import zeroTrustRouter from "./routes/zerotrust";
 import { seedZtFunctions, seedZtSigninDemo, seedZtPolicyDemo } from "./zerotrust";
+import authzGovRouter from "./routes/authzgov";
+import craRouter from "./routes/cra";
 import itdrRouter from "./routes/itdr";
 import { seedItdrDemo } from "./itdr";
 import identityGovRouter from "./routes/identity-governance";
@@ -341,6 +343,8 @@ app.use("/api", journeysRouter); // Compliance journeys: guided multi-framework 
 app.use("/api", questionnaireJourneysRouter); // Questionnaire journeys: guided runner for QUESTIONNAIREs (OCIL, CSA AI-CAIQ TPRM)
 app.use("/api", tprmRouter); // TPRM cockpit: vendor risk, outside-in posture, questionnaire conformance, AI copilots
 app.use("/api", zeroTrustRouter); // Zero Trust cockpit: CISA ZTMM maturity + live pillar signals + fused trust score
+app.use("/api", authzGovRouter); // API Authorization Governance: gateways (PEP) + PDPs (OPA/Cedar/AuthZEN) + posture
+app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", itdrRouter); // ITDR: identity threat detection (sign-in telemetry + posture) → ATT&CK-mapped detections + response
 app.use("/api", identityGovRouter); // IGA/IDMS: access certification campaigns + lifecycle posture + revocation worklist over IDENTITY
 app.use("/api", socRouter); // SOC Operations: shifts/on-call, MTTD/MTTA/MTTR, escalation procedure, IR playbooks
@@ -559,6 +563,12 @@ app.get("/questionnaire-journeys", pageGuard("/"), (_req: Request, res: Response
 });
 app.get("/zero-trust", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "zero-trust.html"));
+});
+app.get("/authz-governance", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "authz-governance.html"));
+});
+app.get("/cra-compliance", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "cra-compliance.html"));
 });
 app.get("/itdr", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "itdr.html"));

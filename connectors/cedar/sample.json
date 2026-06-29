@@ -1,0 +1,12 @@
+{
+  "pdps": [
+    { "name": "Amazon Verified Permissions", "engine": "cedar", "endpoint": "https://verifiedpermissions.eu-west-1.amazonaws.com", "authzen_compliant": false, "status": "healthy", "notes": "AVP policy store evaluating Cedar PARC for the orders API." }
+  ],
+  "gateways": [
+    { "name": "AWS API Gateway (orders)", "gateway_type": "aws-apigw", "authn_methods": ["oidc", "jwt"], "authz_model": "external-pdp", "pdp_name": "Amazon Verified Permissions", "environment": "prod", "deny_by_default": true, "decision_logging": true }
+  ],
+  "policies": [
+    { "name": "OrderOwnerCanRead", "engine": "cedar", "language": "cedar", "pdp_name": "Amazon Verified Permissions", "default_deny": true, "versioned": true, "tested": true, "notes": "permit when principal == resource.owner (object-level / BOLA-safe)." },
+    { "name": "AdminFullAccess", "engine": "cedar", "language": "cedar", "pdp_name": "Amazon Verified Permissions", "default_deny": true, "versioned": true, "tested": true, "notes": "permit for role Admin (function-level)." }
+  ]
+}

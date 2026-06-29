@@ -1,0 +1,12 @@
+{
+  "pdps": [
+    { "name": "OPA", "engine": "opa", "endpoint": "http://opa.internal:8181", "authzen_compliant": false, "status": "healthy", "notes": "Sidecar OPA enforcing API authorization." }
+  ],
+  "gateways": [
+    { "name": "Kong (public API)", "gateway_type": "kong", "authn_methods": ["oidc", "jwt"], "authz_model": "external-pdp", "pdp_name": "OPA", "base_url": "https://api.example.com", "environment": "prod", "deny_by_default": true, "decision_logging": true }
+  ],
+  "policies": [
+    { "name": "httpapi/authz.rego", "engine": "opa", "language": "rego", "pdp_name": "OPA", "default_deny": true, "versioned": true, "tested": true, "version": "1.4.0", "notes": "default allow := false; allow on owner match (ABAC)." },
+    { "name": "legacy/admin.rego", "engine": "opa", "language": "rego", "pdp_name": "OPA", "default_deny": false, "versioned": true, "tested": false, "notes": "Default-allow legacy module — flagged." }
+  ]
+}

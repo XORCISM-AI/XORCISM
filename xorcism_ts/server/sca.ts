@@ -323,6 +323,25 @@ function exploitByCpe(cpeIds: number[]): Map<number, { cvss: number | null; kev:
   return out;
 }
 
+/** For one SBOM: how many of its components are known-vulnerable (+ critical / KEV). Cross-DB best-effort.
+ *  Used by the CRA release-readiness gate ("no known exploitable vulnerabilities", Annex I.1.(2)(a)). */
+export function sbomVulnSummary(sbomId: number): { components: number; vulnerable: number; critical: number; kev: number } {
+  const out = { components: 0, vulnerable: 0, critical: 0, kev: 0 };
+  try {
+    const xo = getDb("XORCISM");
+    if (!has(xo, "COMPONENT")) return out;
+    const comps = xo.prepare("SELECT CPEID FROM COMPONENT WHERE SbomID=?").all(sbomId) as { CPEID: number | null }[];
+    out.components = comps.length;
+    const cpeIds = [...new Set(comps.map((c) => Number(c.CPEID)).filter(Boolean))];
+    const exp = exploitByCpe(cpeIds);
+    for (const c of comps) {
+      const e = exp.get(Number(c.CPEID));
+      if (e && e.vulns > 0) { out.vulnerable++; if ((e.cvss ?? 0) >= 9) out.critical++; if (e.kev) out.kev++; }
+    }
+  } catch { /* SCA/XVULNERABILITY unavailable */ }
+  return out;
+}
+
 export function scaPriority(tenant: number | null): ScaPriority {
   const xo = getDb("XORCISM");
   const empty: ScaPriority = { findings: [], summary: { vulnerable: 0, reachable: 0, unreachable: 0, unknown: 0, act: 0, scheduled: 0, deferred: 0, review: 0, noiseReductionPct: 0, reachablePct: 0 } };

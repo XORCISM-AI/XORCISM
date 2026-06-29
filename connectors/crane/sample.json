@@ -1,0 +1,38 @@
+{
+  "products": [
+    {
+      "name": "SmartGateway X200 (firmware)",
+      "description": "IoT edge gateway firmware — a product with digital elements in scope of the CRA.",
+      "class": "class-ii",
+      "manufacturer": "Acme Devices GmbH",
+      "support_until": "2031-12-31",
+      "conformity_route": "module B+C (notified body)",
+      "releases": [
+        { "version": "2.4.1", "release_date": "2026-05-10", "status": "released", "sbom_id": 0 },
+        { "version": "2.5.0", "release_date": "2026-08-01", "status": "draft" }
+      ],
+      "requirements": [
+        { "ref": "Annex I.1.(2)(a)", "status": "met", "evidence": "No known exploitable CVEs in 2.5.0 SBOM (validated)." },
+        { "ref": "Annex I.1.(2)(b)", "status": "met", "evidence": "Secure-by-default config; factory reset supported." },
+        { "ref": "Annex I.1.(2)(c)", "status": "met", "evidence": "Signed OTA updates with opt-out auto-update." },
+        { "ref": "Annex I.1.(2)(e)", "status": "partial", "evidence": "TLS in transit; at-rest encryption in progress." },
+        { "ref": "Annex I.2.(1)", "status": "met", "evidence": "CycloneDX SBOM published per release." },
+        { "ref": "Annex I.2.(5)", "status": "met", "evidence": "Coordinated vulnerability disclosure policy at /security.txt." },
+        { "ref": "Annex V", "status": "gap", "evidence": "EU declaration of conformity pending notified-body assessment." }
+      ]
+    },
+    {
+      "name": "Acme Mobile App",
+      "description": "Companion mobile application (PDE).",
+      "class": "default",
+      "manufacturer": "Acme Devices GmbH",
+      "support_until": "2027-06-30",
+      "conformity_route": "self-assessment",
+      "releases": [ { "version": "5.1.0", "release_date": "2026-06-01", "status": "released" } ],
+      "requirements": [
+        { "ref": "Annex I.2.(1)", "status": "gap", "evidence": "" },
+        { "ref": "Annex I.2.(5)", "status": "met", "evidence": "CVD policy in app store listing." }
+      ]
+    }
+  ]
+}

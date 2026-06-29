@@ -49,6 +49,12 @@ const L = {
   agents: "/agents",
   tprm: "/tprm",
   aicmControls: "/?db=XORCISM&table=CONTROL",
+  cra: "/cra-compliance",
+  threatModel: "/threat-model",
+  devsecops: "/devsecops",
+  pentest: "/pentest",
+  regIncident: "/reg-incident-reporting",
+  regCalendar: "/reg-calendar",
 } as const;
 
 export type StepT = { title: string; desc: string; link?: string };
@@ -540,26 +546,44 @@ export const FRAMEWORKS: FrameworkT[] = [
   },
   {
     key: "cra", name: "EU Cyber Resilience Act", provider: "EU (2024/2847)", kind: "Regulation", jurisdiction: "European Union",
-    summary: "Mandatory cybersecurity for products with digital elements: secure-by-design requirements, SBOM, vulnerability handling, conformity assessment and CE marking.",
-    effort: "6–12 months",
+    summary: "Mandatory cybersecurity for products with digital elements (PDE) across the whole lifecycle. Timeline: in force 10 Dec 2024 · vulnerability & incident reporting from 11 Sep 2026 · full applicability (CE marking) from 11 Dec 2027. This journey runs the practitioner path — scope & classify the product, threat-model and set a target IEC 62443 Security Level, gap-analyse and remediate against Annex I, test technically, operate vulnerability handling, then pass conformity assessment + CE marking and maintain post-market vigilance. Track every product, its release-readiness gate and the Annex I matrix in /cra-compliance; import the CRA control catalogue to track the obligations as controls.",
+    effort: "6–12 months (phased: reporting Sep 2026 · CE marking Dec 2027)",
     phases: [
-      { name: "Product Scope", steps: [
-        st("Classify the product", "Determine if the product with digital elements is default / important (class I/II) / critical.", L.scope),
-        st("Map digital elements & dependencies", "Inventory components and third-party / open-source dependencies.", L.sca),
+      { name: "1 · Scope & classification", steps: [
+        st("Is the product in scope of the CRA?", "Answer the first foundational question: does this hardware/software with digital elements, made available on the EU market, fall under the CRA (and is it not covered by a sector regime)?", L.cra),
+        st("Register the product & classify it", "Register the product with digital elements and determine its class — default / important Class I / important Class II / critical (Annex III/IV) — which drives the assessment route.", L.cra),
+        st("Determine the conformity-assessment route", "Default & Class I (with harmonised standards) self-assess; Class II and critical products require a third-party / notified body. Set the route on the product.", L.cra),
+        st("Map digital elements & dependencies (SBOM)", "Inventory the product's components and third-party / open-source dependencies as a machine-readable SBOM (CycloneDX/SPDX).", L.sca),
       ]},
-      { name: "Essential Requirements (Annex I)", steps: [
-        st("Secure-by-design & by-default", "Implement the Annex I Part I security requirements across the lifecycle.", L.controls53),
-        st("Produce the SBOM", "Generate and maintain a Software Bill of Materials (CycloneDX/SPDX).", L.sca),
-        st("Risk assessment", "Perform and document the product cybersecurity risk assessment.", L.riskReg),
+      { name: "2 · Risk & threat modeling", steps: [
+        st("Product cybersecurity risk assessment", "Perform and document the risk assessment that underpins the Annex I requirements and the technical documentation.", L.riskReg),
+        st("Threat-model the product", "Model the attack surface, entry points, trust boundaries and abuse cases (e.g. STRIDE) for the product and its update channel.", L.threatModel),
+        st("Set a target Security Level (IEC 62443 SL)", "Define a target Security Level (SL1–SL4) proportionate to the product's criticality, as the yardstick for the essential requirements.", L.cra),
       ]},
-      { name: "Vulnerability Handling (Annex I Part II)", steps: [
-        st("Vulnerability management", "Operate vulnerability identification, remediation and security updates.", L.vuln),
-        st("Coordinated disclosure", "Establish a coordinated vulnerability-disclosure policy and contact.", L.policies),
-        st("24h / 72h reporting to ENISA", "Set up reporting of actively-exploited vulnerabilities and severe incidents to ENISA/CSIRT.", L.regulator),
+      { name: "3 · Gap analysis & secure-by-design (Annex I Part I)", steps: [
+        st("Gap analysis vs Annex I & IEC 62443", "Assess current controls against the Annex I Part I requirements (and the mapped IEC 62443 SL) to find the gaps; track status in the Annex I matrix.", L.cra),
+        st("Implement secure-by-design & by-default", "Implement the Annex I Part I controls — secure defaults, access control, confidentiality/integrity, attack-surface minimisation, logging — across the lifecycle.", L.controls53),
+        st("Remediation roadmap", "Turn the gaps into a tracked remediation backlog with owners and due dates.", L.riskReg),
       ]},
-      { name: "Conformity & CE", steps: [
-        st("Conformity assessment", "Run the applicable conformity-assessment procedure (self / notified body).", L.assess),
-        st("Technical documentation & CE marking", "Compile the technical documentation, EU declaration of conformity and affix CE marking.", L.evidence),
+      { name: "4 · Technical security testing", steps: [
+        st("DevSecOps pipeline testing", "Run SAST / secret scanning / SCA / DAST on the product's code and build, gating releases on the results.", L.devsecops),
+        st("Penetration test & deeper analysis", "Execute technical testing proportionate to the class — source-code review, firmware/protocol analysis, fuzzing and authentication-flow testing.", L.pentest),
+        st("Validate no known exploitable vulnerabilities", "Confirm the release ships with no known exploitable vulnerabilities (Annex I.1.(2)(a)) by correlating the SBOM against CVE/KEV data.", L.cra),
+      ]},
+      { name: "5 · Vulnerability handling (Annex I Part II)", steps: [
+        st("Operate vulnerability management", "Identify, remediate and issue free security updates for vulnerabilities without delay.", L.vuln),
+        st("Coordinated vulnerability disclosure", "Establish a coordinated vulnerability-disclosure policy, a reporting contact and secure update distribution.", L.policies),
+        st("Reporting readiness (24h / 72h / 14 days)", "Be ready to report actively-exploited vulnerabilities & severe incidents to ENISA/CSIRT — early warning 24h, notification 72h, final report 14 days.", L.regIncident),
+      ]},
+      { name: "6 · Conformity assessment & CE marking", steps: [
+        st("Run the conformity assessment", "Execute the route for the class — internal self-assessment, or engage a notified body for Class II / critical products.", L.assess),
+        st("Compile the technical documentation (Annex VII)", "Assemble the technical documentation: risk assessment, SBOM, test evidence and the description of the essential-requirement controls.", L.evidence),
+        st("EU declaration of conformity & CE", "Draw up the EU declaration of conformity (Annex V) and affix the CE marking once the gate is green.", L.cra),
+      ]},
+      { name: "7 · Post-market vigilance", steps: [
+        st("Continuous SBOM & CVE monitoring", "Continuously monitor the released SBOM against new CVEs/KEV over the support period and ship security updates.", L.sca),
+        st("Support period & lifecycle", "Maintain the declared support period (≥ 5 years unless justified) and re-assess conformity on any substantial modification.", L.cra),
+        st("Track CRA deadlines", "Track the CRA milestones (reporting from 11 Sep 2026, full applicability 11 Dec 2027) in the regulatory calendar.", L.regCalendar),
       ]},
     ],
   },

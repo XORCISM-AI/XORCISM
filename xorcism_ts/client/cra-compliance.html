@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — EU Cyber Resilience Act</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cra-wrap{max-width:1160px;margin:0 auto;padding:18px}
+  .cra-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:920px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 14px;min-width:120px}
+  .kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+  table.cra{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.cra th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:6px 8px}
+  table.cra td{border-bottom:1px solid #1e2133;padding:6px 8px;color:#e2e8f0}
+  table.cra tr.clk{cursor:pointer}table.cra tr.clk:hover td{background:#161a30}
+  .bar{height:8px;border-radius:4px;background:#1e2133;overflow:hidden;min-width:80px;display:inline-block;width:100px;vertical-align:middle}
+  .bar>i{display:block;height:100%}
+  .pill{font-size:11px;border-radius:6px;padding:2px 8px}
+  .p-ok{background:#064e3b;color:#6ee7b7}.p-warn{background:#78350f;color:#fcd34d}.p-bad{background:#7f1d1d;color:#fecaca}.p-na{background:#1e2133;color:#94a3b8}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:14px}
+  .fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:#94a3b8}
+  .fld input,.fld select,.fld textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:8px}
+  .btn-cra{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .gate{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #1e2133;font-size:12.5px}
+  .muted{color:#64748b}
+  .grp{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/sca">&#128230; SBOM</a>
+  <a href="/reg-incident-reporting">&#128680; Reg reporting</a>
+  <span class="spacer"></span>
+  <span class="title">&#127466;&#127482; Cyber Resilience Act</span>
+</div>
+
+<div class="cra-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px">EU Cyber Resilience Act — conformity</h1>
+  <div class="cra-sub">Track <b>products with digital elements (PDE)</b> and their releases against the <b>CRA (Regulation (EU) 2024/2847)</b> essential requirements (Annex I Part I product security + Part II vulnerability handling), with a <b>release-readiness gate</b> and conformity evidence for the EU declaration of conformity / CE marking. Reuses XORCISM's SBOM (/sca), vulnerability and evidence subsystems and the Art. 14 reporting timelines (/reg-incident-reporting).</div>
+
+  <div id="cra-kpis" class="kpis"></div>
+  <div style="margin:0 0 14px"><a class="btn-cra" href="/api/cra?format=md" style="text-decoration:none">📄 Download CRA conformity report (Markdown)</a></div>
+
+  <div class="card2">
+    <div style="font-size:13px;font-weight:600;color:#e7ebf3;margin-bottom:8px">＋ Register a product with digital elements</div>
+    <div class="row">
+      <div class="fld"><label>Name</label><input id="p-name"></div>
+      <div class="fld"><label>Class (Annex III/IV)</label><select id="p-class"><option value="default">default</option><option value="class-i">Important — Class I</option><option value="class-ii">Important — Class II</option><option value="critical">Critical</option></select></div>
+      <div class="fld"><label>Manufacturer</label><input id="p-mfr"></div>
+      <div class="fld"><label>Support until</label><input id="p-support" type="date"></div>
+      <div class="fld"><label>Target Security Level (IEC 62443)</label><select id="p-sl"><option value="">—</option><option>SL1</option><option>SL2</option><option>SL3</option><option>SL4</option></select></div>
+      <div class="fld"><label>Conformity route</label><input id="p-route" placeholder="self-assessment / notified body"></div>
+    </div>
+    <button class="btn-cra" id="p-add">Add product</button>
+  </div>
+
+  <div class="sect-h">Products</div>
+  <div id="cra-products"></div>
+
+  <div id="cra-detail"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/cra-compliance.js"></script>
+</body>
+</html>

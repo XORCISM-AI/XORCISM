@@ -10,6 +10,8 @@
  */
 import { getDb } from "./db";
 import { topExposures } from "./fusion";
+import { assessAuthzPosture } from "./authzgov";
+import { craDashboard } from "./cra";
 
 export type CtlStatus = "proven" | "partial" | "gap" | "attest";
 export interface FwRef { fw: string; ref: string; }
@@ -42,6 +44,8 @@ const CONTROL_FRAMEWORKS: Record<string, FwRef[]> = {
   validation: [{ fw: "soc2", ref: "CC4.1" }, { fw: "iso27001", ref: "A.8.29" }, { fw: "nistcsf", ref: "ID.RA-01" }],
   incident:   [{ fw: "soc2", ref: "CC7.3/7.4" }, { fw: "iso27001", ref: "A.5.24-5.27" }, { fw: "nistcsf", ref: "RS.MA" }],
   resilience: [{ fw: "soc2", ref: "A1.2" }, { fw: "iso27001", ref: "A.8.13" }, { fw: "nistcsf", ref: "RC.RP-01" }],
+  apiauthz:   [{ fw: "soc2", ref: "CC6.3" }, { fw: "iso27001", ref: "A.5.15/A.8.3" }, { fw: "nistcsf", ref: "PR.AA-05" }],
+  craproduct: [{ fw: "soc2", ref: "CC8.1" }, { fw: "iso27001", ref: "A.8.25/A.8.28" }, { fw: "nistcsf", ref: "PR.PS-01" }],
 };
 
 // Baseline of common, high-signal ATT&CK techniques used to measure detection & TID coverage.
@@ -175,6 +179,31 @@ export function controlAssurance(tenant: number | null): Assurance {
 
   // 8. Ransomware resilience / backups — telemetry can't prove offline backups → attest
   controls.push({ id: "resilience", name: "Ransomware resilience & backups", iso: "A.8.13", nist: "PR.DS / RC.RP", status: "attest", score: 0, metric: "offline/immutable backups — manual attestation required", evidence: ["See the /ransomware scenario for the residual-loss reduction backups would buy"] });
+
+  // 9. API authorization governance — live from the /authz-governance posture (PEP/PDP, OWASP API Top 10)
+  try {
+    const az = assessAuthzPosture(tenant);
+    const inv = az.counts.gateways + az.counts.pdps;
+    if (inv === 0) {
+      controls.push({ id: "apiauthz", name: "API authorization governance", iso: "A.5.15/A.8.3", nist: "PR.AA", status: "attest", score: 0, metric: "no API gateways/PDPs inventoried", evidence: ["Register gateways & policy engines (OPA/Cedar/AuthZEN) in /authz-governance"] });
+    } else {
+      const ev = [`${az.counts.gateways} gateway(s), ${az.counts.pdps} PDP(s), ${az.counts.policies} policy(ies)`];
+      if (az.counts.ungoverned) ev.push(`${az.counts.ungoverned} ungoverned gateway(s)`);
+      controls.push({ id: "apiauthz", name: "API authorization governance", iso: "A.5.15/A.8.3", nist: "PR.AA", status: byScore(az.score), score: az.score, metric: `${az.score}% authZ posture (OWASP API Top 10 / 800-207 PEP-PDP)`, evidence: ev });
+    }
+  } catch { /* authz tables not ready */ }
+
+  // 10. EU Cyber Resilience Act — product conformity from the /cra-compliance cockpit
+  try {
+    const cd = craDashboard(tenant);
+    if (cd.summary.products === 0) {
+      controls.push({ id: "craproduct", name: "CRA product conformity", iso: "A.8.25/A.8.28", nist: "PR.PS", status: "attest", score: 0, metric: "no products with digital elements registered", evidence: ["Register products & their Annex I conformity in /cra-compliance"] });
+    } else {
+      const ev = [`${cd.summary.conformant}/${cd.summary.products} products release-gate ready`];
+      if (cd.summary.supportExpired) ev.push(`${cd.summary.supportExpired} with expired support period`);
+      controls.push({ id: "craproduct", name: "CRA product conformity", iso: "A.8.25/A.8.28", nist: "PR.PS", status: byScore(cd.summary.avgConformity), score: cd.summary.avgConformity, metric: `${cd.summary.avgConformity}% avg Annex I conformity across ${cd.summary.products} product(s)`, evidence: ev });
+    }
+  } catch { /* CRA tables not ready */ }
 
   for (const c of controls) c.frameworks = CONTROL_FRAMEWORKS[c.id] || [];
   const tally = (st: CtlStatus) => controls.filter((c) => c.status === st).length;

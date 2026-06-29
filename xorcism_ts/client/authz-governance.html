@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — API Authorization Governance</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .az-wrap{max-width:1140px;margin:0 auto;padding:18px}
+  .az-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:900px}
+  .az-hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .az-score{font-size:42px;font-weight:700}
+  .az-bar{flex:1;min-width:220px;max-width:440px;height:12px;border-radius:6px;background:#1e2133;overflow:hidden}
+  .az-bar>i{display:block;height:100%}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+  .chip{font-size:12px;border-radius:6px;padding:3px 9px;background:#13162a;border:1px solid #2d3250;color:#cbd5e1}
+  .counts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .pill{font-size:12px;border-radius:6px;padding:3px 9px}
+  .p-ok{background:#064e3b;color:#6ee7b7}.p-warn{background:#78350f;color:#fcd34d}.p-bad{background:#7f1d1d;color:#fecaca}.p-na{background:#1e2133;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:20px 0 8px}
+  .ctl{border:1px solid #2d3250;border-radius:10px;padding:11px 13px;margin-bottom:9px;background:#13162a}
+  .ctl .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ctl .nm{font-size:14px;font-weight:600;color:#e2e8f0}
+  .badge{font-size:11px;border-radius:6px;padding:2px 8px;font-weight:600;margin-left:auto}
+  .b-proven{background:#064e3b;color:#6ee7b7}.b-partial{background:#78350f;color:#fcd34d}.b-gap{background:#7f1d1d;color:#fecaca}.b-na{background:#1e2133;color:#94a3b8}
+  .refs{font-size:11px;color:#64748b;font-family:ui-monospace,monospace}
+  .ev{font-size:12px;color:#cbd5e1;margin-top:4px}.rec{font-size:12px;color:#94a3b8;margin-top:2px}
+  table.az{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:6px}
+  table.az th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:6px 8px}
+  table.az td{border-bottom:1px solid #1e2133;padding:6px 8px;color:#e2e8f0}
+  .muted{color:#64748b}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a}
+  .card2 h3{font-size:13px;margin:0 0 8px;color:#e7ebf3}
+  .fld{display:flex;flex-direction:column;gap:3px;margin-bottom:7px}
+  .fld label{font-size:11px;color:#94a3b8}
+  .fld input,.fld select,.fld textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  .btn-az{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  pre.payload{background:#0b0d18;border:1px solid #2d3250;border-radius:8px;padding:10px;font-size:11px;color:#a5b4fc;overflow:auto;max-height:240px;white-space:pre-wrap}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/zero-trust">&#128737;&#65039; Zero Trust</a>
+  <span class="spacer"></span>
+  <span class="title">&#128273; API Authorization Governance</span>
+</div>
+
+<div class="az-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px">API Authorization Governance</h1>
+  <div class="az-sub">Inventory and assess the <b>API gateways (PEP)</b>, <b>policy decision points (PDP — OPA / Cedar / AuthZEN)</b> and authorization <b>policies</b> protecting your APIs. Posture is scored against the <b>OWASP API Security Top 10</b> (BOLA/BFLA/Broken-AuthN), <b>NIST CSF 2.0 PR.AA</b> and the <b>NIST 800-207</b> PE/PA/PEP model. Includes a vendor-neutral decision evaluator (PEP test harness).</div>
+
+  <div id="az-posture"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+
+  <div class="sect-h">Authorization decision evaluator (PEP test harness)</div>
+  <div class="card2">
+    <div class="row">
+      <div class="fld"><label>Engine</label><select id="ev-engine"><option value="authzen">AuthZEN</option><option value="opa">OPA (Rego)</option><option value="cedar">Cedar / AVP</option></select></div>
+      <div class="fld"><label>Expected (optional)</label><select id="ev-expected"><option value="">—</option><option value="allow">allow</option><option value="deny">deny</option></select></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>Subject (e.g. user:alice)</label><input id="ev-subject" placeholder="user:alice"></div>
+      <div class="fld"><label>Action (e.g. read)</label><input id="ev-action" placeholder="read"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>Resource (e.g. document:42)</label><input id="ev-resource" placeholder="document:42"></div>
+      <div class="fld"><label>Context JSON (optional)</label><input id="ev-context" placeholder='{"ip":"10.0.0.1"}'></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>PDP endpoint (optional, for live call)</label><input id="ev-endpoint" placeholder="http://localhost:8181/v1/data/app/allow"></div>
+      <div class="fld"><label>&nbsp;</label><label style="font-size:12px;color:#cbd5e1"><input type="checkbox" id="ev-live"> Call PDP live</label></div>
+    </div>
+    <button class="btn-az" id="ev-run">Evaluate</button>
+    <button class="btn-az" id="ev-suite" title="Run the OWASP BOLA/BFLA negative-authorization battery against the PDP (uses the engine + endpoint + live settings above)">&#9888;&#65039; Run BOLA/BFLA test battery</button>
+    <div id="ev-out"></div>
+    <div id="suite-trend"></div>
+    <div id="suite-out"></div>
+  </div>
+
+  <div class="grid2" style="margin-top:16px">
+    <div class="card2">
+      <h3>＋ Register API gateway (PEP)</h3>
+      <div class="fld"><label>Name</label><input id="gw-name"></div>
+      <div class="row">
+        <div class="fld"><label>Type</label><select id="gw-type"><option>kong</option><option>apigee</option><option>aws-apigw</option><option>azure-apim</option><option>envoy</option><option>nginx</option><option>tyk</option><option>traefik</option><option>other</option></select></div>
+        <div class="fld"><label>AuthZ model</label><select id="gw-model"><option value="none">none</option><option value="rbac">rbac</option><option value="scopes">scopes</option><option value="abac">abac</option><option value="rebac">rebac</option><option value="external-pdp">external-pdp</option></select></div>
+      </div>
+      <div class="fld"><label>AuthN methods (comma: oidc,jwt,mtls,apikey,basic)</label><input id="gw-authn" placeholder="oidc,mtls"></div>
+      <div class="row">
+        <div class="fld"><label>PDP</label><select id="gw-pdp"><option value="">— none —</option></select></div>
+        <div class="fld"><label>Environment</label><input id="gw-env" placeholder="prod"></div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>Deny-by-default</label><select id="gw-deny"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
+        <div class="fld"><label>Decision logging</label><select id="gw-log"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
+      </div>
+      <button class="btn-az" id="gw-add">Add gateway</button>
+    </div>
+
+    <div class="card2">
+      <h3>＋ Register policy decision point (PDP)</h3>
+      <div class="fld"><label>Name</label><input id="pdp-name"></div>
+      <div class="row">
+        <div class="fld"><label>Engine</label><select id="pdp-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="avp">Amazon Verified Permissions</option><option value="authzen">AuthZEN PDP</option><option value="spicedb">SpiceDB</option><option value="casbin">Casbin</option><option value="other">other</option></select></div>
+        <div class="fld"><label>Status</label><select id="pdp-status"><option value="unknown">unknown</option><option value="healthy">healthy</option><option value="unreachable">unreachable</option></select></div>
+      </div>
+      <div class="fld"><label>Endpoint</label><input id="pdp-endpoint" placeholder="http://localhost:8181"></div>
+      <div class="fld"><label><input type="checkbox" id="pdp-authzen"> AuthZEN-conformant</label></div>
+      <div class="fld"><label><input type="checkbox" id="pdp-regression"> Scheduled regression (re-run BOLA/BFLA battery daily &amp; alert on regression)</label></div>
+      <button class="btn-az" id="pdp-add">Add PDP</button>
+      <h3 style="margin-top:14px">＋ Register policy</h3>
+      <div class="row">
+        <div class="fld"><label>Name</label><input id="pol-name"></div>
+        <div class="fld"><label>Engine</label><select id="pol-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="other">other</option></select></div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>Default-deny</label><select id="pol-deny"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
+        <div class="fld"><label>Versioned & tested</label><select id="pol-vt"><option value="">unknown</option><option value="vt">versioned+tested</option><option value="v">versioned only</option><option value="0">neither</option></select></div>
+      </div>
+      <button class="btn-az" id="pol-add">Add policy</button>
+    </div>
+  </div>
+
+  <div class="sect-h">Topology — PEP → PDP → policy</div>
+  <div id="az-topology"></div>
+
+  <div class="sect-h">Inventory</div>
+  <div id="az-inventory"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/authz-governance.js"></script>
+</body>
+</html>

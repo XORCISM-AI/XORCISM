@@ -1,0 +1,12 @@
+{
+  "pdps": [
+    { "name": "AuthZEN PDP (Topaz)", "engine": "authzen", "endpoint": "https://pdp.internal/access/v1/evaluation", "authzen_compliant": true, "status": "healthy", "notes": "OpenID AuthZEN Authorization API 1.0 decision endpoint." }
+  ],
+  "gateways": [
+    { "name": "Envoy (ext_authz)", "gateway_type": "envoy", "authn_methods": ["mtls", "jwt"], "authz_model": "external-pdp", "pdp_name": "AuthZEN PDP (Topaz)", "environment": "prod", "deny_by_default": true, "decision_logging": true },
+    { "name": "Legacy NGINX (internal)", "gateway_type": "nginx", "authn_methods": ["apikey"], "authz_model": "none", "environment": "prod", "deny_by_default": false, "decision_logging": false, "notes": "Static API key, no PDP — ungoverned ingress." }
+  ],
+  "policies": [
+    { "name": "documents.rebac", "engine": "authzen", "language": "json", "pdp_name": "AuthZEN PDP (Topaz)", "default_deny": true, "versioned": true, "tested": true, "notes": "Relationship-based (ReBAC) document access (object-level)." }
+  ]
+}

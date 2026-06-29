@@ -1,0 +1,14 @@
+{
+  "id": "cedar",
+  "name": "Cedar / Amazon Verified Permissions — authorization inventory",
+  "type": "import",
+  "category": "Identity & Access",
+  "description": "Imports a Cedar authorization inventory into XORCISM's API Authorization Governance (/authz-governance): the policy store / Amazon Verified Permissions (AVP) as a Policy Decision Point (PDP) and its Cedar policies (permit/forbid; Cedar is deny-by-default by design), plus API gateways (PEP) that delegate to it. Cedar (https://www.cedarpolicy.com) is the open authorization language behind AWS Verified Permissions, evaluating Principal-Action-Resource-Context. Worker-safe & offline: pass `file` = an AVP `ListPolicies` export or an inventory JSON, or run with no config for the bundled sample. Normalized to authz_pdps / authz_gateways / authz_policies.",
+  "intrusive": false,
+  "permission": "connector:cedar",
+  "run": "run.py",
+  "mapping": "cedar",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An AVP ListPolicies export, or an inventory JSON {pdps,gateways,policies}. Omit for the bundled sample." }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "opa",
+  "name": "Open Policy Agent (OPA) — authorization inventory",
+  "type": "import",
+  "category": "Identity & Access",
+  "description": "Imports an Open Policy Agent (OPA) authorization inventory into XORCISM's API Authorization Governance (/authz-governance): the OPA instance as a Policy Decision Point (PDP) and its Rego policies (with default-deny / versioned / tested flags), plus any API gateways (PEP) that delegate to it. OPA (https://www.openpolicyagent.org) is the CNCF policy engine using the Rego language; its decision API returns allow/deny. Worker-safe & offline: pass `file` = a saved OPA `/v1/policies` export (or a small inventory JSON), or run with no config for the bundled sample. Normalized to authz_pdps / authz_gateways / authz_policies.",
+  "intrusive": false,
+  "permission": "connector:opa",
+  "run": "run.py",
+  "mapping": "opa",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An OPA /v1/policies export, or an inventory JSON {pdps,gateways,policies}. Omit for the bundled sample." }
+  ]
+}
