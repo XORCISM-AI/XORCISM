@@ -1288,6 +1288,11 @@ const GRID_DISPLAY_COLUMNS: Record<string, GridDisplaySpec[]> = {
       colLabel: "IncidentName",
     },
   ],
+  // POLICYFORASSET: resolved asset name (after AssetID) + policy name (after PolicyID).
+  POLICYFORASSET: [
+    { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetID", colLabel: "AssetName" },
+    { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", hintLabel: "PolicyName", srcCol: "PolicyID", colLabel: "PolicyName" },
+  ],
   // INCIDENT: the incident's category name, resolved from IncidentCategoryID and shown right after it.
   INCIDENT: [
     { db: "XINCIDENT", table: "INCIDENTCATEGORY", idCol: "IncidentCategoryID", labelCol: "IncidentCategoryName", hintLabel: "Category", srcCol: "IncidentCategoryID", colLabel: "Category" },
@@ -2607,6 +2612,8 @@ FK_COLUMNS["ALERT.PersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonI
 // Defender "Select entities": impacted-assets junction + related evidence (browsable, FK-linked).
 FK_COLUMNS["ALERTFORASSET.AlertID"] = { db: "XINCIDENT", table: "ALERT", idCol: "AlertID", labelCol: "AlertName", distinct: true };
 FK_COLUMNS["ALERTFORASSET.AssetID"] = { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true };
+FK_COLUMNS["POLICYFORASSET.PolicyID"] = { db: "XORCISM", table: "POLICY", idCol: "PolicyID", labelCol: "PolicyName", distinct: true };
+FK_COLUMNS["POLICYFORASSET.AssetID"] = { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", distinct: true };
 FK_COLUMNS["ALERTEVIDENCE.AlertID"] = { db: "XINCIDENT", table: "ALERT", idCol: "AlertID", labelCol: "AlertName", distinct: true };
 STATIC_DATALIST_COLUMNS["ALERTEVIDENCE.EvidenceType"] = ["File", "File hash", "Process", "URL", "IP address",
   "Domain", "Email", "Mailbox", "User account", "Registry key", "Command line", "Other"];
@@ -5494,6 +5501,7 @@ async function deleteRow(rowid: number): Promise<void> {
 
 let editRowId = 0;
 let editIncidentId = 0;
+let editPolicyId = 0;
 let editAlertId = 0;
 let editThreatId = 0;
 let editThreatAgentId = 0;
@@ -5894,6 +5902,7 @@ function validateRequiredForm(prefix: string, table: string): boolean {
 async function openEditModal(row: Record<string, unknown>): Promise<void> {
   editRowId = Number(row["rowid"]);
   editIncidentId = Number(row["IncidentID"]) || 0;
+  editPolicyId = currentTable === "POLICY" ? Number(row["PolicyID"]) || 0 : 0;
   editAlertId = currentTable === "ALERT" ? Number(row["AlertID"]) || 0 : 0;
   editThreatId = currentTable === "THREAT" ? Number(row["ThreatID"]) || 0 : 0;
   const body = $("edit-modal-body");
@@ -6151,6 +6160,13 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     await appendIncidentThreatActor(body, "ef_", curActor);
   }
 
+  // Governed assets (POLICYFORASSET) for the POLICY table (pre-checked) — which assets this policy covers
+  if (currentTable === "POLICY" && editPolicyId) {
+    let linked: number[] = [];
+    try { linked = await api.getPolicyAssets(editPolicyId); } catch { /* rights / unavailable */ }
+    await appendAssetSelector(body, "ef", new Set(linked), "POLICYFORASSET", { tagFilter: true, checkAll: true });
+  }
+
   // Multi-ASSET selection for the AUDIT table (ASSETAUDIT links, pre-checked)
   if (currentTable === "AUDIT") {
     editAuditId = Number(row["AuditID"]) || 0;
@@ -6294,6 +6310,14 @@ async function submitEdit(): Promise<void> {
         } catch (e) {
           toast(t("toast.threatActorLinkErr") + " " + e, "err");
         }
+      }
+    }
+    // Governed-asset links (POLICYFORASSET) for the POLICY table
+    if (currentTable === "POLICY" && editPolicyId) {
+      try {
+        await api.setPolicyAssets(editPolicyId, collectCheckedAssets("ef"));
+      } catch (e) {
+        toast(t("toast.assetLinksErr") + " " + e, "err");
       }
     }
     // ASSET links (ASSETAUDIT)
@@ -9886,6 +9910,8 @@ async function openInsertModal(): Promise<void> {
   }
   // Impacted assets (ALERTFORASSET) for the ALERT table — Defender "Select entities"
   if (currentTable === "ALERT") await appendAssetSelector(body, "f", new Set(), "ALERTFORASSET");
+  // Governed assets (POLICYFORASSET) for the POLICY table — which assets this policy covers
+  if (currentTable === "POLICY") await appendAssetSelector(body, "f", new Set(), "POLICYFORASSET", { tagFilter: true, checkAll: true });
 
   // CATEGORY dropdown (vocabulary-dependent) for the THREATAGENT table
   if (currentTable === "THREATAGENT") await appendThreatAgentCategory("f_", null);
@@ -10096,6 +10122,17 @@ async function submitInsert(): Promise<void> {
           } catch (e) {
             toast(t("toast.threatActorLinkErr") + " " + e, "err");
           }
+        }
+      }
+    }
+    // Governed-asset links (POLICYFORASSET) — PolicyID = auto pre-filled PK
+    if (currentTable === "POLICY") {
+      const policyId = Number((document.getElementById("f_PolicyID") as HTMLInputElement)?.value);
+      if (policyId) {
+        try {
+          await api.setPolicyAssets(policyId, collectCheckedAssets("f"));
+        } catch (e) {
+          toast(t("toast.assetLinksErr") + " " + e, "err");
         }
       }
     }

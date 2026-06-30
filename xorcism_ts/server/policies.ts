@@ -541,3 +541,68 @@ export function restorePolicyVersion(id: number, versionId: number, by: { userId
   xo.prepare(`UPDATE POLICY SET ${sets.join(", ")} WHERE PolicyID = ?`).run(...vals);
   return true;
 }
+
+// ── POLICY ↔ ASSET coverage (POLICYFORASSET) ──────────────────────────────────
+// Which assets are governed by a policy, and — the gap that matters — which assets
+// (especially critical / high-value ones) have NO governing policy at all.
+export interface PolicyCoverage {
+  summary: { policies: number; assets: number; links: number; coveredAssets: number; coveragePct: number; uncoveredAssets: number; uncoveredCritical: number; policiesNoAsset: number };
+  perPolicy: { policyId: number; policyName: string; status: string; assetCount: number }[];
+  uncovered: { assetId: number; assetName: string; criticality: string | null; businessValue: number | null }[];
+  policiesNoAsset: { policyId: number; policyName: string; status: string }[];
+}
+
+const EMPTY_COVERAGE: PolicyCoverage = {
+  summary: { policies: 0, assets: 0, links: 0, coveredAssets: 0, coveragePct: 0, uncoveredAssets: 0, uncoveredCritical: 0, policiesNoAsset: 0 },
+  perPolicy: [], uncovered: [], policiesNoAsset: [],
+};
+
+export function policyAssetCoverage(tenant: number | null): PolicyCoverage {
+  const xo = getDb("XORCISM");
+  const has = (t: string): boolean => !!xo.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(t);
+  if (!has("POLICY") || !has("ASSET") || !has("POLICYFORASSET")) return { ...EMPTY_COVERAGE };
+  const colset = (t: string): Set<string> => new Set((xo.prepare(`PRAGMA table_info("${t}")`).all() as { name: string }[]).map((c) => c.name));
+  const ac = colset("ASSET"), pc = colset("POLICY"), lc = colset("POLICYFORASSET");
+  const tcl = (cs: Set<string>): string => (tenant != null && cs.has("TenantID") ? " AND (TenantID = ? OR TenantID IS NULL)" : "");
+  const ta = (cs: Set<string>): number[] => (tenant != null && cs.has("TenantID") ? [tenant] : []);
+
+  const polName = pc.has("PolicyName") ? "PolicyName" : "'Policy '||PolicyID";
+  const polStatus = pc.has("Status") ? "Status" : "''";
+  const policies = xo.prepare(`SELECT PolicyID id, ${polName} name, ${polStatus} status FROM POLICY WHERE 1=1${tcl(pc)}`).all(...ta(pc)) as { id: number; name: string; status: string }[];
+
+  const crit = ac.has("AssetCriticalityLevel") ? "AssetCriticalityLevel" : "NULL";
+  const bv = ac.has("BusinessValue") ? "BusinessValue" : (ac.has("RiskScore") ? "RiskScore" : "NULL");
+  const assets = xo.prepare(`SELECT AssetID id, AssetName name, ${crit} crit, ${bv} bv FROM ASSET WHERE 1=1${tcl(ac)}`).all(...ta(ac)) as { id: number; name: string; crit: string | null; bv: number | null }[];
+
+  const links = xo.prepare(`SELECT PolicyID pid, AssetID aid FROM POLICYFORASSET WHERE AssetID IS NOT NULL${tcl(lc)}`).all(...ta(lc)) as { pid: number; aid: number }[];
+
+  const perPolicyCount = new Map<number, number>();
+  const coveredIds = new Set<number>();
+  for (const l of links) { perPolicyCount.set(l.pid, (perPolicyCount.get(l.pid) || 0) + 1); coveredIds.add(l.aid); }
+
+  const isCritical = (c: string | null, v: number | null): boolean => /crit|high/i.test(String(c || "")) || (v != null && Number(v) >= 100000);
+  const inScopeCovered = assets.filter((a) => coveredIds.has(a.id)).length;
+  const uncovered = assets.filter((a) => !coveredIds.has(a.id))
+    .sort((a, b) => (Number(isCritical(b.crit, b.bv)) - Number(isCritical(a.crit, a.bv))) || ((Number(b.bv) || 0) - (Number(a.bv) || 0)))
+    .slice(0, 100)
+    .map((a) => ({ assetId: a.id, assetName: String(a.name ?? `#${a.id}`), criticality: a.crit ? String(a.crit) : null, businessValue: a.bv != null ? Number(a.bv) : null }));
+
+  const perPolicy = policies.map((p) => ({ policyId: p.id, policyName: String(p.name ?? `#${p.id}`), status: String(p.status || ""), assetCount: perPolicyCount.get(p.id) || 0 }))
+    .sort((a, b) => b.assetCount - a.assetCount);
+  const published = (s: string): boolean => /publish|approv|active/i.test(s);
+  const policiesNoAsset = perPolicy.filter((p) => p.assetCount === 0 && published(p.status)).map((p) => ({ policyId: p.policyId, policyName: p.policyName, status: p.status }));
+
+  return {
+    summary: {
+      policies: policies.length, assets: assets.length, links: links.length,
+      coveredAssets: inScopeCovered,
+      coveragePct: assets.length ? Math.round((inScopeCovered / assets.length) * 100) : 0,
+      uncoveredAssets: assets.length - inScopeCovered,
+      uncoveredCritical: assets.filter((a) => !coveredIds.has(a.id) && isCritical(a.crit, a.bv)).length,
+      policiesNoAsset: policiesNoAsset.length,
+    },
+    perPolicy: perPolicy.slice(0, 200),
+    uncovered,
+    policiesNoAsset,
+  };
+}

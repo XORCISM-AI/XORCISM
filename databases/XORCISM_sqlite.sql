@@ -26421,6 +26421,13 @@ CREATE TABLE IF NOT EXISTS ASSETVULNERABILITYREMEDIATION (
       AssetVulnerabilityRemediationID INTEGER PRIMARY KEY,
       AssetVulnerabilityID INTEGER, RemediationName TEXT, RemediationDescription TEXT,
       CreatedDate TEXT, PersonID INTEGER, ValidFrom DATE, ValidUntil DATE);
+CREATE TABLE IF NOT EXISTS "POLICYFORASSET" (
+      "PolicyAssetID" INTEGER PRIMARY KEY,
+      "PolicyID" INTEGER, "AssetID" INTEGER, "Applicability" TEXT, "Notes" TEXT,
+      "CreatedDate" TEXT, "TenantID" INTEGER);
+CREATE INDEX IF NOT EXISTS ix_policyforasset_policy ON "POLICYFORASSET"(PolicyID);
+CREATE INDEX IF NOT EXISTS ix_policyforasset_asset ON "POLICYFORASSET"(AssetID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_policyforasset ON "POLICYFORASSET"(PolicyID, AssetID);
 CREATE TABLE IF NOT EXISTS APPLICATIONWHITELISTENTRY (
       AppWhitelistEntryID INTEGER PRIMARY KEY,
       ApplicationWhitelistID INTEGER, ApplicationID INTEGER,

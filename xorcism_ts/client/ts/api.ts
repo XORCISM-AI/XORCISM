@@ -378,6 +378,10 @@ export const api = {
     request<number[]>(`/api/incident-assets?incidentId=${incidentId}`),
   setIncidentAssets: (incidentId: number, assetIds: number[]) =>
     request<{ ok: boolean }>("/api/incident-assets", "PUT", { incidentId, assetIds }),
+  getPolicyAssets: (policyId: number) =>
+    request<number[]>(`/api/policy-assets?policyId=${policyId}`),
+  setPolicyAssets: (policyId: number, assetIds: number[]) =>
+    request<{ ok: boolean }>("/api/policy-assets", "PUT", { policyId, assetIds }),
   getAlertAssets: (alertId: number) =>
     request<number[]>(`/api/alert-assets?alertId=${alertId}`),
   setAlertAssets: (alertId: number, assetIds: number[]) =>

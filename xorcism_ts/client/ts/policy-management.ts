@@ -277,6 +277,45 @@ function versionView(versionId: number): void {
     }).catch((e) => toast("⚠️ " + (e.message || e)));
 }
 
+// ── POLICY ↔ ASSET coverage panel ─────────────────────────────────────────────
+interface Coverage {
+  summary: { policies: number; assets: number; links: number; coveredAssets: number; coveragePct: number; uncoveredAssets: number; uncoveredCritical: number; policiesNoAsset: number };
+  perPolicy: { policyId: number; policyName: string; status: string; assetCount: number }[];
+  uncovered: { assetId: number; assetName: string; criticality: string | null; businessValue: number | null }[];
+  policiesNoAsset: { policyId: number; policyName: string; status: string }[];
+}
+async function loadCoverage(): Promise<void> {
+  const host = document.getElementById("pp-coverage"); if (!host) return;
+  let c: Coverage;
+  try { const r = await fetch("/api/policy-management/coverage"); if (!r.ok) throw new Error(`HTTP ${r.status}`); c = await r.json(); }
+  catch { host.innerHTML = ""; return; }
+  const s = c.summary;
+  if (!s.assets && !s.policies) { host.innerHTML = ""; return; }
+  const cards = [
+    card("Asset coverage", `${s.coveragePct}%`, `${s.coveredAssets}/${s.assets} assets governed`, pctColor(s.coveragePct)),
+    card("Uncovered assets", String(s.uncoveredAssets), `${s.uncoveredCritical} critical/high`, s.uncoveredCritical ? "#f87171" : s.uncoveredAssets ? "#fbbf24" : "#34d399"),
+    card("Policy↔asset links", String(s.links), `across ${s.policies} policies`, "#60a5fa"),
+    card("Policies w/o assets", String(s.policiesNoAsset), "published, govern nothing", s.policiesNoAsset ? "#fbbf24" : "#34d399"),
+  ].join("");
+  const critTag = (cr: string | null): string => cr && /crit|high/i.test(cr) ? `<span class="tag tag-w">${esc(cr)}</span>` : (cr ? `<span class="muted">${esc(cr)}</span>` : `<span class="muted">—</span>`);
+  const uncRows = c.uncovered.length
+    ? c.uncovered.slice(0, 40).map((a) => `<tr>
+        <td><a href="/?db=XORCISM&amp;table=ASSET&amp;editCol=AssetName&amp;editVal=${encodeURIComponent(a.assetName)}">${esc(a.assetName)}</a></td>
+        <td>${critTag(a.criticality)}</td>
+        <td>${a.businessValue != null ? esc(a.businessValue) : '<span class="muted">—</span>'}</td>
+        <td><span class="tag tag-w">no policy</span></td></tr>`).join("")
+    : `<tr><td colspan="4" class="muted" style="padding:8px">✓ Every asset is governed by at least one policy.</td></tr>`;
+  const noAsset = c.policiesNoAsset.length
+    ? `<div class="pp-section">Published policies governing no asset (${c.policiesNoAsset.length})</div>
+       <div class="breakdown">${c.policiesNoAsset.slice(0, 40).map((p) => `<a class="bd" href="/?db=XORCISM&amp;table=POLICY&amp;editCol=PolicyName&amp;editVal=${encodeURIComponent(p.policyName)}" title="Open the policy to add the assets it covers">${esc(p.policyName)}</a>`).join("")}</div>`
+    : "";
+  host.innerHTML = `<div class="pp-section">Policy ↔ Asset coverage</div>
+    <div class="pp-cards">${cards}</div>
+    <div class="muted" style="font-size:12px;margin:4px 0 6px">Assets with <b>no governing policy</b> (critical / high-value first) — open the asset, or open a policy to pick the assets it covers (POLICYFORASSET):</div>
+    <table class="pp"><thead><tr><th>Asset (uncovered)</th><th>Criticality</th><th>Business value</th><th>Coverage</th></tr></thead><tbody>${uncRows}</tbody></table>
+    ${noAsset}`;
+}
+
 async function load(): Promise<void> {
   ensureModal();
   let d: Inventory;
@@ -319,6 +358,7 @@ async function load(): Promise<void> {
     </tr></thead><tbody>${d.documents.map(docHtml).join("")}</tbody></table>` : "";
 
   $("pp-body").innerHTML = `<div class="pp-cards">${cards}</div>
+    <div id="pp-coverage"></div>
     ${myPanel(d.me)}
     <div class="pp-section">Governance worklist (${d.findings.length})</div>${findings}
     ${byFw ? `<div class="pp-section">By framework</div><div class="breakdown">${byFw}</div>` : ""}
@@ -328,6 +368,7 @@ async function load(): Promise<void> {
       tracked per user &amp; version. <b>Acceptance</b> shows accepted/target; <b>Coverage</b> lists who has and hasn't acknowledged.
       <b>Score</b> is the governance gap (higher = worse): review overdue +30, not published +15, no owner +15, low acceptance +up to 15.</div>`;
   wire();
+  void loadCoverage();
 }
 
 document.addEventListener("DOMContentLoaded", () => { initI18n(); ensureModal(); void load(); });

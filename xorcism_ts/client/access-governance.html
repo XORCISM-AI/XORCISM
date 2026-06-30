@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Access Governance</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ag-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .ag-wrap h1{font-size:20px;margin:0 0 2px}
+  .ag-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
+  .muted{color:#64748b}
+  .ag-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ag-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .ag-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ag-card .val{font-size:24px;font-weight:700;margin-top:3px}.ag-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ag-sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}.btn:disabled{opacity:.5}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.warn{background:#3a2e14;color:#fcd34d}.btn.warn:hover{background:#54421d}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  input.in,select.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;white-space:nowrap}
+  .tag.app{background:#14233a;color:#7dd3fc}.tag.priv{background:#3a1620;color:#fca5a5}.tag.jit{background:#2a2440;color:#c4b5fd}
+  .r-critical{color:#f87171;font-weight:700}.r-high{color:#fb923c;font-weight:700}.r-medium{color:#fbbf24}.r-low{color:#94a3b8}
+  .st-open{color:#f87171;font-weight:700}.st-mitigated{color:#fbbf24}.st-accepted{color:#a78bfa}.st-resolved{color:#22c55e}
+  .conf{font-size:10px;border-radius:5px;padding:1px 6px;background:#3a1620;color:#fca5a5}
+  .frm{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:11px;margin-bottom:10px}
+  .frm .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;margin-bottom:7px}
+  .frm label{font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px}
+  .frm input,.frm select{width:100%}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .pair{display:inline-flex;align-items:center;gap:5px}.pair b{color:#e2e8f0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/identities">&#128100; Identities</a>
+  <a href="/identity-governance">&#9989; Certification</a>
+  <a href="/itdr">&#128270; ITDR</a>
+  <span class="spacer"></span>
+  <span class="title">&#128273; Access Governance</span>
+</div>
+
+<div class="ag-wrap">
+  <h1>Access Governance</h1>
+  <div class="ag-sub">The entitlement fabric over your identities, with the controls Saviynt is built on. An <b>entitlement catalogue</b> (who holds what access, direct / role / time-bound JIT), a <b>Segregation-of-Duties</b> engine that detects toxic combinations across the estate (e.g. <i>create-vendor + pay-invoice</i>) at the function level, <b>access requests</b> with a <b>preventive SoD pre-check</b> (block conflicting grants before they happen), and <b>JIT</b> time-bound privileged elevation that auto-expires. Complements identity inventory (/identities) and access certification (/identity-governance).</div>
+  <div id="ag-body"><div class="muted" style="padding:24px;text-align:center">Loading access governance…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/access-governance.js"></script>
+</body>
+</html>

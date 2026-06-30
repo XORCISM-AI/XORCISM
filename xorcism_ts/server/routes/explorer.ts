@@ -58,6 +58,8 @@ import {
   incidentsByAsset,
   getIncidentAssets,
   setIncidentAssets,
+  getPolicyAssets,
+  setPolicyAssets,
   getAlertAssets,
   setAlertAssets,
   getThreatAssets,
@@ -1590,6 +1592,37 @@ router.put("/incident-assets", (req: Request, res: Response) => {
     resourceType: "table",
     resourceKey: "XINCIDENT.INCIDENTFORASSET",
     detail: `incident=${incidentId} assets=[${assetIds.join(",")}]`,
+    ip: clientIp(req),
+  });
+  res.json({ ok: true });
+});
+
+// ── POLICY ↔ ASSET coverage links (POLICYFORASSET) ─────────────────────────────
+// GET /api/policy-assets?policyId=N — AssetIDs governed by the policy
+router.get("/policy-assets", (req: Request, res: Response) => {
+  const policyId = Number(req.query.policyId);
+  if (!policyId) return void res.status(400).json({ error: "policyId requis" });
+  if (!userCan(req.user, "read", "XORCISM", "POLICY")) return deny(req, res, "read", "XORCISM", "POLICY");
+  if (!parentTenantOr403(req, res, "XORCISM", "POLICY", "PolicyID", policyId, "read")) return;
+  res.json(getPolicyAssets(policyId));
+});
+
+// PUT /api/policy-assets { policyId, assetIds:[...] } — replaces the coverage links
+router.put("/policy-assets", (req: Request, res: Response) => {
+  const { policyId, assetIds } = req.body as { policyId: number; assetIds: number[] };
+  if (!policyId || !Array.isArray(assetIds)) return void res.status(400).json({ error: "policyId et assetIds[] requis" });
+  if (!userCan(req.user, "update", "XORCISM", "POLICY") && !userCan(req.user, "create", "XORCISM", "POLICY")) {
+    return deny(req, res, "update", "XORCISM", "POLICY");
+  }
+  const ia = parentTenantOr403(req, res, "XORCISM", "POLICY", "PolicyID", Number(policyId), "update");
+  if (!ia) return;
+  setPolicyAssets(Number(policyId), assetIds.map(Number), ia.tenant);
+  xid.addAudit({
+    userId: req.user!.UserID,
+    action: "link_policy_assets",
+    resourceType: "table",
+    resourceKey: "XORCISM.POLICYFORASSET",
+    detail: `policy=${policyId} assets=[${assetIds.join(",")}]`,
     ip: clientIp(req),
   });
   res.json({ ok: true });

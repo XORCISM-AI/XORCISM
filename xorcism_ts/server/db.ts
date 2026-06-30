@@ -898,6 +898,7 @@ export const TENANT_SCOPED_TABLES = new Set<string>([
   "XORCISM.BIAENTRY",
   "XORCISM.CPEFORASSET",
   "XORCISM.ASSETVULNERABILITY",
+  "XORCISM.POLICYFORASSET",
   "XORCISM.THREATMODEL",
   "XORCISM.THREATMODELASSET",
   "XORCISM.THREATMODELTHREAT",
@@ -3205,6 +3206,40 @@ export function setIncidentAssets(
   tx();
 }
 
+// ── POLICY ↔ ASSET links (POLICYFORASSET junction, XORCISM database) ──
+
+export function getPolicyAssets(policyId: number): number[] {
+  const db = getDb("XORCISM");
+  try {
+    return (
+      db.prepare('SELECT AssetID FROM POLICYFORASSET WHERE PolicyID = ? AND AssetID IS NOT NULL').all(policyId) as { AssetID: number }[]
+    ).map((r) => r.AssetID);
+  } catch { return []; }
+}
+
+/** Replace the asset links for a policy (idempotent, dedup). Junction inherits the policy's tenant. */
+export function setPolicyAssets(policyId: number, assetIds: number[], tenant: number | null = null): void {
+  const db = getDb("XORCISM");
+  const ts = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const hasTenant = tableHasTenantCol("XORCISM", "POLICYFORASSET");
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM POLICYFORASSET WHERE PolicyID = ?").run(policyId);
+    let maxId = (db.prepare("SELECT COALESCE(MAX(PolicyAssetID), 0) AS m FROM POLICYFORASSET").get() as { m: number }).m;
+    const ins = hasTenant
+      ? db.prepare(`INSERT INTO POLICYFORASSET (PolicyAssetID, PolicyID, AssetID, CreatedDate, "${TENANT_COL}") VALUES (?,?,?,?,?)`)
+      : db.prepare(`INSERT INTO POLICYFORASSET (PolicyAssetID, PolicyID, AssetID, CreatedDate) VALUES (?,?,?,?)`);
+    const seen = new Set<number>();
+    for (const aid of assetIds) {
+      if (aid == null || seen.has(aid)) continue;
+      seen.add(aid);
+      maxId++;
+      if (hasTenant) ins.run(maxId, policyId, aid, ts, tenant);
+      else ins.run(maxId, policyId, aid, ts);
+    }
+  });
+  tx();
+}
+
 // ── THREATAGENT ↔ CATEGORY (via THREATAGENTCATEGORY, XTHREAT; CATEGORY labels, XORCISM) ──
 
 /**
@@ -5214,6 +5249,49 @@ export function ensureIdGovTables(): void {
   } catch { /* best-effort */ }
 }
 
+/**
+ * Access Governance (Saviynt-style) over IDENTITY — the entitlement fabric the certification layer lacked.
+ *   ENTITLEMENT        = the access catalogue (app/system × fine-grained entitlement; risk; SoD function code).
+ *   IDENTITYENTITLEMENT= who holds what (direct / role / JIT, with ExpiresDate for time-bound elevation).
+ *   SODRULE            = Segregation-of-Duties toxic-combination ruleset (FunctionA conflicts with FunctionB).
+ *   SODVIOLATION       = an identity that holds both sides of a rule (detective control).
+ *   ACCESSREQUEST      = request → approve → provision → JIT-expire, with a preventive SoD pre-check.
+ * See server/accessgov.ts, surfaced at /access-governance.
+ */
+export function ensureAccessGovTables(): void {
+  try {
+    getDb("XORCISM").exec(`
+      CREATE TABLE IF NOT EXISTS ENTITLEMENT (
+        EntitlementID INTEGER PRIMARY KEY, EntitlementGUID TEXT, Name TEXT, Application TEXT,
+        EntitlementType TEXT, Description TEXT, Risk TEXT DEFAULT 'medium', Privileged INTEGER DEFAULT 0,
+        Function TEXT, OwnerPersonID INTEGER, Source TEXT, CreatedDate TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS IDENTITYENTITLEMENT (
+        IdentityEntitlementID INTEGER PRIMARY KEY, IdentityID INTEGER, EntitlementID INTEGER,
+        GrantType TEXT DEFAULT 'direct', AssignedDate TEXT, ExpiresDate TEXT, LastUsedDate TEXT,
+        Source TEXT, CreatedDate TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS SODRULE (
+        SodRuleID INTEGER PRIMARY KEY, SodRuleGUID TEXT, Name TEXT, Description TEXT,
+        FunctionA TEXT, FunctionB TEXT, Risk TEXT DEFAULT 'high', MitigatingControl TEXT,
+        Enabled INTEGER DEFAULT 1, CreatedDate TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS SODVIOLATION (
+        SodViolationID INTEGER PRIMARY KEY, SodRuleID INTEGER, RuleName TEXT, IdentityID INTEGER, IdentityName TEXT,
+        LeftEntitlement TEXT, RightEntitlement TEXT, Risk TEXT, Status TEXT DEFAULT 'open',
+        Notes TEXT, DetectedDate TEXT, DecidedBy TEXT, DecidedDate TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS ACCESSREQUEST (
+        RequestID INTEGER PRIMARY KEY, RequestGUID TEXT, IdentityID INTEGER, IdentityName TEXT,
+        EntitlementID INTEGER, EntitlementName TEXT, Justification TEXT, JitHours INTEGER DEFAULT 0,
+        Status TEXT DEFAULT 'pending', SodConflict INTEGER DEFAULT 0, SodDetail TEXT,
+        RequestedBy TEXT, DecidedBy TEXT, DecidedDate TEXT, ProvisionedDate TEXT, ExpiresDate TEXT,
+        CreatedDate TEXT, TenantID INTEGER);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_identent ON IDENTITYENTITLEMENT(IdentityID, EntitlementID);
+      CREATE INDEX IF NOT EXISTS ix_identent_ent ON IDENTITYENTITLEMENT(EntitlementID);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_sodviol ON SODVIOLATION(SodRuleID, IdentityID);
+      CREATE INDEX IF NOT EXISTS ix_sodviol_status ON SODVIOLATION(Status);
+      CREATE INDEX IF NOT EXISTS ix_accessreq_status ON ACCESSREQUEST(Status);
+      CREATE INDEX IF NOT EXISTS ix_entitlement_tenant ON ENTITLEMENT(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
 export function ensurePersonOrgChartColumns(): void {
   try {
     const db = getDb("XORCISM");
@@ -5367,6 +5445,28 @@ export function ensurePolicyVersionTable(): void {
     "TenantID" INTEGER
   );
   CREATE INDEX IF NOT EXISTS ix_polver_policy ON "POLICYVERSION"(PolicyID);`);
+}
+
+/**
+ * POLICY ↔ ASSET coverage (XORCISM.POLICYFORASSET junction) — which policies govern which assets.
+ * Surfaced as a multi-asset selector on the POLICY form, and as a coverage view in /policy-management
+ * (which assets have no governing policy, which policies cover nothing). See getPolicyAssets/setPolicyAssets.
+ */
+export function ensurePolicyAssetTable(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`CREATE TABLE IF NOT EXISTS "POLICYFORASSET" (
+    "PolicyAssetID" INTEGER PRIMARY KEY,
+    "PolicyID" INTEGER,
+    "AssetID" INTEGER,
+    "Applicability" TEXT,
+    "Notes" TEXT,
+    "CreatedDate" TEXT,
+    "TenantID" INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS ix_policyforasset_policy ON "POLICYFORASSET"(PolicyID);
+  CREATE INDEX IF NOT EXISTS ix_policyforasset_asset ON "POLICYFORASSET"(AssetID);
+  CREATE UNIQUE INDEX IF NOT EXISTS ux_policyforasset ON "POLICYFORASSET"(PolicyID, AssetID);`);
 }
 
 /**

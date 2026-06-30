@@ -1,0 +1,17 @@
+{
+  "id": "aisoc",
+  "name": "AiSOC — AI SOC cases / alerts / IOCs / detections",
+  "type": "import",
+  "category": "SOC",
+  "description": "Imports from AiSOC (github.com/beenuar/AiSOC, MIT) — the open-source, self-hostable AI Security Operations Center (alert fusion, four LangGraph agents Detect/Triage/Hunt/Respond, OCSF-normalized alerts, cases, MITRE ATT&CK investigation, risk-based alerting, detection-as-code). One import feeds three XORCISM cockpits: AiSOC cases & alerts -> XINCIDENT.ALERT (incident / SOC), AiSOC IOCs + threat-actor attributions -> XTHREAT.INTELEXCHANGE (CTI; MITRE technique tags cross-link into the ATT&CK coverage matrix), and AiSOC detection rules -> XTHREAT.SIGMARULE (purple-team / threat-informed defense). Worker-safe & read-only: parse an exported AiSOC JSON, or set AISOC_URL + AISOC_API_KEY to pull read-only from the AiSOC API. No actions are sent back to AiSOC.",
+  "intrusive": false,
+  "permission": "connector:aisoc",
+  "run": "run.py",
+  "mapping": "aisoc",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a saved AiSOC export JSON (cases / alerts / iocs / detections / actors). Omit to use AISOC_URL/AISOC_API_KEY, or the bundled sample." },
+    { "name": "kind", "type": "string", "default": "all", "help": "all | cases | alerts | iocs | detections — which AiSOC outputs to import" },
+    { "name": "limit", "type": "int", "default": 500, "min": 1, "max": 5000, "help": "Maximum items per category to import" },
+    { "name": "min_severity", "type": "string", "required": false, "help": "Only import alerts/IOCs at or above this severity (info|low|medium|high|critical). Default: info." }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "offsec-ai",
+  "name": "offsec-ai",
+  "type": "import",
+  "category": "AI Security",
+  "description": "offsec-ai (github.com/Htunn/offsec-ai, MIT) — an offensive-security toolkit that combines network recon with AI/LLM security testing: OWASP LLM Top 10 scanning of live LLM endpoints, MCP (Model Context Protocol) security scanning + authorized active attack (CVEs, auth bypass, injection), and infra checks (port scan, L7/WAF detection, mTLS, certificate analysis, hybrid identity, web OWASP Top 10, security headers). This connector imports an offsec-ai JSON report (ai-owasp-scan / mcp-scan / owasp-scan / scan / cert-check) and maps it to XORCISM: the scanned endpoint/host -> ASSET, open services -> CPEs, each OWASP-LLM / MCP / web / TLS / header finding -> VULNERABILITY. Worker-safe: parses an exported report only; the live (and active/authorized) scanning is run by the operator with offsec-ai itself.",
+  "intrusive": false,
+  "permission": "connector:offsec-ai",
+  "run": "run.py",
+  "mapping": "offsec-ai",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "file",
+      "required": true,
+      "help": "An offsec-ai JSON report (e.g. `offsec-ai ai-owasp-scan <url> --output json`, or mcp-scan / owasp-scan / scan / cert-check). An object, or an array of findings."
+    },
+    {
+      "name": "target",
+      "type": "string",
+      "required": false,
+      "help": "Override the scanned target/asset name (default: read from the report's target/host/url/endpoint)."
+    },
+    {
+      "name": "min_severity",
+      "type": "string",
+      "required": false,
+      "help": "Only import findings at or above this severity (info|low|medium|high|critical). Default: low."
+    }
+  ]
+}

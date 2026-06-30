@@ -6,7 +6,7 @@
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
 import { policyInventory, publishPolicy, retirePolicy, acknowledgePolicy, policyAcceptanceDetail, myPendingPolicies,
-  snapshotPolicyVersion, policyVersions, policyVersionDetail, restorePolicyVersion } from "../policies";
+  snapshotPolicyVersion, policyVersions, policyVersionDetail, restorePolicyVersion, policyAssetCoverage } from "../policies";
 import * as xid from "../xid";
 
 const router = Router();
@@ -24,6 +24,14 @@ router.get("/policy-management", (req: Request, res: Response) => {
   let mine: unknown[] = [];
   try { mine = myPendingPolicies(req.user.UserID, tenant); } catch { /* */ }
   res.json({ ...inv, me: { userId: req.user.UserID, name: req.user.DisplayName || req.user.Email, pending: mine } });
+});
+
+// GET /api/policy-management/coverage — POLICY↔ASSET coverage: per-policy asset counts,
+// uncovered assets (critical first) and published policies governing nothing.
+router.get("/policy-management/coverage", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canRead(req)) return void res.status(403).json({ error: "forbidden" });
+  res.json(policyAssetCoverage(ten(req)));
 });
 
 // POST /api/policy-management/policy/:id/publish { effectiveDate?, version?, requiresAck? }

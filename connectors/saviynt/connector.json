@@ -1,0 +1,16 @@
+{
+  "id": "saviynt",
+  "name": "Saviynt — identities / accounts import",
+  "type": "import",
+  "category": "Identity & Access Management",
+  "description": "Imports identities and accounts from Saviynt Enterprise Identity Cloud (EIC) — the cloud-native IGA + PAM platform — into XORCISM.IDENTITY (idempotent by Provider+ExternalID). Users → human identities; service/privileged accounts → non-human identities (NHI). Feeds the identity inventory (/identities), certification (/identity-governance) and the Saviynt-style Access Governance cockpit (/access-governance: entitlements, SoD, access requests, JIT). Config (worker environment): SAVIYNT_BASE_URL, SAVIYNT_USERNAME, SAVIYNT_PASSWORD (read-only). Offline: pass `file` = a Saviynt user/account export JSON, or run with no config to import the bundled sample. Read-only — never writes back to Saviynt.",
+  "intrusive": false,
+  "permission": "connector:saviynt",
+  "run": "run.py",
+  "mapping": "saviynt",
+  "parameters": [
+    { "name": "limit", "type": "int", "default": 500, "min": 1, "max": 5000, "help": "Maximum number of identities to import" },
+    { "name": "include", "type": "string", "default": "users,accounts", "help": "users | accounts | users,accounts" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a saved Saviynt user/account export JSON to parse instead of the live API" }
+  ]
+}
