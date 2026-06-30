@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat-Actor Profiling &amp; Diamond Model</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ta-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .ta-wrap h1{font-size:20px;margin:0 0 2px}
+  .ta-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
+  .muted{color:#64748b}
+  .ta-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ta-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .ta-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ta-card .val{font-size:24px;font-weight:700;margin-top:3px}.ta-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ta-sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  input.in,select.in,textarea.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit;width:100%;box-sizing:border-box}
+  textarea.in{min-height:54px;resize:vertical}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.tt tr.row{cursor:pointer}table.tt tr.row:hover{background:#161a2e}
+  .chip{font-size:9px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;margin:0 3px 3px 0;white-space:nowrap;display:inline-block}
+  .chip.cap{background:#2a1d3a;color:#c4b5fd}.chip.sec{background:#13261c;color:#86efac}.chip.mal{background:#3a2414;color:#fcd34d}
+  .badge{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .badge.ns{background:#2a1620;color:#fca5a5}.badge.adv{background:#2a2440;color:#c4b5fd}.badge.ok{background:#13261c;color:#86efac}
+  /* Diamond Model */
+  .diamond-grid{display:grid;grid-template-columns:660px 1fr;gap:18px;align-items:start}
+  @media(max-width:1100px){.diamond-grid{grid-template-columns:1fr}}
+  .dnode{cursor:pointer}
+  .dpanel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+  .dpanel h3{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:7px}
+  .dpanel .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .dpanel p{margin:4px 0;font-size:12px;color:#cbd5e1;line-height:1.5}
+  .kv{font-size:11px;color:#94a3b8}.kv b{color:#cbd5e1;font-weight:600}
+  .modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.72);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow:auto}
+  .modal-bg.on{display:flex}
+  .modal{background:#0f1322;border:1px solid #2d3250;border-radius:12px;padding:18px;margin:40px 0;width:760px;max-width:94vw}
+  .modal h2{margin:0 0 12px;font-size:16px}
+  .frm{display:grid;grid-template-columns:1fr 1fr;gap:10px}.frm .full{grid-column:1/3}
+  .frm label{font-size:11px;color:#94a3b8;display:block;margin-bottom:3px}
+  .meta-axis{font-size:11px;color:#94a3b8;font-style:italic;margin:6px 0}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/cti-expert">&#129302; CTI-Expert</a>
+  <a href="/threat-copilot">&#129534; Threat Copilot</a>
+  <a href="/hunting">&#128270; Hunting</a>
+  <span class="spacer"></span>
+  <span class="title">&#127919; Threat-Actor Profiling &amp; Diamond Model</span>
+</div>
+
+<div class="ta-wrap">
+  <h1 data-i18n="ta.title">Threat-Actor Profiling &amp; the Diamond Model</h1>
+  <div class="ta-sub" data-i18n="ta.sub">Build an intel-grade profile for a threat actor and structure it with the <b>Diamond Model of Intrusion Analysis</b> — the four core features <b>Adversary</b>, <b>Capability</b>, <b>Infrastructure</b> and <b>Victim</b>, connected by the socio-political and technology meta-feature axes. Capabilities resolve to MITRE ATT&amp;CK techniques, infrastructure to curated IOCs, victims to targeted sectors, regions and linked incidents.</div>
+  <div id="ta-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<div class="modal-bg" id="modal"><div class="modal" id="modal-inner"></div></div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/threat-actor.js"></script>
+</body>
+</html>

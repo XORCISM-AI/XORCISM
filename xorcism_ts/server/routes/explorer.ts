@@ -142,7 +142,10 @@ import { assetInventory } from "../assets";
 import { identityInventory } from "../identities";
 import { incidentInventory } from "../incidents";
 import { complianceInventory } from "../compliance";
-import { policyInventory } from "../policies";
+import { policyInventory, policyAssetCoverage } from "../policies";
+import { remediationDashboard } from "../remediation";
+import { accessGovDashboard } from "../accessgov";
+import { awareGovernance } from "../aiguard";
 import { tidInventory } from "../tid";
 import { crisisInventory } from "../crisis";
 import { riskRegisterInventory } from "../riskregister";
@@ -367,6 +370,10 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
   const pq = safe(() => pqcmmInventory(tenant).summary);
   const pm = safe(() => patchInventory(tenant).summary);
   const po = safe(() => policyInventory(tenant).summary);
+  const ag = safe(() => accessGovDashboard(tenant).summary);
+  const rem = safe(() => remediationDashboard(tenant).summary);
+  const cov = safe(() => policyAssetCoverage(tenant).summary);
+  const aw = safe(() => awareGovernance().summary);
   res.json({
     riskScore: safe(() => computeEnterpriseRiskScore(req.user!.tenantId)),
     adversaryOpportunity: safe(() => threatDebtLatest(tenant)),
@@ -382,6 +389,11 @@ router.get("/dashboard/kpis", (req: Request, res: Response) => {
     pqcmm: pq && pq.assessments ? { maturityScore: pq.maturityScore, assessments: pq.assessments, quantumVulnerable: pq.quantumVulnerable, productionReady: pq.productionReady, managed: pq.managed } : null,
     patch: pm && pm.instances ? { coverage: pm.coverage, overdue: pm.overdue, kevUnpatched: pm.kevUnpatched, unpatched: pm.unpatched, instances: pm.instances, mttr: pm.mttr } : null,
     policy: po && po.requiringAck ? { published: po.published, requiringAck: po.requiringAck, ackCoverage: po.ackCoverage, pendingAcks: po.pendingAcks, fullyAcknowledged: po.fullyAcknowledged } : null,
+    // ── latest-feature KPIs ──
+    accessGov: ag && (ag as any).entitlements ? { entitlements: (ag as any).entitlements, sodViolations: (ag as any).sodViolations, sodCritical: (ag as any).sodCritical, pendingRequests: (ag as any).pendingRequests, jitActive: (ag as any).jitActive } : null,
+    remediation: rem && (rem as any).total ? { open: (rem as any).open, overdue: (rem as any).overdue, slaCompliance: (rem as any).slaCompliance, mttrHours: (rem as any).mttrHours, autonomousPct: (rem as any).autonomousPct } : null,
+    policyCoverage: cov && (cov as any).assets ? { coveragePct: (cov as any).coveragePct, uncoveredCritical: (cov as any).uncoveredCritical, uncovered: (cov as any).uncoveredAssets } : null,
+    aware: aw && (aw as any).agents ? { agents: (aw as any).agents, governed: (aw as any).governed, ungoverned: (aw as any).ungoverned, autonomousUngoverned: (aw as any).autonomousUngoverned, revoked: (aw as any).revoked } : null,
   });
 });
 

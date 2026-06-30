@@ -1,0 +1,16 @@
+{
+  "id": "bawbel-scanner",
+  "name": "bawbel-scanner — AVE per-artifact findings import",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports the output of the bawbel-scanner (the reference scanner for AVE — Agentic Vulnerability Enumeration, github.com/bawbel/ave, Apache-2.0). `pip install bawbel-scanner` scans agentic-AI components — skill files, MCP server manifests, system prompts, agent components — for behavioral vulnerability classes (external-fetch / metamorphic payloads, confused-deputy tool-allowlist breaches, indirect prompt injection, hardcoded credentials, unsafe delegation, context leaks, …) and emits AVE-in-SARIF 2.1.0 (each result references an AVE-2026-##### rule with an AIVSS score + OWASP MCP / MITRE ATLAS mappings, a file:line location, a confidence float and the detection engine). This connector parses the scanner's SARIF (or a flat {findings:[]} / array JSON) and maps each per-artifact detection into XORCISM.AVESCANFINDING — real, located findings (file:line, AIVSS, confidence) cross-linked to the AVE catalogue (/ave) and surfaced in its Scan-findings view, complementing the inferred agent-exposure assessment. Worker-safe & read-only: parses an exported scan report only (no scanning, no code execution).",
+  "intrusive": false,
+  "permission": "connector:bawbel-scanner",
+  "run": "run.py",
+  "mapping": "bawbel-scanner",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A bawbel-scanner report: AVE-in-SARIF 2.1.0 (gs/bawbel-scanner --sarif out.sarif), or a flat {findings:[]} / array JSON. Defaults to the bundled sample SARIF." },
+    { "name": "source", "type": "string", "default": "bawbel-scanner", "help": "Source label stamped on imported findings. Re-importing the same source replaces its previous scan snapshot." },
+    { "name": "scan_ref", "type": "string", "required": false, "help": "Optional scan reference (repo, branch, commit, run id) recorded with the findings." }
+  ]
+}

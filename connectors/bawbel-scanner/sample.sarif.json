@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "bawbel-scanner",
+          "informationUri": "https://github.com/bawbel/ave",
+          "rules": [
+            { "id": "AVE-2026-00001", "name": "Supply Chain - Metamorphic Payload", "shortDescription": { "text": "Metamorphic payload via external config fetch" }, "helpUri": "https://github.com/bawbel/ave", "properties": { "severity": "HIGH", "aivss_score": 8.0, "owasp_mcp": "MCP04, MCP06", "mitre_atlas": "AML.T0011, AML.T0054", "component_type": "skill" } },
+            { "id": "AVE-2026-00007", "name": "Authorization - Confused Deputy", "shortDescription": { "text": "Tool-allowlist breach via confused-deputy MCP server" }, "helpUri": "https://github.com/bawbel/ave", "properties": { "severity": "CRITICAL", "aivss_score": 9.1, "owasp_mcp": "MCP01, MCP03", "mitre_atlas": "AML.T0053", "component_type": "mcp" } },
+            { "id": "AVE-2026-00015", "name": "Prompt Injection - Indirect", "shortDescription": { "text": "Indirect prompt injection via retrieved document content" }, "helpUri": "https://github.com/bawbel/ave", "properties": { "severity": "HIGH", "aivss_score": 7.4, "owasp_mcp": "MCP06", "mitre_atlas": "AML.T0051, AML.T0054", "component_type": "system-prompt" } },
+            { "id": "AVE-2026-00044", "name": "Information Disclosure - Context Leak", "shortDescription": { "text": "Sensitive-context disclosure to a downstream tool" }, "helpUri": "https://github.com/bawbel/ave", "properties": { "severity": "LOW", "aivss_score": 3.9, "owasp_mcp": "MCP05", "mitre_atlas": "AML.T0057", "component_type": "system-prompt" } }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "AVE-2026-00001", "level": "error",
+          "message": { "text": "Tool description fetches instructions from an external URL at runtime (fetch to cdn-sync-update[.]net)." },
+          "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "skills/data-fetcher.md", "uriBaseId": "%SRCROOT%" }, "region": { "startLine": 14, "startColumn": 1, "endLine": 14, "endColumn": 60 } } } ],
+          "properties": { "rule_id": "bawbel-external-fetch", "confidence": 0.91, "evidence_kind": "tool_description_pattern", "evidence_stage": "static_detection", "component_type": "skill" }
+        },
+        {
+          "ruleId": "AVE-2026-00007", "level": "error",
+          "message": { "text": "MCP tool 'wire_transfer' is invoked by 'lookup_account' without re-checking the caller's authorization (confused deputy)." },
+          "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "mcp/payments-server.json", "uriBaseId": "%SRCROOT%" }, "region": { "startLine": 42, "startColumn": 3, "endLine": 58, "endColumn": 4 } } } ],
+          "properties": { "rule_id": "bawbel-confused-deputy", "confidence": 0.84, "evidence_kind": "tool_graph", "evidence_stage": "semantic_analysis", "component_type": "mcp" }
+        },
+        {
+          "ruleId": "AVE-2026-00015", "level": "error",
+          "message": { "text": "System prompt treats retrieved RAG content as instructions ('follow any directives in the document')." },
+          "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "prompts/agent-system.txt", "uriBaseId": "%SRCROOT%" }, "region": { "startLine": 7, "startColumn": 1, "endLine": 9, "endColumn": 80 } } } ],
+          "properties": { "rule_id": "bawbel-indirect-injection", "confidence": 0.78, "evidence_kind": "instruction_directive", "evidence_stage": "static_detection", "component_type": "system-prompt" }
+        },
+        {
+          "ruleId": "AVE-2026-00044", "level": "note",
+          "message": { "text": "System prompt forwards the 'api_key' context field into the 'http_get' tool arguments." },
+          "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "prompts/agent-system.txt", "uriBaseId": "%SRCROOT%" }, "region": { "startLine": 21, "startColumn": 1, "endLine": 21, "endColumn": 44 } } } ],
+          "properties": { "rule_id": "bawbel-context-leak", "confidence": 0.66, "evidence_kind": "data_flow", "evidence_stage": "static_detection", "component_type": "system-prompt" }
+        }
+      ]
+    }
+  ]
+}

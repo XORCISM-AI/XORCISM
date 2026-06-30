@@ -6878,6 +6878,67 @@ export function ensureRemediationTables(): void {
 }
 
 /**
+ * Threat-actor profiling + Diamond Model of Intrusion Analysis (Caltagirone/Pendergast/Betz).
+ * Extends the legacy XTHREAT.THREATACTOR with intel-grade profile attributes (STIX threat-actor
+ * vocabularies: types / sophistication / resource-level / motivations) and the four Diamond Model
+ * vertices — Adversary, Capability, Infrastructure, Victim — plus the socio-political & technology
+ * meta-feature axes. Capabilities are ATT&CK technique ids (AttackTags) and malware/tools
+ * (MalwareTags); infrastructure is curated IOCs; victims are sectors / regions. Idempotent ALTERs
+ * so it upgrades any DB version without a rebuild ([[xorcism-legacy-tables]]).
+ */
+export function ensureThreatActorProfile(): void {
+  try {
+    const xt = getDb("XTHREAT");
+    const have = new Set((xt.prepare(`PRAGMA table_info("THREATACTOR")`).all() as { name: string }[]).map((c) => c.name));
+    const cols: [string, string][] = [
+      ["Aliases", "TEXT"], ["ActorTypes", "TEXT"], ["Motivation", "TEXT"], ["SecondaryMotivations", "TEXT"],
+      ["Sophistication", "TEXT"], ["ResourceLevel", "TEXT"], ["FirstSeen", "TEXT"], ["LastSeen", "TEXT"],
+      ["AttackTags", "TEXT"], ["MalwareTags", "TEXT"], ["TargetSectors", "TEXT"], ["TargetRegions", "TEXT"],
+      ["InfrastructureNotes", "TEXT"], ["DiamondAdversary", "TEXT"], ["DiamondCapability", "TEXT"],
+      ["DiamondInfrastructure", "TEXT"], ["DiamondVictim", "TEXT"], ["SociopoliticalMeta", "TEXT"],
+      ["TechnologyMeta", "TEXT"], ["Confidence", "TEXT"], ["Active", "INTEGER DEFAULT 1"], ["TenantID", "INTEGER"],
+      ["UpdatedDate", "TEXT"],
+    ];
+    for (const [c, t] of cols) if (!have.has(c)) { try { xt.exec(`ALTER TABLE THREATACTOR ADD COLUMN ${c} ${t}`); } catch { /* exists */ } }
+    // actor ↔ curated IOC / infrastructure observable (Diamond "Infrastructure" vertex)
+    xt.exec(`CREATE TABLE IF NOT EXISTS THREATACTORINFRA (
+      ActorInfraID INTEGER PRIMARY KEY, ThreatActorID INTEGER, IocType TEXT, IocValue TEXT, Role TEXT,
+      FirstSeen TEXT, LastSeen TEXT, Confidence TEXT, Source TEXT, CreatedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_tainfra_actor ON THREATACTORINFRA(ThreatActorID);
+      CREATE INDEX IF NOT EXISTS ix_ta_tenant ON THREATACTOR(TenantID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * AVE — Agentic Vulnerability Enumeration (bawbel/ave, Apache-2.0). A behavioral-classification
+ * standard for agentic-AI components (AI agents, skill files, MCP servers, system prompts): stable
+ * AVE-2026-##### ids + AIVSS scores (OWASP AIVSS: CVSS base × agentic amplification) + mappings to
+ * OWASP Agentic Top 10 / OWASP MCP Top 10 / MITRE ATLAS / NIST AI RMF. Stored as a reference
+ * catalogue in XVULNERABILITY, queryable at /ave and mappable from the AI-security modules.
+ */
+export function ensureAveTables(): void {
+  try {
+    getDb("XVULNERABILITY").exec(`
+      CREATE TABLE IF NOT EXISTS AVERECORD (
+        AveId TEXT PRIMARY KEY, Title TEXT, AttackClass TEXT, ComponentType TEXT, Description TEXT,
+        Severity TEXT, AivssScore REAL, CvssBase REAL, CvssVector TEXT, OwaspAgentic TEXT, OwaspMcp TEXT,
+        NistAiRmf TEXT, MitreAtlas TEXT, BehavioralVector TEXT, BehavioralFingerprint TEXT, MutationCount INTEGER,
+        DetectionMethodology TEXT, Iocs TEXT, Remediation TEXT, AffectedPlatforms TEXT, Status TEXT,
+        Researcher TEXT, Published TEXT, LastUpdated TEXT, SpecVersion TEXT, Source TEXT, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_ave_sev ON AVERECORD(Severity);
+      CREATE INDEX IF NOT EXISTS ix_ave_ctype ON AVERECORD(ComponentType);
+      CREATE TABLE IF NOT EXISTS AVESCANFINDING (
+        ScanFindingID INTEGER PRIMARY KEY, AveId TEXT, RuleId TEXT, Title TEXT, Severity TEXT, AivssScore REAL,
+        Confidence REAL, ComponentType TEXT, File TEXT, Line INTEGER, Message TEXT, EvidenceKind TEXT,
+        EvidenceStage TEXT, OwaspMcp TEXT, MitreAtlas TEXT, Status TEXT, Source TEXT, ScanRef TEXT,
+        CreatedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_avescan_ave ON AVESCANFINDING(AveId);
+      CREATE INDEX IF NOT EXISTS ix_avescan_sev ON AVESCANFINDING(Severity);
+      CREATE INDEX IF NOT EXISTS ix_avescan_src ON AVESCANFINDING(Source);`);
+  } catch { /* best-effort */ }
+}
+
+/**
  * SPRS / NIST 800-171 self-assessment (XCOMPLIANCE) — per-requirement implementation status for the 110
  * NIST SP 800-171 Rev 2 requirements, used to compute the DoD SPRS score (110 down to the methodology
  * floor). The 110-requirement catalogue + weights live in code (data/sprs800171.ts); only the per-tenant

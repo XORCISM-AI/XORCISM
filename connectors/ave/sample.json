@@ -1,0 +1,79 @@
+{
+  "records": [
+    {
+      "ave_id": "AVE-2026-00001", "schema_version": "1.0.0", "component_type": "skill",
+      "title": "Metamorphic payload via external config fetch", "attack_class": "Supply Chain - Metamorphic Payload",
+      "description": "A skill or MCP component fetches its instructions from an external URL at runtime; the fetched content replaces the original instructions, so behavior can change after a security review. Invisible to static scanners because the payload does not exist at scan time.",
+      "component_examples": ["claude-code", "cursor", "windsurf"],
+      "aivss_score": 8.0, "severity": "HIGH", "cvss_base_vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:L/SC:H/SI:H/SA:L",
+      "owasp_mapping": ["ASI01", "ASI04"], "owasp_mcp": ["MCP04", "MCP06"],
+      "nist_ai_rmf_mapping": ["MAP-1.5", "MEASURE-2.5", "MANAGE-1.3"], "mitre_atlas_mapping": ["AML.T0011", "AML.T0054"],
+      "behavioral_vector": ["supply-chain", "external-fetch", "self-modification", "metamorphic"], "mutation_count": 89,
+      "indicators_of_compromise": ["Component contains fetch/requests.get/curl/wget to an external URL", "Network egress to an unexpected domain during initialization"],
+      "remediation": "Remove the component; block agent egress to unknown domains; audit actions during the exposure window; rotate accessible credentials.",
+      "aivss": {"cvss_base": 8.5, "aars": 7.5, "thm": 1, "mitigation_factor": 1, "aivss_score": 8.0, "aivss_severity": "HIGH", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-04-01T09:00:00Z"
+    },
+    {
+      "ave_id": "AVE-2026-00007", "schema_version": "1.0.0", "component_type": "mcp",
+      "title": "Tool-allowlist breach via confused-deputy MCP server", "attack_class": "Authorization - Confused Deputy",
+      "description": "An MCP server exposes a high-privilege tool that an untrusted caller can invoke indirectly through a benign-looking tool, bypassing the agent's allowlist and acting with the server's privileges.",
+      "aivss_score": 9.1, "severity": "CRITICAL", "cvss_base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H",
+      "owasp_mapping": ["ASI02", "ASI06"], "owasp_mcp": ["MCP01", "MCP03"],
+      "nist_ai_rmf_mapping": ["GOVERN-1.1", "MANAGE-2.2"], "mitre_atlas_mapping": ["AML.T0053"],
+      "behavioral_vector": ["confused-deputy", "privilege-escalation", "tool-misuse"], "mutation_count": 34,
+      "indicators_of_compromise": ["A tool invokes another privileged tool without re-checking the caller's authorization"],
+      "remediation": "Re-authorize on every privileged tool call; scope MCP tokens least-privilege; isolate high-privilege tools behind explicit human approval.",
+      "aivss": {"cvss_base": 8.8, "aars": 8.0, "thm": 1, "mitigation_factor": 0.95, "aivss_score": 9.1, "aivss_severity": "CRITICAL", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-04-08T09:00:00Z"
+    },
+    {
+      "ave_id": "AVE-2026-00015", "schema_version": "1.0.0", "component_type": "system-prompt",
+      "title": "Indirect prompt injection via retrieved document content", "attack_class": "Prompt Injection - Indirect",
+      "description": "A system prompt trusts retrieved/RAG content as instructions; an attacker plants directives inside a document the agent later reads, hijacking the agent's behavior.",
+      "aivss_score": 7.4, "severity": "HIGH", "cvss_base_vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:N/SC:H/SI:L/SA:N",
+      "owasp_mapping": ["ASI01"], "owasp_mcp": ["MCP06"], "nist_ai_rmf_mapping": ["MEASURE-2.7"], "mitre_atlas_mapping": ["AML.T0051", "AML.T0054"],
+      "behavioral_vector": ["prompt-injection", "indirect", "rag", "instruction-override"], "mutation_count": 142,
+      "indicators_of_compromise": ["Retrieved content contains imperative directives ('ignore previous instructions')", "Agent output deviates from task after reading external content"],
+      "remediation": "Treat all retrieved content as data, never instructions; sandbox tool use behind explicit policy; add an injection classifier on retrieved text.",
+      "aivss": {"cvss_base": 7.8, "aars": 7.0, "thm": 1, "mitigation_factor": 1, "aivss_score": 7.4, "aivss_severity": "HIGH", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-04-15T09:00:00Z"
+    },
+    {
+      "ave_id": "AVE-2026-00023", "schema_version": "1.0.0", "component_type": "agent",
+      "title": "Unbounded autonomous spend (no budget watchdog)", "attack_class": "Resource Abuse - Budget Exhaustion",
+      "description": "An autonomous agent loops on a tool with cost (API calls, compute, paid actions) without a rolling-window budget cap, leading to financial denial-of-wallet.",
+      "aivss_score": 6.2, "severity": "MEDIUM", "cvss_base_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:H",
+      "owasp_mapping": ["ASI05"], "owasp_mcp": ["MCP09"], "nist_ai_rmf_mapping": ["MANAGE-2.1"], "mitre_atlas_mapping": ["AML.T0034"],
+      "behavioral_vector": ["resource-abuse", "loop", "denial-of-wallet"], "mutation_count": 21,
+      "indicators_of_compromise": ["Repeated identical paid tool calls in a short window", "No soft-cap / hard-limit on agent spend"],
+      "remediation": "Add a rolling-window budget watchdog (soft cap + hard limit); rate-limit costly tools; require approval above a spend threshold.",
+      "aivss": {"cvss_base": 6.5, "aars": 5.8, "thm": 0.9, "mitigation_factor": 1, "aivss_score": 6.2, "aivss_severity": "MEDIUM", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-04-22T09:00:00Z"
+    },
+    {
+      "ave_id": "AVE-2026-00031", "schema_version": "1.0.0", "component_type": "skill",
+      "title": "Persistent memory poisoning across sessions", "attack_class": "Memory - Cross-Session Poisoning",
+      "description": "A skill writes attacker-controlled content into the agent's persistent memory; the poisoned memory is recalled in later, unrelated sessions and steers behavior.",
+      "aivss_score": 7.9, "severity": "HIGH", "cvss_base_vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:H/VA:N/SC:H/SI:H/SA:N",
+      "owasp_mapping": ["ASI07"], "owasp_mcp": ["MCP07"], "nist_ai_rmf_mapping": ["MEASURE-2.6", "MANAGE-2.2"], "mitre_atlas_mapping": ["AML.T0070"],
+      "behavioral_vector": ["memory-poisoning", "persistence", "cross-session"], "mutation_count": 47,
+      "indicators_of_compromise": ["Untrusted content written to long-term memory store", "Behavioral drift correlated with prior-session memory recall"],
+      "remediation": "Validate/scope what enters persistent memory; segregate memory by trust domain; expire and review memory entries.",
+      "aivss": {"cvss_base": 8.0, "aars": 7.4, "thm": 1, "mitigation_factor": 1, "aivss_score": 7.9, "aivss_severity": "HIGH", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-05-02T09:00:00Z"
+    },
+    {
+      "ave_id": "AVE-2026-00044", "schema_version": "1.0.0", "component_type": "system-prompt",
+      "title": "Sensitive-context disclosure to a downstream tool", "attack_class": "Information Disclosure - Context Leak",
+      "description": "A system prompt forwards secrets / PII from its context into a third-party tool's arguments, leaking sensitive data to an external service.",
+      "aivss_score": 3.9, "severity": "LOW", "cvss_base_vector": "CVSS:4.0/AV:N/AC:H/AT:P/PR:L/UI:N/VC:L/VI:N/VA:N/SC:L/SI:N/SA:N",
+      "owasp_mapping": ["ASI08"], "owasp_mcp": ["MCP05"], "nist_ai_rmf_mapping": ["MEASURE-2.10"], "mitre_atlas_mapping": ["AML.T0057"],
+      "behavioral_vector": ["info-disclosure", "context-leak", "data-egress"], "mutation_count": 12,
+      "indicators_of_compromise": ["Secrets/PII appear in outbound tool arguments", "Context fields passed verbatim to external endpoints"],
+      "remediation": "Redact/whitelist fields passed to tools; keep secrets out of the model context; data-loss-prevention on tool arguments.",
+      "aivss": {"cvss_base": 4.2, "aars": 3.5, "thm": 0.8, "mitigation_factor": 1, "aivss_score": 3.9, "aivss_severity": "LOW", "spec_version": "0.8"},
+      "status": "active", "researcher": "Bawbel Security Research Team", "published": "2026-05-12T09:00:00Z"
+    }
+  ]
+}

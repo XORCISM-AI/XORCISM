@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AVE (Agentic Vulnerability Enumeration)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .av-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .av-wrap h1{font-size:20px;margin:0 0 2px}
+  .av-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
+  .muted{color:#64748b}
+  .av-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .av-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .av-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .av-card .val{font-size:24px;font-weight:700;margin-top:3px}.av-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  input.in,select.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.tt tr.row{cursor:pointer}table.tt tr.row:hover{background:#161a2e}
+  .sev{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .sev.CRITICAL{background:#3a1620;color:#fca5a5}.sev.HIGH{background:#3a2414;color:#fcd34d}.sev.MEDIUM{background:#13261c;color:#86efac}.sev.LOW{background:#1e2a44;color:#93c5fd}
+  .chip{font-size:9px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;margin:0 3px 3px 0;white-space:nowrap;display:inline-block}
+  .chip.atlas{background:#2a1d3a;color:#c4b5fd}.chip.mcp{background:#13261c;color:#86efac}.chip.asi{background:#3a2414;color:#fcd34d}
+  .aveid{font-family:ui-monospace,monospace;font-size:11px;color:#cbd5e1}
+  .det{background:#0f1322;font-size:12px;color:#cbd5e1;line-height:1.55}
+  .det h4{margin:8px 0 3px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/ai-guardrails">&#128737;&#65039; AI Guardrails</a>
+  <a href="/aware">&#129518; AWARE</a>
+  <a href="/llm-pentest">&#129302; LLM Pentest</a>
+  <span class="spacer"></span>
+  <span class="title">&#129529; AVE — Agentic Vulnerability Enumeration</span>
+</div>
+
+<div class="av-wrap">
+  <h1 data-i18n="ave.title">AVE — Agentic Vulnerability Enumeration</h1>
+  <div class="av-sub" data-i18n="ave.sub">A behavioral-classification standard for agentic-AI components (AI agents, skill files, MCP servers, system prompts). Where CVE/OSV need a package version, <b>AVE</b> assigns stable <b>AVE-2026-#####</b> ids and <b>AIVSS</b> scores (OWASP AIVSS: CVSS base × agentic amplification) to behavioral vulnerability classes, mapped to the OWASP Agentic Top 10, OWASP MCP Top 10, MITRE ATLAS and NIST AI RMF. From <a href="https://github.com/bawbel/ave" target="_blank" rel="noopener">bawbel/ave</a> (Apache-2.0).</div>
+  <div id="av-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/ave.js"></script>
+</body>
+</html>

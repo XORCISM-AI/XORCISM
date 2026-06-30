@@ -395,11 +395,25 @@
         <span class="domain-desc" data-i18n="landing.ctiexpert.d">Enquête OSINT/CTI orchestrée par l'IA locale (méthodologie cti-expert) : une cible → plan de techniques, conclusions notées (fiabilité A–F), score d'exposition 0–100, observables STIX et INTSUM.</span>
       </a>
 
+      <a class="domain-card" href="/threat-actor" style="--accent:#fb7185">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 7v6c0 4.5 3.4 7.7 8 9 4.6-1.3 8-4.5 8-9V7z"/><path d="M12 7v10M7 12h10"/></svg></span>
+        <span class="domain-title" data-i18n="landing.threatactor">Threat-Actor Profiling &amp; Diamond Model</span>
+        <span class="domain-sub">Diamond Model · Adversary/Capability/Infrastructure/Victim · ATT&CK</span>
+        <span class="domain-desc" data-i18n="landing.threatactor.d">Construisez un profil d'acteur de la menace de qualité renseignement et structurez-le avec le <b>Modèle du Diamant</b> (Diamond Model of Intrusion Analysis) : les quatre sommets <b>Adversaire</b>, <b>Capacité</b>, <b>Infrastructure</b> et <b>Victime</b>, reliés par les axes méta socio-politique et technologique. Les capacités se résolvent en techniques MITRE ATT&CK, l'infrastructure en IOC, les victimes en secteurs/régions ciblés et incidents liés. Vocabulaires STIX (type d'acteur, sophistication, ressources, motivation).</span>
+      </a>
+
       <a class="domain-card" href="/threat-copilot" style="--accent:#22d3ee">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 0-4 4v1a3 3 0 0 0-1 5.83V15a3 3 0 0 0 3 3h0a2 2 0 0 0 2 2 2 2 0 0 0 2-2h0a3 3 0 0 0 3-3v-2.17A3 3 0 0 0 16 7V6a4 4 0 0 0-4-4z"/><path d="M12 8v8"/></svg></span>
         <span class="domain-title" data-i18n="landing.threatcopilot">Threat-Intel Copilot</span>
         <span class="domain-sub">decision-ready · Act/Prioritise/Track · local AI</span>
         <span class="domain-desc" data-i18n="landing.threatcopilot.d">Du bruit au signal : chaque CVE pertinente est notée Act / Prioritise / Track (KEV, EPSS, CVSS, SSVC) pour votre parc, et un analyste IA en 4 modes (Ask / Investigate / Draft / Challenge) répond à partir de vos données en montrant les requêtes exécutées et les sources citées. Inspiré d'Exvora.</span>
+      </a>
+
+      <a class="domain-card" href="/matrix-agent" style="--accent:#818cf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>
+        <span class="domain-title" data-i18n="landing.matrixagent">Matrix Knowledge-Base Agent</span>
+        <span class="domain-sub">ATT&amp;CK · ATLAS · A3M · SAIF · D3FEND · local AI</span>
+        <span class="domain-desc" data-i18n="landing.matrixagent.d">Posez des questions en langage naturel sur les matrices de techniques adverses et défensives importées — MITRE ATT&amp;CK, MITRE ATLAS (IA/ML), A3M, Google SAIF, MITRE D3FEND et Mitigant. L'agent récupère les techniques pertinentes et compose une réponse citée avec l'IA locale (priorité à la confidentialité ; fonctionne hors-ligne en mode digest de récupération). Réplique le MITRE ATLAS Knowledge Base Agent, généralisé à toutes les matrices.</span>
       </a>
 
       <a class="domain-card" href="/threat-informed-defense" style="--accent:#d946ef">
@@ -865,6 +879,13 @@
         <span class="domain-title" data-i18n="landing.aware">AWARE — AI-Agent Governance</span>
         <span class="domain-sub">tiers T0–T4 · identity · kill-switch</span>
         <span class="domain-desc" data-i18n="landing.aware.d">Intégration d'AWARE (GoodCISO/aware, Apache-2.0), l'infrastructure de conformité autonome pour systèmes d'agents IA, par-dessus vos agents IA découverts : chaque agent est gouverné à un <b>niveau de contrainte</b> (T0 audit seul → T4 autonome sous contraintes déclarées), porte une <b>identité non-humaine cryptographique</b> infalsifiable, et s'inscrit dans une hiérarchie parent→enfant avec <b>cascade de révocation</b> (un kill-switch : révoquer un parent désactive automatiquement tous ses enfants). Chaque niveau est mappé sur <b>CSA AICM · NIST AI RMF · ISO 27001 · DORA · OWASP-LLM</b>. L'application des contraintes T2/T3 s'exécute dans l'Agent Policy Firewall ; AWARE fournit la posture de gouvernance et l'autorité de cascade. Complète AI Guardrails et l'Agent Policy Firewall.</span>
+      </a>
+
+      <a class="domain-card" href="/ave" style="--accent:#34d399">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6z"/><path d="M9 12h6M12 9v6"/></svg></span>
+        <span class="domain-title" data-i18n="landing.ave">AVE — Agentic Vulnerability Enumeration</span>
+        <span class="domain-sub">AIVSS · OWASP Agentic/MCP · ATLAS · NIST AI RMF</span>
+        <span class="domain-desc" data-i18n="landing.ave.d">Catalogue de référence AVE (bawbel/ave, Apache-2.0) — le standard de classification comportementale des composants d'IA agentique (agents IA, fichiers skill, serveurs MCP, prompts système). Là où CVE/OSV exigent une version de paquet, AVE attribue des identifiants stables <b>AVE-2026-#####</b> et des scores <b>AIVSS</b> (base CVSS × amplification agentique : autonomie, usage d'outils, auto-modification…) aux classes de vulnérabilités comportementales (injection de prompt, contournement d'allowlist d'outils, charges utiles métamorphiques de la chaîne d'approvisionnement, empoisonnement de mémoire, déni-de-portefeuille…), mappées sur l'OWASP Agentic Top 10, l'OWASP MCP Top 10, MITRE ATLAS et le NIST AI RMF. Importé via le connecteur ave, exploitable depuis AI Guardrails / AWARE / LLM-pentest.</span>
       </a>
 
       <a class="domain-card" href="/endpoint-query" style="--accent:#a855f7">

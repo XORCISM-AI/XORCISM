@@ -411,6 +411,288 @@ def import_aware_agents(result: Dict[str, Any]) -> Dict[str, int]:
         con.close()
 
 
+# ── Cryptographic posture / PQC: CRYPTOASSET (CBOM + PQCMM) ───────────────────────
+# Quantum-safety classification kept faithful to quantumSafe() in xorcism_ts/server/cbom.ts.
+_CRYPTO_VULN_RE = re.compile(
+    r"\b(rsa|ecdsa|ecdh|ecc|ecies|ed25519|ed448|x25519|x448|curve25519|secp\d|prime256|nistp|brainpool|dh|diffie|dsa|elgamal|dss)\b", re.I)
+_CRYPTO_SAFE_RE = re.compile(
+    r"\b(ml-?kem|kyber|ml-?dsa|dilithium|slh-?dsa|sphincs|fn-?dsa|falcon|mceliece|bike|hqc|frodo|ntru|saber|xmss|lms|hss)\b", re.I)
+_CRYPTO_SYM_RE = re.compile(r"\b(aes|chacha|salsa|camellia|aria|seed|sm4|3des|des|blowfish|twofish|rc4)\b", re.I)
+_CRYPTO_HASH_RE = re.compile(r"\b(sha-?1|sha-?224|sha-?256|sha-?384|sha-?512|sha-?3|sha3|shake|blake|md5|md4|ripemd|sm3|whirlpool)\b", re.I)
+_CRYPTO_WEAK_RE = re.compile(r"\b(md5|md4|sha-?1|des|3des|rc4|blowfish)\b", re.I)
+
+
+def _crypto_quantum_safe(text: str, nist_level: Optional[int]) -> Optional[int]:
+    """1 = quantum-safe, 0 = quantum-vulnerable, None = unknown."""
+    a = text or ""
+    if nist_level is not None and nist_level >= 1:
+        return 1
+    if _CRYPTO_SAFE_RE.search(a):
+        return 1
+    if _CRYPTO_VULN_RE.search(a):
+        return 0
+    if _CRYPTO_SYM_RE.search(a):
+        if re.search(r"3des|\bdes\b|rc4|blowfish", a, re.I):
+            return 0
+        m = re.search(r"(\d{3,4})", a)
+        return 1 if (m and int(m.group(1)) >= 256) else 0
+    if _CRYPTO_HASH_RE.search(a):
+        if re.search(r"md5|md4|sha-?1", a, re.I):
+            return 0
+        m = re.search(r"(\d{3,4})", a)
+        return 1 if ((m and int(m.group(1)) >= 384) or re.search(r"sha-?3|sha3|shake", a, re.I)) else 0
+    return None
+
+
+def _crypto_num(v: Any) -> Optional[int]:
+    try:
+        return int(float(v))
+    except (TypeError, ValueError):
+        return None
+
+
+def _normalize_crypto_asset(c: Dict[str, Any]) -> Dict[str, Any]:
+    """Mirror normalizeCryptoAsset() in cbom.ts — accepts CycloneDX cryptoProperties or a flat object."""
+    cp = c.get("cryptoProperties") or c.get("crypto") or {}
+    alg = cp.get("algorithmProperties") or {}
+    cert = cp.get("certificateProperties") or {}
+    proto = cp.get("protocolProperties") or {}
+    s = lambda v: ("" if v is None else str(v))[:300]
+    asset_type = s(cp.get("assetType") or c.get("assetType")
+                   or ("certificate" if cert.get("subjectName") else "protocol" if proto.get("type") else "algorithm")).lower()
+    algorithm = s(c.get("algorithm") or c.get("name") or cp.get("oid") or "")
+    primitive = s(alg.get("primitive") or c.get("primitive")
+                  or ("certificate" if asset_type == "certificate" else "protocol" if asset_type == "protocol" else ""))
+    key_size = _crypto_num(alg.get("parameterSetIdentifier")) or _crypto_num(c.get("keySize")) or _crypto_num(alg.get("keySize"))
+    curve = s(alg.get("curve") or c.get("curve"))
+    classical_bits = _crypto_num(alg.get("classicalSecurityLevel"))
+    nist_level = _crypto_num(alg.get("nistQuantumSecurityLevel"))
+    if nist_level is None:
+        nist_level = _crypto_num(c.get("nistQuantumSecurityLevel"))
+    protocol = s((proto.get("type") + (" " + str(proto.get("version")) if proto.get("version") else "")) if proto.get("type") else c.get("protocol"))
+    qs = _crypto_quantum_safe("%s %s" % (algorithm, curve), nist_level)
+    return {
+        "name": s(c.get("name") or algorithm or cp.get("oid") or "crypto-asset"),
+        "bomRef": s(c.get("bom-ref") or c.get("bomRef")),
+        "assetType": asset_type, "primitive": primitive, "algorithm": algorithm or s(c.get("name")),
+        "keySize": key_size, "curve": curve, "classicalBits": classical_bits, "nistLevel": nist_level,
+        "quantumSafe": qs, "deprecated": 1 if _CRYPTO_WEAK_RE.search("%s %s" % (algorithm, curve)) else 0,
+        "protocol": protocol, "certSubject": s(cert.get("subjectName")), "certIssuer": s(cert.get("issuerName")),
+        "certNotAfter": s(cert.get("notValidAfter")), "oid": s(cp.get("oid") or c.get("oid")),
+    }
+
+
+def import_crypto_assets(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import CryptoScan-discovered cryptographic assets into XORCISM.CRYPTOASSET, each classified
+    quantum-safe/-vulnerable (feeds the CBOM cockpit /cbom + PQCMM). A connector run is a full
+    posture snapshot, so re-importing the same Source replaces that source's previous rows."""
+    import datetime
+    import uuid
+
+    items = result.get("crypto_assets") or []
+    if not items:
+        return {}
+    source = str(result.get("source") or "CryptoScan")[:120]
+    tenant = result.get("tenant_id")
+    tenant = int(tenant) if isinstance(tenant, (int, float)) or (isinstance(tenant, str) and tenant.isdigit()) else None
+    asset_id = result.get("asset_id")
+    asset_id = int(asset_id) if isinstance(asset_id, (int, float)) or (isinstance(asset_id, str) and str(asset_id).isdigit()) else None
+    now = datetime.datetime.utcnow().isoformat()
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=20)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='CRYPTOASSET'")
+        if not cur.fetchone():
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS CRYPTOASSET (CryptoAssetID INTEGER PRIMARY KEY, CryptoAssetGUID TEXT, "
+                "Name TEXT, BomRef TEXT, AssetType TEXT, Primitive TEXT, Algorithm TEXT, KeySize INTEGER, Curve TEXT, "
+                "ClassicalBits INTEGER, NistQuantumLevel INTEGER, QuantumSafe INTEGER, Deprecated INTEGER, Protocol TEXT, "
+                "CertSubject TEXT, CertIssuer TEXT, CertNotAfter TEXT, Oid TEXT, AssetID INTEGER, SbomID INTEGER, "
+                "Source TEXT, TenantID INTEGER, CreatedDate TEXT)")
+        # idempotent snapshot: drop the prior rows from this exact source (tenant-aware)
+        if tenant is None:
+            cur.execute("DELETE FROM CRYPTOASSET WHERE Source=? AND TenantID IS NULL", (source,))
+        else:
+            cur.execute("DELETE FROM CRYPTOASSET WHERE Source=? AND TenantID=?", (source, tenant))
+        row = cur.execute("SELECT COALESCE(MAX(CryptoAssetID),0) FROM CRYPTOASSET").fetchone()
+        next_id = int(row[0]) + 1
+        n = 0
+        qv = 0
+        for c in items:
+            if not isinstance(c, dict):
+                continue
+            r = _normalize_crypto_asset(c)
+            cur.execute(
+                "INSERT INTO CRYPTOASSET (CryptoAssetID, CryptoAssetGUID, Name, BomRef, AssetType, Primitive, Algorithm, "
+                "KeySize, Curve, ClassicalBits, NistQuantumLevel, QuantumSafe, Deprecated, Protocol, CertSubject, "
+                "CertIssuer, CertNotAfter, Oid, AssetID, SbomID, Source, TenantID, CreatedDate) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (next_id, str(uuid.uuid4()), r["name"], r["bomRef"], r["assetType"], r["primitive"], r["algorithm"],
+                 r["keySize"], r["curve"], r["classicalBits"], r["nistLevel"], r["quantumSafe"], r["deprecated"],
+                 r["protocol"], r["certSubject"], r["certIssuer"], r["certNotAfter"], r["oid"],
+                 asset_id, None, source, tenant, now))
+            next_id += 1
+            n += 1
+            if r["quantumSafe"] == 0:
+                qv += 1
+        con.commit()
+        return {"crypto_assets": n, "quantum_vulnerable": qv}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
+# ── AVE — Agentic Vulnerability Enumeration reference catalogue (XVULNERABILITY) ───
+def _is_number(v: Any) -> bool:
+    try:
+        float(v)
+        return v is not None and not isinstance(v, bool)
+    except (TypeError, ValueError):
+        return False
+
+
+def _ave_join(v: Any) -> str:
+    if isinstance(v, list):
+        return ", ".join(str(x) for x in v)
+    return "" if v is None else str(v)
+
+
+def _ave_severity(score: Any) -> str:
+    try:
+        n = float(score)
+    except (TypeError, ValueError):
+        return ""
+    return "CRITICAL" if n >= 9 else "HIGH" if n >= 7 else "MEDIUM" if n >= 4 else "LOW"
+
+
+def import_ave_records(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import AVE (bawbel/ave) behavioral vulnerability records into XVULNERABILITY.AVERECORD
+    (the /ave reference catalogue). Idempotent by AveId; mirrors normalizeAve() in ave.ts."""
+    import datetime
+
+    items = result.get("ave_records") or []
+    if not items:
+        return {}
+    source = str(result.get("source") or "AVE")[:120]
+    now = datetime.datetime.utcnow().isoformat()
+    con = sqlite3.connect(os.path.join(_db_dir(), "XVULNERABILITY.db"), timeout=20)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS AVERECORD (AveId TEXT PRIMARY KEY, Title TEXT, AttackClass TEXT, "
+            "ComponentType TEXT, Description TEXT, Severity TEXT, AivssScore REAL, CvssBase REAL, CvssVector TEXT, "
+            "OwaspAgentic TEXT, OwaspMcp TEXT, NistAiRmf TEXT, MitreAtlas TEXT, BehavioralVector TEXT, "
+            "BehavioralFingerprint TEXT, MutationCount INTEGER, DetectionMethodology TEXT, Iocs TEXT, Remediation TEXT, "
+            "AffectedPlatforms TEXT, Status TEXT, Researcher TEXT, Published TEXT, LastUpdated TEXT, SpecVersion TEXT, "
+            "Source TEXT, CreatedDate TEXT)")
+        imp = 0
+        upd = 0
+        for r in items:
+            if not isinstance(r, dict):
+                continue
+            aid = str(r.get("ave_id") or r.get("id") or "").strip()
+            if not aid.upper().startswith("AVE-"):
+                continue
+            aivss = r.get("aivss") or {}
+            score = r.get("aivss_score")
+            if score is None:
+                score = aivss.get("aivss_score")
+            row = {
+                "AveId": aid, "Title": _ave_join(r.get("title"))[:300], "AttackClass": _ave_join(r.get("attack_class"))[:200],
+                "ComponentType": _ave_join(r.get("component_type"))[:60], "Description": _ave_join(r.get("description"))[:4000],
+                "Severity": (_ave_join(r.get("severity") or aivss.get("aivss_severity")) or _ave_severity(score)),
+                "AivssScore": (float(score) if _is_number(score) else None),
+                "CvssBase": (float(aivss.get("cvss_base")) if _is_number(aivss.get("cvss_base")) else None),
+                "CvssVector": _ave_join(r.get("cvss_base_vector"))[:120], "OwaspAgentic": _ave_join(r.get("owasp_mapping")),
+                "OwaspMcp": _ave_join(r.get("owasp_mcp") or aivss.get("owasp_mcp_mapping")), "NistAiRmf": _ave_join(r.get("nist_ai_rmf_mapping")),
+                "MitreAtlas": _ave_join(r.get("mitre_atlas_mapping")), "BehavioralVector": _ave_join(r.get("behavioral_vector")),
+                "BehavioralFingerprint": _ave_join(r.get("behavioral_fingerprint"))[:500],
+                "MutationCount": (int(r.get("mutation_count")) if _is_number(r.get("mutation_count")) else None),
+                "DetectionMethodology": _ave_join(r.get("detection_methodology"))[:2000], "Iocs": _ave_join(r.get("indicators_of_compromise"))[:2000],
+                "Remediation": _ave_join(r.get("remediation"))[:2000], "AffectedPlatforms": _ave_join(r.get("affected_platforms")),
+                "Status": _ave_join(r.get("status"))[:30], "Researcher": _ave_join(r.get("researcher"))[:120],
+                "Published": _ave_join(r.get("published"))[:40], "LastUpdated": _ave_join(r.get("last_updated"))[:40],
+                "SpecVersion": _ave_join(aivss.get("spec_version") or r.get("schema_version"))[:20],
+            }
+            cols = list(row.keys())
+            exists = cur.execute("SELECT 1 FROM AVERECORD WHERE AveId=?", (aid,)).fetchone()
+            if exists:
+                cur.execute("UPDATE AVERECORD SET %s, Source=? WHERE AveId=?" % ",".join("%s=?" % c for c in cols),
+                            [row[c] for c in cols] + [source, aid])
+                upd += 1
+            else:
+                cur.execute("INSERT INTO AVERECORD (%s, Source, CreatedDate) VALUES (%s)" % (",".join(cols), ",".join("?" * (len(cols) + 2))),
+                            [row[c] for c in cols] + [source, now])
+                imp += 1
+        con.commit()
+        return {"ave_records": imp, "ave_updated": upd}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
+def import_ave_scan_findings(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import bawbel-scanner per-artifact AVE findings into XVULNERABILITY.AVESCANFINDING. A scan run
+    is a snapshot — re-importing the same Source replaces its previous findings. Mirrors importScanFindings()."""
+    import datetime
+
+    items = result.get("ave_scan_findings") or []
+    if not items:
+        return {}
+    source = str(result.get("source") or "bawbel-scanner")[:120]
+    scan_ref = str(result.get("scan_ref") or "")[:200]
+    now = datetime.datetime.utcnow().isoformat()
+
+    def sev_from_aivss(v: Any) -> str:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return ""
+        return "CRITICAL" if n >= 9 else "HIGH" if n >= 7 else "MEDIUM" if n >= 4 else "LOW"
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XVULNERABILITY.db"), timeout=20)
+    try:
+        cur = con.cursor()
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS AVESCANFINDING (ScanFindingID INTEGER PRIMARY KEY, AveId TEXT, RuleId TEXT, "
+            "Title TEXT, Severity TEXT, AivssScore REAL, Confidence REAL, ComponentType TEXT, File TEXT, Line INTEGER, "
+            "Message TEXT, EvidenceKind TEXT, EvidenceStage TEXT, OwaspMcp TEXT, MitreAtlas TEXT, Status TEXT, "
+            "Source TEXT, ScanRef TEXT, CreatedDate TEXT, TenantID INTEGER)")
+        cur.execute("DELETE FROM AVESCANFINDING WHERE Source=?", (source,))
+        nid = int(cur.execute("SELECT COALESCE(MAX(ScanFindingID),0) FROM AVESCANFINDING").fetchone()[0]) + 1
+        n = 0
+        for f in items:
+            if not isinstance(f, dict):
+                continue
+            ave = str(f.get("ave_id") or f.get("aveId") or f.get("ruleId") or "").upper()
+            rule = str(f.get("rule_id") or f.get("ruleId") or "")
+            if not ave.startswith("AVE-") and not rule:
+                continue
+            sev = str(f.get("severity") or "").upper() or sev_from_aivss(f.get("aivss_score") or f.get("aivss"))
+            cur.execute(
+                "INSERT INTO AVESCANFINDING (ScanFindingID, AveId, RuleId, Title, Severity, AivssScore, Confidence, "
+                "ComponentType, File, Line, Message, EvidenceKind, EvidenceStage, OwaspMcp, MitreAtlas, Status, Source, "
+                "ScanRef, CreatedDate, TenantID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (nid, ave, rule, str(f.get("title") or "")[:300], sev,
+                 (float(f.get("aivss_score") or f.get("aivss")) if _is_number(f.get("aivss_score") or f.get("aivss")) else None),
+                 (float(f.get("confidence")) if _is_number(f.get("confidence")) else None),
+                 str(f.get("component_type") or "")[:60], str(f.get("file") or f.get("path") or f.get("uri") or "")[:400],
+                 (int(f.get("line")) if _is_number(f.get("line")) else None), str(f.get("message") or "")[:1000],
+                 str(f.get("evidence_kind") or "")[:60], str(f.get("evidence_stage") or f.get("detection_stage") or "")[:60],
+                 str(f.get("owasp_mcp") or ""), str(f.get("mitre_atlas") or ""), "open", source, scan_ref, now, None))
+            nid += 1
+            n += 1
+        con.commit()
+        return {"ave_scan_findings": n}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
 # ── Import into XORCISM (mappings) ────────────────────────────────────────────────
 def import_ai_systems(result: Dict[str, Any]) -> Dict[str, int]:
     """Import agentlessly-discovered AI/LLM services into XORCISM.AISYSTEM (the AI-SPM inventory).
@@ -523,6 +805,12 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_ai_guardrail(result))
     if result.get("aware_agents"):
         counts.update(import_aware_agents(result))
+    if result.get("crypto_assets"):
+        counts.update(import_crypto_assets(result))
+    if result.get("ave_records"):
+        counts.update(import_ave_records(result))
+    if result.get("ave_scan_findings"):
+        counts.update(import_ave_scan_findings(result))
     if result.get("aisystems"):
         counts.update(import_ai_systems(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):

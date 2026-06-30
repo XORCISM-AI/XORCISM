@@ -1,0 +1,17 @@
+{
+  "id": "crypto-scan",
+  "name": "CryptoScan — cryptographic posture / PQC import",
+  "type": "import",
+  "category": "Cryptography",
+  "description": "Imports the output of CryptoScan (github.com/GreyNOC/Crypto-Scan, by GreyNOC) — a cryptographic posture-management & post-quantum-cryptography (PQC) migration scanner. CryptoScan discovers cryptography in use across live TLS 1.3 / SSH / IPsec-IKEv2 endpoints, X.509 PKI files, and source code across package ecosystems, classifies each by quantum risk (Shor-broken / Grover-weakened / PQ-safe / classically-weak) with a Mosca harvest-now-decrypt-later timeline, and emits a CycloneDX 1.6 CBOM, JSON findings and SARIF 2.1.0. This connector parses CryptoScan's CycloneDX 1.6 CBOM (or a {cryptoAssets:[]} / array / SARIF export) and maps each cryptographic asset to XORCISM.CRYPTOASSET, where it is re-classified quantum-safe vs quantum-vulnerable and rolled into the CBOM cockpit (/cbom) and Post-Quantum Crypto Maturity (/pqcmm). CryptoScan is proprietary (Copyright (c) GreyNOC); this connector ships none of its code and only reads the standard-format output files you produce by running your own licensed copy. Worker-safe & read-only: parses an exported file, performs no scanning or network activity itself.",
+  "intrusive": false,
+  "permission": "connector:crypto-scan",
+  "run": "run.py",
+  "mapping": "crypto-scan",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A CryptoScan output file: a CycloneDX 1.6 CBOM (gs ... --cbom cbom.json), JSON findings (--json), or SARIF (--sarif). Defaults to a bundled sample CBOM when omitted." },
+    { "name": "source", "type": "string", "default": "CryptoScan", "help": "Source label stamped on imported crypto assets (e.g. CryptoScan:prod-tls). Re-importing the same source replaces its previous snapshot." },
+    { "name": "asset_id", "type": "int", "required": false, "help": "Optional XORCISM AssetID to attach the discovered crypto assets to (e.g. the host/repo that was scanned)." },
+    { "name": "limit", "type": "int", "default": 5000, "min": 1, "max": 50000, "help": "Maximum cryptographic assets to import." }
+  ]
+}

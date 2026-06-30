@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Matrix Knowledge-Base Agent</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mx-wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .mx-wrap h1{font-size:20px;margin:0 0 2px}
+  .mx-sub{color:#94a3b8;font-size:13px;margin-bottom:16px}
+  .muted{color:#64748b}
+  .mx-cov{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .mxc{background:#13162a;border:1px solid #2d3250;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:12px}
+  .mxc.on{border-color:#38bdf8;box-shadow:0 0 0 1px #38bdf8 inset}
+  .mxc.off{opacity:.45}
+  .mxc .n{font-weight:700}.mxc .c{color:#64748b;font-size:11px;margin-left:5px}
+  .scope-offensive{color:#fca5a5}.scope-defensive{color:#86efac}.scope-ai{color:#c4b5fd}.scope-cloud{color:#7dd3fc}
+  .askbar{display:flex;gap:8px;margin-bottom:6px}
+  input.in{flex:1;background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:8px;font-size:14px;padding:9px 12px;font-family:inherit}
+  .btn{background:#38bdf8;color:#04222e;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}.btn:hover{background:#7dd3fc}.btn:disabled{opacity:.5;cursor:default}
+  .btn.sec{background:#2d3250;color:#cbd5e1;font-size:11px;padding:4px 10px}
+  .ex{margin:4px 0 16px}.ex .chip{font-size:11px;background:#1a1f33;border:1px solid #2d3250;color:#93c5fd;border-radius:12px;padding:3px 10px;margin:0 5px 5px 0;cursor:pointer;display:inline-block}.ex .chip:hover{background:#23304a}
+  .answer{background:#13162a;border:1px solid #2d3250;border-radius:11px;padding:16px 18px;margin-bottom:14px;white-space:pre-wrap;line-height:1.6;font-size:13px}
+  .prov{font-size:11px;color:#64748b;margin-bottom:10px}
+  .src{background:#0f1322;border:1px solid #232842;border-radius:9px;padding:9px 12px;margin-bottom:7px}
+  .src a{color:#7dd3fc;text-decoration:none;font-weight:700;font-size:12px}.src a:hover{text-decoration:underline}
+  .src .mtag{font-size:9px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;margin-left:6px}
+  .src p{margin:4px 0 0;font-size:12px;color:#94a3b8}
+  .sec-h{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px}
+  .spin{color:#64748b;padding:10px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/attack">&#9876;&#65039; ATT&CK</a>
+  <a href="/cti-expert">&#129302; CTI-Expert</a>
+  <a href="/ask">&#128172; Ask the model</a>
+  <span class="spacer"></span>
+  <span class="title">&#129504; Matrix Knowledge-Base Agent</span>
+</div>
+
+<div class="mx-wrap">
+  <h1 data-i18n="mx.title">Matrix Knowledge-Base Agent</h1>
+  <div class="mx-sub" data-i18n="mx.sub">Ask natural-language questions about the adversarial &amp; defensive technique matrices XORCISM imports — MITRE ATT&amp;CK, MITRE ATLAS (AI/ML), A3M, Google SAIF, MITRE D3FEND and Mitigant. The agent retrieves the relevant techniques and composes a cited answer with the local AI (privacy-first; works offline as a retrieval digest). Inspired by the MITRE ATLAS Knowledge Base Agent, generalised across every matrix.</div>
+  <div id="mx-cov" class="mx-cov"></div>
+  <div class="askbar">
+    <input class="in" id="q" placeholder="e.g. How does an adversary poison a model? Which ATLAS techniques relate to prompt injection?">
+    <button class="btn" id="ask" data-i18n="mx.ask">Ask</button>
+  </div>
+  <div class="ex" id="ex"></div>
+  <div id="mx-out"></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/matrix-agent.js"></script>
+</body>
+</html>

@@ -48,6 +48,9 @@ import { ensureFrameworkVocabulary, seedFrameworks } from "./frameworks";
 import { ensureTahitiColumns } from "./hunting";
 import { ensureAiGuardTables, seedAwareDemo } from "./aiguard";
 import awareRouter from "./routes/aware";
+import threatActorRouter from "./routes/threatactor";
+import aveRouter from "./routes/ave";
+import matrixAgentRouter from "./routes/matrixagent";
 import incidentsRouter from "./routes/incidents";
 import complianceRouter from "./routes/compliance";
 import otSecurityRouter from "./routes/otsecurity";
@@ -152,6 +155,8 @@ import agentFwRouter from "./routes/agentfw";
 import sprsRouter from "./routes/sprs";
 import remediationRouter from "./routes/remediation";
 import { seedDemo as seedRemediationDemo } from "./remediation";
+import { seedDemo as seedThreatActorDemo } from "./threatactor";
+import { seedAve } from "./ave";
 import ess8Router from "./routes/ess8";
 import { ensureEss8Tables, seedEss8Demo } from "./ess8";
 import threatDebtRouter from "./routes/threatdebt";
@@ -203,7 +208,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions, seedFeaturePageGrants, ensureAuditChain } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureAccessGovTables, startReplicaSync, dbDriver } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureAccessGovTables, ensureThreatActorProfile, ensureAveTables, startReplicaSync, dbDriver } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -315,6 +320,9 @@ app.use("/api/bia", requirePageApi("/bia"), biaRouter);
 app.use("/api", vaultRouter); // encryption vault (each route checks admin)
 app.use("/api", agentAdminRouter); // XOR agents (list, events, launch a scan)
 app.use("/api", awareRouter); // AWARE (GoodCISO/aware): autonomous AI-agent governance — tiers T0–T4 + identity + revocation cascade
+app.use("/api", threatActorRouter); // Threat-actor profiling + Diamond Model of Intrusion Analysis (Adversary/Capability/Infrastructure/Victim)
+app.use("/api", aveRouter); // AVE (bawbel/ave): Agentic Vulnerability Enumeration reference catalogue (AIVSS) — /ave
+app.use("/api", matrixAgentRouter); // Matrix Knowledge-Base Agent (ATLAS-agent-style local-AI Q&A over ATT&CK/ATLAS/A3M/SAIF/D3FEND/Mitigant)
 app.use("/api", feedbackRouter); // user feedback (ratings / improvements)
 app.use("/api", prefsRouter); // user preferences (CTI feeds, display…)
 app.use("/api", notificationsRouter); // notifications (header bell + browser)
@@ -706,6 +714,15 @@ app.get("/ai-guardrails", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/aware", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "aware.html"));
 });
+app.get("/threat-actor", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "threat-actor.html"));
+});
+app.get("/ave", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ave.html"));
+});
+app.get("/matrix-agent", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "matrix-agent.html"));
+});
 app.get("/voc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "voc.html"));
 });
@@ -1011,6 +1028,10 @@ ensureTlptTables(); // TLPT / TIBER-EU threat-led penetration testing engagement
 ensureAgentFwTables(); // Agent Policy Firewall: agent-action governance ledger + policies (XORCISM)
 ensureSprsTables(); // SPRS / NIST 800-171 self-assessment status (XCOMPLIANCE)
 ensureRemediationTables(); // Autonomous Exposure Remediation: REMEDIATIONPLAN + REMEDIATIONEVENT closed-loop store (XVULNERABILITY)
+ensureThreatActorProfile(); // Threat-actor profiling + Diamond Model: extends XTHREAT.THREATACTOR + THREATACTORINFRA
+try { seedThreatActorDemo(3); } catch { /* demo only */ } // demo profiled actor (Diamond Model) for tenant 3
+ensureAveTables(); // AVE (bawbel/ave): Agentic Vulnerability Enumeration reference catalogue (XVULNERABILITY.AVERECORD)
+try { seedAve(); } catch { /* sample only */ } // load the bundled AVE sample catalogue if empty
 try { seedRemediationDemo(3); } catch { /* demo only */ } // AER demo (tenant 3): plans across the PLAN→GATE→EXECUTE→VERIFY→CLOSE lifecycle
 ensureCbomTables(); // CBOM cryptographic bill of materials: CRYPTOASSET inventory (quantum-safe classification, feeds PQCMM)
 ensureAiSbomTables(); // AI SBOM minimum elements (CISA/G7): AISBOMELEMENT catalogue + AISBOM/AISBOMCOVERAGE conformance

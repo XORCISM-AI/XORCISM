@@ -1,0 +1,16 @@
+{
+  "id": "ave",
+  "name": "AVE — Agentic Vulnerability Enumeration import",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports the AVE catalogue (github.com/bawbel/ave, Apache-2.0, by bawbel) — the behavioral-classification standard for agentic-AI components (AI agents, skill files, MCP servers, system prompts). Where CVE/OSV need a package version, AVE assigns stable AVE-2026-##### ids and AIVSS scores (OWASP AIVSS v0.8: a CVSS base amplified by agentic factors — autonomy, tool-use, self-modification, …) to behavioral vulnerability classes (prompt injection, tool-allowlist breach, metamorphic supply-chain payloads, memory poisoning, denial-of-wallet, …), each mapped to the OWASP Agentic Top 10, OWASP MCP Top 10, MITRE ATLAS and NIST AI RMF. This connector parses the AVE records (a records.json export, a {records:[]} object, an array, or a directory of AVE-####.json files) and maps each into XORCISM.AVERECORD, surfaced at /ave and mappable from AI Guardrails / AWARE / LLM-pentest onto a stable taxonomy. Worker-safe & read-only: parses exported JSON only.",
+  "intrusive": false,
+  "permission": "connector:ave",
+  "run": "run.py",
+  "mapping": "ave",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An AVE records export: records.json, a {records:[]} object, a JSON array, or a single AVE-####.json. Defaults to the bundled sample." },
+    { "name": "dir", "type": "string", "required": false, "help": "Optional path to a directory of AVE-####.json record files (e.g. the records/ folder of the AVE repo)." },
+    { "name": "source", "type": "string", "default": "AVE", "help": "Source label stamped on imported records." }
+  ]
+}

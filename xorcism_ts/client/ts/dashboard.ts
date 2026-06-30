@@ -597,6 +597,10 @@ interface Kpis {
   pqcmm: { maturityScore: number; assessments: number; quantumVulnerable: number; productionReady: number; managed: number } | null;
   patch: { coverage: number | null; overdue: number; kevUnpatched: number; unpatched: number; instances: number; mttr: number | null } | null;
   policy: { published: number; requiringAck: number; ackCoverage: number; pendingAcks: number; fullyAcknowledged: number } | null;
+  accessGov: { entitlements: number; sodViolations: number; sodCritical: number; pendingRequests: number; jitActive: number } | null;
+  remediation: { open: number; overdue: number; slaCompliance: number | null; mttrHours: number | null; autonomousPct: number | null } | null;
+  policyCoverage: { coveragePct: number; uncoveredCritical: number; uncovered: number } | null;
+  aware: { agents: number; governed: number; ungoverned: number; autonomousUngoverned: number; revoked: number } | null;
 }
 const badColor = (n: number): string => (n > 0 ? "#f87171" : "#34d399");
 const warnColor = (n: number): string => (n > 0 ? "#fbbf24" : "#34d399");
@@ -671,6 +675,20 @@ async function initKpis(): Promise<void> {
   if (k.policy) {
     tile(`${k.policy.ackCoverage}%`, t("dash.kpi.policyAcceptance"), `${k.policy.requiringAck} ${t("dash.kpi.publishedAckRequired")}`, "/policy-management", pctColor(k.policy.ackCoverage));
     tile(k.policy.pendingAcks, t("dash.kpi.pendingAcks"), `${k.policy.fullyAcknowledged}/${k.policy.requiringAck} ${t("dash.kpi.fullyAccepted")}`, "/policy-management", warnColor(k.policy.pendingAcks));
+  }
+  if (k.policyCoverage) {
+    tile(`${k.policyCoverage.coveragePct}%`, t("dash.kpi.policyCoverage"), `${k.policyCoverage.uncoveredCritical} ${t("dash.kpi.critUncovered")}`, "/policy-management", pctColor(k.policyCoverage.coveragePct));
+  }
+  if (k.accessGov) {
+    tile(k.accessGov.sodViolations, t("dash.kpi.sodViolations"), `${k.accessGov.sodCritical} ${t("dash.kpi.critHigh")}`, "/access-governance", badColor(k.accessGov.sodViolations));
+    tile(k.accessGov.pendingRequests, t("dash.kpi.accessRequests"), `${k.accessGov.jitActive} ${t("dash.kpi.jitActive")}`, "/access-governance", warnColor(k.accessGov.pendingRequests));
+  }
+  if (k.remediation) {
+    tile(k.remediation.slaCompliance != null ? `${k.remediation.slaCompliance}%` : null, t("dash.kpi.remediationSla"), `${k.remediation.open} ${t("dash.kpi.openPlans")}`, "/exposure-remediation", pctColor(k.remediation.slaCompliance));
+    tile(k.remediation.overdue, t("dash.kpi.remediationOverdue"), k.remediation.mttrHours != null ? `MTTR ${k.remediation.mttrHours < 48 ? k.remediation.mttrHours + "h" : Math.round(k.remediation.mttrHours / 24) + "d"}` : t("dash.kpi.pastSla"), "/exposure-remediation", badColor(k.remediation.overdue));
+  }
+  if (k.aware) {
+    tile(k.aware.autonomousUngoverned, t("dash.kpi.ungovernedAgents"), `${k.aware.ungoverned}/${k.aware.agents} ${t("dash.kpi.ungoverned")}`, "/aware", badColor(k.aware.autonomousUngoverned));
   }
   if (k.crisis) {
     tile(k.crisis.readinessScore, t("dash.kpi.crisisReadiness"), t("dash.kpi.crisisReadiness.f"), "/crisis-management", pctColor(k.crisis.readinessScore));
