@@ -46,7 +46,8 @@ import easmRouter from "./routes/easm";
 import frameworksRouter from "./routes/frameworks";
 import { ensureFrameworkVocabulary, seedFrameworks } from "./frameworks";
 import { ensureTahitiColumns } from "./hunting";
-import { ensureAiGuardTables } from "./aiguard";
+import { ensureAiGuardTables, seedAwareDemo } from "./aiguard";
+import awareRouter from "./routes/aware";
 import incidentsRouter from "./routes/incidents";
 import complianceRouter from "./routes/compliance";
 import otSecurityRouter from "./routes/otsecurity";
@@ -313,6 +314,7 @@ app.use("/api/admin", requireAdmin, adminRouter);
 app.use("/api/bia", requirePageApi("/bia"), biaRouter);
 app.use("/api", vaultRouter); // encryption vault (each route checks admin)
 app.use("/api", agentAdminRouter); // XOR agents (list, events, launch a scan)
+app.use("/api", awareRouter); // AWARE (GoodCISO/aware): autonomous AI-agent governance — tiers T0–T4 + identity + revocation cascade
 app.use("/api", feedbackRouter); // user feedback (ratings / improvements)
 app.use("/api", prefsRouter); // user preferences (CTI feeds, display…)
 app.use("/api", notificationsRouter); // notifications (header bell + browser)
@@ -701,6 +703,9 @@ app.get("/agents", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/ai-guardrails", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ai-guardrails.html"));
 });
+app.get("/aware", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "aware.html"));
+});
 app.get("/voc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "voc.html"));
 });
@@ -972,6 +977,7 @@ ensureLoopHealthTable(); // CROC resilience-over-time snapshot store
 ensureFrameworkVocabulary(); seedFrameworks(); // Frameworks management: FRAMEWORK→VOCABULARY mapping + curated catalogue
 ensureTahitiColumns(); // TaHiTI methodology: HUNT.TahitiPhase + TahitiTrigger columns
 ensureAiGuardTables(); // AI-agent guardrails: AIAGENT / AIGUARDRAILRESULT / AIGUARDRAILVIOLATION (XAGENT)
+try { seedAwareDemo(); } catch { /* demo only */ } // AWARE demo: a parent→child agent fleet with mixed constraint tiers T0–T4
 try { seedCrocDemo(3); } catch { /* demo only */ } // CROC value demo (tenant 3): 24h bidirectional loop feed + 30-day improving resilience
 try { seedThreatDebtDemo(3); } catch { /* demo only */ } // AOI demo (tenant 3): 30-day improving (paid-down) Adversary Opportunity Index history
 try { seedAiUsageDemo(3); } catch { /* demo only */ } // AI runtime detection demo (tenant 3): 30d usage baseline + an anomaly day (no-op if no AI systems)

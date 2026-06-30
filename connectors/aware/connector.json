@@ -1,0 +1,15 @@
+{
+  "id": "aware",
+  "name": "AWARE — AI-agent governance import",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports from AWARE (github.com/GoodCISO/aware, Apache-2.0) — open-source autonomous-compliance infrastructure for AI agent systems. AWARE governs autonomous agents with a cryptographic non-human identity, audit trails, a parent→child revocation cascade (kill-switch), constraint-enforcement tiers T0–T4, and compliance mapping to CSA AICM / NIST AI RMF / ISO 27001 / DORA / OWASP-LLM. This connector parses an AWARE export (its governed-agent registry + policy/guardrail violations) and maps it to XORCISM: governed agents → XAGENT.AIAGENT carrying their AWARE tier, identity fingerprint and parent (surfaced in the /aware governance cockpit and AI Guardrails), and enforcement/policy violations → XAGENT.AIGUARDRAILVIOLATION. Worker-safe & read-only: parses an exported JSON only.",
+  "intrusive": false,
+  "permission": "connector:aware",
+  "run": "run.py",
+  "mapping": "aware",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "An AWARE export JSON: governed agents (with tier / identity / parent) and optional policy/guardrail violations." },
+    { "name": "limit", "type": "int", "default": 1000, "min": 1, "max": 10000, "help": "Maximum agents to import" }
+  ]
+}

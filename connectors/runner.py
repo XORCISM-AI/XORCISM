@@ -364,6 +364,53 @@ def import_ai_guardrail(result: Dict[str, Any]) -> Dict[str, int]:
         con.close()
 
 
+def import_aware_agents(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import AWARE (GoodCISO/aware) governed AI agents into XAGENT.AIAGENT — each carries an AWARE
+    constraint tier (T0..T4), a cryptographic identity fingerprint, and a parent agent (hierarchy), so
+    they appear in the /aware governance cockpit and the AI Guardrails posture. Idempotent by name."""
+    import datetime
+    agents = result.get("aware_agents") or []
+    if not agents:
+        return {}
+    host = str(result.get("host") or "aware")
+    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    con = sqlite3.connect(os.path.join(_db_dir(), "XAGENT.db"), timeout=15)
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='AIAGENT'")
+        if not cur.fetchone():
+            return {}
+        have = {r[1] for r in cur.execute('PRAGMA table_info("AIAGENT")').fetchall()}
+        for c, t in (("constraint_tier", "TEXT"), ("identity_fingerprint", "TEXT"), ("parent_agent", "TEXT"),
+                     ("revoked", "INTEGER DEFAULT 0"), ("revoked_reason", "TEXT"), ("governance_source", "TEXT")):
+            if c not in have:
+                try: cur.execute('ALTER TABLE AIAGENT ADD COLUMN %s %s' % (c, t))
+                except sqlite3.OperationalError: pass
+        n = 0
+        for a in agents:
+            name = str(a.get("name") or a.get("agent_id") or "").strip()
+            if not name:
+                continue
+            cur.execute("DELETE FROM AIAGENT WHERE agent='aware-connector' AND name=?", (name,))
+            score = int(a.get("score") or 50)
+            cur.execute(
+                "INSERT INTO AIAGENT(agent,host,name,framework,model,autonomous,uses_tools,score,coverage,gaps,created_at,"
+                "constraint_tier,identity_fingerprint,parent_agent,revoked,revoked_reason,governance_source) "
+                "VALUES ('aware-connector',?,?,?,?,?,?,?,?,'',?,?,?,?,?,?,'aware')",
+                (host, name, str(a.get("framework") or ""), str(a.get("model") or ""),
+                 1 if a.get("autonomous") else 0, 1 if a.get("uses_tools") else 0, score, 80 if score >= 70 else 40, now,
+                 (str(a.get("tier")) if a.get("tier") else None), (str(a.get("fingerprint")) if a.get("fingerprint") else None),
+                 (str(a.get("parent")) if a.get("parent") else None), 1 if a.get("revoked") else 0,
+                 str(a.get("revoked_reason") or "") or None))
+            n += 1
+        con.commit()
+        return {"aware_agents": n}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
 # ── Import into XORCISM (mappings) ────────────────────────────────────────────────
 def import_ai_systems(result: Dict[str, Any]) -> Dict[str, int]:
     """Import agentlessly-discovered AI/LLM services into XORCISM.AISYSTEM (the AI-SPM inventory).
@@ -474,6 +521,8 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_emulation(result))
     if result.get("guardrail_violations"):
         counts.update(import_ai_guardrail(result))
+    if result.get("aware_agents"):
+        counts.update(import_aware_agents(result))
     if result.get("aisystems"):
         counts.update(import_ai_systems(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):

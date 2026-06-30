@@ -1,0 +1,12 @@
+{
+  "agents": [
+    {"name": "orchestrator-prime", "framework": "crewai", "model": "gpt-4o", "tier": 4, "autonomous": true, "fingerprint": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "score": 78},
+    {"name": "retrieval-worker", "framework": "langchain", "tier": "T2", "parent": "orchestrator-prime", "uses_tools": true, "score": 64},
+    {"name": "payments-agent", "framework": "autogen", "tier": "policy", "parent": "orchestrator-prime", "autonomous": true, "score": 41},
+    {"name": "shadow-agent", "framework": "openai", "autonomous": true, "score": 28}
+  ],
+  "violations": [
+    {"agent": "payments-agent", "rule": "tool-allowlist breach", "action": "blocked", "severity": "high", "technique": "LLM06", "detail": "attempted call to un-allowlisted wire-transfer tool"},
+    {"agent": "shadow-agent", "rule": "rate-limit exceeded", "action": "flagged", "severity": "medium", "detail": "1200 calls in 60s"}
+  ]
+}

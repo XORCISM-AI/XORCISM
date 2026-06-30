@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AWARE AI-Agent Governance</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .aw-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .aw-wrap h1{font-size:20px;margin:0 0 2px}
+  .aw-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
+  .muted{color:#64748b}
+  .aw-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .aw-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .aw-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .aw-card .val{font-size:24px;font-weight:700;margin-top:3px}.aw-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .aw-sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  select.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:11px;padding:3px 6px;font-family:inherit}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .tier{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .tier.T0{background:#1e2a44;color:#93c5fd}.tier.T1{background:#14233a;color:#7dd3fc}.tier.T2{background:#13261c;color:#86efac}.tier.T3{background:#2a2440;color:#c4b5fd}.tier.T4{background:#3a2e14;color:#fcd34d}.tier.none{background:#3a1620;color:#fca5a5}
+  .fp{font-family:ui-monospace,monospace;font-size:10px;color:#64748b}
+  .chip{font-size:9px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;margin-right:3px;white-space:nowrap}
+  .chip.off{background:#2a1620;color:#fca5a5}
+  .ladder{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .lstep{flex:1;min-width:150px;background:#0f1117;border:1px solid #2d3250;border-radius:9px;padding:9px 11px}
+  .lstep .h{font-weight:700;font-size:13px}.lstep .n{font-size:22px;font-weight:700;float:right}.lstep .e{font-size:11px;color:#94a3b8;margin:3px 0 5px}
+  .revoked{color:#f87171;font-weight:700}
+  .tree{font-size:12px;line-height:1.7}.tree .root{color:#e2e8f0;font-weight:700}.tree .kid{color:#cbd5e1;padding-left:20px}.tree .kid:before{content:"\21B3 ";color:#3a4170}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/ai-guardrails">&#128737;&#65039; AI Guardrails</a>
+  <a href="/agent-firewall">&#128272; Agent Firewall</a>
+  <a href="/identities">&#128100; Identities</a>
+  <span class="spacer"></span>
+  <span class="title">&#129518; AWARE — AI-Agent Governance</span>
+</div>
+
+<div class="aw-wrap">
+  <h1>AWARE — Autonomous AI-Agent Governance</h1>
+  <div class="aw-sub">Integration of <b>AWARE</b> (GoodCISO/aware, Apache-2.0) — autonomous-compliance infrastructure for AI agents — over XORCISM's discovered AI agents. Each agent is governed at a <b>constraint-enforcement tier</b> (T0 audit-only → T4 autonomous-under-constraints), carries a <b>cryptographic non-human identity</b> that can't be spoofed, and sits in a parent→child hierarchy with a <b>revocation cascade</b> (a kill-switch — revoking a parent automatically disables every child). Each tier maps to <b>CSA AICM · NIST AI RMF · ISO 27001 · DORA · OWASP-LLM</b>. Enforcement of the T2/T3 policy constraints runs in the Agent Policy Firewall; AWARE here is the governance posture &amp; cascade authority.</div>
+  <div id="aw-body"><div class="muted" style="padding:24px;text-align:center">Loading agent governance…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/aware.js"></script>
+</body>
+</html>

@@ -16,6 +16,7 @@
  * Tables (XAGENT): AIAGENT, AIGUARDRAILRESULT, AIGUARDRAILVIOLATION. Privacy: AI traces are analysed
  * by the LOCAL Ollama; only verdicts are stored, never the raw prompts.
  */
+import { createHash } from "crypto";
 import { getAgentDb, addAgentEvent, listAgents } from "./agents";
 import { ollamaChat } from "./ai";
 import { saveHunt } from "./hunting";
@@ -114,6 +115,11 @@ export function ensureAiGuardTables(): void {
     CREATE INDEX IF NOT EXISTS ix_aigrresult_agent ON AIGUARDRAILRESULT(ai_agent_id);
     CREATE INDEX IF NOT EXISTS ix_aigrviol_agent ON AIGUARDRAILVIOLATION(agent, ViolationID);
   `);
+  // AWARE (GoodCISO/aware) autonomous AI-agent governance columns on AIAGENT — idempotent ALTERs.
+  const have = new Set((db.prepare(`PRAGMA table_info("AIAGENT")`).all() as { name: string }[]).map((c) => c.name));
+  for (const [c, t] of [["constraint_tier", "TEXT"], ["identity_fingerprint", "TEXT"], ["parent_agent", "TEXT"], ["revoked", "INTEGER DEFAULT 0"], ["revoked_reason", "TEXT"], ["governance_source", "TEXT"]] as [string, string][]) {
+    if (!have.has(c)) { try { db.prepare(`ALTER TABLE AIAGENT ADD COLUMN ${c} ${t}`).run(); } catch { /* best-effort */ } }
+  }
 }
 
 export interface AiAgentSignal {
@@ -336,4 +342,124 @@ export function aiGuardrailsCockpit(): AiGuardrailsCockpit {
       gateways,
     },
   };
+}
+
+// ── AWARE (GoodCISO/aware) — autonomous AI-agent governance on AIAGENT ─────────
+// Integrates the AWARE model: constraint-enforcement tiers T0–T4, a cryptographic agent identity, a
+// parent→child hierarchy with REVOCATION CASCADE (kill-switch), each tier mapped to AICM / NIST AI RMF /
+// ISO 27001 / DORA / OWASP-LLM. Enforcement of T2/T3 lives in the Agent Policy Firewall (agentfw.ts);
+// AWARE here is the governance posture + cascade authority over the discovered AI agents.
+export const AWARE_TIERS = [
+  { id: "T0", name: "Audit-only", enforces: "Audit trail of every action and decision", frameworks: { aicm: "AI Operations", airmf: "Measure", iso27001: "A.8.15 Logging", dora: "ICT Incident logging", llm: "LLM08 Excessive Agency (visibility)" } },
+  { id: "T1", name: "Cryptographic identity", enforces: "A non-human identity that cannot be spoofed", frameworks: { aicm: "AI Identity", airmf: "Map", iso27001: "A.5.16 Identity management", dora: "Internal Controls", llm: "LLM03 Supply chain (provenance)" } },
+  { id: "T2", name: "Guardrailed operations", enforces: "Policy constraints on operations (input/output/tool allow-list)", frameworks: { aicm: "AI Operations", airmf: "Manage", iso27001: "A.8 Operations security", dora: "Internal Controls", llm: "LLM01 Prompt injection / LLM02 Output handling" } },
+  { id: "T3", name: "Policy-driven governance", enforces: "Rate limits, decision routing and kill switch", frameworks: { aicm: "AI Operations", airmf: "Govern", iso27001: "A.5 Access control", dora: "Threat Intelligence", llm: "LLM04 Model DoS / LLM08 Excessive Agency" } },
+  { id: "T4", name: "Autonomous self-operation", enforces: "Self-operates under declared constraints (continuous, revocable)", frameworks: { aicm: "AI Maintenance", airmf: "Govern + Manage", iso27001: "Incident management", dora: "ICT Incidents", llm: "LLM10 Model theft (containment)" } },
+] as const;
+const TIER_RANK: Record<string, number> = { T0: 0, T1: 1, T2: 2, T3: 3, T4: 4 };
+const AWARE_FW: Record<string, string> = { aicm: "CSA AI Controls Matrix", airmf: "NIST AI RMF", iso27001: "ISO/IEC 27001:2022", dora: "DORA", llm: "OWASP Top 10 for LLM" };
+
+/** Stable cryptographic fingerprint for an AI agent's non-human identity (T1+). */
+function agentFingerprint(name: string, framework: string, endpoint: string): string {
+  return createHash("sha256").update(`aware|${name}|${framework}|${endpoint || ""}`).digest("hex").slice(0, 32);
+}
+
+/** Latest AIAGENT row per logical agent name (the governance subject). */
+function latestAgents(): Record<string, any>[] {
+  const db = getAgentDb();
+  return db.prepare(`SELECT a.* FROM AIAGENT a JOIN (SELECT name, MAX(AiAgentID) mx FROM AIAGENT WHERE name IS NOT NULL AND name<>'' GROUP BY name) g ON a.AiAgentID=g.mx`).all() as Record<string, any>[];
+}
+
+/** Assign AWARE governance (tier, identity, parent) to an agent (by name). Auto-mints a fingerprint at T1+. */
+export function setAgentGovernance(name: string, p: { tier?: string; parentAgent?: string; fingerprint?: string; source?: string }): { ok: boolean; fingerprint?: string; error?: string } {
+  ensureAiGuardTables();
+  const db = getAgentDb();
+  const rows = db.prepare("SELECT AiAgentID, framework, endpoint, identity_fingerprint FROM AIAGENT WHERE name=?").all(name) as any[];
+  if (!rows.length) return { ok: false, error: "agent not found" };
+  const tier = p.tier && TIER_RANK[p.tier] != null ? p.tier : undefined;
+  let fp = p.fingerprint || rows[0].identity_fingerprint || undefined;
+  if (!fp && tier && TIER_RANK[tier] >= 1) fp = agentFingerprint(name, String(rows[0].framework || ""), String(rows[0].endpoint || ""));
+  const sets: string[] = [], vals: any[] = [];
+  if (tier) { sets.push("constraint_tier=?"); vals.push(tier); }
+  if (fp) { sets.push("identity_fingerprint=?"); vals.push(fp); }
+  if (p.parentAgent !== undefined) { sets.push("parent_agent=?"); vals.push(p.parentAgent || null); }
+  sets.push("governance_source=?"); vals.push(p.source || "aware");
+  db.prepare(`UPDATE AIAGENT SET ${sets.join(", ")} WHERE name=?`).run(...vals, name);
+  try { addAgentEvent("aware", { type: "aware_govern", title: `${name} -> ${tier || "(no tier change)"}`, detail: p.parentAgent ? `parent=${p.parentAgent}` : undefined }); } catch { /* */ }
+  return { ok: true, fingerprint: fp };
+}
+
+/** AWARE revocation cascade: revoke an agent and ALL its descendants (kill-switch over the parent->child tree). */
+export function revokeAgentCascade(name: string, reason: string): { ok: boolean; revoked: number; agents: string[]; error?: string } {
+  ensureAiGuardTables();
+  const db = getAgentDb();
+  const all = latestAgents();
+  if (!all.some((a) => String(a.name) === name)) return { ok: false, revoked: 0, agents: [], error: "agent not found" };
+  const childrenOf = new Map<string, string[]>();
+  for (const a of all) { const par = String(a.parent_agent || ""); if (par) { const arr = childrenOf.get(par) || []; arr.push(String(a.name)); childrenOf.set(par, arr); } }
+  const targets: string[] = []; const seen = new Set<string>(); const stack = [name];
+  while (stack.length) { const n = stack.pop()!; if (seen.has(n)) continue; seen.add(n); targets.push(n); for (const c of childrenOf.get(n) || []) stack.push(c); }
+  const upd = db.prepare("UPDATE AIAGENT SET revoked=1, revoked_reason=? WHERE name=?");
+  const tx = db.transaction(() => { for (const n of targets) upd.run(`${reason || "revoked"} (cascade from ${name})`, n); });
+  tx();
+  try { addAgentEvent("aware", { type: "aware_revoke_cascade", severity: "high", title: `revoked ${targets.length} agent(s) from ${name}`, detail: targets.join(", ") }); } catch { /* */ }
+  return { ok: true, revoked: targets.length, agents: targets };
+}
+
+/** Reinstate (un-revoke) an agent. */
+export function reinstateAgent(name: string): { ok: boolean } {
+  ensureAiGuardTables();
+  getAgentDb().prepare("UPDATE AIAGENT SET revoked=0, revoked_reason=NULL WHERE name=?").run(name);
+  try { addAgentEvent("aware", { type: "aware_reinstate", title: `reinstated ${name}` }); } catch { /* */ }
+  return { ok: true };
+}
+
+/** AWARE governance posture over the discovered AI agents. */
+export function awareGovernance(): any {
+  ensureAiGuardTables();
+  const rows = latestAgents();
+  const agents = rows.map((a) => ({
+    id: Number(a.AiAgentID), name: String(a.name || ""), framework: String(a.framework || ""), host: String(a.host || ""),
+    tier: a.constraint_tier ? String(a.constraint_tier) : null, fingerprint: a.identity_fingerprint ? String(a.identity_fingerprint).slice(0, 16) : null,
+    parent: a.parent_agent ? String(a.parent_agent) : null, revoked: Number(a.revoked || 0) === 1, revokedReason: String(a.revoked_reason || ""),
+    autonomous: !!a.autonomous, score: Number(a.score || 0), source: String(a.governance_source || ""),
+  }));
+  const names = new Set(agents.map((a) => a.name));
+  const tierDist = AWARE_TIERS.map((t) => ({ tier: t.id, name: t.name, enforces: t.enforces, count: agents.filter((a) => a.tier === t.id).length, frameworks: t.frameworks }));
+  const ungoverned = agents.filter((a) => !a.tier);
+  const roots = agents.filter((a) => !a.parent || !names.has(a.parent));
+  const edges = agents.filter((a) => a.parent && names.has(a.parent)).map((a) => ({ parent: a.parent as string, child: a.name, childRevoked: a.revoked }));
+  const fwCovered = new Set<string>();
+  for (const a of agents) { if (!a.tier) continue; const t = AWARE_TIERS.find((x) => x.id === a.tier); if (t) for (const k of Object.keys(t.frameworks)) fwCovered.add(k); }
+  const frameworks = Object.entries(AWARE_FW).map(([k, name]) => ({ key: k, name, covered: fwCovered.has(k) }));
+  const summary = {
+    agents: agents.length, governed: agents.filter((a) => a.tier).length, ungoverned: ungoverned.length,
+    withIdentity: agents.filter((a) => a.fingerprint).length, revoked: agents.filter((a) => a.revoked).length,
+    autonomousGoverned: agents.filter((a) => a.autonomous && a.tier && TIER_RANK[a.tier] >= 3).length,
+    autonomousUngoverned: agents.filter((a) => a.autonomous && (!a.tier || TIER_RANK[a.tier] < 3)).length,
+    hierarchyRoots: roots.length, frameworksCovered: frameworks.filter((f) => f.covered).length,
+  };
+  return { tiers: AWARE_TIERS, tierDist, agents, ungoverned, roots, edges, frameworks, summary };
+}
+
+/** Demo: a parent->child agent fleet with mixed AWARE tiers (one ungoverned, populating the worklist). */
+export function seedAwareDemo(): { created: number } {
+  ensureAiGuardTables();
+  const db = getAgentDb();
+  if (db.prepare("SELECT 1 FROM AIAGENT WHERE agent='aware-demo' LIMIT 1").get()) return { created: 0 };
+  const ts = new Date().toISOString();
+  const ins = db.prepare(`INSERT INTO AIAGENT(agent,host,name,framework,model,autonomous,uses_tools,score,coverage,gaps,created_at,governance_source) VALUES ('aware-demo','agent-host',?,?,?,?,?,?,?,'',?,'aware')`);
+  const fleet: [string, string, string, number, number, number][] = [
+    ["orchestrator-prime", "crewai", "gpt-4o", 1, 1, 78],
+    ["retrieval-worker", "langchain", "qwen2.5:7b", 0, 1, 64],
+    ["payments-agent", "autogen", "claude-3.5", 1, 1, 41],
+    ["log-summariser", "llamaindex", "llama3.1:8b", 0, 0, 55],
+    ["shadow-agent", "openai", "gpt-4o-mini", 1, 1, 28],
+  ];
+  for (const [name, fw, model, auto, tools, score] of fleet) ins.run(name, fw, model, auto, tools, score, score >= 70 ? 80 : 40, ts);
+  setAgentGovernance("orchestrator-prime", { tier: "T4" });
+  setAgentGovernance("retrieval-worker", { tier: "T2", parentAgent: "orchestrator-prime" });
+  setAgentGovernance("payments-agent", { tier: "T3", parentAgent: "orchestrator-prime" });
+  setAgentGovernance("log-summariser", { tier: "T0", parentAgent: "orchestrator-prime" });
+  return { created: 1 };
 }
