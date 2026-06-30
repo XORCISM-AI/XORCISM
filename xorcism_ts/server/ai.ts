@@ -918,3 +918,27 @@ export async function tlptReport(eng: any): Promise<{ report: string; model: str
   }
   return { report: det, model: status.reachable ? "fallback" : "offline", offline: true };
 }
+
+/**
+ * Autonomous Exposure Remediation — generate a remediation runbook for one exposure/plan: ordered steps,
+ * a rollback, and the closed-loop verification check. Local model when reachable, deterministic offline
+ * fallback otherwise (so the runbook is always available). See server/remediation.ts (/exposure-remediation).
+ */
+export async function remediationRunbook(ex: { ref: string; action: string; severity?: string; priority?: number; assets?: number; publicFacing?: boolean; window?: string; reason?: string; steps?: { title: string }[] }): Promise<{ runbook: string; model: string; offline: boolean }> {
+  const steps = (ex.steps || []).map((s) => s.title).filter(Boolean);
+  const det = [
+    `### Remediation runbook — ${ex.ref}`,
+    `Action: **${ex.action}** · severity ${ex.severity || "—"} · priority ${ex.priority ?? "—"} · ${ex.assets ?? 0} asset(s)${ex.publicFacing ? " · internet-facing" : ""}${ex.window ? ` · window: ${ex.window}` : ""}.`,
+    ex.reason ? `\n**Why this action:** ${ex.reason}` : "",
+    steps.length ? `\n**Steps:**\n${steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}` : "",
+    `\n**Rollback:** revert to the snapshot/rollback point captured before the change if functionality regresses.`,
+    `\n**Verification (closed loop):** re-scan the affected asset(s); the plan auto-closes only when ${ex.ref} is no longer detected. If still present past the SLA, the plan reopens and escalates to the owner.`,
+  ].filter(Boolean).join("\n");
+
+  const status = await ollamaStatus();
+  if (status.reachable) {
+    const sys = "You are a senior remediation engineer. Write a concise, safe Markdown runbook to remediate the given exposure. Sections: ## Pre-checks, ## Remediation steps (numbered, specific to the action type), ## Rollback, ## Verification (how to confirm the exposure is gone). Prefer least-disruptive, reversible actions; for internet-facing + actively-exploited items, recommend containment/virtual-patch first. Under 320 words.";
+    try { const runbook = await ollamaChat([{ role: "system", content: sys }, { role: "user", content: det.slice(0, 8000) }], 0.2, 60000); if (runbook) return { runbook, model: OLLAMA_MODEL, offline: false }; } catch { /* fall back */ }
+  }
+  return { runbook: det, model: status.reachable ? "fallback" : "offline", offline: true };
+}

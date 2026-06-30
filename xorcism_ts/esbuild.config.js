@@ -56,6 +56,7 @@ const entryPoints = [
   "client/ts/tlpt.ts",
   "client/ts/agent-firewall.ts",
   "client/ts/sprs.ts",
+  "client/ts/exposure-remediation.ts",
   "client/ts/essential-eight.ts",
   "client/ts/adversary-opportunity.ts",
   "client/ts/insurance-readiness.ts",

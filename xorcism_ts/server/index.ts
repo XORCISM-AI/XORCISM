@@ -147,6 +147,8 @@ import traceRouter from "./routes/trace";
 import tlptRouter from "./routes/tlpt";
 import agentFwRouter from "./routes/agentfw";
 import sprsRouter from "./routes/sprs";
+import remediationRouter from "./routes/remediation";
+import { seedDemo as seedRemediationDemo } from "./remediation";
 import ess8Router from "./routes/ess8";
 import { ensureEss8Tables, seedEss8Demo } from "./ess8";
 import threatDebtRouter from "./routes/threatdebt";
@@ -198,7 +200,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions, seedFeaturePageGrants, ensureAuditChain } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, startReplicaSync, dbDriver } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, startReplicaSync, dbDriver } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -408,6 +410,7 @@ app.use("/api", traceRouter); // TRACE (Oak Security): structured, evidence-driv
 app.use("/api", tlptRouter); // TLPT / TIBER-EU: threat-led penetration testing engagements (DORA advanced testing)
 app.use("/api", agentFwRouter); // Agent Policy Firewall: pre-execution governance gate for agent/automation actions
 app.use("/api", sprsRouter); // SPRS / NIST 800-171 self-assessment score (DoD DFARS / CMMC L2)
+app.use("/api", remediationRouter); // Autonomous Exposure Remediation (AER): CTEM Mobilization closed loop
 app.use("/api", ess8Router); // Essential Eight: ASD maturity-model assessment (backed by the ACSC ISM import)
 app.use("/api", threatDebtRouter); // Adversary Opportunity Index (AOI): path-organized "threat debt" top-line + STOCK/FLOW
 app.use("/api", insuranceRouter); // Cyber Insurance Readiness: insurer control checklist mapped to live signals
@@ -801,6 +804,9 @@ app.get("/agent-firewall", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/sprs", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "sprs.html"));
 });
+app.get("/exposure-remediation", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "exposure-remediation.html"));
+});
 app.get("/essential-eight", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "essential-eight.html"));
 });
@@ -989,6 +995,8 @@ ensureCsfMaturityTables(); // NIST CSF 2.0 maturity self-assessment: CSFSUBCATEG
 ensureTlptTables(); // TLPT / TIBER-EU threat-led penetration testing engagements (XCOMPLIANCE)
 ensureAgentFwTables(); // Agent Policy Firewall: agent-action governance ledger + policies (XORCISM)
 ensureSprsTables(); // SPRS / NIST 800-171 self-assessment status (XCOMPLIANCE)
+ensureRemediationTables(); // Autonomous Exposure Remediation: REMEDIATIONPLAN + REMEDIATIONEVENT closed-loop store (XVULNERABILITY)
+try { seedRemediationDemo(3); } catch { /* demo only */ } // AER demo (tenant 3): plans across the PLAN→GATE→EXECUTE→VERIFY→CLOSE lifecycle
 ensureCbomTables(); // CBOM cryptographic bill of materials: CRYPTOASSET inventory (quantum-safe classification, feeds PQCMM)
 ensureAiSbomTables(); // AI SBOM minimum elements (CISA/G7): AISBOMELEMENT catalogue + AISBOM/AISBOMCOVERAGE conformance
 ensureThreatDebtTables(); // Adversary Opportunity Index: THREATDEBTSNAPSHOT (AOI STOCK/FLOW history)

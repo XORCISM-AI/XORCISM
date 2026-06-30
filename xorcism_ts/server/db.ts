@@ -6750,6 +6750,34 @@ export function ensureAgentFwTables(): void {
 }
 
 /**
+ * Autonomous Exposure Remediation (XVULNERABILITY) — the CTEM "Mobilization" closed loop. REMEDIATIONPLAN
+ * is the lifecycle entity for remediating one prioritized exposure (action type, severity, SLA/due date,
+ * owner, autonomy level, status PLAN→GATE→EXECUTE→VERIFY→CLOSE, the Agent-Policy-Firewall action it was
+ * gated by, the execution ref, and a tamper-evident SHA-256 receipt chain). REMEDIATIONEVENT is the
+ * per-plan lifecycle/audit trail. Exposures come from the fusion score; the loop reuses the Agent Policy
+ * Firewall (gate) + ITSM/IAM/Teams actuators (execute) + the live ASSETVULNERABILITY state (verify).
+ * See server/remediation.ts, surfaced at /exposure-remediation.
+ */
+export function ensureRemediationTables(): void {
+  try {
+    getDb("XVULNERABILITY").exec(`
+      CREATE TABLE IF NOT EXISTS REMEDIATIONPLAN (
+        PlanID INTEGER PRIMARY KEY, PlanGUID TEXT, Title TEXT, ExposureRef TEXT, VulnerabilityID INTEGER, CveId TEXT,
+        ActionType TEXT, Severity TEXT, Priority INTEGER, Score INTEGER, AssetCount INTEGER, AssetIds TEXT,
+        PublicFacing INTEGER DEFAULT 0, Window TEXT, Autonomy TEXT DEFAULT 'supervised', Status TEXT DEFAULT 'proposed',
+        OwnerPersonID INTEGER, SlaHours INTEGER, DueDate TEXT, FirewallActionID INTEGER, ExecutionMode TEXT,
+        ExecutionRef TEXT, ReceiptHash TEXT, PrevHash TEXT, PlanJson TEXT, Source TEXT, ReopenCount INTEGER DEFAULT 0,
+        CreatedDate TEXT, ApprovedDate TEXT, ExecutedDate TEXT, VerifiedDate TEXT, ClosedDate TEXT, TenantID INTEGER);
+      CREATE TABLE IF NOT EXISTS REMEDIATIONEVENT (
+        EventID INTEGER PRIMARY KEY, PlanID INTEGER, At TEXT, Event TEXT, Actor TEXT, Detail TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_remplan_tenant ON REMEDIATIONPLAN(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_remplan_status ON REMEDIATIONPLAN(Status);
+      CREATE INDEX IF NOT EXISTS ix_remplan_vuln ON REMEDIATIONPLAN(VulnerabilityID);
+      CREATE INDEX IF NOT EXISTS ix_remevent_plan ON REMEDIATIONEVENT(PlanID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
  * SPRS / NIST 800-171 self-assessment (XCOMPLIANCE) — per-requirement implementation status for the 110
  * NIST SP 800-171 Rev 2 requirements, used to compute the DoD SPRS score (110 down to the methodology
  * floor). The 110-requirement catalogue + weights live in code (data/sprs800171.ts); only the per-tenant

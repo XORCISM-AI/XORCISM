@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Autonomous Exposure Remediation</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ar-wrap{max-width:1340px;margin:0 auto;padding:18px}
+  .ar-wrap h1{font-size:20px;margin:0 0 2px}
+  .ar-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1080px}
+  .muted{color:#64748b}
+  .ar-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ar-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .ar-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ar-card .val{font-size:24px;font-weight:700;margin-top:3px}.ar-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ar-sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}.btn:disabled{opacity:.5}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.warn{background:#3a2e14;color:#fcd34d}.btn.warn:hover{background:#54421d}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  input.in,select.in,textarea.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2a44;color:#93c5fd;white-space:nowrap}
+  .tag.act{background:#14233a;color:#7dd3fc}.tag.auto{background:#13261c;color:#86efac}.tag.crit{background:#3a1620;color:#fca5a5}
+  .sev-critical{color:#f87171;font-weight:700}.sev-high{color:#fb923c;font-weight:700}.sev-medium{color:#fbbf24}.sev-low{color:#94a3b8}
+  .st{font-weight:700}.st-proposed{color:#60a5fa}.st-awaiting-approval{color:#fbbf24}.st-awaiting-verification{color:#22d3ee}
+  .st-verified,.st-closed{color:#22c55e}.st-reopened,.st-blocked{color:#f87171}.st-risk-accepted{color:#a78bfa}.st-queued{color:#60a5fa}
+  .prio{display:inline-block;min-width:78px}.priobar{display:inline-block;height:8px;border-radius:4px;background:#1e2133;width:56px;overflow:hidden;vertical-align:middle;margin-left:4px}.priobar>i{display:block;height:100%}
+  .ovd{font-size:10px;border-radius:5px;padding:1px 6px;background:#3a1620;color:#fca5a5;margin-left:4px}
+  .loop{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:14px}
+  .loop .stp{flex:1;min-width:120px;background:#0f1117;border:1px solid #2d3250;border-radius:9px;padding:9px 12px;position:relative}
+  .loop .stp .n{font-size:22px;font-weight:700}.loop .stp .t{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .loop .stp .arr{position:absolute;right:-13px;top:50%;transform:translateY(-50%);color:#3a4170;font-size:16px;z-index:1}
+  .frm{background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:11px;margin-bottom:10px}
+  .frm label{font-size:10px;color:#94a3b8;display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px}
+  .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+  .chain-ok{color:#6ee7b7}.chain-bad{color:#fca5a5}
+  .rb{margin-top:6px;border:1px solid #2d3250;border-radius:8px;padding:10px;font-size:12px;background:#0f1117;white-space:pre-wrap;line-height:1.5}
+  .tl{font-size:11px;color:#94a3b8;margin-top:4px}.tl b{color:#cbd5e1}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/exposure">&#127919; Exposure</a>
+  <a href="/ctem">&#128200; CTEM</a>
+  <a href="/croc">&#128260; CROC Loop</a>
+  <a href="/agent-firewall">&#128737;&#65039; Agent Firewall</a>
+  <span class="spacer"></span>
+  <span class="title">&#129302; Autonomous Exposure Remediation</span>
+</div>
+
+<div class="ar-wrap">
+  <h1>Autonomous Exposure Remediation</h1>
+  <div class="ar-sub">The CTEM <b>Mobilization</b> stage as a closed loop — where most exposure programs stall. XORCISM turns its <b>prioritized exposures</b> (fusion score: EPSS · KEV · exploit · CTI · blast radius · internet-facing) into owner-routed, SLA-bound <b>remediation plans</b>, runs each through an <b>autonomy ladder</b> gated by the <b>Agent Policy Firewall</b> (blast radius · policy · segregation-of-duties), <b>executes</b> via your ITSM / IAM / SOAR actuators (dry-run safe), then <b>verifies closure by re-checking the live exposure state</b> — reopening anything still present past SLA. Every autonomous/approved action is sealed in a tamper-evident signed-receipt chain. <b>Plan → Gate → Execute → Verify → Close.</b></div>
+  <div id="ar-body"><div class="muted" style="padding:24px;text-align:center">Loading the remediation loop…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/exposure-remediation.js"></script>
+</body>
+</html>
