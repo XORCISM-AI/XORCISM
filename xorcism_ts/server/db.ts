@@ -6878,6 +6878,41 @@ export function ensureRemediationTables(): void {
 }
 
 /**
+ * Unified Exposure Management (UEMP) — the canonical EXPOSURE spine. Every finding type across the
+ * platform (CVEs, cloud misconfigs, quantum-vulnerable crypto, AI scan + AI-agent exposure, identity
+ * SoD, audit/misconfig, attack-surface) normalizes into ONE row here, deduplicated by a stable
+ * Fingerprint, carried through one lifecycle (open→triaged→mobilizing→resolved→reopened→risk-accepted),
+ * with one generalized fused Score (0-100), a Validation state (theoretical vs proven-exploitable that
+ * re-weights the score), an owner + SLA, and first/last-seen for freshness. This is the "single
+ * prioritized queue + single score" layer that makes the platform unified rather than federated.
+ */
+export function ensureExposureTables(): void {
+  try {
+    getDb("XVULNERABILITY").exec(`
+      CREATE TABLE IF NOT EXISTS EXPOSURE (
+        ExposureID INTEGER PRIMARY KEY, Fingerprint TEXT UNIQUE, Type TEXT, Title TEXT, AssetRef TEXT,
+        AssetID INTEGER, Severity TEXT, Score INTEGER, BaseScore INTEGER, Exploitability TEXT,
+        Reachability TEXT, PublicFacing INTEGER DEFAULT 0, BusinessValue REAL, AssetCount INTEGER,
+        SourceModule TEXT, SourceRef TEXT, Validation TEXT DEFAULT 'unvalidated', Status TEXT DEFAULT 'open',
+        Owner TEXT, SlaHours INTEGER, DueDate TEXT, RiskAcceptNote TEXT, Factors TEXT,
+        FirstSeen TEXT, LastSeen TEXT, ResolvedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_exposure_type ON EXPOSURE(Type);
+      CREATE INDEX IF NOT EXISTS ix_exposure_status ON EXPOSURE(Status);
+      CREATE INDEX IF NOT EXISTS ix_exposure_sev ON EXPOSURE(Severity);
+      CREATE INDEX IF NOT EXISTS ix_exposure_tenant ON EXPOSURE(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_exposure_score ON EXPOSURE(Score);
+      CREATE TABLE IF NOT EXISTS EXPOSURESCORE (
+        ExposureScoreID INTEGER PRIMARY KEY, Day TEXT, Score INTEGER, Open INTEGER, Critical INTEGER,
+        ValidatedExploitable INTEGER, TenantID INTEGER, CreatedDate TEXT);
+      CREATE INDEX IF NOT EXISTS ix_exposurescore_day ON EXPOSURESCORE(Day);`);
+    // idempotent ALTERs (for envs where EXPOSURE pre-existed)
+    const xv = getDb("XVULNERABILITY");
+    const have = new Set((xv.prepare(`PRAGMA table_info("EXPOSURE")`).all() as { name: string }[]).map((c) => c.name));
+    if (!have.has("TicketRef")) { try { xv.exec("ALTER TABLE EXPOSURE ADD COLUMN TicketRef TEXT"); } catch { /* exists */ } }
+  } catch { /* best-effort */ }
+}
+
+/**
  * Threat-actor profiling + Diamond Model of Intrusion Analysis (Caltagirone/Pendergast/Betz).
  * Extends the legacy XTHREAT.THREATACTOR with intel-grade profile attributes (STIX threat-actor
  * vocabularies: types / sophistication / resource-level / motivations) and the four Diamond Model

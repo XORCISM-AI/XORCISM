@@ -51,6 +51,7 @@ import awareRouter from "./routes/aware";
 import threatActorRouter from "./routes/threatactor";
 import aveRouter from "./routes/ave";
 import matrixAgentRouter from "./routes/matrixagent";
+import uemRouter from "./routes/uem";
 import incidentsRouter from "./routes/incidents";
 import complianceRouter from "./routes/compliance";
 import otSecurityRouter from "./routes/otsecurity";
@@ -208,7 +209,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions, seedFeaturePageGrants, ensureAuditChain } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureAccessGovTables, ensureThreatActorProfile, ensureAveTables, startReplicaSync, dbDriver } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureAccessGovTables, ensureThreatActorProfile, ensureAveTables, ensureExposureTables, startReplicaSync, dbDriver } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -323,6 +324,7 @@ app.use("/api", awareRouter); // AWARE (GoodCISO/aware): autonomous AI-agent gov
 app.use("/api", threatActorRouter); // Threat-actor profiling + Diamond Model of Intrusion Analysis (Adversary/Capability/Infrastructure/Victim)
 app.use("/api", aveRouter); // AVE (bawbel/ave): Agentic Vulnerability Enumeration reference catalogue (AIVSS) — /ave
 app.use("/api", matrixAgentRouter); // Matrix Knowledge-Base Agent (ATLAS-agent-style local-AI Q&A over ATT&CK/ATLAS/A3M/SAIF/D3FEND/Mitigant)
+app.use("/api", uemRouter); // Unified Exposure Management (UEMP): one EXPOSURE queue across all finding types — dedup + generalized fusion + validation + lifecycle
 app.use("/api", feedbackRouter); // user feedback (ratings / improvements)
 app.use("/api", prefsRouter); // user preferences (CTI feeds, display…)
 app.use("/api", notificationsRouter); // notifications (header bell + browser)
@@ -723,6 +725,9 @@ app.get("/ave", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/matrix-agent", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "matrix-agent.html"));
 });
+app.get("/exposure-management", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "exposure-management.html"));
+});
 app.get("/voc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "voc.html"));
 });
@@ -1030,6 +1035,7 @@ ensureSprsTables(); // SPRS / NIST 800-171 self-assessment status (XCOMPLIANCE)
 ensureRemediationTables(); // Autonomous Exposure Remediation: REMEDIATIONPLAN + REMEDIATIONEVENT closed-loop store (XVULNERABILITY)
 ensureThreatActorProfile(); // Threat-actor profiling + Diamond Model: extends XTHREAT.THREATACTOR + THREATACTORINFRA
 try { seedThreatActorDemo(3); } catch { /* demo only */ } // demo profiled actor (Diamond Model) for tenant 3
+ensureExposureTables(); // Unified Exposure Management (UEMP): the canonical EXPOSURE queue spine (XVULNERABILITY)
 ensureAveTables(); // AVE (bawbel/ave): Agentic Vulnerability Enumeration reference catalogue (XVULNERABILITY.AVERECORD)
 try { seedAve(); } catch { /* sample only */ } // load the bundled AVE sample catalogue if empty
 try { seedRemediationDemo(3); } catch { /* demo only */ } // AER demo (tenant 3): plans across the PLAN→GATE→EXECUTE→VERIFY→CLOSE lifecycle

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Unified Exposure Management</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ue-wrap{max-width:1400px;margin:0 auto;padding:18px}
+  .ue-wrap h1{font-size:20px;margin:0 0 2px}
+  .ue-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1100px}
+  .muted{color:#64748b}
+  .ue-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ue-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .ue-card.score{background:linear-gradient(135deg,#1a1330,#13162a);min-width:150px}
+  .ue-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ue-card .val{font-size:26px;font-weight:700;margin-top:3px}.ue-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  input.in,select.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  table.tt{width:100%;border-collapse:collapse;font-size:12px}
+  table.tt th,table.tt td{text-align:left;padding:5px 8px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.tt th{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  table.tt tr:hover{background:#161a2e}
+  .sev{display:inline-block;font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px}
+  .sev.CRITICAL{background:#3a1620;color:#fca5a5}.sev.HIGH{background:#3a2414;color:#fcd34d}.sev.MEDIUM{background:#13261c;color:#86efac}.sev.LOW{background:#1e2a44;color:#93c5fd}
+  .tchip{font-size:9px;border-radius:5px;padding:1px 6px;white-space:nowrap}
+  .tchip.cve{background:#2a1620;color:#fca5a5}.tchip.cloud{background:#13243a;color:#7dd3fc}.tchip.crypto{background:#102a1e;color:#86efac}
+  .tchip.ai-scan{background:#2a1d3a;color:#c4b5fd}.tchip.ai-agent{background:#2a1d3a;color:#d8b4fe}.tchip.identity{background:#2a2440;color:#c4b5fd}
+  .tchip.data{background:#13243a;color:#38bdf8}.tchip.misconfig{background:#2a2414;color:#fcd34d}
+  .scoredot{font-weight:700;font-size:14px}
+  .val-pill{font-size:9px;border-radius:9px;padding:1px 7px}
+  .val-pill.exploit{background:#3a1620;color:#fca5a5}.val-pill.safe{background:#13261c;color:#86efac}.val-pill.un{background:#1e2133;color:#64748b}
+  .cov{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .covchip{font-size:11px;border-radius:7px;padding:3px 9px;background:#0f1322;border:1px solid #232842}
+  .covchip.on{border-color:#22c55e;color:#cbd5e1}.covchip.off{opacity:.4}
+  .status-sel{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:5px;font-size:10px;padding:2px 4px}
+  a.src{color:#7dd3fc;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/exposure">&#128293; Fusion score</a>
+  <a href="/ctem">&#127919; CTEM</a>
+  <a href="/exposure-remediation">&#9851;&#65039; Remediation</a>
+  <span class="spacer"></span>
+  <span class="title">&#128302; Unified Exposure Management</span>
+</div>
+
+<div class="ue-wrap">
+  <h1 data-i18n="uem.title">Unified Exposure Management</h1>
+  <div class="ue-sub" data-i18n="uem.sub">One prioritized, ownable queue across <b>every</b> exposure type XORCISM sees — CVEs, cloud misconfigurations, quantum-vulnerable crypto, AI component &amp; AI-agent exposure, identity SoD and audit gaps — deduplicated, scored by one generalized fusion model, validation-weighted (proven-exploitable ranks higher), and tracked through one lifecycle with SLAs. Click <b>Sync</b> to (re)build the queue from all sources.</div>
+  <div id="ue-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/exposure-management.js"></script>
+</body>
+</html>
