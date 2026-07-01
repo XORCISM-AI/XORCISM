@@ -1,0 +1,16 @@
+{
+  "id": "raccoon",
+  "name": "Raccoon",
+  "type": "import",
+  "category": "Recon",
+  "description": "Imports reconnaissance results from Raccoon, the offensive reconnaissance & information-gathering framework (https://github.com/evyatarmeged/Raccoon): DNS/subdomain enumeration, host (nmap) port scan, DNS records, TLS data, web-application fingerprint and URL/dir fuzzing. Each discovered host/subdomain becomes an ASSET (hostname + resolved IP) and each open port a service on the target — recon output is attack surface, so it maps to ASSET/services (not the threat-intel exchange). Offline mode: point `dir` at a Raccoon results folder (raccoon_scan_results/<target>/) or `file` at a single subdomains list. Live mode: if `target` is set and the `raccoon` binary is on the worker PATH, runs Raccoon and parses its output. No DB access in run.py (worker-safe). Run live only within an authorised engagement scope; Raccoon actively scans ports and fuzzes URLs.",
+  "intrusive": true,
+  "permission": "connector:raccoon",
+  "run": "run.py",
+  "mapping": "raccoon",
+  "parameters": [
+    { "name": "dir", "type": "string", "required": false, "help": "Path on the worker to a Raccoon results directory (e.g. raccoon_scan_results/example.com/). Parses subdomains, DNS records, host/port scan, TLS, web scan and URL fuzz files found under it." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: a single Raccoon subdomains file (one hostname per line) to import." },
+    { "name": "target", "type": "target", "required": false, "pattern": "^[A-Za-z0-9._-]+$", "help": "Live mode: host or domain to scan with the local `raccoon` binary (raccoon --outdir <tmp> <target>). Only within an authorised scope." }
+  ]
+}

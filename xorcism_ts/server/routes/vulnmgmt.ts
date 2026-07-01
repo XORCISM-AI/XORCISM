@@ -6,6 +6,7 @@
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
 import { vulnInventory, trackVulnerability, setVulnDisposition, assetPickList } from "../vulnmgmt";
+import { vprInventory, recomputeVprEstimates, setVpr, vprThreatLevel } from "../vpr";
 import * as xid from "../xid";
 
 const router = Router();
@@ -60,6 +61,37 @@ router.post("/vulnerability-management/disposition", (req: Request, res: Respons
       resourceKey: String(vulnerabilityId), detail: `disposition=${disposition} affected=${out.affected}`, ip: clientIp(req) });
     res.json(out);
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// GET /api/vpr — Tenable VPR posture (counts by threat level, Tenable-vs-estimated, top-by-VPR)
+router.get("/vpr", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "read", "XVULNERABILITY", "VULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try { res.json(vprInventory(tenant)); } catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// POST /api/vpr/recompute { force? } — fill a VPR-style estimate for vulns without an imported Tenable VPR
+router.post("/vpr/recompute", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "update", "XVULNERABILITY", "VULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  const out = recomputeVprEstimates(tenant, !!(req.body || {}).force);
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "vpr_recompute", resourceType: "VULNERABILITY", resourceKey: "estimate", detail: `estimated ${out.updated}`, ip: clientIp(req) });
+  res.json({ ok: true, ...out });
+});
+
+// POST /api/vpr/:vid { score, drivers?, source? } — set a Tenable VPR (or manual override) on one vuln
+router.post("/vpr/:vid", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "update", "XVULNERABILITY", "VULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
+  const b = (req.body || {}) as Record<string, unknown>;
+  const score = Number(b.score);
+  if (!Number.isFinite(score) || score < 0 || score > 10) return void res.status(400).json({ error: "score 0-10 required" });
+  const out = setVpr(Number(req.params.vid), { score, drivers: b.drivers ? String(b.drivers) : undefined, source: b.source ? String(b.source) : "Tenable" });
+  if (!out.ok) return void res.status(404).json({ error: "vulnerability not found" });
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "vpr_set", resourceType: "VULNERABILITY", resourceKey: String(req.params.vid), detail: `vpr=${score} (${vprThreatLevel(score)})`, ip: clientIp(req) });
+  res.json({ ok: true, score, level: vprThreatLevel(score) });
 });
 
 export default router;

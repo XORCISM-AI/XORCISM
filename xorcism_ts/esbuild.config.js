@@ -41,6 +41,7 @@ const entryPoints = [
   "client/ts/incident-management.ts",
   "client/ts/compliance-management.ts",
   "client/ts/policy-management.ts",
+  "client/ts/gap-assessment.ts",
   "client/ts/configuration-management.ts",
   "client/ts/crisis-management.ts",
   "client/ts/crisis-exercise.ts",
@@ -147,6 +148,7 @@ const entryPoints = [
   "client/ts/osint-graph.ts",
   "client/ts/hunting.ts",
   "client/ts/questionnaire-assistant.ts",
+  "client/ts/detection-evidence.ts",
 ];
 
 const shared = {

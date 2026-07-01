@@ -1,0 +1,28 @@
+{
+  "workspace": "engagement-2026-q3",
+  "hosts": [
+    { "ip": "10.0.10.5", "hostnames": ["web01.corp.local"], "os": "Ubuntu 22.04",
+      "services": [ { "name": "http", "port": 80, "protocol": "tcp" }, { "name": "ssh", "port": 22, "protocol": "tcp" } ] },
+    { "ip": "10.0.10.9", "hostnames": ["db01.corp.local"], "os": "Windows Server 2019",
+      "services": [ { "name": "ms-sql", "port": 1433, "protocol": "tcp" } ] }
+  ],
+  "vulnerabilities": [
+    { "name": "Apache HTTP Server Path Traversal / RCE", "severity": "critical", "confirmed": true, "status": "open",
+      "target": "10.0.10.5", "service": "http/80", "type": "Vulnerability",
+      "desc": "Path traversal and RCE in Apache 2.4.49 (mod_cgi).",
+      "refs": [ { "name": "CVE-2021-41773", "type": "cve" }, { "name": "EDB-50383", "type": "exploit" } ],
+      "cvss3": { "base_score": 9.8, "vector_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" } },
+    { "name": "OpenSSH Username Enumeration", "severity": "medium", "confirmed": false, "status": "open",
+      "target": "10.0.10.5", "service": "ssh/22", "type": "Vulnerability",
+      "desc": "OpenSSH < 7.7 permits username enumeration via timing.",
+      "refs": [ { "name": "CVE-2018-15473", "type": "cve" } ], "cvss3": { "base_score": 5.3 } },
+    { "name": "SQL Injection in login form", "severity": "high", "confirmed": true, "status": "open",
+      "target": "10.0.10.9", "service": "ms-sql/1433", "type": "VulnerabilityWeb", "method": "POST", "path": "/login",
+      "desc": "Authenticated SQLi via the username field on /login.",
+      "refs": [ { "name": "CWE-89", "type": "cwe" } ], "cvss3": { "base_score": 8.6 } },
+    { "name": "Weak TLS cipher suites (SWEET32)", "severity": "low", "confirmed": true, "status": "closed",
+      "target": "10.0.10.5", "service": "http/80", "type": "Vulnerability",
+      "desc": "3DES cipher suites enabled.", "refs": [ { "name": "CVE-2016-2183", "type": "cve" } ],
+      "cvss3": { "base_score": 3.1 } }
+  ]
+}

@@ -258,6 +258,8 @@ const GRID_VALUE_LABELS: Record<string, Record<string, string>> = {
 const GRID_VALUE_COLORS: Record<string, Record<string, string>> = {
   "ASSETVULNERABILITY.Exploited": { Yes: "var(--danger)" },
   "ASSETVULNERABILITY.KEV": { Yes: "var(--danger)" },
+  // Tenable VPR (Vulnerability Priority Rating) threat level, colored on the VULNERABILITY grid.
+  "VULNERABILITY.VprThreatLevel": { Critical: "var(--danger)", High: "#f97316", Medium: "#eab308", Low: "var(--muted)" },
   // Business value heat scale (low → critical importance). Keyed by the DISPLAYED
   // label (the grid colors on the displayed value, which comes from GRID_VALUE_LABELS).
   "ASSET.BusinessValue": { "Very Low": "#22c55e", "Low": "#84cc16", "Medium": "#eab308", "High": "#f97316", "Very High": "#ef4444" },

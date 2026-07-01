@@ -67,7 +67,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
   // Cross-DB VULNERABILITY enrichment (chunked).
   type Vmeta = { cve: string; name: string; cvss: number | null; kev: boolean; epss: number | null;
     exploited: boolean; easilyExploitable: boolean; ssvc: string; published: string | null; desc: string;
-    euvd: string; euvdUrl: string };
+    euvd: string; euvdUrl: string; vpr: number | null; vprLevel: string; vprSource: string };
   const vuln = new Map<number, Vmeta>();
   const vids = [...new Set(links.map((l) => Number(l.VulnerabilityID)))];
   const vc = cols("XVULNERABILITY", "VULNERABILITY");
@@ -79,7 +79,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
       for (const r of xv.prepare(
         `SELECT VulnerabilityID, ${g("VULReferentialID")}, ${g("VULName")}, ${g("CVSSBaseScore")}, ${g("KEV")}, ${g("EPSS")},
                 ${g("Exploited")}, ${g("EasilyExploitable")}, ${g("SsvcDecision")}, ${g("VULPublishedDate")}, ${g("VULDescription")},
-                ${g("EUVDId")}, ${g("EUVDUrl")}
+                ${g("EUVDId")}, ${g("EUVDUrl")}, ${g("Vpr")}, ${g("VprThreatLevel")}, ${g("VprSource")}
          FROM VULNERABILITY WHERE VulnerabilityID IN (${ph})`
       ).all(...chunk) as Record<string, any>[]) {
         vuln.set(Number(r.VulnerabilityID), {
@@ -92,6 +92,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
           desc: String(r.VULDescription ?? "").trim().slice(0, 280),
           euvd: String(r.EUVDId ?? "").trim(),
           euvdUrl: String(r.EUVDUrl ?? "").trim() || (String(r.EUVDId ?? "").trim() ? `https://euvd.enisa.europa.eu/vulnerability/${String(r.EUVDId).trim()}` : ""),
+          vpr: num(r.Vpr), vprLevel: String(r.VprThreatLevel ?? "").trim(), vprSource: String(r.VprSource ?? "").trim(),
         });
       }
     }
@@ -132,6 +133,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
     let score = (kev ? 45 : 0)
       + (v?.exploited ? 18 : 0)
       + (v?.ssvc === "Act" ? 25 : v?.ssvc === "Attend" ? 10 : 0)
+      + (v?.vpr != null ? Math.round((v.vpr / 10) * 30) : 0)
       + (SEV_RANK[severity] != null ? (4 - SEV_RANK[severity]) * 8 : 0)
       + (v?.epss != null ? Math.round(v.epss * 25) : 0)
       + Math.min(open.length, 5) * 2
@@ -147,7 +149,9 @@ export function vulnInventory(tenant: number | null): VulnInventory {
       if (kev) { reason = "Known Exploited (CISA KEV)"; reasonSev = "Critical"; action = "Patch within KEV due date"; }
       else if (v?.ssvc === "Act") { reason = "SSVC decision: Act"; reasonSev = "Critical"; action = "Remediate immediately"; }
       else if (v?.exploited) { reason = "Active exploitation observed"; reasonSev = "High"; action = "Prioritise remediation"; }
+      else if (v?.vprLevel === "Critical") { reason = `Tenable VPR ${v.vpr} (Critical)`; reasonSev = "Critical"; action = "Remediate immediately"; }
       else if (severity === "Critical") { reason = `Critical severity (CVSS ${cvss})`; reasonSev = "High"; action = "Schedule patch (15-day SLA)"; }
+      else if (v?.vprLevel === "High") { reason = `Tenable VPR ${v.vpr} (High)`; reasonSev = "High"; action = "Prioritise remediation"; }
       else if (v?.epss != null && v.epss >= 0.5) { reason = `High exploit probability (EPSS ${Math.round(v.epss * 100)}%)`; reasonSev = "High"; action = "Prioritise remediation"; }
       else if (overdue) { reason = "Remediation overdue"; reasonSev = "High"; action = "Escalate to owner"; }
       else if (severity === "High") { reason = `High severity (CVSS ${cvss})`; reasonSev = "Medium"; action = "Schedule patch (30-day SLA)"; }
@@ -160,6 +164,7 @@ export function vulnInventory(tenant: number | null): VulnInventory {
       id: vid, cve: v?.cve ?? `VULN#${vid}`, name: v?.name ?? "", description: v?.desc ?? "",
       severity, cvss, kev, epss: v?.epss ?? null, exploited: v?.exploited ?? false, easilyExploitable: v?.easilyExploitable ?? false,
       ssvc: v?.ssvc ?? "", published: v?.published ?? null, euvd: v?.euvd ?? "", euvdUrl: v?.euvdUrl ?? "",
+      vpr: v?.vpr ?? null, vprLevel: v?.vprLevel ?? "", vprSource: v?.vprSource ?? "",
       affectedAssets: insts.length, openInstances: open.length, resolvedInstances: insts.length - open.length,
       assets: insts.slice(0, 8).map((i) => i.asset), maxCriticality: maxCrit,
       overdue, oldestAgeDays: oldestAge, hasOwner, falsePositive: insts.every((i) => i.falsePositive),

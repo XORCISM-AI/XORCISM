@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Detection Evidence &amp; Provenance</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .de-wrap{max-width:1200px;margin:0 auto;padding:18px}
+  .de-wrap h1{font-size:20px;margin:0 0 2px}
+  .de-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .muted{color:#64748b}
+  .btn{background:#22c55e;color:#06240f;border:none;border-radius:7px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer}.btn:hover{background:#4ade80}
+  .btn.sec{background:#2d3250;color:#cbd5e1}.btn.sec:hover{background:#3a4170}.btn.sm{padding:3px 9px;font-size:11px}
+  .btn.danger{background:#3a1620;color:#fca5a5}.btn.danger:hover{background:#5a1f2e}
+  input.in,select.in,textarea.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;font-size:12px;padding:5px 8px;font-family:inherit;box-sizing:border-box}
+  textarea.in{min-height:70px;width:100%;resize:vertical;font-family:ui-monospace,monospace}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .de-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .de-card{flex:1;min-width:130px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 14px}
+  .de-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .de-card .val{font-size:24px;font-weight:700;margin-top:3px}.de-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  /* provenance meter */
+  .prov{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+  .pchip{font-size:11px;border-radius:8px;padding:5px 11px;border:1px solid #2d3250;background:#0f1322;display:flex;align-items:center;gap:6px}
+  .pchip.on{border-color:#22c55e;background:#0e2417;color:#86efac}.pchip.off{opacity:.5}
+  .pchip .dot{width:8px;height:8px;border-radius:50%;background:#334155}.pchip.on .dot{background:#22c55e}
+  .evgroup{margin-bottom:16px}
+  .evgroup h3{font-size:12px;color:#cbd5e1;text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px;border-bottom:1px solid #1e2133;padding-bottom:4px}
+  .ev{background:#13162a;border:1px solid #2d3250;border-radius:9px;padding:10px 12px;margin-bottom:8px}
+  .ev .h{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .ev .t{font-weight:700;font-size:13px}
+  .ev pre{background:#0b0e18;border:1px solid #1e2133;border-radius:6px;padding:8px;font-size:11px;overflow:auto;max-height:200px;margin:6px 0 0;white-space:pre-wrap}
+  .ev .m{font-size:10px;color:#64748b;margin-top:4px}
+  .etag{font-size:9px;font-weight:700;border-radius:5px;padding:1px 7px;text-transform:uppercase}
+  .etag.intel{background:#13243a;color:#7dd3fc}.etag.poc{background:#3a1620;color:#fca5a5}.etag.log{background:#2a2414;color:#fcd34d}.etag.pcap{background:#2a1d3a;color:#c4b5fd}.etag.prompt{background:#102a1e;color:#86efac}.etag.reference{background:#1e2a44;color:#93c5fd}.etag\.test-result,.etag.test-result{background:#13261c;color:#86efac}
+  .verdict{font-size:9px;border-radius:5px;padding:1px 6px}.verdict.matched{background:#13261c;color:#86efac}.verdict.not-matched{background:#3a1620;color:#fca5a5}.verdict.partial{background:#2a2414;color:#fcd34d}
+  a.dl{color:#7dd3fc;text-decoration:none;font-size:11px}
+  .addbox{background:#0f1322;border:1px solid #232842;border-radius:10px;padding:12px 14px;margin-bottom:14px}
+  .frm{display:grid;grid-template-columns:1fr 1fr;gap:10px}.frm .full{grid-column:1/3}
+  .frm label{font-size:11px;color:#94a3b8;display:block;margin-bottom:3px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/">&#8592; Explorer</a>
+  <a href="/purple-team">&#129522; Purple Team</a>
+  <a href="/threat-informed-defense">&#127919; Threat-Informed Defense</a>
+  <a href="/hunting">&#128270; Hunting</a>
+  <span class="spacer"></span>
+  <span class="title">&#128206; Detection Evidence &amp; Provenance</span>
+</div>
+
+<div class="de-wrap">
+  <h1 data-i18n="de.title">Detection Evidence &amp; Provenance</h1>
+  <div class="de-sub" data-i18n="de.sub">Attach the <b>proof behind a detection</b>: the intel it came from, the PoC code it detects, the logs or PCAP it was tested against, the AI prompt that generated it, and any reference that shows the rule does what it claims. A reviewer should be able to <b>trust</b> a Sigma/YARA rule, not just run it — the provenance meter shows how well-evidenced each detection is.</div>
+  <div class="bar">
+    <label class="muted" style="font-size:12px" data-i18n="de.pick">Detection:</label>
+    <select class="in" id="pick" style="min-width:340px"></select>
+  </div>
+  <div id="de-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/detection-evidence.js"></script>
+</body>
+</html>

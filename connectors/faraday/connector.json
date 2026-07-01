@@ -1,0 +1,16 @@
+{
+  "id": "faraday",
+  "name": "Faraday — vulnerability management import",
+  "type": "import",
+  "category": "Vulnerability Scanner",
+  "description": "Imports from Faraday (github.com/infobyte/faraday, by Faraday Security / Infobyte, GPL-3.0) — the open-source collaborative vulnerability manager. Faraday's strength is normalization: ~90 console/report plugins ingest Nessus, Nmap, Burp, OpenVAS, Qualys, Nuclei, ZAP and more into one Workspace → Host → Service → Vulnerability model (severity, CVE/refs, CVSS, status, confirmed flag), deduplicated across tools. This connector consumes that aggregated output — a Faraday workspace export (faraday-cli / the REST-GraphQL API's hosts + vulns) — and maps it into XORCISM: Hosts → ASSET, Vulnerabilities → XVULNERABILITY.VULNERABILITY (CVE ref + CVSS preserved) linked via ASSETVULNERABILITY, so Faraday-aggregated findings feed the exposure-fusion score, VPR, the Unified Exposure queue and the Enterprise Risk Score. Use Faraday as the multi-scanner pentest front-end, XORCISM as the exposure/risk brain. Worker-safe & read-only: parses an exported JSON only (no scanning). Open vulns are imported by default (set include_closed to import the rest).",
+  "intrusive": false,
+  "permission": "connector:faraday",
+  "run": "run.py",
+  "mapping": "faraday",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A Faraday workspace export JSON (faraday-cli 'vuln list'/'host list' or the REST/GraphQL API). Defaults to the bundled sample." },
+    { "name": "workspace", "type": "string", "required": false, "help": "Workspace label to stamp on imported findings (defaults to the workspace in the export)." },
+    { "name": "include_closed", "type": "bool", "default": false, "help": "Also import vulnerabilities whose Faraday status is closed / risk-accepted (default: open + re-opened only)." }
+  ]
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Gap Assessment</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ga-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .ga-wrap h1{font-size:20px;margin:0 0 2px}
+  .ga-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1000px}
+  .ga-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+  .ga-controls label{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+  .ga-controls select,.ga-controls input{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:6px 9px;font-size:13px}
+  .ga-controls select{min-width:280px}
+  .btn{background:#4f46e5;border:1px solid #6366f1;color:#fff;border-radius:6px;font-size:13px;padding:7px 14px;cursor:pointer;font-weight:600}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;font-weight:500}
+  .ga-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .ga-card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .ga-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .ga-card .val{font-size:26px;font-weight:700;margin-top:3px}
+  .ga-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ga-section{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .cbar{height:14px;border-radius:7px;background:#0f1117;border:1px solid #2d3250;overflow:hidden;display:flex;margin:6px 0 12px}
+  .cbar i{display:block;height:100%}
+  .cbar .c-cov{background:#34d399}.cbar .c-par{background:#fbbf24}.cbar .c-gap{background:#f87171}
+  table.ga{width:100%;border-collapse:collapse;font-size:13px}
+  table.ga th,table.ga td{text-align:left;padding:8px 10px;border-bottom:1px solid #1e2133;vertical-align:top}
+  table.ga th{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}
+  .st{font-size:11px;border-radius:5px;padding:2px 8px;white-space:nowrap;font-weight:600}
+  .st-covered{background:#14532d;color:#bbf7d0}.st-partial{background:#3b2f1e;color:#fcd34d}
+  .st-gap{background:#3f1d1d;color:#fca5a5}.st-unknown{background:#1e2133;color:#94a3b8}
+  .ref{font-family:ui-monospace,monospace;font-size:11px;color:#7c83fd}
+  .cname{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.small{font-size:12px;color:#94a3b8}
+  .ev{font-size:12px;color:#93c5fd}.rec{font-size:12px;color:#cbd5e1}
+  .pill{font-size:10px;font-weight:700;text-transform:uppercase;border:1px solid #2d3250;border-radius:4px;padding:1px 6px;color:#94a3b8;margin-left:6px}
+  .pill-ai{border-color:#4338ca;color:#a5b4fc}.pill-heur{border-color:#78350f;color:#fcd34d}
+  .filterbar{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+  .fb{font-size:12px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:3px 10px;color:#cbd5e1;cursor:pointer}
+  .fb.active{background:#1e2440;border-color:#6366f1;color:#e2e8f0}
+  #ga-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1e2440;border:1px solid #4f46e5;color:#e2e8f0;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+  #ga-toast.show{opacity:1}
+  .legend{font-size:11px;color:#64748b;margin-top:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/policy-management">&#128220; Policies &amp; Documents</a>
+  <a href="/compliance-management">&#9878;&#65039; Compliance</a>
+  <a href="/frameworks">&#128218; Frameworks</a>
+  <span class="spacer"></span>
+  <span class="title">&#129517; Gap Assessment</span>
+</div>
+
+<div class="ga-wrap">
+  <div>
+    <h1>Automated Gap Assessment</h1>
+    <div class="ga-sub">Assess how well your written governance — every <a href="/policy-management">policy and document</a> —
+      covers a selected <a href="/frameworks">framework or regulation</a>. A local AI reads each control against the
+      documents it retrieves and returns <b>covered / partial / gap</b> with a rationale, the cited document and a
+      remediation. No AI reachable? A deterministic keyword-overlap fallback still flags the obvious gaps. Nothing leaves
+      your infrastructure.</div>
+  </div>
+
+  <div class="ga-controls">
+    <span><label for="ga-fw">Framework / Regulation</label>
+      <select id="ga-fw"><option value="">Loading…</option></select></span>
+    <span><label for="ga-limit">Controls</label>
+      <input id="ga-limit" type="number" min="1" max="200" value="60" style="width:74px" title="Max controls to assess in this run"></span>
+    <button class="btn" id="ga-run">▶ Run assessment</button>
+    <span id="ga-status" class="small"></span>
+  </div>
+
+  <div id="ga-body"><div class="muted" style="padding:24px;text-align:center">Pick a framework and run an assessment, or view the latest result.</div></div>
+</div>
+<div id="ga-toast"></div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/gap-assessment.js"></script>
+</body>
+</html>

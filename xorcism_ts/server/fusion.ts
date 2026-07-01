@@ -10,12 +10,14 @@
  */
 import { getDb } from "./db";
 import { exploitsForCve } from "./exploitdb";
+import { vprThreatLevel } from "./vpr";
 
 export interface FusionScore {
   VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null;
   exploits: number; itw: boolean; assets: number; maxValue: number | null;
   publicFacing?: boolean; window?: "hours" | "days" | "weeks";
   score: number; priority: number; factors: string[];
+  vpr?: number | null; vprLevel?: string; // Tenable VPR (or XORCISM estimate) — surfaced alongside the fusion score
   assetIds?: number[]; // the AssetIDs this exposure sits on (for attack-path reachability)
 }
 
@@ -34,7 +36,7 @@ function colset(db: ReturnType<typeof getDb>, table: string): Set<string> {
 }
 
 /** Compute the fused score + breakdown from the raw signals. */
-function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null; exploits: number; itw: boolean; assets: number; maxValue: number | null; publicFacing?: boolean }): FusionScore {
+function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; kev: number; epss: number | null; exploits: number; itw: boolean; assets: number; maxValue: number | null; publicFacing?: boolean; vpr?: number | null }): FusionScore {
   const factors: string[] = [];
   let score = 0;
   if (v.epss != null && v.epss > 0) { const p = Math.round(v.epss * 40); score += p; factors.push(`EPSS ${(v.epss * 100).toFixed(1)}% (+${p})`); }
@@ -52,7 +54,8 @@ function fuse(v: { VulnerabilityID: number; ref: string; cvss: number | null; ke
   if (v.publicFacing) factors.push("internet-facing / reachable (+12)");
   const window = patchWindow(v);
   factors.push(window === "hours" ? "AI-era window: remediate within HOURS" : window === "days" ? "AI-era window: remediate within days" : "AI-era window: weeks");
-  return { ...v, publicFacing: !!v.publicFacing, window, score, priority, factors };
+  if (v.vpr != null) factors.push(`Tenable VPR ${v.vpr} (${vprThreatLevel(v.vpr)})`);
+  return { ...v, publicFacing: !!v.publicFacing, window, score, priority, factors, vpr: v.vpr ?? null, vprLevel: v.vpr != null ? vprThreatLevel(v.vpr) : "" };
 }
 
 function cveOf(ref: string): string | null { const m = (ref || "").match(CVE_RX); return m ? m[0].toUpperCase() : null; }
@@ -80,19 +83,20 @@ export function fusionForVuln(vid: number): FusionScore | null {
      FROM ASSETVULNERABILITY av JOIN ASSET a ON a.AssetID=av.AssetID
      WHERE av.VulnerabilityID=? AND COALESCE(av.FalsePositive,0)=0`
   ).get(vid) as { assets: number; maxValue: number | null; pub: number } | undefined;
-  let ref = `Vuln #${vid}`, cvss: number | null = null, kev = 0, epss: number | null = null;
+  let ref = `Vuln #${vid}`, cvss: number | null = null, kev = 0, epss: number | null = null, vpr: number | null = null;
   try {
     const xv = getDb("XVULNERABILITY");
+    const hasVpr = colset(xv, "VULNERABILITY").has("Vpr");
     const m = xv.prepare(
-      `SELECT COALESCE(NULLIF(VULReferential,''), NULLIF(VULName,''), 'Vuln #'||VulnerabilityID) ref, CVSSBaseScore cvss, KEV kev, EPSS epss
+      `SELECT COALESCE(NULLIF(VULReferential,''), NULLIF(VULName,''), 'Vuln #'||VulnerabilityID) ref, CVSSBaseScore cvss, KEV kev, EPSS epss${hasVpr ? ", Vpr vpr" : ""}
        FROM VULNERABILITY WHERE VulnerabilityID=?`
-    ).get(vid) as { ref: string; cvss: number | null; kev: unknown; epss: number | null } | undefined;
-    if (m) { ref = m.ref; cvss = m.cvss; kev = Number(m.kev) || 0; epss = m.epss; }
+    ).get(vid) as { ref: string; cvss: number | null; kev: unknown; epss: number | null; vpr?: number | null } | undefined;
+    if (m) { ref = m.ref; cvss = m.cvss; kev = Number(m.kev) || 0; epss = m.epss; vpr = m.vpr ?? null; }
   } catch { /* */ }
   const cve = cveOf(ref);
   const exploits = cve ? exploitsForCve(cve).length : 0;
   const itw = cve ? itwCves([cve]).has(cve) : false;
-  return fuse({ VulnerabilityID: vid, ref, cvss, kev, epss, exploits, itw, assets: agg?.assets || 0, maxValue: agg?.maxValue ?? null, publicFacing: Number(agg?.pub) > 0 });
+  return fuse({ VulnerabilityID: vid, ref, cvss, kev, epss, exploits, itw, assets: agg?.assets || 0, maxValue: agg?.maxValue ?? null, publicFacing: Number(agg?.pub) > 0, vpr });
 }
 
 /** Per-vuln exploitability (0–100, no blast radius) for a set of ids. Reused by the attack-path engine. */
@@ -145,18 +149,19 @@ export function topExposures(tenant: number | null, limit = 50): { results: Fusi
   ).all(...args) as { vid: number; assets: number; maxValue: number | null; pub: number; assetIds: string | null }[];
   if (!agg.length) return { results: [], scanned: 0 };
 
-  const meta = new Map<number, { ref: string; cvss: number | null; kev: number; epss: number | null }>();
+  const meta = new Map<number, { ref: string; cvss: number | null; kev: number; epss: number | null; vpr: number | null }>();
   try {
     const xv = getDb("XVULNERABILITY");
+    const hasVpr = colset(xv, "VULNERABILITY").has("Vpr");
     const ids = agg.map((r) => r.vid);
     for (let i = 0; i < ids.length; i += 800) {
       const chunk = ids.slice(i, i + 800);
       const ph = chunk.map(() => "?").join(",");
       for (const m of xv.prepare(
-        `SELECT VulnerabilityID id, COALESCE(NULLIF(VULReferential,''), NULLIF(VULName,''), 'Vuln #'||VulnerabilityID) ref, CVSSBaseScore cvss, KEV kev, EPSS epss
+        `SELECT VulnerabilityID id, COALESCE(NULLIF(VULReferential,''), NULLIF(VULName,''), 'Vuln #'||VulnerabilityID) ref, CVSSBaseScore cvss, KEV kev, EPSS epss${hasVpr ? ", Vpr vpr" : ""}
          FROM VULNERABILITY WHERE VulnerabilityID IN (${ph})`
-      ).all(...chunk) as { id: number; ref: string; cvss: number | null; kev: unknown; epss: number | null }[]) {
-        meta.set(m.id, { ref: m.ref, cvss: m.cvss, kev: Number(m.kev) || 0, epss: m.epss });
+      ).all(...chunk) as { id: number; ref: string; cvss: number | null; kev: unknown; epss: number | null; vpr?: number | null }[]) {
+        meta.set(m.id, { ref: m.ref, cvss: m.cvss, kev: Number(m.kev) || 0, epss: m.epss, vpr: m.vpr ?? null });
       }
     }
   } catch { /* XVULNERABILITY unavailable */ }
@@ -171,7 +176,7 @@ export function topExposures(tenant: number | null, limit = 50): { results: Fusi
     const fs = fuse({
       VulnerabilityID: r.vid, ref, cvss: m?.cvss ?? null, kev: m?.kev || 0, epss: m?.epss ?? null,
       exploits: cve ? exploitsForCve(cve).length : 0, itw: cve ? itw.has(cve) : false,
-      assets: r.assets, maxValue: r.maxValue, publicFacing: Number(r.pub) > 0,
+      assets: r.assets, maxValue: r.maxValue, publicFacing: Number(r.pub) > 0, vpr: m?.vpr ?? null,
     });
     fs.assetIds = String(r.assetIds || "").split(",").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);
     return fs;

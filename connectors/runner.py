@@ -693,6 +693,65 @@ def import_ave_scan_findings(result: Dict[str, Any]) -> Dict[str, int]:
         con.close()
 
 
+def import_vpr(result: Dict[str, Any]) -> Dict[str, int]:
+    """Apply Tenable VPR (Vulnerability Priority Rating) to existing XVULNERABILITY.VULNERABILITY rows,
+    matched by CVE / ref. Accepts a `vpr_ratings` list and/or inline `vpr` on `vulns` items. Raw SQL
+    (no ORM), idempotent (overwrites VprSource='Tenable'). Run AFTER import_findings created the rows."""
+    import datetime
+
+    items = list(result.get("vpr_ratings") or [])
+    for v in (result.get("vulns") or []):
+        if isinstance(v, dict) and (v.get("vpr") is not None or v.get("vpr_score") is not None):
+            items.append({"ref": v.get("ref") or v.get("cve"), "vpr": v.get("vpr"), "vpr_score": v.get("vpr_score"),
+                          "vpr_threat_level": v.get("vpr_threat_level"), "vpr_drivers": v.get("vpr_drivers")})
+    if not items:
+        return {}
+
+    def level(s: Any) -> str:
+        try:
+            n = float(s)
+        except (TypeError, ValueError):
+            return ""
+        return "Critical" if n >= 9 else "High" if n >= 7 else "Medium" if n >= 4 else "Low"
+
+    now = datetime.datetime.utcnow().isoformat()
+    con = sqlite3.connect(os.path.join(_db_dir(), "XVULNERABILITY.db"), timeout=15)
+    try:
+        cur = con.cursor()
+        if not cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='VULNERABILITY'").fetchone():
+            return {}
+        have = {r[1] for r in cur.execute("PRAGMA table_info(VULNERABILITY)").fetchall()}
+        for c, t in (("Vpr", "REAL"), ("VprThreatLevel", "TEXT"), ("VprDrivers", "TEXT"), ("VprSource", "TEXT"), ("VprUpdated", "TEXT")):
+            if c not in have:
+                try: cur.execute("ALTER TABLE VULNERABILITY ADD COLUMN %s %s" % (c, t))
+                except sqlite3.OperationalError: pass
+        refcols = [c for c in ("VULReferentialID", "VULReferential", "VULName", "VULGUID") if c in have]
+        if not refcols:
+            return {}
+        cond = " OR ".join("%s=?" % c for c in refcols)
+        n = 0
+        for it in items:
+            ref = str(it.get("ref") or it.get("cve") or it.get("id") or "").strip()
+            score = it.get("vpr") if it.get("vpr") is not None else it.get("vpr_score")
+            if not ref or not _is_number(score):
+                continue
+            sc = max(0.0, min(10.0, float(score)))
+            lvl = str(it.get("vpr_threat_level") or "").strip() or level(sc)
+            drv = it.get("vpr_drivers") or it.get("drivers") or ""
+            if isinstance(drv, list):
+                drv = ", ".join(str(d) for d in drv)
+            cur.execute("UPDATE VULNERABILITY SET Vpr=?, VprThreatLevel=?, VprDrivers=?, VprSource='Tenable', VprUpdated=? WHERE %s" % cond,
+                        [sc, lvl, str(drv)[:1000], now] + [ref] * len(refcols))
+            if cur.rowcount and cur.rowcount > 0:
+                n += cur.rowcount
+        con.commit()
+        return {"vpr_ratings": n}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
 # ── Import into XORCISM (mappings) ────────────────────────────────────────────────
 def import_ai_systems(result: Dict[str, Any]) -> Dict[str, int]:
     """Import agentlessly-discovered AI/LLM services into XORCISM.AISYSTEM (the AI-SPM inventory).
@@ -815,6 +874,8 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_ai_systems(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):
         counts.update(import_findings(result))
+    if result.get("vpr_ratings") or any(isinstance(v, dict) and (v.get("vpr") is not None or v.get("vpr_score") is not None) for v in (result.get("vulns") or [])):
+        counts.update(import_vpr(result))  # Tenable VPR → VULNERABILITY (after the rows exist)
     # DevSecOps: a SAST/Secrets/SCA/DAST connector result is also a pipeline security scan — recorded
     # here (not at a single call site) so EVERY import path (worker, local run, attack-chain step) counts.
     if mapping in _DEVSECOPS_TOOLS:
@@ -2587,6 +2648,22 @@ def import_findings(result: Dict[str, Any]) -> Dict[str, int]:
                 if s.query(ASSETVULNERABILITY).filter_by(AssetID=aid, VulnerabilityID=vid).first() is None:
                     s.add(ASSETVULNERABILITY(AssetID=aid, VulnerabilityID=vid, CreatedDate=_now()))
                     counts["vuln_links"] += 1
+
+    # Enrich VULNERABILITY.CVSSBaseScore from a connector-provided CVSS (raw SQL — the ORM create above
+    # only sets ref/desc). Benefits every vuln connector that carries a CVSS (Faraday, Nessus, ...).
+    cvss_by_ref = {v.get("ref"): float(v.get("cvss")) for v in vulns if v.get("ref") and _is_number(v.get("cvss"))}
+    if cvss_by_ref:
+        try:
+            con = sqlite3.connect(os.path.join(_db_dir(), "XVULNERABILITY.db"), timeout=15)
+            cur = con.cursor()
+            if "CVSSBaseScore" in {r[1] for r in cur.execute("PRAGMA table_info(VULNERABILITY)").fetchall()}:
+                for ref, cv in cvss_by_ref.items():
+                    cur.execute("UPDATE VULNERABILITY SET CVSSBaseScore=? WHERE VULReferentialID=? AND (CVSSBaseScore IS NULL OR CVSSBaseScore='')", (cv, ref))
+                con.commit()
+                counts["cvss_enriched"] = len(cvss_by_ref)
+            con.close()
+        except sqlite3.OperationalError:
+            pass
 
     # Multi-tenant: stamp the configured tenant on the assets this import touched,
     # so connector/agent-created rows aren't hidden from tenant-scoped users.

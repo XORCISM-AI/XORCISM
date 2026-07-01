@@ -4940,11 +4940,17 @@ export function ensureVulnerabilityColumns(): void {
     // ENISA EU Vulnerability Database (EUVD, NIS2) cross-reference: the EUVD-YYYY-NNNNN id
     // and its public page URL. Populated by the `euvd` connector (runner.import_euvd).
     EUVDId: "TEXT", EUVDUrl: "TEXT",
+    // Tenable VPR (Vulnerability Priority Rating) — a 0.0-10.0 risk-based score that blends CVSS
+    // with threat intelligence (threat recency/intensity, exploit-code maturity, vuln age, product
+    // coverage). VprSource = 'Tenable' when imported from a Tenable/Nessus export, or 'estimated'
+    // when XORCISM derives a VPR-style score from its own signals (CVSS+EPSS+KEV+exploit+CTI).
+    Vpr: "REAL", VprThreatLevel: "TEXT", VprDrivers: "TEXT", VprSource: "TEXT", VprUpdated: "TEXT",
   };
   for (const [n, t] of Object.entries(cols)) {
     if (!existing.has(n)) db.exec(`ALTER TABLE "VULNERABILITY" ADD COLUMN "${n}" ${t}`);
   }
   try { db.exec(`CREATE INDEX IF NOT EXISTS ix_vuln_euvd ON "VULNERABILITY"("EUVDId")`); } catch { /* index best-effort */ }
+  try { db.exec(`CREATE INDEX IF NOT EXISTS ix_vuln_vpr ON "VULNERABILITY"("Vpr")`); } catch { /* index best-effort */ }
 }
 
 /**
@@ -6909,6 +6915,27 @@ export function ensureExposureTables(): void {
     const xv = getDb("XVULNERABILITY");
     const have = new Set((xv.prepare(`PRAGMA table_info("EXPOSURE")`).all() as { name: string }[]).map((c) => c.name));
     if (!have.has("TicketRef")) { try { xv.exec("ALTER TABLE EXPOSURE ADD COLUMN TicketRef TEXT"); } catch { /* exists */ } }
+  } catch { /* best-effort */ }
+}
+
+/**
+ * Detection evidence / provenance — the PROOF behind a detection rule (SIGMARULE / YARARULE):
+ * the intel it came from, the PoC code, the logs or PCAP it was tested against, the AI prompt that
+ * generated it, and any reference showing the rule does what it claims. Text/URL evidence lives in
+ * Content/Url; file evidence (PCAP, logs, PoC files) is stored in the content-addressed blob store
+ * ([[blob-store]], Sha256 pointer). Lets a reviewer trust a detection, not just run it.
+ */
+export function ensureDetectionEvidenceTables(): void {
+  try {
+    getDb("XTHREAT").exec(`
+      CREATE TABLE IF NOT EXISTS DETECTIONEVIDENCE (
+        EvidenceID INTEGER PRIMARY KEY, EvidenceGUID TEXT, DetectionType TEXT, DetectionID INTEGER, DetectionName TEXT,
+        EvidenceType TEXT, Title TEXT, Content TEXT, Url TEXT, Source TEXT, Verdict TEXT,
+        FileName TEXT, ContentType TEXT, Sha256 TEXT, Size INTEGER,
+        AddedByUserID INTEGER, AddedByName TEXT, CreatedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_detevidence_det ON DETECTIONEVIDENCE(DetectionType, DetectionID);
+      CREATE INDEX IF NOT EXISTS ix_detevidence_type ON DETECTIONEVIDENCE(EvidenceType);
+      CREATE INDEX IF NOT EXISTS ix_detevidence_tenant ON DETECTIONEVIDENCE(TenantID);`);
   } catch { /* best-effort */ }
 }
 
