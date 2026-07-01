@@ -7,6 +7,7 @@ import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
 import { policyInventory, publishPolicy, retirePolicy, acknowledgePolicy, policyAcceptanceDetail, myPendingPolicies,
   snapshotPolicyVersion, policyVersions, policyVersionDetail, restorePolicyVersion, policyAssetCoverage } from "../policies";
+import { listReviews, addReview, updateReview, removeReview, TARGET_TYPES } from "../legalreview";
 import * as xid from "../xid";
 
 const router = Router();
@@ -117,6 +118,50 @@ router.post("/policy-management/policy/:id/restore", (req: Request, res: Respons
   if (!ok) return void res.status(404).json({ error: "policy or version not found" });
   xid.addAudit({ userId: req.user.UserID ?? null, action: "policy_restore_version", resourceType: "POLICY", resourceKey: String(id), detail: `version ${versionId}`, ip: clientIp(req) });
   res.json({ ok: true });
+});
+
+// ── Legal review & validation trail (POLICY + DOCUMENT) ───────────────────────
+const who = (req: Request) => ({ id: req.user!.UserID ?? null, name: String(req.user!.DisplayName || req.user!.Email || "") });
+const validTarget = (t: string) => (TARGET_TYPES as readonly string[]).includes(t);
+
+// GET /api/policy-management/legal-reviews?type=policy&id=123 — a target's legal/validation trail
+router.get("/policy-management/legal-reviews", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canRead(req)) return void res.status(403).json({ error: "forbidden" });
+  const type = String(req.query.type || ""), id = Number(req.query.id);
+  if (!validTarget(type) || !Number.isInteger(id)) return void res.status(400).json({ error: "valid type + id required" });
+  res.json(listReviews(type, id, ten(req)));
+});
+
+// POST /api/policy-management/legal-reviews { type, id, reviewType, status, legalBasis?, jurisdiction?, versionReviewed?, reviewerName?, comments?, validUntil? }
+router.post("/policy-management/legal-reviews", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const b = req.body || {};
+  const out = addReview(String(b.type || ""), Number(b.id), ten(req), b, who(req));
+  if ("error" in out) return void res.status(400).json(out);
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "legal_review_add", resourceType: b.type === "document" ? "DOCUMENT" : "POLICY", resourceKey: String(b.id), detail: `${b.reviewType}:${b.status || "requested"}`, ip: clientIp(req) });
+  res.json({ ok: true, ...out });
+});
+
+// POST /api/policy-management/legal-reviews/:rid { status?, comments?, ... } — update a review's outcome
+router.post("/policy-management/legal-reviews/:rid", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const out = updateReview(Number(req.params.rid), ten(req), req.body || {}, who(req));
+  if (!out.ok) return void res.status(404).json({ error: "not found" });
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "legal_review_update", resourceType: "LEGALREVIEW", resourceKey: String(req.params.rid), detail: String((req.body || {}).status || ""), ip: clientIp(req) });
+  res.json(out);
+});
+
+// DELETE /api/policy-management/legal-reviews/:rid
+router.delete("/policy-management/legal-reviews/:rid", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const out = removeReview(Number(req.params.rid), ten(req));
+  if (!out.ok) return void res.status(404).json({ error: "not found" });
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "legal_review_remove", resourceType: "LEGALREVIEW", resourceKey: String(req.params.rid), ip: clientIp(req) });
+  res.json(out);
 });
 
 export default router;

@@ -9,13 +9,15 @@ function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
 function toast(m: string): void { const t = $("pp-toast"); t.textContent = m; t.className = "show"; setTimeout(() => { t.className = ""; }, 2800); }
 
-interface PolicyRow { id: number; name: string; reference: string; docType?: string; parentId?: number | null; category: string; framework: string; language: string; status: string; version: string; owner: string | null; effectiveDate: string | null; reviewDate: string | null; reviewInDays: number | null; published: boolean; retired: boolean; publishedDate: string | null; requiresAck: boolean; accepted: number; ackTarget: number; ackRate: number | null; versions: number; score: number; issues: string[]; }
-interface DocumentRow { id: number; name: string; type: string; category: string; status: string; version: string; language: string; owner: string | null; reviewDate: string | null; validUntil: string | null; expired: boolean; issues: string[]; classification?: string; tlp?: string; }
+interface Legal { legalStatus: string | null; validationStatus: string | null; legallyCleared: boolean; legalOverdue: boolean; }
+interface PolicyRow extends Legal { id: number; name: string; reference: string; docType?: string; parentId?: number | null; category: string; framework: string; language: string; status: string; version: string; owner: string | null; effectiveDate: string | null; reviewDate: string | null; reviewInDays: number | null; published: boolean; retired: boolean; publishedDate: string | null; requiresAck: boolean; accepted: number; ackTarget: number; ackRate: number | null; versions: number; score: number; issues: string[]; }
+interface DocumentRow extends Legal { id: number; name: string; type: string; category: string; status: string; version: string; language: string; owner: string | null; reviewDate: string | null; validUntil: string | null; expired: boolean; issues: string[]; classification?: string; tlp?: string; }
+interface Review { id: number; reviewType: string; status: string; versionReviewed: string; legalBasis: string; jurisdiction: string; reviewerName: string; comments: string; requestedDate: string; reviewedDate: string; validUntil: string; createdBy: string; }
 interface Finding { id: number; name: string; kind: "policy" | "document"; severity: "High" | "Medium" | "Low"; reason: string; label: string; }
 interface Pending { id: number; name: string; version: string; publishedDate: string | null; }
 interface Inventory {
   rows: PolicyRow[]; documents: DocumentRow[]; findings: Finding[];
-  summary: { policies: number; published: number; draft: number; inReview: number; approved: number; retired: number; overdueReview: number; dueSoon: number; noOwner: number; noVersion: number; notEffective: number; documents: number; expiredDocs: number; docsNoOwner: number; frameworks: number; languages: number; avgScore: number; requiringAck: number; ackTarget: number; requiredAcks: number; completedAcks: number; ackCoverage: number; pendingAcks: number; fullyAcknowledged: number; byStatus: Record<string, number>; byFramework: Record<string, number>; byCategory: Record<string, number>; byLanguage: Record<string, number>; };
+  summary: { policies: number; published: number; draft: number; inReview: number; approved: number; retired: number; overdueReview: number; dueSoon: number; noOwner: number; noVersion: number; notEffective: number; documents: number; expiredDocs: number; docsNoOwner: number; frameworks: number; languages: number; avgScore: number; requiringAck: number; ackTarget: number; requiredAcks: number; completedAcks: number; ackCoverage: number; pendingAcks: number; fullyAcknowledged: number; legalReviewed: number; legalCleared: number; legalPendingLegal: number; legalPendingValidation: number; legalRejected: number; legalOverdue: number; byStatus: Record<string, number>; byFramework: Record<string, number>; byCategory: Record<string, number>; byLanguage: Record<string, number>; };
   me: { userId: number; name: string; pending: Pending[] };
 }
 
@@ -47,7 +49,17 @@ function actionsHtml(r: PolicyRow): string {
   if (r.published) { a.push(`<button style="${BTN}" data-retire="${r.id}">Retire</button>`); if (r.requiresAck) a.push(`<button style="${BTN}" data-cov="${r.id}">Coverage</button>`); }
   a.push(`<button style="${BTN}" data-hist="${r.id}" title="Version history">History${r.versions ? ` (${r.versions})` : ""}</button>`);
   a.push(`<button style="${BTN}" data-validate="${r.id}" title="Validate this policy against live evidence (on-prem / cloud / hybrid)">🛡 Validate</button>`);
+  a.push(`<button style="${BTN}" data-legal="policy:${r.id}" title="Legal review & validation trail">⚖ Legal</button>`);
   return a.join(" ");
+}
+
+// clickable chip summarising a policy/document's legal-review + validation state
+function legalBadge(kind: "policy" | "document", r: Legal & { id: number }): string {
+  const st = r.legallyCleared ? { bg: "#34d399", c: "#06240f", t: "⚖ cleared" }
+    : (r.legalStatus === "rejected" || r.validationStatus === "rejected") ? { bg: "#f87171", c: "#2a0b0f", t: "⚖ rejected" }
+    : (r.legalStatus || r.validationStatus) ? { bg: "#fbbf24", c: "#221803", t: "⚖ in review" }
+    : { bg: "#2d3250", c: "#94a3b8", t: "⚖ review" };
+  return `<button data-legal="${kind}:${r.id}"${r.legalOverdue ? ' title="re-review overdue"' : ""} style="border:none;border-radius:5px;font-size:9px;font-weight:700;padding:1px 7px;cursor:pointer;background:${st.bg};color:${st.c}">${st.t}${r.legalOverdue ? " !" : ""}</button>`;
 }
 
 function policyHtml(r: PolicyRow): string {
@@ -56,7 +68,7 @@ function policyHtml(r: PolicyRow): string {
     : (r.retired ? `<span class="muted">retired</span>` : `<span class="s-lo">✓ ok</span>`);
   const dt = r.docType && r.docType !== "Policy" ? `<span class="lang" title="document type" style="background:#3b2f63;color:#ddd6fe">${esc(r.docType)}</span>` : "";
   return `<tr>
-    <td><div class="pname">${esc(r.name)}${dt}${r.language !== "—" ? `<span class="lang">${esc(r.language)}</span>` : ""}</div>
+    <td><div class="pname">${esc(r.name)}${dt}${r.language !== "—" ? `<span class="lang">${esc(r.language)}</span>` : ""} ${legalBadge("policy", r)}</div>
       <div class="muted" style="font-size:11px">${esc(r.framework)}${r.reference !== "—" ? ` · <span class="ref">${esc(r.reference)}</span>` : ""}${r.publishedDate ? ` · published ${esc(r.publishedDate)}` : ""}</div></td>
     <td><span class="st ${stClass(r.status)}">${esc(r.status)}</span>${r.published && r.requiresAck ? ` <span class="tag" title="acknowledgement required">ack</span>` : ""}</td>
     <td>${esc(r.version)}</td>
@@ -79,7 +91,7 @@ function sensBadge(d: DocumentRow): string {
 function docHtml(d: DocumentRow): string {
   const issues = d.issues.length ? d.issues.map((i) => `<span class="tag${/version|unclassified/.test(i) ? " tag-w" : ""}">${esc(i)}</span>`).join("") : `<span class="s-lo">✓ ok</span>`;
   return `<tr>
-    <td><div class="pname">${esc(d.name)}${d.language !== "—" ? `<span class="lang">${esc(d.language)}</span>` : ""}</div>
+    <td><div class="pname">${esc(d.name)}${d.language !== "—" ? `<span class="lang">${esc(d.language)}</span>` : ""} ${legalBadge("document", d)}</div>
       <div class="muted" style="font-size:11px">${esc(d.type)}${d.category !== "—" ? ` · ${esc(d.category)}` : ""}</div></td>
     <td>${d.status !== "—" ? `<span class="st ${stClass(d.status)}">${esc(d.status)}</span>` : `<span class="muted">—</span>`}</td>
     <td>${sensBadge(d)}</td>
@@ -164,6 +176,69 @@ function coverageDialog(id: number): void {
     }).catch((e) => toast("⚠️ " + (e.message || e)));
 }
 
+// ── Legal review & validation trail ──────────────────────────────────────────
+const REVIEW_TYPES = ["legal", "validation"];
+const REVIEW_LABEL: Record<string, string> = { legal: "Legal review", validation: "Validation / sign-off" };
+const LR_STATUSES = ["requested", "in-review", "approved", "approved-with-changes", "rejected"];
+const LR_COLOR: Record<string, string> = { requested: "#94a3b8", "in-review": "#fbbf24", approved: "#34d399", "approved-with-changes": "#4ade80", rejected: "#f87171" };
+const LINP = "width:100%;box-sizing:border-box;background:#13162a;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:6px 8px;font-size:12px;margin-top:3px";
+
+function legalDialog(kind: string, id: number): void {
+  fetch(`/api/policy-management/legal-reviews?type=${kind}&id=${id}`).then((r) => r.json().then((j) => { if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`); return j; }))
+    .then((d: { items: Review[]; summary: { total: number; legalStatus: string | null; validationStatus: string | null; legallyCleared: boolean; reviewOverdue: boolean } }) => {
+      const chip = (label: string, st: string | null) => `<span style="font-size:11px">${label}: <b style="color:${st ? (LR_COLOR[st] || "#cbd5e1") : "#64748b"}">${esc(st || "—")}</b></span>`;
+      const cleared = d.summary.legallyCleared
+        ? `<span style="background:#34d399;color:#06240f;border-radius:5px;font-size:10px;font-weight:700;padding:2px 8px">⚖ LEGALLY CLEARED</span>`
+        : `<span style="background:#2d3250;color:#cbd5e1;border-radius:5px;font-size:10px;padding:2px 8px">not yet cleared</span>`;
+      const items = d.items.length ? d.items.map((rv) => {
+        const sopts = LR_STATUSES.map((sx) => `<option value="${sx}"${sx === rv.status ? " selected" : ""}>${sx}</option>`).join("");
+        return `<div style="border:1px solid #232842;border-radius:8px;padding:9px 11px;margin-bottom:7px;background:#0f1322">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-weight:700;font-size:12px;color:#e2e8f0">${esc(REVIEW_LABEL[rv.reviewType] || rv.reviewType)}</span>
+            <select data-lrupd="${rv.id}" style="background:#13162a;border:1px solid #2d3250;color:${LR_COLOR[rv.status] || "#cbd5e1"};border-radius:5px;font-size:11px;padding:2px 6px">${sopts}</select>
+            <span style="flex:1"></span>
+            <button style="${BTN};border-color:#5a1f2e;color:#fca5a5" data-lrdel="${rv.id}">Delete</button>
+          </div>
+          ${rv.legalBasis ? `<div style="font-size:11px;margin-top:5px"><span class="muted">Legal basis:</span> ${esc(rv.legalBasis)}${rv.jurisdiction ? ` · <span class="muted">Jurisdiction:</span> ${esc(rv.jurisdiction)}` : ""}</div>` : ""}
+          ${rv.comments ? `<div style="font-size:11px;margin-top:4px;color:#cbd5e1">${esc(rv.comments)}</div>` : ""}
+          <div class="muted" style="font-size:10px;margin-top:5px">${rv.reviewerName ? esc(rv.reviewerName) + " · " : ""}${rv.versionReviewed ? "v" + esc(rv.versionReviewed) + " · " : ""}${rv.reviewedDate ? "reviewed " + esc(rv.reviewedDate) : (rv.requestedDate ? "requested " + esc(rv.requestedDate) : "")}${rv.validUntil ? ` · re-review by ${esc(rv.validUntil)}` : ""}</div>
+        </div>`;
+      }).join("") : `<div class="muted" style="padding:8px 0">No legal review or validation recorded yet.</div>`;
+      const topts = REVIEW_TYPES.map((rt) => `<option value="${rt}">${esc(REVIEW_LABEL[rt])}</option>`).join("");
+      const sopts = LR_STATUSES.map((sx) => `<option value="${sx}"${sx === "approved" ? " selected" : ""}>${sx}</option>`).join("");
+      openModal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:15px;color:#e7ebf3">⚖ Legal review &amp; validation</b><span style="flex:1"></span><button style="${BTN}" id="pp-close">Close</button></div>
+        <div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">${chip("Legal", d.summary.legalStatus)}${chip("Validation", d.summary.validationStatus)}${cleared}</div>
+        <div style="max-height:40vh;overflow:auto;margin-bottom:10px">${items}</div>
+        <div style="border-top:1px solid #232842;padding-top:10px">
+          <div style="font-weight:700;font-size:12px;margin-bottom:6px">+ Record a review</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label style="font-size:11px;color:#94a3b8">Type<select id="lr-type" style="${LINP}">${topts}</select></label>
+            <label style="font-size:11px;color:#94a3b8">Outcome<select id="lr-status" style="${LINP}">${sopts}</select></label>
+            <label style="font-size:11px;color:#94a3b8">Reviewer<input id="lr-reviewer" style="${LINP}" placeholder="legal counsel / authority"></label>
+            <label style="font-size:11px;color:#94a3b8">Version reviewed<input id="lr-version" style="${LINP}" placeholder="e.g. 1.2"></label>
+            <label style="font-size:11px;color:#94a3b8">Jurisdiction<input id="lr-jur" style="${LINP}" placeholder="e.g. EU / FR"></label>
+            <label style="font-size:11px;color:#94a3b8">Re-review by<input id="lr-valid" type="date" style="${LINP}"></label>
+            <label style="font-size:11px;color:#94a3b8;grid-column:1/3">Legal basis / obligations checked<input id="lr-basis" style="${LINP}" placeholder="e.g. GDPR, DUAA, NIS2, employment law"></label>
+            <label style="font-size:11px;color:#94a3b8;grid-column:1/3">Comments<textarea id="lr-comments" style="${LINP};min-height:52px;resize:vertical"></textarea></label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px"><button style="${BTN};border-color:#34d399;color:#86efac" id="lr-add">Record review</button></div>
+        </div>`);
+      const v = (idv: string) => (document.getElementById(idv) as HTMLInputElement)?.value || "";
+      (document.getElementById("lr-add") as HTMLButtonElement).onclick = () => {
+        post("/api/policy-management/legal-reviews", { type: kind, id, reviewType: v("lr-type"), status: v("lr-status"), reviewerName: v("lr-reviewer"), versionReviewed: v("lr-version"), jurisdiction: v("lr-jur"), validUntil: v("lr-valid"), legalBasis: v("lr-basis"), comments: v("lr-comments") })
+          .then(() => { toast("Review recorded"); legalDialog(kind, id); void load(); }).catch((e) => toast("⚠️ " + (e.message || e)));
+      };
+      document.querySelectorAll<HTMLSelectElement>("[data-lrupd]").forEach((sel) => sel.onchange = () => {
+        post(`/api/policy-management/legal-reviews/${sel.getAttribute("data-lrupd")}`, { status: sel.value })
+          .then(() => { toast("Status updated"); legalDialog(kind, id); void load(); }).catch((e) => toast("⚠️ " + (e.message || e)));
+      });
+      document.querySelectorAll<HTMLElement>("[data-lrdel]").forEach((b) => b.onclick = () => {
+        if (!confirm("Delete this review record?")) return;
+        fetch(`/api/policy-management/legal-reviews/${b.getAttribute("data-lrdel")}`, { method: "DELETE" }).then((r) => r.json()).then(() => { toast("Deleted"); legalDialog(kind, id); void load(); }).catch((e) => toast("⚠️ " + (e.message || e)));
+      });
+    }).catch((e) => toast("⚠️ " + (e.message || e)));
+}
+
 function wire(): void {
   const on = (attr: string, fn: (id: number, el: HTMLElement) => void) =>
     Array.prototype.forEach.call(document.querySelectorAll(`[data-${attr}]`), (el: HTMLElement) => { el.onclick = () => fn(Number(el.getAttribute(`data-${attr}`)), el); });
@@ -173,6 +248,10 @@ function wire(): void {
   on("hist", (id) => versionsDialog(id));
   on("ack", (id) => post(`/api/policy-management/policy/${id}/acknowledge`).then((j) => { toast(j.already ? "Already acknowledged" : "Acknowledged — thank you"); void load(); }).catch((e) => toast("⚠️ " + (e.message || e))));
   on("validate", (id) => validateDialog(id));
+  document.querySelectorAll<HTMLElement>("[data-legal]").forEach((el) => el.onclick = () => {
+    const [kind, id] = (el.getAttribute("data-legal") || "").split(":");
+    if (kind && id) legalDialog(kind, Number(id));
+  });
 }
 
 // ── Policy validation (AI requirement extraction + cross-environment evidence checks) ──
@@ -336,6 +415,7 @@ async function load(): Promise<void> {
     card("Requiring ack", String(s.requiringAck), `${s.fullyAcknowledged} fully accepted`, s.requiringAck ? "#60a5fa" : undefined),
     card("Acceptance", s.requiringAck ? `${s.ackCoverage}%` : "—", `${s.completedAcks}/${s.requiredAcks} user acks`, s.requiringAck ? pctColor(s.ackCoverage) : undefined),
     card("Pending acks", String(s.pendingAcks), `${s.ackTarget} active user(s)`, s.pendingAcks ? "#fb923c" : "#34d399"),
+    card("Legally cleared", String(s.legalCleared ?? 0), `${s.legalPendingLegal ?? 0} legal · ${s.legalPendingValidation ?? 0} validation pending${s.legalRejected ? ` · ${s.legalRejected} rejected` : ""}`, (s.legalRejected ? "#f87171" : (s.legalPendingLegal || s.legalPendingValidation) ? "#fbbf24" : s.legalCleared ? "#34d399" : undefined)),
     card("Overdue review", String(s.overdueReview), "past review date", s.overdueReview ? "#f87171" : "#34d399"),
     card("No owner", String(s.noOwner), "active · unaccountable", s.noOwner ? "#fbbf24" : "#34d399"),
     card("Avg score", String(s.avgScore), "governance gap (↓ better)", s.avgScore >= 30 ? "#f87171" : s.avgScore >= 10 ? "#fbbf24" : "#34d399"),

@@ -10,8 +10,9 @@
  * Read-only; CRUD stays in the schema-driven explorer. Cross-DB (policies XORCISM,
  * documents XCOMPLIANCE), owners resolved against XORCISM.PERSON.
  */
-import { allocId, getDb, ensurePolicyAckTable, ensurePolicyVersionTable } from "./db";
+import { allocId, getDb, ensurePolicyAckTable, ensurePolicyVersionTable, ensureLegalReviewTable } from "./db";
 import { listUsers } from "./xid";
+import { legalRollup } from "./legalreview";
 import { randomUUID } from "crypto";
 
 export interface PolicyRow {
@@ -39,6 +40,10 @@ export interface PolicyRow {
   versions: number;              // number of snapshots in the version history
   score: number;                 // 0-100 (higher = worse)
   issues: string[];
+  legalStatus: string | null;    // latest legal-counsel review status
+  validationStatus: string | null; // latest validation / sign-off status
+  legallyCleared: boolean;       // legal approved AND validated
+  legalOverdue: boolean;         // a legal review/validation is past its re-review date
 }
 export interface DocumentRow {
   id: number;
@@ -55,6 +60,10 @@ export interface DocumentRow {
   issues: string[];
   classification: string;
   tlp: string;
+  legalStatus: string | null;
+  validationStatus: string | null;
+  legallyCleared: boolean;
+  legalOverdue: boolean;
 }
 export interface PolicyFinding {
   id: number;
@@ -82,6 +91,13 @@ export interface PolicyInventory {
     pendingAcks: number;         // requiredAcks − completedAcks
     fullyAcknowledged: number;   // published+requiresAck policies at 100% acceptance
     standards: number; procedures: number; guidelines: number;  // ISO documentation pyramid counts
+    // legal review & validation roll-up (across policies + documents)
+    legalReviewed: number;       // targets with at least one legal review or validation
+    legalCleared: number;        // legal approved AND validated
+    legalPendingLegal: number;   // awaiting legal-counsel approval
+    legalPendingValidation: number; // awaiting validation / sign-off
+    legalRejected: number;       // a legal review or validation was rejected
+    legalOverdue: number;        // a review/validation past its re-review date
     byStatus: Record<string, number>; byFramework: Record<string, number>;
     byCategory: Record<string, number>; byLanguage: Record<string, number>; byType: Record<string, number>;
   };
@@ -95,6 +111,7 @@ const EMPTY: PolicyInventory = {
     documents: 0, expiredDocs: 0, docsNoOwner: 0, frameworks: 0, languages: 0, avgScore: 0,
     requiringAck: 0, ackTarget: 0, requiredAcks: 0, completedAcks: 0, ackCoverage: 0, pendingAcks: 0, fullyAcknowledged: 0,
     standards: 0, procedures: 0, guidelines: 0,
+    legalReviewed: 0, legalCleared: 0, legalPendingLegal: 0, legalPendingValidation: 0, legalRejected: 0, legalOverdue: 0,
     byStatus: {}, byFramework: {}, byCategory: {}, byLanguage: {}, byType: {},
   },
 };
@@ -138,6 +155,11 @@ export function policyInventory(tenant: number | null): PolicyInventory {
   if (!pc.size) return { ...EMPTY };
   const owners = personNames();
   const findings: PolicyFinding[] = [];
+
+  // ── Legal review & validation trail (XORCISM.LEGALREVIEW) ──
+  let legalMap = new Map<string, any>(), legalKpi: any = { reviewed: 0, cleared: 0, pendingLegal: 0, pendingValidation: 0, rejected: 0, overdue: 0 };
+  try { ensureLegalReviewTable(); const lr = legalRollup(tenant); legalMap = lr.map; legalKpi = lr.kpi; } catch { /* table absent */ }
+  const legalOf = (type: string, id: number) => legalMap.get(`${type}:${id}`) || { legalStatus: null, validationStatus: null, legallyCleared: false, reviewOverdue: false };
 
   // ── User-acceptance of published policies (XORCISM.POLICYACKNOWLEDGEMENT) ──
   ensurePolicyAckTable();
@@ -209,6 +231,7 @@ export function policyInventory(tenant: number | null): PolicyInventory {
       }
     }
 
+    const lg = legalOf("policy", id);
     return {
       id, name, reference: norm(p.PolicyReference) || "—",
       docType: norm(p.DocumentType) || "Policy", parentId: p.ParentPolicyID != null ? Number(p.ParentPolicyID) : null,
@@ -216,6 +239,7 @@ export function policyInventory(tenant: number | null): PolicyInventory {
       language: (norm(p.Language) || "—").toLowerCase(), status, version: version || "—",
       owner, effectiveDate, reviewDate, reviewInDays, published, retired,
       publishedDate, requiresAck, accepted, ackTarget: at, ackRate, versions: verCount.get(id) ?? 0, score, issues,
+      legalStatus: lg.legalStatus, validationStatus: lg.validationStatus, legallyCleared: lg.legallyCleared, legalOverdue: lg.reviewOverdue,
     };
   });
 
@@ -249,10 +273,12 @@ export function policyInventory(tenant: number | null): PolicyInventory {
           findings.push({ id, name, kind: "document", severity: "Low", reason: "doc-no-owner", label: `${name} — no owner` });
         else if (!classification && isStr(d.DocumentName))
           findings.push({ id, name, kind: "document", severity: "Low", reason: "doc-unclassified", label: `${name} — no sensitivity label` });
+        const lg = legalOf("document", id);
         documents.push({
           id, name, type: norm(d.DocumentType) || "—", category: norm(d.Category) || "—",
           status: norm(d.Status) || "—", version: norm(d.Version) || "—", classification, tlp,
           language: (norm(d.Language) || "—").toLowerCase(), owner, reviewDate, validUntil, expired, issues,
+          legalStatus: lg.legalStatus, validationStatus: lg.validationStatus, legallyCleared: lg.legallyCleared, legalOverdue: lg.reviewOverdue,
         });
       }
     }
@@ -307,6 +333,8 @@ export function policyInventory(tenant: number | null): PolicyInventory {
       avgScore,
       requiringAck, ackTarget, requiredAcks, completedAcks, ackCoverage, pendingAcks, fullyAcknowledged,
       standards: byType["Standard"] || 0, procedures: byType["Procedure"] || 0, guidelines: byType["Guideline"] || 0,
+      legalReviewed: legalKpi.reviewed, legalCleared: legalKpi.cleared, legalPendingLegal: legalKpi.pendingLegal,
+      legalPendingValidation: legalKpi.pendingValidation, legalRejected: legalKpi.rejected, legalOverdue: legalKpi.overdue,
       byStatus, byFramework, byCategory, byLanguage, byType,
     },
   };

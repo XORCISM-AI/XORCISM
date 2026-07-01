@@ -544,6 +544,94 @@ def import_crypto_assets(result: Dict[str, Any]) -> Dict[str, int]:
         con.close()
 
 
+def import_phishing_results(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import a phishing-simulation exercise (e.g. from the zphisher connector) into the Security
+    Awareness model: one XORCISM.PHISHINGSIMULATION campaign + per-recipient XORCISM.PHISHINGRESULT
+    rows (opened / clicked / submitted-credentials / reported). Recipients are matched to PERSON by
+    e-mail where possible (else PersonID stays NULL — the campaign metrics still count them). A run is
+    a snapshot: re-importing the same campaign (name + template + tenant) replaces its prior results.
+    This is for AUTHORISED security-awareness testing only."""
+    import datetime
+    import uuid
+
+    ph = result.get("phishing") or {}
+    camp = ph.get("campaign") or {}
+    rows = ph.get("results") or []
+    if not camp and not rows:
+        return {}
+    tenant = result.get("tenant_id")
+    tenant = int(tenant) if isinstance(tenant, (int, float)) or (isinstance(tenant, str) and str(tenant).isdigit()) else _import_tenant_id()
+    now = datetime.datetime.utcnow().isoformat()
+
+    def b(v):
+        return 1 if (v is True or v in (1, "1") or (isinstance(v, str) and v.strip().lower() in ("true", "yes", "y"))) else 0
+
+    con = sqlite3.connect(os.path.join(_db_dir(), "XORCISM.db"), timeout=20)
+    try:
+        cur = con.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS PHISHINGSIMULATION (PhishingSimulationID INTEGER PRIMARY KEY, PhishingSimulationGUID TEXT, "
+                    "Name TEXT, Theme TEXT, Template TEXT, Difficulty TEXT, Status TEXT, Description TEXT, LandingPageURL TEXT, SentDate TEXT, TenantID INTEGER, CreatedDate TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS PHISHINGRESULT (PhishingResultID INTEGER PRIMARY KEY, PhishingSimulationID INTEGER, PersonID INTEGER, "
+                    "Sent INTEGER DEFAULT 1, Opened INTEGER DEFAULT 0, Clicked INTEGER DEFAULT 0, SubmittedData INTEGER DEFAULT 0, ReportedPhish INTEGER DEFAULT 0, "
+                    "DateSent TEXT, DateClicked TEXT, DateReported TEXT, TenantID INTEGER, CreatedDate TEXT)")
+
+        # e-mail → PersonID, if PERSON has an email-ish column
+        email2pid: Dict[str, int] = {}
+        try:
+            pcols = [c[1] for c in cur.execute('PRAGMA table_info("PERSON")').fetchall()]
+            ecol = next((c for c in ("Email", "EmailAddress", "WorkEmail", "Mail") if c in pcols), None)
+            if ecol:
+                for pid, em in cur.execute(f'SELECT PersonID, {ecol} FROM PERSON WHERE {ecol} IS NOT NULL'):
+                    if em:
+                        email2pid[str(em).strip().lower()] = int(pid)
+        except sqlite3.OperationalError:
+            pass
+
+        name = str(camp.get("name") or "Phishing simulation")[:200]
+        template = str(camp.get("template") or camp.get("theme") or "")[:120]
+        sent_date = str(camp.get("sentDate") or now[:10])[:40]
+        # snapshot: reuse an existing campaign with the same name + template + tenant
+        if tenant is None:
+            existing = cur.execute("SELECT PhishingSimulationID FROM PHISHINGSIMULATION WHERE Name=? AND IFNULL(Template,'')=? AND TenantID IS NULL", (name, template)).fetchone()
+        else:
+            existing = cur.execute("SELECT PhishingSimulationID FROM PHISHINGSIMULATION WHERE Name=? AND IFNULL(Template,'')=? AND TenantID=?", (name, template, tenant)).fetchone()
+        if existing:
+            sim_id = int(existing[0])
+            cur.execute("DELETE FROM PHISHINGRESULT WHERE PhishingSimulationID=?", (sim_id,))
+        else:
+            sim_id = int(cur.execute("SELECT COALESCE(MAX(PhishingSimulationID),0) FROM PHISHINGSIMULATION").fetchone()[0]) + 1
+            cur.execute("INSERT INTO PHISHINGSIMULATION (PhishingSimulationID, PhishingSimulationGUID, Name, Theme, Template, Difficulty, Status, Description, LandingPageURL, SentDate, TenantID, CreatedDate) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (sim_id, str(uuid.uuid4()), name, str(camp.get("theme") or "")[:120], template, str(camp.get("difficulty") or "")[:40],
+                         "Completed", str(camp.get("description") or "")[:1000], str(camp.get("landingPageUrl") or "")[:500], sent_date, tenant, now))
+
+        next_rid = int(cur.execute("SELECT COALESCE(MAX(PhishingResultID),0) FROM PHISHINGRESULT").fetchone()[0]) + 1
+        n = clicked = submitted = 0
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            email = str(r.get("email") or "").strip().lower()
+            pid = email2pid.get(email)
+            op, cl, sub, rep = b(r.get("opened")), b(r.get("clicked")), b(r.get("submitted")), b(r.get("reported"))
+            if sub:  # submitting credentials implies clicking
+                cl = 1
+            if cl:
+                op = 1
+            cur.execute("INSERT INTO PHISHINGRESULT (PhishingResultID, PhishingSimulationID, PersonID, Sent, Opened, Clicked, SubmittedData, ReportedPhish, DateSent, DateClicked, TenantID, CreatedDate) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (next_rid, sim_id, pid, 1, op, cl, sub, rep, sent_date, str(r.get("dateClicked") or "") or None, tenant, now))
+            next_rid += 1
+            n += 1
+            clicked += cl
+            submitted += sub
+        con.commit()
+        return {"phishing_campaigns": 1, "phishing_recipients": n, "phishing_clicked": clicked, "phishing_submitted": submitted}
+    except sqlite3.OperationalError:
+        return {}
+    finally:
+        con.close()
+
+
 # ── AVE — Agentic Vulnerability Enumeration reference catalogue (XVULNERABILITY) ───
 def _is_number(v: Any) -> bool:
     try:
@@ -872,6 +960,8 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_ave_scan_findings(result))
     if result.get("aisystems"):
         counts.update(import_ai_systems(result))
+    if result.get("phishing"):
+        counts.update(import_phishing_results(result))
     if any(result.get(k) for k in ("assets", "vulns", "cpes", "components", "services", "project")):
         counts.update(import_findings(result))
     if result.get("vpr_ratings") or any(isinstance(v, dict) and (v.get("vpr") is not None or v.get("vpr_score") is not None) for v in (result.get("vulns") or [])):

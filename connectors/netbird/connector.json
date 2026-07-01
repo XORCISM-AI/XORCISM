@@ -1,0 +1,16 @@
+{
+  "id": "netbird",
+  "name": "NetBird",
+  "type": "import",
+  "category": "Asset Management",
+  "description": "Imports the device inventory from NetBird, the open-source WireGuard-based zero-trust mesh network (https://netbird.io). Each NetBird peer becomes an ASSET — its DNS label / hostname, overlay IP, operating system, agent version, connectivity and groups. Offline mode: parse a `GET /api/peers` JSON export saved from the NetBird Management API. Live mode: if `api_token` is set, the worker calls the NetBird Management API (self-hosted `management_url` or the NetBird cloud) read-only to list peers. No DB access in run.py (worker-safe); the runner performs the ASSET writes. Feeds Asset Management with the mesh-connected endpoints.",
+  "intrusive": false,
+  "permission": "connector:netbird",
+  "run": "run.py",
+  "mapping": "netbird",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: a NetBird `GET /api/peers` JSON response (array, or an object with a `data`/`peers` array) to import." },
+    { "name": "api_token", "type": "string", "required": false, "secret": true, "help": "Live mode: a NetBird Management API personal access token / service-user token (sent as `Authorization: Token …`). Read-only peer listing." },
+    { "name": "management_url", "type": "string", "required": false, "default": "https://api.netbird.io", "help": "NetBird Management API base URL (self-hosted, e.g. https://netbird.example.com). Defaults to the NetBird cloud API." }
+  ]
+}

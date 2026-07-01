@@ -1,0 +1,40 @@
+[
+  {
+    "id": "ch8i4ug6lnn4g9hqv7m0",
+    "name": "laptop-alice",
+    "dns_label": "laptop-alice.netbird.cloud",
+    "ip": "100.64.0.5",
+    "connected": true,
+    "last_seen": "2026-06-30T09:12:00Z",
+    "os": "Darwin 14.5",
+    "version": "0.28.4",
+    "hostname": "laptop-alice",
+    "groups": [{"id": "g1", "name": "engineering"}, {"id": "g2", "name": "all"}],
+    "ssh_enabled": true,
+    "login_expired": false
+  },
+  {
+    "id": "ch8i4ug6lnn4g9hqv7mg",
+    "name": "gw-prod-eu",
+    "dns_label": "gw-prod-eu.netbird.cloud",
+    "ip": "100.64.0.9",
+    "connected": true,
+    "last_seen": "2026-07-01T06:00:00Z",
+    "os": "Linux 6.1.0 Debian",
+    "version": "0.28.4",
+    "hostname": "gw-prod-eu",
+    "groups": [{"id": "g3", "name": "gateways"}]
+  },
+  {
+    "id": "ch8i4ug6lnn4g9hqv7n0",
+    "name": "phone-bob",
+    "dns_label": "phone-bob.netbird.cloud",
+    "ip": "100.64.0.12",
+    "connected": false,
+    "last_seen": "2026-06-20T18:44:00Z",
+    "os": "Android 14",
+    "version": "0.27.9",
+    "hostname": "phone-bob",
+    "groups": [{"id": "g2", "name": "all"}]
+  }
+]

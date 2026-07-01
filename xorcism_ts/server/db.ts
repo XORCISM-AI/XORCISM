@@ -5425,6 +5425,43 @@ export function ensurePolicyAckTable(): void {
 }
 
 /**
+ * XORCISM.LEGALREVIEW — legal review & validation trail for controlled documents. A row records
+ * one review of a POLICY (XORCISM) or DOCUMENT (XCOMPLIANCE): its type (legal counsel review vs
+ * final validation/sign-off), status/outcome, the legal basis/jurisdiction checked, the version
+ * reviewed, reviewer, comments, and a re-review due date. Lets a policy show whether it is
+ * "legally cleared" (legal approved AND validated on the current version). Created idempotently.
+ */
+export function ensureLegalReviewTable(): void {
+  let db: Database.Database;
+  try { db = getDb("XORCISM"); } catch { return; }
+  db.exec(`CREATE TABLE IF NOT EXISTS "LEGALREVIEW" (
+    "ReviewID" INTEGER PRIMARY KEY,
+    "ReviewGUID" TEXT,
+    "TargetType" TEXT,          -- 'policy' | 'document'
+    "TargetID" INTEGER,
+    "TargetName" TEXT,
+    "ReviewType" TEXT,          -- 'legal' | 'validation'
+    "Status" TEXT,              -- requested | in-review | approved | approved-with-changes | rejected
+    "VersionReviewed" TEXT,
+    "LegalBasis" TEXT,          -- regulations / obligations checked (e.g. GDPR, DUAA, NIS2)
+    "Jurisdiction" TEXT,
+    "ReviewerID" INTEGER,
+    "ReviewerName" TEXT,
+    "Comments" TEXT,
+    "RequestedDate" TEXT,
+    "ReviewedDate" TEXT,
+    "ValidUntil" TEXT,          -- re-review due date
+    "CreatedByUserID" INTEGER,
+    "CreatedByName" TEXT,
+    "CreatedDate" TEXT,
+    "TenantID" INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS ix_legalreview_target ON "LEGALREVIEW"(TargetType, TargetID);
+  CREATE INDEX IF NOT EXISTS ix_legalreview_type ON "LEGALREVIEW"(ReviewType);
+  CREATE INDEX IF NOT EXISTS ix_legalreview_tenant ON "LEGALREVIEW"(TenantID);`);
+}
+
+/**
  * XORCISM.POLICYVERSION — immutable version history of a policy. A snapshot row is written each
  * time a policy is published (and on demand), capturing the content + lifecycle metadata of that
  * version so prior versions can be reviewed, compared, and restored. Editor identity is
