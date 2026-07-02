@@ -14,6 +14,7 @@
 import { randomUUID } from "crypto";
 import { getDb } from "./db";
 import { SOC_PLAYBOOKS_36 } from "./data/socPlaybooks";
+import { IRM_PLAYBOOKS } from "./data/irPlaybooks";
 import { aiProviderInfo, ollamaChat } from "./ai";
 
 const PHASES = ["Preparation", "Detection & Analysis", "Containment", "Eradication", "Recovery", "Lessons Learned & Reporting", "Post-Incident"] as const;
@@ -598,6 +599,28 @@ export function seedSocDefaults(tenant: number): { policy: number; playbooks: nu
         .run(pid, randomUUID(), pb.name, pb.category, pb.scenario, pb.severity, pb.phases.length,
           pb.scenario, pb.incidentType, pb.priority, pb.detectionSources, pb.attack.join(", "), pb.tools.join(" • "), pb.metrics,
           "SOC IR Playbook library", tenant, now);
+    } else {
+      db.prepare("INSERT INTO PLAYBOOK (PlaybookID, PlaybookGUID, Name, Category, Description, Severity, StepCount, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?)")
+        .run(pid, randomUUID(), pb.name, pb.category, pb.scenario, pb.severity, pb.phases.length, tenant, now);
+    }
+    let sid = nextId("PLAYBOOKSTEP", "StepID");
+    const ins = db.prepare("INSERT INTO PLAYBOOKSTEP (StepID, PlaybookID, Phase, StepOrder, Title, Description, Role, TenantID) VALUES (?,?,?,?,?,?,?,?)");
+    pb.phases.forEach((ph, i) => ins.run(sid++, pid, ph.phase, i + 1, ph.phase, ph.text, null, tenant));
+    pbN++;
+  }
+
+  // CERT Société Générale IRM playbooks (per-threat 6-step Incident Response Methodologies)
+  for (const pb of IRM_PLAYBOOKS) {
+    let pid = (db.prepare("SELECT PlaybookID FROM PLAYBOOK WHERE Name = ? AND IFNULL(TenantID,-1)=IFNULL(?,-1)").get(pb.name, tenant) as { PlaybookID: number } | undefined)?.PlaybookID;
+    if (pid) continue;
+    pid = nextId("PLAYBOOK", "PlaybookID");
+    if (hasMeta) {
+      db.prepare(`INSERT INTO PLAYBOOK (PlaybookID, PlaybookGUID, Name, Category, Description, Severity, StepCount,
+        Scenario, IncidentType, Priority, DetectionSources, AttackTechniques, Tools, Metrics, Source, TenantID, CreatedDate)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(pid, randomUUID(), pb.name, pb.category, pb.scenario, pb.severity, pb.phases.length,
+          pb.scenario, pb.incidentType, pb.priority, pb.detectionSources, pb.attack.join(", "), pb.tools.join(" • "), pb.metrics,
+          "CERT Société Générale IRM", tenant, now);
     } else {
       db.prepare("INSERT INTO PLAYBOOK (PlaybookID, PlaybookGUID, Name, Category, Description, Severity, StepCount, TenantID, CreatedDate) VALUES (?,?,?,?,?,?,?,?,?)")
         .run(pid, randomUUID(), pb.name, pb.category, pb.scenario, pb.severity, pb.phases.length, tenant, now);

@@ -38,7 +38,7 @@ const sevOf = (cvss: number | null, kev: boolean): "Critical" | "High" | "Medium
 };
 const critRank = (c: string): number => ({ critical: 4, high: 3, very: 4, medium: 2, moderate: 2, low: 1 } as Record<string, number>)[String(c).toLowerCase().split(/\s/)[0]] ?? 0;
 
-export interface VulnInventory { rows: Record<string, unknown>[]; worklist: Record<string, unknown>[]; summary: Record<string, unknown>; }
+export interface VulnInventory { rows: Record<string, unknown>[]; worklist: Record<string, unknown>[]; summary: Record<string, unknown>; vulnTags?: string[]; assetTags?: string[]; }
 
 export function vulnInventory(tenant: number | null): VulnInventory {
   const xo = getDb("XORCISM");
@@ -172,6 +172,37 @@ export function vulnInventory(tenant: number | null): VulnInventory {
     };
   });
 
+  // Vulnerability tags (VULNERABILITYTAG.TagID → XORCISM.TAG.TagValue, cross-DB, batched) — drives
+  // the client tag filter + tag-based bulk targeting. Also collect the distinct tag lists.
+  const vulnTagSet = new Set<string>();
+  const vidsAll = rows.map((r) => r.id);
+  if (vidsAll.length && has("XVULNERABILITY", "VULNERABILITYTAG")) {
+    const xv = getDb("XVULNERABILITY");
+    const tidByVid = new Map<number, number[]>(); const allTagIds = new Set<number>();
+    for (let i = 0; i < vidsAll.length; i += 400) {
+      const chunk = vidsAll.slice(i, i + 400); const ph = chunk.map(() => "?").join(",");
+      for (const r of xv.prepare(`SELECT VulnerabilityID vid, TagID tid FROM VULNERABILITYTAG WHERE VulnerabilityID IN (${ph}) AND TagID IS NOT NULL`).all(...chunk) as { vid: number; tid: number }[]) {
+        const a = tidByVid.get(Number(r.vid)) ?? []; a.push(Number(r.tid)); tidByVid.set(Number(r.vid), a); allTagIds.add(Number(r.tid));
+      }
+    }
+    const tagVal = new Map<number, string>();
+    if (allTagIds.size && cols("XORCISM", "TAG").has("TagValue")) {
+      const ids = [...allTagIds];
+      for (let i = 0; i < ids.length; i += 400) {
+        const chunk = ids.slice(i, i + 400); const ph = chunk.map(() => "?").join(",");
+        for (const r of xo.prepare(`SELECT TagID, TagValue FROM TAG WHERE TagID IN (${ph})`).all(...chunk) as { TagID: number; TagValue: string }[]) tagVal.set(Number(r.TagID), r.TagValue);
+      }
+    }
+    for (const r of rows) {
+      const tset: string[] = [];
+      for (const tid of (tidByVid.get(r.id) ?? [])) { const v = tagVal.get(tid); if (v && !tset.includes(v)) { tset.push(v); vulnTagSet.add(v); } }
+      (r as Record<string, unknown>).tags = tset;
+    }
+  }
+  for (const r of rows) if (!(r as Record<string, unknown>).tags) (r as Record<string, unknown>).tags = [];
+  const assetTagSet = new Set<string>();
+  if (has("XORCISM", "ASSETTAG")) for (const r of xo.prepare("SELECT DISTINCT Tag FROM ASSETTAG WHERE Tag IS NOT NULL AND Tag <> ''").all() as { Tag: string }[]) assetTagSet.add(r.Tag);
+
   rows.sort((a, b) => b.score - a.score || (SEV_RANK[a.severity] - SEV_RANK[b.severity]) || (b.cvss ?? 0) - (a.cvss ?? 0));
   const openRows = rows.filter((r) => r.openInstances > 0);
 
@@ -205,6 +236,8 @@ export function vulnInventory(tenant: number | null): VulnInventory {
       remediationCoverage: totalInstances > 0 ? Math.round((resolvedInstances / totalInstances) * 100) : null,
       bySeverity, byStatus, newest,
     },
+    vulnTags: [...vulnTagSet].sort((a, b) => a.localeCompare(b)),
+    assetTags: [...assetTagSet].sort((a, b) => a.localeCompare(b)),
   };
 }
 
@@ -296,4 +329,107 @@ export function setVulnDisposition(
   if (tenant != null && avc.has("TenantID")) { tw = " AND (TenantID = ? OR TenantID IS NULL)"; args.push(tenant); }
   const r = xo.prepare(`UPDATE ASSETVULNERABILITY SET ${set.join(", ")} WHERE VulnerabilityID = ?${tw}`).run(...args);
   return { ok: r.changes > 0, affected: r.changes };
+}
+
+// ── Bulk disposition ──────────────────────────────────────────────────────────
+export interface BulkDispoFilter { vulnTag?: string; assetTag?: string; kev?: boolean; minCvss?: number; assetCriticality?: string; status?: "open" | "false-positive" | "resolved"; }
+export interface BulkDispoResult { matched: number; updated: number; disposition: string; targeting: string; }
+
+/**
+ * Bulk-set a disposition (false-positive / accept-risk / reopen) on many ASSETVULNERABILITY rows.
+ * Targeting (most specific wins for the same-DB pass): explicit `assetVulnerabilityIds` (instances) or
+ * `vulnerabilityIds` (CVE-level → all their instances), plus a `filter` that can select by vulnerability
+ * tag (VULNERABILITYTAG→TAG, cross-DB), asset tag (ASSETTAG), KEV, min-CVSS, asset criticality or current
+ * status. Every write is tenant-scoped; only writable disposition columns are touched. False-positive
+ * also records FalsePositiveReason/By/At when those columns exist.
+ */
+export function bulkDisposition(
+  tenant: number | null,
+  opts: { vulnerabilityIds?: number[]; assetVulnerabilityIds?: number[]; filter?: BulkDispoFilter;
+          disposition: "false-positive" | "accept-risk" | "reopen"; reason?: string; actor?: string },
+): BulkDispoResult {
+  const xo = getDb("XORCISM");
+  const avc = cols("XORCISM", "ASSETVULNERABILITY");
+  if (!avc.size) throw new Error("ASSETVULNERABILITY not available");
+
+  // 1) Candidate instances via same-DB conditions.
+  const where: string[] = ["VulnerabilityID IS NOT NULL"]; const args: unknown[] = [];
+  if (tenant != null && avc.has("TenantID")) { where.push("(TenantID = ? OR TenantID IS NULL)"); args.push(tenant); }
+  let targeting = "filter";
+  const avIds = (opts.assetVulnerabilityIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  const vIds = (opts.vulnerabilityIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  if (avIds.length) { where.push(`AssetVulnerabilityID IN (${avIds.map(() => "?").join(",")})`); args.push(...avIds); targeting = "assetVulnIds"; }
+  else if (vIds.length) { where.push(`VulnerabilityID IN (${vIds.map(() => "?").join(",")})`); args.push(...vIds); targeting = "vulnIds"; }
+  const f = opts.filter || {};
+  if (f.assetTag && has("XORCISM", "ASSETTAG")) { where.push("AssetID IN (SELECT AssetID FROM ASSETTAG WHERE Tag = ? COLLATE NOCASE)"); args.push(f.assetTag); }
+  if (f.assetCriticality) { where.push("AssetID IN (SELECT AssetID FROM ASSET WHERE AssetCriticalityLevel = ? COLLATE NOCASE)"); args.push(f.assetCriticality); }
+  if (f.status === "false-positive" && avc.has("FalsePositive")) where.push("FalsePositive = 1");
+  else if (f.status === "resolved" && avc.has("AssetVulnerabilityStatusID")) where.push(`AssetVulnerabilityStatusID >= ${DISPOSED_STATUS}`);
+  else if (f.status === "open") {
+    if (avc.has("FalsePositive")) where.push("(FalsePositive IS NULL OR FalsePositive = 0)");
+    if (avc.has("AssetVulnerabilityStatusID")) where.push(`(AssetVulnerabilityStatusID IS NULL OR AssetVulnerabilityStatusID < ${DISPOSED_STATUS})`);
+  }
+  const cand = xo.prepare(`SELECT AssetVulnerabilityID id, VulnerabilityID vid FROM ASSETVULNERABILITY WHERE ${where.join(" AND ")}`).all(...args) as { id: number; vid: number }[];
+
+  // 2) Cross-DB vulnerability filters (vulnTag / KEV / min-CVSS) — reduce to an allowed vid set.
+  let allowed: Set<number> | null = null;
+  const candVids = [...new Set(cand.map((c) => Number(c.vid)))];
+  if (f.vulnTag && candVids.length && has("XVULNERABILITY", "VULNERABILITYTAG") && cols("XORCISM", "TAG").has("TagValue")) {
+    const tids = (xo.prepare("SELECT TagID FROM TAG WHERE TagValue = ? COLLATE NOCASE").all(f.vulnTag) as { TagID: number }[]).map((t) => Number(t.TagID));
+    allowed = new Set<number>();
+    if (tids.length) {
+      const xv = getDb("XVULNERABILITY"); const tph = tids.map(() => "?").join(",");
+      for (let i = 0; i < candVids.length; i += 400) {
+        const chunk = candVids.slice(i, i + 400); const vph = chunk.map(() => "?").join(",");
+        for (const r of xv.prepare(`SELECT DISTINCT VulnerabilityID vid FROM VULNERABILITYTAG WHERE TagID IN (${tph}) AND VulnerabilityID IN (${vph})`).all(...tids, ...chunk) as { vid: number }[]) allowed.add(Number(r.vid));
+      }
+    }
+  }
+  if ((f.kev || f.minCvss != null) && candVids.length && cols("XVULNERABILITY", "VULNERABILITY").size) {
+    const vc = cols("XVULNERABILITY", "VULNERABILITY"); const conds: string[] = [];
+    if (f.kev && vc.has("KEV")) conds.push("KEV = 1");
+    if (f.minCvss != null && vc.has("CVSSBaseScore")) conds.push(`CVSSBaseScore >= ${Number(f.minCvss)}`);
+    if (conds.length) {
+      const xv = getDb("XVULNERABILITY"); const s = new Set<number>();
+      for (let i = 0; i < candVids.length; i += 400) {
+        const chunk = candVids.slice(i, i + 400); const vph = chunk.map(() => "?").join(",");
+        for (const r of xv.prepare(`SELECT VulnerabilityID vid FROM VULNERABILITY WHERE VulnerabilityID IN (${vph}) AND ${conds.join(" AND ")}`).all(...chunk) as { vid: number }[]) s.add(Number(r.vid));
+      }
+      allowed = allowed ? new Set([...allowed].filter((v) => s.has(v))) : s;
+    }
+  }
+  const targetIds = (allowed ? cand.filter((c) => allowed!.has(Number(c.vid))) : cand).map((c) => Number(c.id));
+  const matched = targetIds.length;
+  if (!matched) return { matched: 0, updated: 0, disposition: opts.disposition, targeting };
+
+  // 3) Disposition SET clause (mirrors setVulnDisposition; FP also stamps reason/by/at).
+  const set: string[] = []; const sargs: unknown[] = []; const now = new Date().toISOString();
+  if (opts.disposition === "false-positive") {
+    if (avc.has("FalsePositive")) set.push("FalsePositive = 1");
+    if (avc.has("Status")) { set.push("Status = ?"); sargs.push("False positive"); }
+    if (avc.has("AssetVulnerabilityStatusID")) set.push(`AssetVulnerabilityStatusID = ${DISPOSED_STATUS}`);
+    if (avc.has("FalsePositiveReason") && opts.reason) { set.push("FalsePositiveReason = ?"); sargs.push(String(opts.reason).slice(0, 500)); }
+    if (avc.has("FalsePositiveBy") && opts.actor) { set.push("FalsePositiveBy = ?"); sargs.push(String(opts.actor).slice(0, 120)); }
+    if (avc.has("FalsePositiveAt")) { set.push("FalsePositiveAt = ?"); sargs.push(now); }
+  } else if (opts.disposition === "accept-risk") {
+    if (avc.has("AssetVulnerabilityStatusID")) set.push(`AssetVulnerabilityStatusID = ${DISPOSED_STATUS}`);
+    if (avc.has("Status")) { set.push("Status = ?"); sargs.push("Accepted risk"); }
+  } else { // reopen
+    if (avc.has("FalsePositive")) set.push("FalsePositive = 0");
+    if (avc.has("AssetVulnerabilityStatusID")) set.push("AssetVulnerabilityStatusID = 0");
+    if (avc.has("Status")) { set.push("Status = ?"); sargs.push("Open"); }
+    if (avc.has("PatchStatus")) set.push("PatchStatus = NULLIF(PatchStatus, 'Patched')");
+    if (avc.has("FalsePositiveReason")) set.push("FalsePositiveReason = NULL");
+  }
+  if (!set.length) throw new Error("no writable disposition columns");
+
+  let updated = 0;
+  const tx = xo.transaction((ids: number[]) => {
+    for (let i = 0; i < ids.length; i += 400) {
+      const chunk = ids.slice(i, i + 400); const ph = chunk.map(() => "?").join(",");
+      updated += xo.prepare(`UPDATE ASSETVULNERABILITY SET ${set.join(", ")} WHERE AssetVulnerabilityID IN (${ph})`).run(...sargs, ...chunk).changes;
+    }
+  });
+  tx(targetIds);
+  return { matched, updated, disposition: opts.disposition, targeting };
 }

@@ -57,42 +57,42 @@
   <a href="/cti-expert">&#128270; CTI-Expert</a>
   <a href="/vulnerability-management">&#128737; Vulnerabilities</a>
   <span class="spacer"></span>
-  <span class="title">&#129504; Threat-Intel Copilot</span>
+  <span class="title" data-t="tcp.barTitle">&#129504; Threat-Intel Copilot</span>
 </div>
 
 <div class="tc-wrap">
-  <h1>Threat-Intel Copilot</h1>
-  <div class="tc-sub">From noise to signal — decision-ready intelligence grounded in your own data. Every relevant CVE is
+  <h1 data-t="tcp.title">Threat-Intel Copilot</h1>
+  <div class="tc-sub" data-t-html="tcp.sub">From noise to signal — decision-ready intelligence grounded in your own data. Every relevant CVE is
     scored <b>Act / Prioritise / Track</b> from KEV (active exploitation), EPSS (exploit probability), CVSS and SSVC.
     The analyst answers in four modes and always shows the queries it ran and the sources it cited.</div>
 
   <div class="tc-panel">
-    <h2>Decision-ready triage <span id="tc-scope" class="muted" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h2>
+    <h2><span data-t="tcp.triage">Decision-ready triage</span> <span id="tc-scope" class="muted" style="font-weight:400;text-transform:none;letter-spacing:0"></span></h2>
     <div class="tc-chips" id="tc-chips"></div>
     <div style="overflow:auto;max-height:460px">
       <table class="tc-tbl" id="tc-feed"><thead><tr>
-        <th>Decision</th><th>CVE</th><th>Signals (why)</th><th>EPSS</th><th>CVSS</th><th>Assets</th><th>Conf.</th>
+        <th data-t="tcp.h.decision">Decision</th><th>CVE</th><th data-t="tcp.h.signals">Signals (why)</th><th>EPSS</th><th>CVSS</th><th data-t="tcp.h.assets">Assets</th><th data-t="tcp.h.conf">Conf.</th>
       </tr></thead><tbody id="tc-feed-body"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody></table>
     </div>
   </div>
 
   <div class="tc-panel">
-    <h2>Analyst <span id="tc-prov" style="font-weight:400"></span></h2>
+    <h2><span data-t="tcp.analyst">Analyst</span> <span id="tc-prov" style="font-weight:400"></span></h2>
     <div class="tc-modes" id="tc-modes">
-      <button class="tc-mode active" data-mode="ask">Ask<span class="h">answer from your data</span></button>
-      <button class="tc-mode" data-mode="investigate">Investigate<span class="h">a CVE / actor / asset</span></button>
-      <button class="tc-mode" data-mode="draft">Draft<span class="h">board-ready brief</span></button>
-      <button class="tc-mode" data-mode="challenge">Challenge<span class="h">competing hypotheses</span></button>
+      <button class="tc-mode active" data-mode="ask" data-t="tcp.mode.ask">Ask<span class="h" data-t="tcp.mode.askH">answer from your data</span></button>
+      <button class="tc-mode" data-mode="investigate" data-t="tcp.mode.investigate">Investigate<span class="h" data-t="tcp.mode.investigateH">a CVE / actor / asset</span></button>
+      <button class="tc-mode" data-mode="draft" data-t="tcp.mode.draft">Draft<span class="h" data-t="tcp.mode.draftH">board-ready brief</span></button>
+      <button class="tc-mode" data-mode="challenge" data-t="tcp.mode.challenge">Challenge<span class="h" data-t="tcp.mode.challengeH">competing hypotheses</span></button>
     </div>
-    <textarea id="tc-q" placeholder="e.g. What should we remediate first this week? · Investigate CVE-2024-3094 · Draft a board brief · Challenge: the SharePoint flaw is our top risk"></textarea>
+    <textarea id="tc-q" data-t-ph="tcp.qPh" placeholder="e.g. What should we remediate first this week? · Investigate CVE-2024-3094 · Draft a board brief · Challenge: the SharePoint flaw is our top risk"></textarea>
     <div class="tc-actions">
-      <button class="btn-run" id="tc-run">▷ Run</button>
+      <button class="btn-run" id="tc-run" data-t="tcp.run">▷ Run</button>
       <span class="muted" id="tc-status" style="font-size:12px"></span>
     </div>
     <div class="tc-answer" id="tc-answer"></div>
     <div class="tc-meta" id="tc-metawrap" style="display:none">
-      <div class="col"><div class="sec">Queries run</div><div id="tc-queries"></div></div>
-      <div class="col"><div class="sec">Sources cited</div><div id="tc-sources"></div></div>
+      <div class="col"><div class="sec" data-t="tcp.queriesRun">Queries run</div><div id="tc-queries"></div></div>
+      <div class="col"><div class="sec" data-t="tcp.sourcesCited">Sources cited</div><div id="tc-sources"></div></div>
     </div>
   </div>
 </div>

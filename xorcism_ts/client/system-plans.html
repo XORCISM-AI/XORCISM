@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — System Plans (NIST SP 800-18r2)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .sp-wrap{max-width:1200px;margin:0 auto;padding:18px}
+  .sp-wrap h1{font-size:20px;margin:0 0 2px}
+  .sp-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .sp-btn{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .sp-btn:hover{border-color:#7c83fd}.sp-btn.pri{background:#7c83fd;color:#0b0d18;border-color:#7c83fd}
+  .sp-btn.sm{padding:3px 9px;font-size:11px}
+  table.sp{width:100%;border-collapse:collapse;font-size:13px}
+  table.sp th,table.sp td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.sp th{color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.4px}
+  .muted{color:#64748b}
+  .tag{display:inline-block;font-size:10.5px;border-radius:6px;padding:2px 8px;background:#161a2e;border:1px solid #2d3250;color:#cbd5e1}
+  .tag.type{background:#1e2940;color:#c4b5fd}.tag.cat-high{background:#7f1d1d;color:#fecaca}.tag.cat-moderate{background:#78350f;color:#fcd34d}.tag.cat-low{background:#064e3b;color:#6ee7b7}
+  .bar{display:inline-block;width:90px;height:8px;border-radius:4px;background:#1e2133;overflow:hidden;vertical-align:middle}.bar>i{display:block;height:100%;background:#7c83fd}
+  .sp-hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+  .sp-score{font-size:34px;font-weight:800;color:#7c83fd}
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px}
+  .step{flex:1;min-width:120px;background:#0f1322;border:1px solid #2d3250;border-radius:10px;padding:9px 11px;cursor:pointer}
+  .step.active{border-color:#7c83fd;box-shadow:0 0 0 1px #7c83fd inset}
+  .step .o{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.4px}
+  .step .n{font-size:13px;font-weight:700;color:#e2e8f0;margin:2px 0}
+  .step .p{font-size:11px;color:#94a3b8}
+  .step .sbar{height:5px;border-radius:3px;background:#1e2133;overflow:hidden;margin-top:5px}.step .sbar>i{display:block;height:100%;background:#4ade80}
+  .stepsec{font-size:13px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.4px;margin:18px 0 8px;border-bottom:1px solid #2d3250;padding-bottom:5px}
+  .el{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px;margin-bottom:9px}
+  .el .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .el .title{font-size:14px;font-weight:600;color:#e2e8f0}
+  .el .rmf{font-size:10.5px;color:#64748b;font-family:ui-monospace,monospace;background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:1px 7px}
+  .el .ov{font-size:12px;color:#94a3b8;margin:5px 0 7px}
+  .el textarea{width:100%;box-sizing:border-box;background:#0f1117;border:1px solid #2d3250;border-radius:8px;padding:8px 10px;color:#e2e8f0;font-size:13px;font-family:inherit;min-height:70px;resize:vertical}
+  .el .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:7px}
+  select,input.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  .st-complete{color:#4ade80}.st-in-progress{color:#fbbf24}.st-na{color:#64748b}.st-todo{color:#94a3b8}
+  .modal-bg{position:fixed;inset:0;background:rgba(4,6,15,.72);display:none;align-items:flex-start;justify-content:center;z-index:50;overflow:auto}
+  .modal-bg.on{display:flex}
+  .modal{background:#0f1322;border:1px solid #2d3250;border-radius:12px;padding:18px 20px;margin:48px 16px;max-width:640px;width:100%}
+  .modal h2{font-size:16px;margin:0 0 12px}
+  .fld{display:flex;flex-direction:column;gap:3px;margin-bottom:9px}.fld label{font-size:11px;color:#94a3b8}
+  .fld input,.fld select,.fld textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .hdr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:9px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-management">&#9989; Compliance</a>
+  <a href="/compliance-journeys">&#129517; Journeys</a>
+  <span class="spacer"></span>
+  <span class="title" data-t="sp.barTitle">&#128220; System Plans</span>
+</div>
+
+<div class="sp-wrap">
+  <h1 data-t="sp.title">System Plans — NIST SP 800-18r2</h1>
+  <div class="sp-sub" data-t="sp.sub">Develop living <b>Security</b>, <b>Privacy</b>, <b>C-SCRM</b> or <b>Consolidated</b> system plans. Each plan is built from the 21 SP 800-18r2 plan elements, organized across the 7 Risk Management Framework steps (Prepare → Categorize → Select → Implement → Assess → Authorize → Monitor), with each element mapped to its source RMF task(s). Export as OSCAL SSP or Markdown.</div>
+  <div id="sp-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<div class="modal-bg" id="sp-modal"><div class="modal" id="sp-modal-inner"></div></div>
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/system-plans.js"></script>
+</body>
+</html>

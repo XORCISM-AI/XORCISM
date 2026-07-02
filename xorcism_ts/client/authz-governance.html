@@ -47,35 +47,35 @@
   <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
   <a href="/zero-trust">&#128737;&#65039; Zero Trust</a>
   <span class="spacer"></span>
-  <span class="title">&#128273; API Authorization Governance</span>
+  <span class="title" data-t="azg.barTitle">&#128273; API Authorization Governance</span>
 </div>
 
 <div class="az-wrap">
-  <h1 style="font-size:20px;margin:0 0 2px">API Authorization Governance</h1>
-  <div class="az-sub">Inventory and assess the <b>API gateways (PEP)</b>, <b>policy decision points (PDP — OPA / Cedar / AuthZEN)</b> and authorization <b>policies</b> protecting your APIs. Posture is scored against the <b>OWASP API Security Top 10</b> (BOLA/BFLA/Broken-AuthN), <b>NIST CSF 2.0 PR.AA</b> and the <b>NIST 800-207</b> PE/PA/PEP model. Includes a vendor-neutral decision evaluator (PEP test harness).</div>
+  <h1 style="font-size:20px;margin:0 0 2px" data-t="azg.title">API Authorization Governance</h1>
+  <div class="az-sub" data-t-html="azg.sub">Inventory and assess the <b>API gateways (PEP)</b>, <b>policy decision points (PDP — OPA / Cedar / AuthZEN)</b> and authorization <b>policies</b> protecting your APIs. Posture is scored against the <b>OWASP API Security Top 10</b> (BOLA/BFLA/Broken-AuthN), <b>NIST CSF 2.0 PR.AA</b> and the <b>NIST 800-207</b> PE/PA/PEP model. Includes a vendor-neutral decision evaluator (PEP test harness).</div>
 
   <div id="az-posture"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
 
-  <div class="sect-h">Authorization decision evaluator (PEP test harness)</div>
+  <div class="sect-h" data-t="azg.evaluator">Authorization decision evaluator (PEP test harness)</div>
   <div class="card2">
     <div class="row">
-      <div class="fld"><label>Engine</label><select id="ev-engine"><option value="authzen">AuthZEN</option><option value="opa">OPA (Rego)</option><option value="cedar">Cedar / AVP</option></select></div>
-      <div class="fld"><label>Expected (optional)</label><select id="ev-expected"><option value="">—</option><option value="allow">allow</option><option value="deny">deny</option></select></div>
+      <div class="fld"><label data-t="azg.engine">Engine</label><select id="ev-engine"><option value="authzen">AuthZEN</option><option value="opa">OPA (Rego)</option><option value="cedar">Cedar / AVP</option></select></div>
+      <div class="fld"><label data-t="azg.expected">Expected (optional)</label><select id="ev-expected"><option value="">—</option><option value="allow">allow</option><option value="deny">deny</option></select></div>
     </div>
     <div class="row">
-      <div class="fld"><label>Subject (e.g. user:alice)</label><input id="ev-subject" placeholder="user:alice"></div>
-      <div class="fld"><label>Action (e.g. read)</label><input id="ev-action" placeholder="read"></div>
+      <div class="fld"><label data-t="azg.subject">Subject (e.g. user:alice)</label><input id="ev-subject" placeholder="user:alice"></div>
+      <div class="fld"><label data-t="azg.action">Action (e.g. read)</label><input id="ev-action" placeholder="read"></div>
     </div>
     <div class="row">
-      <div class="fld"><label>Resource (e.g. document:42)</label><input id="ev-resource" placeholder="document:42"></div>
-      <div class="fld"><label>Context JSON (optional)</label><input id="ev-context" placeholder='{"ip":"10.0.0.1"}'></div>
+      <div class="fld"><label data-t="azg.resource">Resource (e.g. document:42)</label><input id="ev-resource" placeholder="document:42"></div>
+      <div class="fld"><label data-t="azg.contextJson">Context JSON (optional)</label><input id="ev-context" placeholder='{"ip":"10.0.0.1"}'></div>
     </div>
     <div class="row">
-      <div class="fld"><label>PDP endpoint (optional, for live call)</label><input id="ev-endpoint" placeholder="http://localhost:8181/v1/data/app/allow"></div>
-      <div class="fld"><label>&nbsp;</label><label style="font-size:12px;color:#cbd5e1"><input type="checkbox" id="ev-live"> Call PDP live</label></div>
+      <div class="fld"><label data-t="azg.pdpEndpoint">PDP endpoint (optional, for live call)</label><input id="ev-endpoint" placeholder="http://localhost:8181/v1/data/app/allow"></div>
+      <div class="fld"><label>&nbsp;</label><label style="font-size:12px;color:#cbd5e1"><input type="checkbox" id="ev-live"> <span data-t="azg.callLive">Call PDP live</span></label></div>
     </div>
-    <button class="btn-az" id="ev-run">Evaluate</button>
-    <button class="btn-az" id="ev-suite" title="Run the OWASP BOLA/BFLA negative-authorization battery against the PDP (uses the engine + endpoint + live settings above)">&#9888;&#65039; Run BOLA/BFLA test battery</button>
+    <button class="btn-az" id="ev-run" data-t="azg.evaluate">Evaluate</button>
+    <button class="btn-az" id="ev-suite" data-t="azg.runBattery" data-t-title="azg.runBatteryTitle" title="Run the OWASP BOLA/BFLA negative-authorization battery against the PDP (uses the engine + endpoint + live settings above)">&#9888;&#65039; Run BOLA/BFLA test battery</button>
     <div id="ev-out"></div>
     <div id="suite-trend"></div>
     <div id="suite-out"></div>
@@ -83,52 +83,52 @@
 
   <div class="grid2" style="margin-top:16px">
     <div class="card2">
-      <h3>＋ Register API gateway (PEP)</h3>
-      <div class="fld"><label>Name</label><input id="gw-name"></div>
+      <h3 data-t="azg.registerGw">＋ Register API gateway (PEP)</h3>
+      <div class="fld"><label data-t="azg.name">Name</label><input id="gw-name"></div>
       <div class="row">
-        <div class="fld"><label>Type</label><select id="gw-type"><option>kong</option><option>apigee</option><option>aws-apigw</option><option>azure-apim</option><option>envoy</option><option>nginx</option><option>tyk</option><option>traefik</option><option>other</option></select></div>
-        <div class="fld"><label>AuthZ model</label><select id="gw-model"><option value="none">none</option><option value="rbac">rbac</option><option value="scopes">scopes</option><option value="abac">abac</option><option value="rebac">rebac</option><option value="external-pdp">external-pdp</option></select></div>
+        <div class="fld"><label data-t="azg.type">Type</label><select id="gw-type"><option>kong</option><option>apigee</option><option>aws-apigw</option><option>azure-apim</option><option>envoy</option><option>nginx</option><option>tyk</option><option>traefik</option><option>other</option></select></div>
+        <div class="fld"><label data-t="azg.authzModel">AuthZ model</label><select id="gw-model"><option value="none">none</option><option value="rbac">rbac</option><option value="scopes">scopes</option><option value="abac">abac</option><option value="rebac">rebac</option><option value="external-pdp">external-pdp</option></select></div>
       </div>
-      <div class="fld"><label>AuthN methods (comma: oidc,jwt,mtls,apikey,basic)</label><input id="gw-authn" placeholder="oidc,mtls"></div>
+      <div class="fld"><label data-t="azg.authnMethods">AuthN methods (comma: oidc,jwt,mtls,apikey,basic)</label><input id="gw-authn" placeholder="oidc,mtls"></div>
       <div class="row">
         <div class="fld"><label>PDP</label><select id="gw-pdp"><option value="">— none —</option></select></div>
-        <div class="fld"><label>Environment</label><input id="gw-env" placeholder="prod"></div>
+        <div class="fld"><label data-t="azg.environment">Environment</label><input id="gw-env" placeholder="prod"></div>
       </div>
       <div class="row">
-        <div class="fld"><label>Deny-by-default</label><select id="gw-deny"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
-        <div class="fld"><label>Decision logging</label><select id="gw-log"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
+        <div class="fld"><label data-t="azg.denyDefault">Deny-by-default</label><select id="gw-deny"><option value="" data-t="azg.o.unknown">unknown</option><option value="1" data-t="azg.o.yes">yes</option><option value="0" data-t="azg.o.no">no</option></select></div>
+        <div class="fld"><label data-t="azg.decisionLog">Decision logging</label><select id="gw-log"><option value="" data-t="azg.o.unknown">unknown</option><option value="1" data-t="azg.o.yes">yes</option><option value="0" data-t="azg.o.no">no</option></select></div>
       </div>
-      <button class="btn-az" id="gw-add">Add gateway</button>
+      <button class="btn-az" id="gw-add" data-t="azg.addGw">Add gateway</button>
     </div>
 
     <div class="card2">
-      <h3>＋ Register policy decision point (PDP)</h3>
-      <div class="fld"><label>Name</label><input id="pdp-name"></div>
+      <h3 data-t="azg.registerPdp">＋ Register policy decision point (PDP)</h3>
+      <div class="fld"><label data-t="azg.name">Name</label><input id="pdp-name"></div>
       <div class="row">
-        <div class="fld"><label>Engine</label><select id="pdp-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="avp">Amazon Verified Permissions</option><option value="authzen">AuthZEN PDP</option><option value="spicedb">SpiceDB</option><option value="casbin">Casbin</option><option value="other">other</option></select></div>
-        <div class="fld"><label>Status</label><select id="pdp-status"><option value="unknown">unknown</option><option value="healthy">healthy</option><option value="unreachable">unreachable</option></select></div>
+        <div class="fld"><label data-t="azg.engine">Engine</label><select id="pdp-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="avp">Amazon Verified Permissions</option><option value="authzen">AuthZEN PDP</option><option value="spicedb">SpiceDB</option><option value="casbin">Casbin</option><option value="other">other</option></select></div>
+        <div class="fld"><label data-t="azg.status">Status</label><select id="pdp-status"><option value="unknown" data-t="azg.o.unknown">unknown</option><option value="healthy" data-t="azg.o.healthy">healthy</option><option value="unreachable" data-t="azg.o.unreachable">unreachable</option></select></div>
       </div>
-      <div class="fld"><label>Endpoint</label><input id="pdp-endpoint" placeholder="http://localhost:8181"></div>
-      <div class="fld"><label><input type="checkbox" id="pdp-authzen"> AuthZEN-conformant</label></div>
-      <div class="fld"><label><input type="checkbox" id="pdp-regression"> Scheduled regression (re-run BOLA/BFLA battery daily &amp; alert on regression)</label></div>
-      <button class="btn-az" id="pdp-add">Add PDP</button>
-      <h3 style="margin-top:14px">＋ Register policy</h3>
+      <div class="fld"><label data-t="azg.endpoint">Endpoint</label><input id="pdp-endpoint" placeholder="http://localhost:8181"></div>
+      <div class="fld"><label><input type="checkbox" id="pdp-authzen"> <span data-t="azg.authzenConformant">AuthZEN-conformant</span></label></div>
+      <div class="fld"><label><input type="checkbox" id="pdp-regression"> <span data-t="azg.scheduledRegression">Scheduled regression (re-run BOLA/BFLA battery daily &amp; alert on regression)</span></label></div>
+      <button class="btn-az" id="pdp-add" data-t="azg.addPdp">Add PDP</button>
+      <h3 style="margin-top:14px" data-t="azg.registerPolicy">＋ Register policy</h3>
       <div class="row">
-        <div class="fld"><label>Name</label><input id="pol-name"></div>
-        <div class="fld"><label>Engine</label><select id="pol-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="other">other</option></select></div>
+        <div class="fld"><label data-t="azg.name">Name</label><input id="pol-name"></div>
+        <div class="fld"><label data-t="azg.engine">Engine</label><select id="pol-engine"><option value="opa">OPA</option><option value="cedar">Cedar</option><option value="other">other</option></select></div>
       </div>
       <div class="row">
-        <div class="fld"><label>Default-deny</label><select id="pol-deny"><option value="">unknown</option><option value="1">yes</option><option value="0">no</option></select></div>
-        <div class="fld"><label>Versioned & tested</label><select id="pol-vt"><option value="">unknown</option><option value="vt">versioned+tested</option><option value="v">versioned only</option><option value="0">neither</option></select></div>
+        <div class="fld"><label data-t="azg.defaultDeny">Default-deny</label><select id="pol-deny"><option value="" data-t="azg.o.unknown">unknown</option><option value="1" data-t="azg.o.yes">yes</option><option value="0" data-t="azg.o.no">no</option></select></div>
+        <div class="fld"><label data-t="azg.versionedTested">Versioned &amp; tested</label><select id="pol-vt"><option value="" data-t="azg.o.unknown">unknown</option><option value="vt" data-t="azg.o.vt">versioned+tested</option><option value="v" data-t="azg.o.v">versioned only</option><option value="0" data-t="azg.o.neither">neither</option></select></div>
       </div>
-      <button class="btn-az" id="pol-add">Add policy</button>
+      <button class="btn-az" id="pol-add" data-t="azg.addPolicy">Add policy</button>
     </div>
   </div>
 
-  <div class="sect-h">Topology — PEP → PDP → policy</div>
+  <div class="sect-h" data-t="azg.topology">Topology — PEP → PDP → policy</div>
   <div id="az-topology"></div>
 
-  <div class="sect-h">Inventory</div>
+  <div class="sect-h" data-t="azg.inventory">Inventory</div>
   <div id="az-inventory"></div>
 </div>
 

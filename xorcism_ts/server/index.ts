@@ -84,6 +84,7 @@ import { seedIdGovDemo } from "./identitygov";
 import accessGovRouter from "./routes/accessgov";
 import { seedAccessGovDemo } from "./accessgov";
 import socRouter from "./routes/soc";
+import { seedSocDefaults } from "./soc";
 import soccmmRouter from "./routes/soccmm";
 import certopsRouter from "./routes/certops";
 import governanceRouter from "./routes/governance";
@@ -141,6 +142,8 @@ import osintGraphRouter from "./routes/osintgraph";
 import policiesRouter from "./routes/policies";
 import policyvalRouter from "./routes/policyval";
 import gapAssessRouter from "./routes/gapassess";
+import secplansRouter from "./routes/secplans";
+import { seedSystemPlanDemo } from "./secplans";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
 import fairmamRouter from "./routes/fairmam";
@@ -154,6 +157,8 @@ import aiSbomRouter from "./routes/aisbom";
 import traceRouter from "./routes/trace";
 import tlptRouter from "./routes/tlpt";
 import agentFwRouter from "./routes/agentfw";
+import { seedDemo as seedAgentFwDemo } from "./agentfw";
+import { seedAuthzDemo } from "./authzgov";
 import sprsRouter from "./routes/sprs";
 import remediationRouter from "./routes/remediation";
 import { seedDemo as seedRemediationDemo } from "./remediation";
@@ -211,7 +216,7 @@ import {
   seedAdmin,
 } from "./auth";
 import { purgeExpiredSessions, seedFeaturePageGrants, ensureAuditChain } from "./xid";
-import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureLegalReviewTable, ensureAccessGovTables, ensureThreatActorProfile, ensureAveTables, ensureExposureTables, ensureDetectionEvidenceTables, startReplicaSync, dbDriver } from "./db";
+import { ensureSchemaDbs, seedData, ensureTenantColumns, ensureThreatModelTables, ensureComplianceDb, ensureTicketDb, ensureThreatTables, ensureIncidentTables, ensureOpenctiColumns, ensureEmulationTables, ensureGrcColumns, ensureBugBountyTables, ensureEbiosTables, ensureNist80030Tables, ensureOtSecurityTables, ensurePatchTables, ensureMonitoringTables, ensureControlImplementationTables, ensureCisBenchmarkTables, ensureTrustCenterTables, ensureAssetColumns, ensureAssetPrimaryKey, ensureIdentityTables, ensureOvalScanTables, ensureVulnerabilityColumns, ensureDocumentSensitivity, ensurePersonOrgChartColumns, ensureAwarenessTables, ensureMalwareScanTables, ensureCloudComplianceTables, ensureComplianceJourneyTables, ensureSystemPlanTables, ensureQuestionnaireRunTables, ensureTprmTables, ensureZeroTrustTables, ensureZtSigninTable, ensureZtPolicyTable, ensureItdrTables, ensureIdGovTables, ensureNotificationRuleTable, ensureSocTables, ensureSocCmmTables, ensureCertOpsTables, ensureGovernanceTables, ensureAiThreatTables, ensureWorkforceTables, ensureTeamOpsTables, ensureVocTables, ensureVmTrendsTables, ensureCtemTables, ensureRemediationTables, ensureStixObjectStore, ensureDevSecOpsTables, ensureNetflowTables, ensureToolDocumentTable, ensureOrganisationRiskScoreTable, ensureFairMamTables, ensurePqcmmTables, ensureCsfMaturityTables, ensureScaTables, ensureCbomTables, ensureAiSbomTables, ensureTlptTables, ensureAgentFwTables, ensureSprsTables, ensureToolStarTable, ensurePolicyAckTable, ensurePolicyVersionTable, ensurePolicyAssetTable, ensureLegalReviewTable, ensureAccessGovTables, ensureThreatActorProfile, ensureAveTables, ensureExposureTables, ensureDetectionEvidenceTables, seedIrBooks, startReplicaSync, dbDriver } from "./db";
 import { tr } from "./i18n";
 
 const PORT = Number(process.env.PORT) || 9292;
@@ -367,6 +372,7 @@ app.use("/api", cloudSecRouter); // Cloud Security: cloud asset inventory + expo
 app.use("/api", awarenessRouter); // Security Awareness: training catalogue + phishing simulations + human-risk
 app.use("/api", malscanRouter); // Malware scan: multi-engine IOC/file reputation (VT/OpenTIP/ANY.RUN/…) → XMALWARE
 app.use("/api", journeysRouter); // Compliance journeys: guided multi-framework wizard (ISO/SOC2/NIST/NIS2/DORA/CRA/MiCA/FedRAMP)
+app.use("/api", secplansRouter); // System plans (NIST SP 800-18r2): Security/Privacy/C-SCRM/Consolidated + 7-step RMF journey + OSCAL SSP export
 app.use("/api", questionnaireJourneysRouter); // Questionnaire journeys: guided runner for QUESTIONNAIREs (OCIL, CSA AI-CAIQ TPRM)
 app.use("/api", tprmRouter); // TPRM cockpit: vendor risk, outside-in posture, questionnaire conformance, AI copilots
 app.use("/api", zeroTrustRouter); // Zero Trust cockpit: CISA ZTMM maturity + live pillar signals + fused trust score
@@ -599,6 +605,9 @@ app.get("/malware-scan", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/compliance-journeys", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "compliance-journeys.html"));
+});
+app.get("/system-plans", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "system-plans.html"));
 });
 app.get("/questionnaire-journeys", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "questionnaire-journeys.html"));
@@ -959,11 +968,13 @@ ensureOvalScanTables(); // OVAL scan results: extend XOVAL.OVALRESULTS into per-
 ensureSlaColumns(); // ASSET.SLAResponseHours/SLAResolutionHours + INCIDENT.Duration (SLA breach view)
 ensureVulnerabilityColumns(); // adds VULNERABILITY.EPSS (Exploit Prediction Scoring System) if missing
 ensureDocumentSensitivity(); // adds DOCUMENT.SensitivityLabel + TLP (data-classification labels) if missing
+try { seedIrBooks(); } catch { /* best-effort */ } // IR/DFIR reference books → XCOMPLIANCE.DOCUMENT (awesome-incident-response)
 ensurePersonOrgChartColumns(); // adds PERSON org-chart/AD/Entra fields (ManagerPersonID, JobTitle, UPN…) if missing
 ensureAwarenessTables(); // security-awareness training + phishing-simulation schema (PHISHINGSIMULATION/RESULT)
 ensureMalwareScanTables(); // multi-engine malware scan store (XMALWARE.MALWARESCAN/MALWARESCANENGINE)
 ensureCloudComplianceTables(); // cloud compliance checker findings (XORCISM.CLOUDFINDING)
 ensureComplianceJourneyTables(); // guided compliance-journey wizard (XCOMPLIANCE.COMPLIANCEJOURNEY/STEP)
+ensureSystemPlanTables(); // NIST SP 800-18r2 system plans (XCOMPLIANCE.SYSTEMPLAN/SYSTEMPLANELEMENT)
 ensureQuestionnaireRunTables(); // guided questionnaire runner (XCOMPLIANCE.QUESTIONNAIRERUN/RESPONSE)
 ensureTprmTables(); // TPRM cockpit (XCOMPLIANCE.TPRMVENDOR/TPRMFINDING)
 ensureZeroTrustTables(); // Zero Trust maturity (XCOMPLIANCE.ZTFUNCTION/ZTMATURITYASSESSMENT/ZTMATURITYITEM)
@@ -1019,6 +1030,9 @@ try { seedAiSkillsDemo(3); } catch { /* demo only */ } // AI Operations demo (te
 try { seedSlsaDemo(3); } catch { /* demo only */ } // SLSA demo (tenant 3): 4 artifacts at varying build-integrity levels
 try { seedTprmDemo(3); } catch { /* demo only */ } // TPRM demo (tenant 3): 4 vendors with tiers, posture, conformance, findings
 try { seedOdessaPlaybook(3); } catch { /* idempotent */ } // ODESSA AI-IR Loop: 6-stage adversarial-AI incident-response SOAR playbook (tenant 3)
+try { seedSocDefaults(3); } catch { /* idempotent */ } // SOC + CERT-SG IRM incident-response playbook library (PLAYBOOK/PLAYBOOKSTEP, tenant 3)
+try { seedAgentFwDemo(3); } catch { /* demo only */ } // Agent Policy Firewall demo (tenant 3): default policies + evaluated actions + receipt chain
+try { seedAuthzDemo(3); } catch { /* demo only */ } // API Authorization Governance demo (tenant 3): PDPs/gateways/policies + BOLA/BFLA decision tests
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store
@@ -1051,6 +1065,7 @@ ensureAveTables(); // AVE (bawbel/ave): Agentic Vulnerability Enumeration refere
 ensureDetectionEvidenceTables(); // proof behind a detection: XTHREAT.DETECTIONEVIDENCE (intel/PoC/log/PCAP/prompt/ref + provenance)
 try { seedAve(); } catch { /* sample only */ } // load the bundled AVE sample catalogue if empty
 try { seedRemediationDemo(3); } catch { /* demo only */ } // AER demo (tenant 3): plans across the PLAN→GATE→EXECUTE→VERIFY→CLOSE lifecycle
+try { seedSystemPlanDemo(3); } catch { /* demo only */ } // NIST SP 800-18r2 demo (tenant 3): a consolidated system plan mid-RMF-journey
 ensureCbomTables(); // CBOM cryptographic bill of materials: CRYPTOASSET inventory (quantum-safe classification, feeds PQCMM)
 ensureAiSbomTables(); // AI SBOM minimum elements (CISA/G7): AISBOMELEMENT catalogue + AISBOM/AISBOMCOVERAGE conformance
 ensureThreatDebtTables(); // Adversary Opportunity Index: THREATDEBTSNAPSHOT (AOI STOCK/FLOW history)

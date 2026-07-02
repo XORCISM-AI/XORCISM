@@ -8,6 +8,13 @@ import { t, createLanguageSelect } from "./i18n";
 import { createThemeSelect } from "./theme"; // also applies the stored theme (import → initTheme)
 import { passkeySupported, registerPasskey, listPasskeys, deletePasskey, PasskeyInfo } from "./passkey";
 
+// Expose the i18n translator as a global so page bundles that don't import
+// ./i18n directly can still translate via a tiny local helper:
+//   function t(k, fb){ const fn=(window as any).t; const v=fn?fn(k):k; return v===k?fb:v; }
+// session-ui is included on every authenticated page and loads before the page
+// script, so window.t is set before any page init runs.
+(window as any).t = t;
+
 // The language selector is now hosted in the Settings panel: we
 // tell initLanguageSelector (other bundle) NOT to mount one in the
 // top bar. Set as soon as the module loads (the bar is already parsed).

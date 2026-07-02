@@ -288,6 +288,68 @@ export function seedTools(): void {
   }
 }
 
+/** Reference books + playbook/runbook collections for Incident Response / DFIR, seeded into the
+ *  DOCUMENT register (XCOMPLIANCE). Curated from awesome-incident-response (Apache-2.0).
+ *  Column-aware + idempotent by DocumentName. `type` → DocumentType, `cat` → Category. */
+const IR_DOCS: { name: string; author: string; url: string; desc: string; type: string; cat: string }[] = [
+  { name: "Applied Incident Response", author: "Steve Anson", url: "https://www.wiley.com/en-us/Applied+Incident+Response-p-9781119560265", desc: "Practical methodology and techniques for responding to modern network intrusions.", type: "Book", cat: "Incident Response Reference" },
+  { name: "The Art of Memory Forensics", author: "Ligh, Case, Levy, Walters", url: "https://www.wiley.com/en-us/The+Art+of+Memory+Forensics-p-9781118825099", desc: "Detecting malware and threats in Windows, Linux and Mac memory with Volatility.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Crafting the InfoSec Playbook", author: "Bollinger, Enright, Valites", url: "https://www.oreilly.com/library/view/crafting-the-infosec/9781491913598/", desc: "Building a security-monitoring and incident-response master plan (playbooks, detection).", type: "Book", cat: "Incident Response Reference" },
+  { name: "Digital Forensics and Incident Response", author: "Gerard Johansen", url: "https://www.packtpub.com/product/digital-forensics-and-incident-response-third-edition/9781803238678", desc: "IR techniques and procedures to respond to contemporary cyber threats, DFIR end-to-end.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Introduction to DFIR", author: "Scott J. Roberts", url: "https://medium.com/@sroberts/introduction-to-dfir-d35d5de4c180", desc: "Primer introducing Digital Forensics and Incident Response concepts and workflow.", type: "Article", cat: "Incident Response Reference" },
+  { name: "Incident Response & Computer Forensics, Third Edition", author: "Luttgens, Pepe, Mandia", url: "https://www.mhprofessional.com/incident-response-computer-forensics-third-edition-9780071798686-usa", desc: "The definitive guide to the incident-response process and computer forensics fundamentals.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Incident Response Techniques for Ransomware Attacks", author: "Oleg Skulkin", url: "https://www.packtpub.com/product/incident-response-techniques-for-ransomware-attacks/9781803240442", desc: "Building an incident-response strategy specifically for ransomware attacks.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Incident Response with Threat Intelligence", author: "Roberto Martinez", url: "https://www.packtpub.com/product/incident-response-with-threat-intelligence/9781801072953", desc: "Intelligence-based approaches to planning and running incident response.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Intelligence-Driven Incident Response", author: "Scott J. Roberts, Rebekah Brown", url: "https://www.oreilly.com/library/view/intelligence-driven-incident-response/9781491934937/", desc: "Outwitting the adversary by fusing cyber threat intelligence into the IR cycle (F3EAD).", type: "Book", cat: "Incident Response Reference" },
+  { name: "Operator Handbook: Red Team + OSINT + Blue Team Reference", author: "Netmux", url: "https://www.netmux.com/", desc: "A field reference across red-team, OSINT and blue-team operations, useful for responders.", type: "Book", cat: "Incident Response Reference" },
+  { name: "Practical Memory Forensics", author: "Svetlana Ostrovskaya, Oleg Skulkin", url: "https://www.packtpub.com/product/practical-memory-forensics/9781801070331", desc: "Jumpstarting effective memory forensics across Windows, Linux and macOS.", type: "Book", cat: "Incident Response Reference" },
+  { name: "The Practice of Network Security Monitoring", author: "Richard Bejtlich", url: "https://nostarch.com/nsm", desc: "Understanding incident detection and response through network security monitoring.", type: "Book", cat: "Incident Response Reference" },
+  // ── external playbook / runbook collections ──
+  { name: "IRM — Incident Response Methodologies (CERT Société Générale)", author: "CERT Société Générale", url: "https://github.com/certsocietegenerale/IRM", desc: "Set of concise per-threat IR methodologies (worm, intrusion, DDoS, ransomware, phishing…), the basis of the seeded IRM playbooks.", type: "Playbook Collection", cat: "Incident Response Playbooks" },
+  { name: "AWS Incident Response Runbook Samples", author: "AWS Samples", url: "https://github.com/aws-samples/aws-incident-response-runbooks", desc: "Sample AWS IR runbooks for DoS, credential leakage and S3 exposure scenarios.", type: "Playbook Collection", cat: "Incident Response Playbooks" },
+  { name: "Counteractive Incident Response Playbooks", author: "Counteractive Security", url: "https://github.com/counteractive/incident-response-plan-template/tree/master/playbooks", desc: "A collection of ready-to-adapt incident-response playbooks and an IR-plan template.", type: "Playbook Collection", cat: "Incident Response Playbooks" },
+  { name: "GuardSight SOC Playbook Battle Cards", author: "GuardSight", url: "https://github.com/guardsight/gsvsoc_cirt-playbook-battle-cards", desc: "Concise cyber-incident response playbook 'battle cards' for common attack types.", type: "Playbook Collection", cat: "Incident Response Playbooks" },
+  { name: "PagerDuty Incident Response Documentation", author: "PagerDuty", url: "https://response.pagerduty.com/", desc: "PagerDuty's open documentation of its incident-response process, roles and runbooks.", type: "Playbook Collection", cat: "Incident Response Playbooks" },
+  { name: "ThreatHunter-Playbook", author: "Open Threat Research (OTRF)", url: "https://github.com/OTRF/ThreatHunter-Playbook", desc: "Playbook to develop hunting hypotheses and detection techniques mapped to ATT&CK.", type: "Playbook Collection", cat: "Threat Hunting" },
+];
+
+/**
+ * Seeds Incident-Response / DFIR reference BOOKS + playbook collections into XCOMPLIANCE.DOCUMENT
+ * (the document register surfaced in /policy-management). Idempotent + column-aware: only inserts a
+ * doc whose DocumentName is missing, filling whatever of {DocumentType, Category, Classification,
+ * Status, Language} columns exist.
+ */
+export function seedIrBooks(): void {
+  try {
+    const db = getDb("XCOMPLIANCE");
+    if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='DOCUMENT'").get()) return;
+    const cset = new Set((db.prepare(`PRAGMA table_info("DOCUMENT")`).all() as { name: string }[]).map((c) => c.name));
+    const existing = new Set((db.prepare("SELECT DocumentName FROM DOCUMENT WHERE DocumentName IS NOT NULL").all() as { DocumentName: string }[]).map((r) => String(r.DocumentName)));
+    const toAdd = IR_DOCS.filter((b) => !existing.has(b.name));
+    if (!toAdd.length) return;
+    const now = nowTs();
+    const opt = (col: string, val: unknown): [string, unknown] | null => (cset.has(col) ? [col, val] : null);
+    const tx = db.transaction((docs: typeof IR_DOCS) => {
+      let id = allocId(db, "DOCUMENT", "DocumentID");
+      for (const b of docs) {
+        const pairs: [string, unknown][] = [
+          ["DocumentID", id++], ["DocumentGUID", randomUUID()], ["DocumentName", b.name],
+          ["DocumentDescription", b.desc], ["Author", b.author], ["DocumentURL", b.url], ["DocumentDate", now],
+        ];
+        for (const p of [opt("DocumentType", b.type), opt("Category", b.cat),
+          opt("Classification", "Public"), opt("Status", "Published"), opt("Language", "en"), opt("CreatedDate", now)])
+          if (p) pairs.push(p);
+        const keys = pairs.filter(([k]) => cset.has(k) || ["DocumentID", "DocumentGUID", "DocumentName", "DocumentDescription", "Author", "DocumentURL", "DocumentDate"].includes(k));
+        db.prepare(`INSERT INTO DOCUMENT (${keys.map(([k]) => `"${k}"`).join(",")}) VALUES (${keys.map(() => "?").join(",")})`).run(...keys.map(([, v]) => v));
+      }
+    });
+    tx(toAdd);
+    console.log(`[seed] XCOMPLIANCE.DOCUMENT ← +${toAdd.length} IR/DFIR reference docs (books + playbook collections)`);
+  } catch (e) {
+    console.warn(`[seed] IR docs: ${(e as Error).message}`);
+  }
+}
+
 /**
  * XORCISM.TOOLDOCUMENT — link table associating a TOOL with a DOCUMENT, carrying the
  * provenance (PersonID who linked it), a validity window (ValidFrom/ValidUntil) and a
@@ -1098,6 +1160,9 @@ export function ensureTenantColumns(): void {
   }
 }
 
+// Tables that default to newest-first (rowid DESC) when the explorer requests no explicit sort.
+const DEFAULT_DESC_TABLES = new Set(["INTELEXCHANGE"]);
+
 export function queryRows(
   dbName: string,
   table: string,
@@ -1118,11 +1183,15 @@ export function queryRows(
     .all() as { name: string }[];
   const validCols = schema.map((c) => c.name);
 
-  // ORDER BY clause
+  // ORDER BY clause. When the caller gives no explicit sort, most tables fall back to natural
+  // (rowid ASC) order, but a few are more useful newest-first — notably the threat-intel exchange,
+  // where the latest intelligence should surface at the top by default.
   let orderClause = "";
   if (sort && validCols.includes(sort)) {
     const safeDir = dir === "desc" ? "DESC" : "ASC";
     orderClause = `ORDER BY "${sort}" ${safeDir}`;
+  } else if (DEFAULT_DESC_TABLES.has(safeTbl.toUpperCase())) {
+    orderClause = "ORDER BY rowid DESC";
   }
 
   // WHERE: LIKE search (all columns) + tenant isolation + vocabulary filter
@@ -5071,6 +5140,43 @@ export function ensureComplianceJourneyTables(): void {
         Status TEXT DEFAULT 'todo', Notes TEXT, CompletedDate TEXT, TenantID INTEGER);
       CREATE INDEX IF NOT EXISTS ix_journey_tenant ON COMPLIANCEJOURNEY(TenantID);
       CREATE INDEX IF NOT EXISTS ix_journeystep_journey ON COMPLIANCEJOURNEYSTEP(JourneyID);`);
+  } catch { /* best-effort */ }
+}
+
+/**
+ * System plans per NIST SP 800-18r2 "Developing Security, Privacy, and C-SCRM Plans for Systems"
+ * (XCOMPLIANCE). A SYSTEMPLAN documents one system (linked ASSET) as a living plan of a chosen
+ * type — System Security Plan / Privacy Plan / C-SCRM Plan / Consolidated — carrying the header
+ * facts (identifier, FIPS-199 categorization high-water mark, roles, operational status,
+ * authorization decision, current RMF step). SYSTEMPLANELEMENT holds the 21 plan elements of
+ * Table 1, each stamped with its source RMF step + RMF task(s) (the SP 800-18r2 → RMF mapping),
+ * a content body, a completion status, an optional artifact/DOCUMENT reference and (for the
+ * Control Implementation Details element) referenced SP 800-53 control ids. The 7 RMF steps
+ * (Prepare→Categorize→Select→Implement→Assess→Authorize→Monitor) form the development journey.
+ */
+export function ensureSystemPlanTables(): void {
+  try {
+    const db = getDb("XCOMPLIANCE");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS SYSTEMPLAN (
+        PlanID INTEGER PRIMARY KEY, PlanGUID TEXT,
+        Name TEXT, SystemIdentifier TEXT, PlanType TEXT DEFAULT 'security',
+        AssetID INTEGER, SystemType TEXT, SystemOverview TEXT,
+        AuthorizingOfficial TEXT, SystemOwner TEXT,
+        ConfImpact TEXT, IntegImpact TEXT, AvailImpact TEXT, OverallCategorization TEXT,
+        OperationalStatus TEXT DEFAULT 'under-development',
+        AuthorizationDecision TEXT, AuthorizationDate TEXT, AuthorizationExpiry TEXT,
+        CurrentRmfStep TEXT DEFAULT 'prepare', Status TEXT DEFAULT 'draft',
+        DocumentID INTEGER, TenantID INTEGER, CreatedBy TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS SYSTEMPLANELEMENT (
+        ElementID INTEGER PRIMARY KEY, PlanID INTEGER,
+        ElementKey TEXT, RmfStep TEXT, RmfStepOrder INTEGER, RmfTasks TEXT,
+        Title TEXT, Overview TEXT, Content TEXT,
+        Status TEXT DEFAULT 'todo', Optional INTEGER DEFAULT 0,
+        ArtifactRef TEXT, ControlRefs TEXT, ElementOrder INTEGER,
+        UpdatedDate TEXT, TenantID INTEGER);
+      CREATE INDEX IF NOT EXISTS ix_sysplan_tenant ON SYSTEMPLAN(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_sysplanel_plan ON SYSTEMPLANELEMENT(PlanID);`);
   } catch { /* best-effort */ }
 }
 

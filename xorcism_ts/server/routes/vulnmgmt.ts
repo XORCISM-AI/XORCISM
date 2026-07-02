@@ -5,7 +5,7 @@
  */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { vulnInventory, trackVulnerability, setVulnDisposition, assetPickList } from "../vulnmgmt";
+import { vulnInventory, trackVulnerability, setVulnDisposition, assetPickList, bulkDisposition } from "../vulnmgmt";
 import { vprInventory, recomputeVprEstimates, setVpr, vprThreatLevel } from "../vpr";
 import * as xid from "../xid";
 
@@ -60,6 +60,34 @@ router.post("/vulnerability-management/disposition", (req: Request, res: Respons
     xid.addAudit({ userId: req.user.UserID ?? null, action: "vuln_disposition", resourceType: "ASSETVULNERABILITY",
       resourceKey: String(vulnerabilityId), detail: `disposition=${disposition} affected=${out.affected}`, ip: clientIp(req) });
     res.json(out);
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// POST /api/vulnerability-management/bulk-disposition — false-positive / accept-risk / reopen MANY at
+// once, targeted by vulnerabilityIds (CVE-level), assetVulnerabilityIds (instances) or a filter
+// (vulnTag / assetTag / kev / minCvss / assetCriticality / status). Body:
+// { disposition, vulnerabilityIds?, assetVulnerabilityIds?, filter?, reason? }.
+router.post("/vulnerability-management/bulk-disposition", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!userCan(req.user, "update", "XORCISM", "ASSETVULNERABILITY")) return void res.status(403).json({ error: "forbidden" });
+  const b = (req.body || {}) as Record<string, unknown>;
+  const disposition = String(b.disposition ?? "") as (typeof DISPOSITIONS)[number];
+  if (!DISPOSITIONS.includes(disposition)) return void res.status(400).json({ error: "invalid disposition" });
+  const toIds = (v: unknown): number[] => Array.isArray(v) ? v.map(Number).filter((n) => Number.isInteger(n) && n > 0) : [];
+  const vulnerabilityIds = toIds(b.vulnerabilityIds);
+  const assetVulnerabilityIds = toIds(b.assetVulnerabilityIds);
+  const filter = (b.filter && typeof b.filter === "object") ? b.filter as Record<string, unknown> : undefined;
+  if (!vulnerabilityIds.length && !assetVulnerabilityIds.length && !filter) return void res.status(400).json({ error: "provide vulnerabilityIds[], assetVulnerabilityIds[] or a filter" });
+  if (vulnerabilityIds.length > 20000 || assetVulnerabilityIds.length > 50000) return void res.status(400).json({ error: "selection too large" });
+  const tenant = req.user.isSuperAdmin ? null : (req.user.tenantId ?? null);
+  try {
+    const out = bulkDisposition(tenant, {
+      vulnerabilityIds, assetVulnerabilityIds, filter: filter as never, disposition,
+      reason: b.reason ? String(b.reason) : undefined, actor: req.user.DisplayName || req.user.Email || "user",
+    });
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "vuln_bulk_disposition", resourceType: "ASSETVULNERABILITY",
+      detail: `disposition=${disposition} matched=${out.matched} updated=${out.updated} via=${out.targeting}${filter ? ` filter=${JSON.stringify(filter)}` : ""}`, ip: clientIp(req) });
+    res.json({ ok: true, ...out });
   } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
 });
 

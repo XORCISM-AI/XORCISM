@@ -15,6 +15,7 @@ interface AssetRow {
   businessValue: number | null; financialValue: number | null; riskScore: number | null;
   os: string; address: string; vulns: { open: number; kev: number; critical: number };
   controls: number; hasBia: boolean; lastChecked: string | null; flags: string[]; score: number;
+  tags: string[]; mfaEnabled: boolean;
 }
 interface AssetFinding { kind: string; label: string; severity: "Critical" | "High" | "Medium" | "Low"; assetId: number; asset: string; }
 interface Inventory {
@@ -24,6 +25,20 @@ interface Inventory {
     unbackedCritical: number; noOwner: number; withCriticalVulns: number; stale: number;
     byCriticality: Record<string, number>; byEnvironment: Record<string, number>;
   };
+}
+
+// Bulk-selection state + the last-loaded inventory (for client-side filtering of the table).
+const SEL = new Set<number>();
+let DATA: Inventory | null = null;
+let FILTER = { tag: "", crit: "", env: "", exp: "", mfa: "" };
+function filteredRows(): AssetRow[] {
+  const rows = DATA?.rows ?? [];
+  return rows.filter((r) =>
+    (!FILTER.tag || r.tags.includes(FILTER.tag)) &&
+    (!FILTER.crit || r.criticality === FILTER.crit) &&
+    (!FILTER.env || r.environment === FILTER.env) &&
+    (!FILTER.exp || r.exposure === FILTER.exp) &&
+    (!FILTER.mfa || (FILTER.mfa === "yes" ? r.mfaEnabled : !r.mfaEnabled)));
 }
 
 const critClass = (c: string): string => `c-${(c || "unrated").toLowerCase()}`;
@@ -49,12 +64,15 @@ function vulnCell(v: AssetRow["vulns"]): string {
 
 function rowHtml(r: AssetRow): string {
   const flags = r.flags.length ? r.flags.map((f) => `<span class="flag">${esc(f)}</span>`).join("") : `<span class="muted">—</span>`;
+  const tags = r.tags.length ? `<div class="muted" style="font-size:10px;margin-top:2px">${r.tags.slice(0, 6).map((x) => `<span class="flag" style="background:#1e2940;border-color:#2d3250">${esc(x)}</span>`).join("")}</div>` : "";
   return `<tr>
+    <td style="width:26px;text-align:center"><input type="checkbox" class="am-sel" data-id="${r.id}"${SEL.has(r.id) ? " checked" : ""}></td>
     <td><div class="aname">${esc(r.name)}</div>
-      <div class="muted" style="font-size:11px">${esc(r.os || r.environment)}${r.address ? ` · ${esc(r.address)}` : ""}</div></td>
+      <div class="muted" style="font-size:11px">${esc(r.os || r.environment)}${r.address ? ` · ${esc(r.address)}` : ""}</div>${tags}</td>
     <td><span class="crit ${critClass(r.criticality)}">${esc(r.criticality)}</span></td>
     <td>${esc(r.owner || "—")}</td>
     <td><span class="pill ${r.exposure === "Internet" ? "exp-internet" : "exp-internal"}">${esc(expLabel(r.exposure))}</span></td>
+    <td>${r.mfaEnabled ? `<span class="ok">✓ MFA</span>` : `<span class="no">✗</span>`}</td>
     <td>${yn(r.backed)}${r.backupPlan ? ` <span class="muted" style="font-size:11px">${t("asm.cell.plan")}</span>` : ""}</td>
     <td>${vulnCell(r.vulns)}</td>
     <td>${r.controls || `<span class="no">0</span>`} · ${r.hasBia ? `<span class="ok">BIA</span>` : `<span class="no">${t("asm.cell.noBia")}</span>`}</td>
@@ -78,6 +96,8 @@ async function load(): Promise<void> {
   try { const r = await fetch("/api/asset-management"); if (!r.ok) throw new Error(`HTTP ${r.status}`); d = await r.json(); }
   catch (e) { $("am-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">⚠️ ${esc(e)}</div>`; return; }
   const s = d.summary;
+  DATA = d;
+  for (const id of [...SEL]) if (!d.rows.some((r) => r.id === id)) SEL.delete(id); // drop stale selections
 
   if (!d.rows.length) {
     $("am-body").innerHTML = `<div class="muted" style="padding:24px;text-align:center">${t("asm.empty")}</div>`;
@@ -103,16 +123,144 @@ async function load(): Promise<void> {
     ? `<ul class="findings">${d.findings.slice(0, 60).map(findingHtml).join("")}</ul>${d.findings.length > 60 ? `<div class="muted" style="font-size:11px;margin-top:6px">${fmt("asm.more", { n: d.findings.length - 60 })}</div>` : ""}`
     : `<div class="muted" style="padding:12px 0">${t("asm.noFindings")}</div>`;
 
-  const table = `<table class="am"><thead><tr>
-      <th>${t("asm.th.asset")}</th><th>${t("asm.th.criticality")}</th><th>${t("asm.th.owner")}</th><th>${t("asm.th.exposure")}</th><th>${t("asm.th.backup")}</th><th>${t("asm.th.vulns")}</th><th>${t("asm.th.controlsBia")}</th><th>${t("asm.th.findings")}</th><th title="${t("asm.th.risk.title")}">${t("asm.th.risk")}</th>
-    </tr></thead><tbody>${d.rows.map(rowHtml).join("")}</tbody></table>`;
-
   $("am-body").innerHTML = `<div class="am-cards">${cards}</div>
     <div class="am-section">${fmt("asm.sec.worklist", { n: d.findings.length })}</div>${findings}
     <div class="am-section">${t("asm.sec.byCriticality")}</div><div class="breakdown">${byCrit}</div>
     <div class="am-section">${t("asm.sec.byEnvironment")}</div><div class="breakdown">${byEnv}</div>
-    <div class="am-section">${fmt("asm.sec.inventory", { n: d.rows.length })}</div>${table}
+    <div class="am-section">${fmt("asm.sec.inventory", { n: d.rows.length })}</div>
+    <div id="am-inv"></div>
     <div class="legend">${t("asm.legend")}</div>`;
+  renderInventory();
+}
+
+// ── Inventory table with bulk selection + client-side filter ────────────────────
+function renderInventory(): void {
+  if (!DATA) return;
+  const rows = filteredRows();
+  const allTags = [...new Set(DATA.rows.flatMap((r) => r.tags))].sort((a, b) => a.localeCompare(b));
+  const crits = Object.keys(DATA.summary.byCriticality).sort();
+  const envs = Object.keys(DATA.summary.byEnvironment).sort();
+  const opt = (v: string, cur: string, label?: string) => `<option value="${esc(v)}"${cur === v ? " selected" : ""}>${esc(label ?? v)}</option>`;
+  const selCount = SEL.size;
+
+  const bar = `<div class="am-bulkbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <span class="muted" style="font-size:11px">${t("asm.bulk.filter")}:</span>
+      <select id="am-flt-tag" class="am-flt">${opt("", FILTER.tag, t("asm.bulk.anyTag"))}${allTags.map((x) => opt(x, FILTER.tag)).join("")}</select>
+      <select id="am-flt-crit" class="am-flt">${opt("", FILTER.crit, t("asm.bulk.anyCrit"))}${crits.map((x) => opt(x, FILTER.crit)).join("")}</select>
+      <select id="am-flt-env" class="am-flt">${opt("", FILTER.env, t("asm.bulk.anyEnv"))}${envs.map((x) => opt(x, FILTER.env)).join("")}</select>
+      <select id="am-flt-exp" class="am-flt">${opt("", FILTER.exp, t("asm.bulk.anyExp"))}${opt("Internet", FILTER.exp, t("asm.exp.internet"))}${opt("Internal", FILTER.exp, t("asm.exp.internal"))}</select>
+      <select id="am-flt-mfa" class="am-flt">${opt("", FILTER.mfa, t("asm.bulk.anyMfa"))}${opt("yes", FILTER.mfa, t("asm.bulk.mfaYes"))}${opt("no", FILTER.mfa, t("asm.bulk.mfaNo"))}</select>
+      <button class="btn btn-ghost btn-sm" id="am-sel-matching">${fmt("asm.bulk.selectMatching", { n: rows.length })}</button>
+      <button class="btn btn-ghost btn-sm" id="am-sel-clear">${t("asm.bulk.clearSel")}</button>
+      <span style="flex:1"></span>
+      <span class="muted" style="font-size:12px" id="am-sel-count">${fmt("asm.bulk.selected", { n: selCount })}</span>
+      <button class="btn-newasset" id="am-bulk-btn"${selCount ? "" : " disabled"}>${t("asm.bulk.update")}</button>
+    </div>`;
+
+  const table = `<table class="am"><thead><tr>
+      <th style="width:26px;text-align:center"><input type="checkbox" id="am-sel-all" title="${t("asm.bulk.selectAll")}"></th>
+      <th>${t("asm.th.asset")}</th><th>${t("asm.th.criticality")}</th><th>${t("asm.th.owner")}</th><th>${t("asm.th.exposure")}</th><th>MFA</th><th>${t("asm.th.backup")}</th><th>${t("asm.th.vulns")}</th><th>${t("asm.th.controlsBia")}</th><th>${t("asm.th.findings")}</th><th title="${t("asm.th.risk.title")}">${t("asm.th.risk")}</th>
+    </tr></thead><tbody>${rows.map(rowHtml).join("") || `<tr><td colspan="11" class="muted" style="padding:14px;text-align:center">${t("asm.bulk.noMatch")}</td></tr>`}</tbody></table>`;
+
+  $("am-inv").innerHTML = bar + table;
+
+  const reFilter = () => {
+    FILTER = {
+      tag: (document.getElementById("am-flt-tag") as HTMLSelectElement).value,
+      crit: (document.getElementById("am-flt-crit") as HTMLSelectElement).value,
+      env: (document.getElementById("am-flt-env") as HTMLSelectElement).value,
+      exp: (document.getElementById("am-flt-exp") as HTMLSelectElement).value,
+      mfa: (document.getElementById("am-flt-mfa") as HTMLSelectElement).value,
+    };
+    renderInventory();
+  };
+  document.querySelectorAll<HTMLSelectElement>(".am-flt").forEach((el) => el.onchange = reFilter);
+  document.querySelectorAll<HTMLInputElement>(".am-sel").forEach((el) => el.onchange = () => {
+    const id = Number(el.dataset.id); if (el.checked) SEL.add(id); else SEL.delete(id);
+    updateSelUi();
+  });
+  (document.getElementById("am-sel-all") as HTMLInputElement).onchange = (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    for (const r of filteredRows()) { if (on) SEL.add(r.id); else SEL.delete(r.id); }
+    renderInventory();
+  };
+  $("am-sel-matching").onclick = () => { for (const r of filteredRows()) SEL.add(r.id); renderInventory(); };
+  $("am-sel-clear").onclick = () => { SEL.clear(); renderInventory(); };
+  $("am-bulk-btn").onclick = openBulk;
+}
+
+function updateSelUi(): void {
+  const c = $("am-sel-count"); if (c) c.textContent = fmt("asm.bulk.selected", { n: SEL.size });
+  const b = document.getElementById("am-bulk-btn") as HTMLButtonElement | null; if (b) b.disabled = SEL.size === 0;
+}
+
+// ── Bulk-update modal ───────────────────────────────────────────────────────────
+async function openBulk(): Promise<void> {
+  if (!SEL.size) return;
+  // Owner options (best-effort).
+  let owners: { id: number; label: string }[] = [];
+  try { const r = await fetch("/api/lookup?db=XORCISM&table=PERSON&idCol=PersonID&labelCol=FullName"); if (r.ok) owners = await r.json(); } catch { /* optional */ }
+  const yesno = (id: string) => `<select id="${id}" disabled><option value="1">${t("asm.bulk.yes")}</option><option value="0">${t("asm.bulk.no")}</option></select>`;
+  const crits = [...new Set([...(DATA ? Object.keys(DATA.summary.byCriticality) : []), "Low", "Medium", "High", "Critical"])];
+  // Each row: [apply-checkbox] label [value control]. Only checked rows are sent.
+  const F = (key: string, label: string, control: string): string =>
+    `<div class="am-bf" style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #1e2133">
+       <label style="display:flex;align-items:center;gap:7px;flex:1;font-size:13px;color:#cbd5e1">
+         <input type="checkbox" class="am-bf-on" data-field="${key}"> ${esc(label)}</label>
+       <div style="flex:1">${control}</div></div>`;
+  const html = `<div id="am-bulk-modal" style="position:fixed;inset:0;background:rgba(4,6,15,.72);display:flex;align-items:flex-start;justify-content:center;z-index:1200;overflow:auto">
+    <div style="background:#0f1322;border:1px solid #2d3250;border-radius:12px;padding:18px 20px;margin:44px 16px;max-width:560px;width:100%">
+      <h2 style="font-size:16px;margin:0 0 4px">${t("asm.bulk.update")}</h2>
+      <div class="muted" style="font-size:12px;margin-bottom:12px">${fmt("asm.bulk.applyTo", { n: SEL.size })}</div>
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${t("asm.bulk.tick")}</div>
+      ${F("mfaEnabled", t("asm.bulk.mfa"), yesno("am-bf-mfaEnabled"))}
+      ${F("publicFacing", t("asm.bulk.internetFacing"), yesno("am-bf-publicFacing"))}
+      ${F("hostPii", t("asm.bulk.pii"), yesno("am-bf-hostPii"))}
+      ${F("backed", t("asm.th.backup"), yesno("am-bf-backed"))}
+      ${F("enabled", t("asm.bulk.enabled"), yesno("am-bf-enabled"))}
+      ${F("criticality", t("asm.th.criticality"), `<select id="am-bf-criticality" disabled>${crits.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("")}</select>`)}
+      ${F("environment", t("asm.bulk.env"), `<select id="am-bf-environment" disabled><option value="Cloud">Cloud</option><option value="Virtual">Virtual</option><option value="Third-party">Third-party</option><option value="On-premises">On-premises</option></select>`)}
+      ${F("businessValue", t("asm.bulk.bizval"), `<input id="am-bf-businessValue" disabled placeholder="1-5">`)}
+      ${F("financialValue", t("asm.bulk.finval"), `<input id="am-bf-financialValue" type="number" disabled placeholder="e.g. 50000">`)}
+      ${F("currency", t("asm.bulk.currency"), `<input id="am-bf-currency" disabled placeholder="USD" maxlength="10" style="width:90px">`)}
+      ${F("ownerPersonId", t("asm.th.owner"), `<select id="am-bf-ownerPersonId" disabled><option value="">— ${t("asm.bulk.clearOwner")} —</option>${owners.map((o) => `<option value="${o.id}">${esc(o.label || ("#" + o.id))}</option>`).join("")}</select>`)}
+      <div id="am-bulk-err" style="color:#f87171;font-size:12px;min-height:16px;margin-top:8px"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+        <button class="btn btn-ghost btn-sm" id="am-bulk-cancel">${t("asm.btn.cancel")}</button>
+        <button class="btn-newasset" id="am-bulk-apply">${t("asm.bulk.apply")}</button>
+      </div>
+    </div></div>`;
+  const wrap = document.createElement("div"); wrap.innerHTML = html; document.body.appendChild(wrap.firstElementChild!);
+  const close = () => document.getElementById("am-bulk-modal")?.remove();
+  // Enable a field's control only when its "apply" box is ticked.
+  document.querySelectorAll<HTMLInputElement>(".am-bf-on").forEach((cb) => cb.onchange = () => {
+    const ctl = document.getElementById("am-bf-" + cb.dataset.field) as HTMLInputElement | HTMLSelectElement | null;
+    if (ctl) { ctl.disabled = !cb.checked; if (cb.checked) ctl.focus(); }
+  });
+  $("am-bulk-cancel").onclick = close;
+  document.getElementById("am-bulk-modal")!.onclick = (e) => { if (e.target === e.currentTarget) close(); };
+  $("am-bulk-apply").onclick = () => void applyBulk(close);
+}
+
+async function applyBulk(close: () => void): Promise<void> {
+  const set: Record<string, unknown> = {};
+  document.querySelectorAll<HTMLInputElement>(".am-bf-on:checked").forEach((cb) => {
+    const field = cb.dataset.field!;
+    const ctl = document.getElementById("am-bf-" + field) as HTMLInputElement | HTMLSelectElement | null;
+    if (ctl) set[field] = ctl.value;
+  });
+  const err = $("am-bulk-err");
+  if (!Object.keys(set).length) { err.textContent = `⚠️ ${t("asm.bulk.pickField")}`; return; }
+  const btn = $("am-bulk-apply") as HTMLButtonElement; btn.disabled = true; err.textContent = t("asm.bulk.applying");
+  try {
+    const r = await fetch("/api/asset-management/bulk-update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assetIds: [...SEL], set }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+    close();
+    SEL.clear();
+    await load();
+    toast(fmt("asm.bulk.done", { u: d.updated, f: (d.fields || []).length }));
+  } catch (e) { err.textContent = `⚠️ ${e}`; btn.disabled = false; }
 }
 
 // ── Guided "new asset" modal ───────────────────────────────────────────────────

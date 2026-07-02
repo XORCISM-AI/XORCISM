@@ -602,6 +602,11 @@ Ajouter un connecteur = déposer un dossier avec `connector.json` + `run.py`. Vo
 [docs/CONNECTORS.md](docs/CONNECTORS.md) et
 [`connectors/manifest.schema.json`](connectors/manifest.schema.json).
 
+**Pentest assisté** — comment configurer XORCISM pour piloter de vrais outils
+(workers, identifiants, RBAC) et mener des engagements assistés par IA de bout en bout
+(périmètre/ROE, playbooks de chaînes d'attaque, simulé vs réel, constats → exposition) :
+voir **[docs/PENTESTING.fr.md](docs/PENTESTING.fr.md)**.
+
 ---
 
 ## 🗄️ Bases de données

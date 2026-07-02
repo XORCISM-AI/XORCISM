@@ -8,6 +8,7 @@ const watch = process.argv.includes("--watch");
 const entryPoints = [
   "client/ts/app.ts",
   "client/ts/landing.ts",
+  "client/ts/system-plans.ts",
   "client/ts/bia.ts",
   "client/ts/bia-graph.ts",
   "client/ts/dashboard.ts",

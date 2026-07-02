@@ -36,6 +36,8 @@ export interface AssetRow {
   lastChecked: string | null;
   flags: string[];
   score: number;                   // 0-100 derived governance/risk priority
+  tags: string[];                  // ASSETTAG free-text tags (for filtering + bulk targeting)
+  mfaEnabled: boolean;
 }
 
 export interface AssetFinding {
@@ -103,6 +105,15 @@ export function assetInventory(tenant: number | null): AssetInventory {
   const biaAssets = new Set<number>();
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='BIAENTRY'").get() && cols("XORCISM", "BIAENTRY").has("AssetID")) {
     for (const r of db.prepare(`SELECT DISTINCT AssetID FROM BIAENTRY WHERE AssetID IS NOT NULL`).all() as { AssetID: number }[]) biaAssets.add(Number(r.AssetID));
+  }
+  // Free-text tags per asset (ASSETTAG) — drives the client tag filter + bulk targeting.
+  const tagByAsset = new Map<number, string[]>();
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETTAG'").get()) {
+    for (const r of db.prepare(`SELECT AssetID aid, Tag tag FROM ASSETTAG WHERE Tag IS NOT NULL AND Tag <> '' ORDER BY AssetTagID`).all() as { aid: number; tag: string }[]) {
+      const a = tagByAsset.get(Number(r.aid)) ?? [];
+      if (!a.includes(r.tag)) a.push(r.tag);
+      tagByAsset.set(Number(r.aid), a);
+    }
   }
   // Open vulnerabilities per asset, enriched cross-DB (KEV / critical / SSVC Act-Attend).
   const vulnByAsset = new Map<number, { open: number; kev: number; critical: number }>();
@@ -185,6 +196,7 @@ export function assetInventory(tenant: number | null): AssetInventory {
       businessValue: num(a.BusinessValue), financialValue: num(a.FinancialValue), riskScore: num(a.RiskScore),
       os: String(a.OSName ?? "").trim(), address, vulns: v, controls: ctrls, hasBia, lastChecked,
       flags, score: Math.min(100, score),
+      tags: tagByAsset.get(id) ?? [], mfaEnabled: truthy(a.MFAEnabled),
     };
   });
 
@@ -393,4 +405,119 @@ function updateAssetColumns(
   if (ac.has("LastCheckedDate")) { set.LastCheckedDate = new Date().toISOString(); keys.push("LastCheckedDate"); }
   db.prepare(`UPDATE ASSET SET ${keys.map((k) => `"${k}" = ?`).join(", ")} WHERE AssetID = ?`)
     .run(...keys.map((k) => set[k]), assetId);
+}
+
+// ── Bulk update ───────────────────────────────────────────────────────────────
+// The logical fields a bulk update may set, and their kind. Only provided keys are applied;
+// every write is tenant-scoped and only touches columns the ASSET table actually has.
+export type BulkField = "mfaEnabled" | "publicFacing" | "hostPii" | "backed" | "enabled"
+  | "criticality" | "businessValue" | "financialValue" | "currency" | "ownerPersonId" | "environment";
+export const BULK_FIELDS: { key: BulkField; type: "bool" | "text" | "number" | "person" | "environment" }[] = [
+  { key: "mfaEnabled", type: "bool" }, { key: "publicFacing", type: "bool" }, { key: "hostPii", type: "bool" },
+  { key: "backed", type: "bool" }, { key: "enabled", type: "bool" },
+  { key: "criticality", type: "text" }, { key: "businessValue", type: "text" }, { key: "environment", type: "environment" },
+  { key: "financialValue", type: "number" }, { key: "currency", type: "text" }, { key: "ownerPersonId", type: "person" },
+];
+
+export interface BulkFilter { tag?: string; criticality?: string; environment?: string; exposure?: "Internet" | "Internal"; ownerless?: boolean; publicFacing?: boolean; }
+export interface BulkResult { matched: number; updated: number; fields: string[]; targeting: "ids" | "filter"; }
+
+/**
+ * Bulk-update a set of ASSETs — target them either by explicit `assetIds` (what the UI selects)
+ * or by a `filter` (e.g. every asset tagged "endpoint"), then apply the provided `set` fields
+ * (e.g. { mfaEnabled: true }). Only whitelisted fields are written, only to columns that exist,
+ * always within the caller's tenant. Returns how many matched vs. were updated.
+ */
+export function bulkUpdateAssets(
+  tenant: number | null,
+  opts: { assetIds?: number[]; filter?: BulkFilter; set: Record<string, unknown> },
+): BulkResult {
+  const db = getDb("XORCISM");
+  const ac = cols("XORCISM", "ASSET");
+  if (!ac.size) throw new Error("ASSET table not available");
+  const hasTenant = tenant != null && ac.has("TenantID");
+
+  // 1) Resolve the target AssetIDs.
+  let ids: number[] = [];
+  let targeting: "ids" | "filter" = "ids";
+  if (Array.isArray(opts.assetIds) && opts.assetIds.length) {
+    const wanted = [...new Set(opts.assetIds.map((n) => Number(n)).filter((n) => Number.isInteger(n) && n > 0))];
+    // Re-validate ownership: only ids that exist within the tenant survive.
+    for (let i = 0; i < wanted.length; i += 400) {
+      const chunk = wanted.slice(i, i + 400);
+      const ph = chunk.map(() => "?").join(",");
+      const tw = hasTenant ? "AND TenantID IS ?" : "";
+      const rows = db.prepare(`SELECT AssetID FROM ASSET WHERE AssetID IN (${ph}) ${tw}`).all(...chunk, ...(hasTenant ? [tenant] : [])) as { AssetID: number }[];
+      ids.push(...rows.map((r) => Number(r.AssetID)));
+    }
+  } else if (opts.filter) {
+    targeting = "filter";
+    const f = opts.filter;
+    const where: string[] = []; const args: unknown[] = [];
+    if (hasTenant) { where.push("a.TenantID IS ?"); args.push(tenant); }
+    if (f.criticality) { where.push("a.AssetCriticalityLevel = ? COLLATE NOCASE"); args.push(f.criticality); }
+    if (f.exposure) { where.push(f.exposure === "Internet" ? "(a.PublicFacing = 1)" : "(a.PublicFacing IS NULL OR a.PublicFacing = 0)"); }
+    if (f.publicFacing === true) where.push("a.PublicFacing = 1");
+    if (f.ownerless) where.push("(a.PersonID IS NULL OR a.PersonID = 0)");
+    if (f.environment) {
+      const env = f.environment.toLowerCase();
+      if (env === "cloud") where.push("a.cloud = 1");
+      else if (env === "virtual") where.push("a.virtual = 1");
+      else if (env === "third-party" || env === "thirdparty") where.push("(a.managedbythirdparty = 1 OR a.hostedbythirdparty = 1)");
+      else if (env === "on-premises" || env === "on-prem") where.push("(COALESCE(a.cloud,0)=0 AND COALESCE(a.virtual,0)=0 AND COALESCE(a.managedbythirdparty,0)=0)");
+    }
+    const tagJoin = f.tag ? "JOIN ASSETTAG t ON t.AssetID = a.AssetID AND t.Tag = ? COLLATE NOCASE" : "";
+    if (f.tag) args.unshift(f.tag); // the tag param binds to the JOIN which precedes WHERE
+    const sql = `SELECT DISTINCT a.AssetID FROM ASSET a ${tagJoin} ${where.length ? "WHERE " + where.join(" AND ") : ""}`;
+    ids = (db.prepare(sql).all(...args) as { AssetID: number }[]).map((r) => Number(r.AssetID));
+  }
+  const matched = ids.length;
+  if (!matched) return { matched: 0, updated: 0, fields: [], targeting };
+
+  // 2) Build the SET clause from the whitelist (provided keys only, existing columns only).
+  const set: Record<string, unknown> = {};
+  const has = (k: string) => Object.prototype.hasOwnProperty.call(opts.set, k);
+  const bool01 = (v: unknown) => (toBool(v) ? 1 : 0);
+  if (has("mfaEnabled") && ac.has("MFAEnabled")) set.MFAEnabled = bool01(opts.set.mfaEnabled);
+  if (has("publicFacing") && ac.has("PublicFacing")) set.PublicFacing = bool01(opts.set.publicFacing);
+  if (has("hostPii") && ac.has("HostPII")) set.HostPII = bool01(opts.set.hostPii);
+  if (has("backed") && ac.has("Backed")) set.Backed = bool01(opts.set.backed);
+  if (has("enabled") && ac.has("Enabled")) set.Enabled = bool01(opts.set.enabled);
+  if (has("criticality") && ac.has("AssetCriticalityLevel")) set.AssetCriticalityLevel = String(opts.set.criticality ?? "").slice(0, 60) || null;
+  if (has("businessValue") && ac.has("BusinessValue")) set.BusinessValue = String(opts.set.businessValue ?? "").slice(0, 60) || null;
+  if (has("currency") && ac.has("Currency")) set.Currency = String(opts.set.currency ?? "").slice(0, 10) || null;
+  if (has("financialValue") && ac.has("FinancialValue")) {
+    const raw = opts.set.financialValue;
+    set.FinancialValue = raw == null || String(raw).trim() === "" ? null : (Number(String(raw).replace(/[^0-9.\-]/g, "")) || null);
+  }
+  if (has("ownerPersonId") && ac.has("PersonID")) {
+    const raw = opts.set.ownerPersonId;
+    set.PersonID = raw == null || String(raw).trim() === "" ? null : (Number(raw) || null);
+  }
+  if (has("environment") && ac.has("cloud")) {
+    const env = String(opts.set.environment ?? "").toLowerCase();
+    set.cloud = env === "cloud" ? 1 : 0;
+    if (ac.has("virtual")) set.virtual = env === "virtual" ? 1 : 0;
+    if (ac.has("managedbythirdparty")) set.managedbythirdparty = (env === "third-party" || env === "thirdparty") ? 1 : 0;
+  }
+  const keys = Object.keys(set);
+  if (!keys.length) return { matched, updated: 0, fields: [], targeting };
+  if (ac.has("LastCheckedDate")) { set.LastCheckedDate = new Date().toISOString(); keys.push("LastCheckedDate"); }
+
+  // 3) Apply, chunked, tenant-scoped.
+  const assign = keys.map((k) => `"${k}" = ?`).join(", ");
+  const vals = keys.map((k) => set[k]);
+  let updated = 0;
+  const tx = db.transaction((batch: number[]) => {
+    for (let i = 0; i < batch.length; i += 400) {
+      const chunk = batch.slice(i, i + 400);
+      const ph = chunk.map(() => "?").join(",");
+      const tw = hasTenant ? "AND TenantID IS ?" : "";
+      const r = db.prepare(`UPDATE ASSET SET ${assign} WHERE AssetID IN (${ph}) ${tw}`)
+        .run(...vals, ...chunk, ...(hasTenant ? [tenant] : []));
+      updated += r.changes;
+    }
+  });
+  tx(ids);
+  return { matched, updated, fields: keys.filter((k) => k !== "LastCheckedDate"), targeting };
 }

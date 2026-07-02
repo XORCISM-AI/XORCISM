@@ -8,6 +8,17 @@ import { initI18n } from "./i18n";
 function $(id: string): HTMLElement { return document.getElementById(id)!; }
 function val(id: string): string { return (document.getElementById(id) as HTMLInputElement).value.trim(); }
 function esc(s: unknown): string { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!)); }
+// i18n: session-ui exposes the translator as window.t; fall back to the English default.
+// Named `tr` because `t` is used locally as the toast element / trend-item variable.
+function tr(k: string, fb: string): string { const fn = (window as any).t; const v = fn ? fn(k) : k; return v === k ? fb : v; }
+// Translate the static HTML chrome. Uses custom data-t* attributes (ignored by applyTranslations)
+// so English is preserved as the fallback and FR-only keys are enough.
+function translateChrome(): void {
+  document.querySelectorAll<HTMLElement>("[data-t]").forEach((el) => { el.textContent = tr(el.getAttribute("data-t")!, (el.textContent || "").trim()); });
+  document.querySelectorAll<HTMLElement>("[data-t-html]").forEach((el) => { el.innerHTML = tr(el.getAttribute("data-t-html")!, el.innerHTML); });
+  document.querySelectorAll<HTMLElement>("[data-t-ph]").forEach((el) => { el.setAttribute("placeholder", tr(el.getAttribute("data-t-ph")!, el.getAttribute("placeholder") || "")); });
+  document.querySelectorAll<HTMLElement>("[data-t-title]").forEach((el) => { el.setAttribute("title", tr(el.getAttribute("data-t-title")!, el.getAttribute("title") || "")); });
+}
 function toast(msg: string, ok = true): void {
   const t = $("toast"); t.textContent = msg; t.className = ok ? "toast-ok" : "toast-err";
   (t as HTMLElement).style.opacity = "1"; setTimeout(() => ((t as HTMLElement).style.opacity = "0"), 2600);
@@ -40,14 +51,14 @@ function renderSuiteTrend(trend: SuiteRun[]): void {
   const rate = (t: SuiteRun): number => { const e = t.total - t.errors; return e > 0 ? Math.round((t.passed / e) * 100) : 0; };
   const pts = trend.map((t, i) => `${(i / (n - 1)) * W},${(H - (rate(t) / 100) * H).toFixed(1)}`).join(" ");
   const last = evald.length ? rate(evald[evald.length - 1]) : 0;
-  host.innerHTML = `<div class="muted" style="font-size:11px;margin-top:10px">BOLA/BFLA pass-rate trend (${n} runs)
+  host.innerHTML = `<div class="muted" style="font-size:11px;margin-top:10px">${tr("azg.passRateTrend", "BOLA/BFLA pass-rate trend")} (${n} ${tr("azg.runs", "runs")})
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:220px;height:34px;vertical-align:middle;margin-left:6px"><polyline points="${pts}" fill="none" stroke="${pctColor(last)}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>`;
 }
 
 async function load(): Promise<void> {
   let d: { inventory: Inventory; posture: Posture; suiteTrend?: SuiteRun[]; suiteTrendsByPdp?: Record<number, { passed: number; total: number; errors: number }[]> };
   try { const r = await fetch("/api/authz-governance"); if (!r.ok) throw new Error(`HTTP ${r.status}`); d = await r.json(); }
-  catch (e) { $("az-posture").innerHTML = `<div class="muted" style="padding:24px;text-align:center">Failed to load: ${esc(e)}</div>`; return; }
+  catch (e) { $("az-posture").innerHTML = `<div class="muted" style="padding:24px;text-align:center">${tr("azg.failLoad", "Failed to load")}: ${esc(e)}</div>`; return; }
   byPdpTrend = d.suiteTrendsByPdp || {};
   pdps = d.inventory.pdps;
   renderPosture(d.posture);
@@ -65,14 +76,14 @@ function renderPosture(p: Posture): void {
     <div class="az-hero">
       <span class="az-score" style="color:${pctColor(p.score)}">${p.score}%</span>
       <div style="flex:1"><div class="az-bar"><i style="width:${p.score}%;background:${pctColor(p.score)}"></i></div>
-        <div class="muted" style="font-size:12px;margin-top:4px">Authorization posture · evaluated ${esc(p.evaluatedAt)}</div></div>
+        <div class="muted" style="font-size:12px;margin-top:4px">${tr("azg.postureEval", "Authorization posture · evaluated")} ${esc(p.evaluatedAt)}</div></div>
     </div>
     <div class="chips">${p.frameworks.map((f) => `<span class="chip">${esc(f.label)} <b style="color:${pctColor(f.readinessPct)}">${f.readinessPct}%</b></span>`).join("")}</div>
     <div class="counts">
-      <span class="pill p-ok">${p.counts.gateways} gateway(s)</span>
-      <span class="pill p-ok">${p.counts.pdps} PDP(s)</span>
-      <span class="pill p-ok">${p.counts.policies} policy(ies)</span>
-      <span class="pill ${p.counts.ungoverned ? "p-bad" : "p-na"}">${p.counts.ungoverned} ungoverned</span>
+      <span class="pill p-ok">${p.counts.gateways} ${tr("azg.gatewaysN", "gateway(s)")}</span>
+      <span class="pill p-ok">${p.counts.pdps} ${tr("azg.pdpsN", "PDP(s)")}</span>
+      <span class="pill p-ok">${p.counts.policies} ${tr("azg.policiesN", "policy(ies)")}</span>
+      <span class="pill ${p.counts.ungoverned ? "p-bad" : "p-na"}">${p.counts.ungoverned} ${tr("azg.ungoverned", "ungoverned")}</span>
     </div>
     ${controls.map((c) => `<div class="ctl">
       <div class="top"><span class="nm">${esc(c.name)}</span><span class="refs">${c.frameworks.map((f) => esc(f.fw === "owaspapi" ? "OWASP" : f.fw === "nistcsf" ? "CSF" : "ZT") + " " + esc(f.ref)).join(" · ")}</span>${badge(c.status)}</div>
@@ -84,14 +95,14 @@ function renderPosture(p: Posture): void {
 function yn(v: unknown): string { return v == null ? "<span class='muted'>?</span>" : (v === 1 || v === "1" ? "✓" : "✗"); }
 function renderInventory(inv: Inventory): void {
   const del = (kind: string, id: unknown): string => `<a href="#" data-del="${kind}" data-id="${id}" style="color:#f87171">✕</a>`;
-  const gwT = inv.gateways.length ? `<table class="az"><thead><tr><th>Gateway</th><th>Type</th><th>AuthN</th><th>AuthZ</th><th>PDP</th><th>Deny-dflt</th><th>Log</th><th></th></tr></thead><tbody>${inv.gateways.map((g) => `<tr><td>${esc(g.Name)}</td><td>${esc(g.GatewayType)}</td><td>${esc(g.AuthnMethods || "—")}</td><td>${esc(g.AuthzModel)}</td><td>${g.PdpID ? esc((pdps.find((p) => p.PdpID === g.PdpID) || {}).Name || g.PdpID) : "<span class='muted'>none</span>"}</td><td>${yn(g.DenyByDefault)}</td><td>${yn(g.DecisionLogging)}</td><td>${del("gateway", g.GatewayID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">No gateways yet.</div>`;
-  const pdpT = inv.pdps.length ? `<table class="az"><thead><tr><th>PDP</th><th>Engine</th><th>Endpoint</th><th>AuthZEN</th><th>Status</th><th>Pass-rate</th><th></th></tr></thead><tbody>${inv.pdps.map((p) => `<tr><td>${esc(p.Name)}</td><td>${esc(p.Engine)}</td><td class="muted">${esc(p.Endpoint || "—")}</td><td>${yn(p.AuthzenCompliant)}</td><td>${esc(p.Status)}</td><td>${miniSpark(byPdpTrend[Number(p.PdpID)] || [])}</td><td>${del("pdp", p.PdpID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">No PDPs yet.</div>`;
-  const polT = inv.policies.length ? `<table class="az"><thead><tr><th>Policy</th><th>Engine</th><th>Default-deny</th><th>Versioned</th><th>Tested</th><th></th></tr></thead><tbody>${inv.policies.map((p) => `<tr><td>${esc(p.Name)}</td><td>${esc(p.Engine)}</td><td>${yn(p.DefaultDeny)}</td><td>${yn(p.Versioned)}</td><td>${yn(p.Tested)}</td><td>${del("policy", p.PolicyID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">No policies yet.</div>`;
-  $("az-inventory").innerHTML = `<div class="sect-h" style="margin-top:6px">Gateways (PEP)</div>${gwT}<div class="sect-h">Policy decision points (PDP)</div>${pdpT}<div class="sect-h">Policies</div>${polT}`;
+  const gwT = inv.gateways.length ? `<table class="az"><thead><tr><th>${tr("azg.h.gateway", "Gateway")}</th><th>${tr("azg.h.type", "Type")}</th><th>AuthN</th><th>AuthZ</th><th>PDP</th><th>${tr("azg.h.denyDflt", "Deny-dflt")}</th><th>${tr("azg.h.log", "Log")}</th><th></th></tr></thead><tbody>${inv.gateways.map((g) => `<tr><td>${esc(g.Name)}</td><td>${esc(g.GatewayType)}</td><td>${esc(g.AuthnMethods || "—")}</td><td>${esc(g.AuthzModel)}</td><td>${g.PdpID ? esc((pdps.find((p) => p.PdpID === g.PdpID) || {}).Name || g.PdpID) : `<span class='muted'>${tr("azg.none", "none")}</span>`}</td><td>${yn(g.DenyByDefault)}</td><td>${yn(g.DecisionLogging)}</td><td>${del("gateway", g.GatewayID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">${tr("azg.noGw", "No gateways yet.")}</div>`;
+  const pdpT = inv.pdps.length ? `<table class="az"><thead><tr><th>PDP</th><th>${tr("azg.h.engine", "Engine")}</th><th>${tr("azg.h.endpoint", "Endpoint")}</th><th>AuthZEN</th><th>${tr("azg.h.status", "Status")}</th><th>${tr("azg.h.passRate", "Pass-rate")}</th><th></th></tr></thead><tbody>${inv.pdps.map((p) => `<tr><td>${esc(p.Name)}</td><td>${esc(p.Engine)}</td><td class="muted">${esc(p.Endpoint || "—")}</td><td>${yn(p.AuthzenCompliant)}</td><td>${esc(p.Status)}</td><td>${miniSpark(byPdpTrend[Number(p.PdpID)] || [])}</td><td>${del("pdp", p.PdpID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">${tr("azg.noPdp", "No PDPs yet.")}</div>`;
+  const polT = inv.policies.length ? `<table class="az"><thead><tr><th>${tr("azg.h.policy", "Policy")}</th><th>${tr("azg.h.engine", "Engine")}</th><th>${tr("azg.h.defaultDeny", "Default-deny")}</th><th>${tr("azg.h.versioned", "Versioned")}</th><th>${tr("azg.h.tested", "Tested")}</th><th></th></tr></thead><tbody>${inv.policies.map((p) => `<tr><td>${esc(p.Name)}</td><td>${esc(p.Engine)}</td><td>${yn(p.DefaultDeny)}</td><td>${yn(p.Versioned)}</td><td>${yn(p.Tested)}</td><td>${del("policy", p.PolicyID)}</td></tr>`).join("")}</tbody></table>` : `<div class="muted" style="margin-bottom:10px">${tr("azg.noPol", "No policies yet.")}</div>`;
+  $("az-inventory").innerHTML = `<div class="sect-h" style="margin-top:6px">${tr("azg.gatewaysPep", "Gateways (PEP)")}</div>${gwT}<div class="sect-h">${tr("azg.pdpFull", "Policy decision points (PDP)")}</div>${pdpT}<div class="sect-h">${tr("azg.policiesH", "Policies")}</div>${polT}`;
   $("az-inventory").querySelectorAll<HTMLAnchorElement>("a[data-del]").forEach((a) => a.onclick = async (e) => {
-    e.preventDefault(); if (!confirm("Delete this item?")) return;
+    e.preventDefault(); if (!confirm(tr("azg.deleteConfirm", "Delete this item?"))) return;
     await fetch(`/api/authz-governance/${a.dataset.del}/${a.dataset.id}`, { method: "DELETE" });
-    toast("Deleted"); void load();
+    toast(tr("azg.deleted", "Deleted")); void load();
   });
 }
 
@@ -99,7 +110,7 @@ function renderInventory(inv: Inventory): void {
 function renderTopology(inv: Inventory): void {
   const host = document.getElementById("az-topology"); if (!host) return;
   const gws = inv.gateways, ps = inv.pdps, pols = inv.policies;
-  if (!gws.length && !ps.length) { host.innerHTML = `<div class="muted" style="padding:8px">Nothing to map yet — register gateways and PDPs.</div>`; return; }
+  if (!gws.length && !ps.length) { host.innerHTML = `<div class="muted" style="padding:8px">${tr("azg.nothingToMap", "Nothing to map yet — register gateways and PDPs.")}</div>`; return; }
   const colX = [40, 320, 600], boxW = 200, boxH = 30, gap = 14, top = 30;
   const yOf = (i: number): number => top + i * (boxH + gap);
   const rows = Math.max(gws.length, ps.length, pols.length, 1);
@@ -116,13 +127,13 @@ function renderTopology(inv: Inventory): void {
   const gwBoxes = gws.map((g, i) => box(0, i, String(g.Name), String(g.GatewayType || ""), g.PdpID ? "#34d399" : "#ef4444")).join("");
   const pdpBoxes = ps.map((p, i) => box(1, i, String(p.Name), String(p.Engine || ""), "#a78bfa")).join("");
   const polBoxes = pols.map((po, i) => box(2, i, String(po.Name), String(po.Engine || ""), "#38bdf8")).join("");
-  const hdr = (col: number, t: string): string => `<text x="${colX[col]}" y="18" fill="#94a3b8" font-size="11" font-weight="700">${t}</text>`;
+  const hdr = (col: number, tx: string): string => `<text x="${colX[col]}" y="18" fill="#94a3b8" font-size="11" font-weight="700">${tx}</text>`;
   host.innerHTML = `<div style="overflow-x:auto;border:1px solid #2d3250;border-radius:10px;background:#0f1117;padding:6px">
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:640px;height:${H}px">
-      ${hdr(0, "Gateways (PEP)")}${hdr(1, "Decision points (PDP)")}${hdr(2, "Policies")}
+      ${hdr(0, esc(tr("azg.gatewaysPep", "Gateways (PEP)")))}${hdr(1, esc(tr("azg.decisionPoints", "Decision points (PDP)")))}${hdr(2, esc(tr("azg.policiesH", "Policies")))}
       ${edges.join("")}${gwBoxes}${pdpBoxes}${polBoxes}
     </svg></div>
-    <div class="muted" style="font-size:11px;margin-top:4px">Green = governed PEP · <span style="color:#ef4444">red = ungoverned ingress</span> · dashed = policy attached to a PDP.</div>`;
+    <div class="muted" style="font-size:11px;margin-top:4px">${tr("azg.legend", "Green = governed PEP · <span style=\"color:#ef4444\">red = ungoverned ingress</span> · dashed = policy attached to a PDP.")}</div>`;
 }
 
 async function post(path: string, body: Record<string, unknown>): Promise<Record<string, unknown> | null> {
@@ -133,7 +144,7 @@ async function post(path: string, body: Record<string, unknown>): Promise<Record
 
 async function evaluate(): Promise<void> {
   let context: unknown = {};
-  const cx = val("ev-context"); if (cx) { try { context = JSON.parse(cx); } catch { toast("Context must be valid JSON", false); return; } }
+  const cx = val("ev-context"); if (cx) { try { context = JSON.parse(cx); } catch { toast(tr("azg.ctxJson", "Context must be valid JSON"), false); return; } }
   const out = await post("evaluate", {
     engine: val("ev-engine"), subject: val("ev-subject"), action: val("ev-action"), resource: val("ev-resource"),
     context, expected: val("ev-expected") || undefined, endpoint: val("ev-endpoint") || undefined,
@@ -142,9 +153,9 @@ async function evaluate(): Promise<void> {
   if (!out) return;
   const dec = String(out.decision);
   const col = dec === "allow" ? "#6ee7b7" : dec === "deny" ? "#fecaca" : "#94a3b8";
-  const passTxt = out.pass == null ? "" : out.pass === 1 ? ` <span style="color:#6ee7b7">✓ matches expected</span>` : ` <span style="color:#fecaca">✗ differs from expected</span>`;
-  $("ev-out").innerHTML = `<div style="margin-top:10px"><b>Decision:</b> <span style="color:${col};font-weight:700">${esc(dec)}</span>${passTxt} <span class="muted" style="font-size:11px">— ${esc(out.note)}</span></div>
-    <div class="muted" style="font-size:11px;margin:8px 0 3px">Request payload sent to the ${esc(out.engine)} PDP:</div>
+  const passTxt = out.pass == null ? "" : out.pass === 1 ? ` <span style="color:#6ee7b7">✓ ${tr("azg.matches", "matches expected")}</span>` : ` <span style="color:#fecaca">✗ ${tr("azg.differs", "differs from expected")}</span>`;
+  $("ev-out").innerHTML = `<div style="margin-top:10px"><b>${tr("azg.decision", "Decision")}:</b> <span style="color:${col};font-weight:700">${esc(dec)}</span>${passTxt} <span class="muted" style="font-size:11px">— ${esc(out.note)}</span></div>
+    <div class="muted" style="font-size:11px;margin:8px 0 3px">${tr("azg.payloadSentA", "Request payload sent to the")} ${esc(out.engine)} ${tr("azg.payloadSentB", "PDP:")}</div>
     <pre class="payload">${esc(JSON.stringify(out.request, null, 2))}</pre>`;
   void load();
 }
@@ -158,42 +169,42 @@ async function runSuite(): Promise<void> {
   const r = out as unknown as { engine: string; total: number; passed: number; failed: number; errors: number; byCategory: Record<string, { total: number; failed: number }>; findings: { category: string; ref: string; name: string; severity: string }[]; results: { name: string; category: string; decision: string; expected: string; pass: boolean | null }[] };
   const row = (t: { name: string; category: string; decision: string; expected: string; pass: boolean | null }): string => {
     const c = t.pass === null ? "#94a3b8" : t.pass ? "#6ee7b7" : "#fecaca";
-    const mark = t.pass === null ? "—" : t.pass ? "✓ deny" : "✗ ALLOWED";
+    const mark = t.pass === null ? "—" : t.pass ? `✓ ${tr("azg.deny", "deny")}` : `✗ ${tr("azg.allowed", "ALLOWED")}`;
     return `<tr><td>${esc(t.category)}</td><td>${esc(t.name)}</td><td style="color:${c};font-weight:600">${mark}</td></tr>`;
   };
   const findingBanner = r.findings.length
-    ? `<div class="pill p-bad" style="display:inline-block;margin-bottom:8px">⚠ ${r.findings.length} broken-authorization finding(s): ${r.findings.map((f) => f.ref).filter((v, i, a) => a.indexOf(v) === i).join(", ")}</div>`
-    : r.errors === r.total ? `<div class="pill p-na" style="display:inline-block;margin-bottom:8px">Not evaluated — enable “Call PDP live” with a reachable endpoint to get decisions.</div>`
-    : `<div class="pill p-ok" style="display:inline-block;margin-bottom:8px">✓ No broken-authorization findings — every negative test was denied.</div>`;
-  $("suite-out").innerHTML = `<div style="margin-top:12px"><b>BOLA/BFLA test battery</b> — ${r.passed} passed · ${r.failed} failed · ${r.errors} not evaluated (of ${r.total})</div>
+    ? `<div class="pill p-bad" style="display:inline-block;margin-bottom:8px">⚠ ${r.findings.length} ${tr("azg.brokenFindings", "broken-authorization finding(s):")} ${r.findings.map((f) => f.ref).filter((v, i, a) => a.indexOf(v) === i).join(", ")}</div>`
+    : r.errors === r.total ? `<div class="pill p-na" style="display:inline-block;margin-bottom:8px">${tr("azg.notEvaluated", "Not evaluated — enable “Call PDP live” with a reachable endpoint to get decisions.")}</div>`
+    : `<div class="pill p-ok" style="display:inline-block;margin-bottom:8px">✓ ${tr("azg.noBrokenFindings", "No broken-authorization findings — every negative test was denied.")}</div>`;
+  $("suite-out").innerHTML = `<div style="margin-top:12px"><b>${tr("azg.testBattery", "BOLA/BFLA test battery")}</b> — ${r.passed} ${tr("azg.passed", "passed")} · ${r.failed} ${tr("azg.failed", "failed")} · ${r.errors} ${tr("azg.notEvald", "not evaluated")} (${tr("azg.of", "of")} ${r.total})</div>
     ${findingBanner}
-    <table class="az"><thead><tr><th>OWASP</th><th>Negative test (must deny)</th><th>Result</th></tr></thead><tbody>${r.results.map(row).join("")}</tbody></table>`;
+    <table class="az"><thead><tr><th>OWASP</th><th>${tr("azg.negTest", "Negative test (must deny)")}</th><th>${tr("azg.result", "Result")}</th></tr></thead><tbody>${r.results.map(row).join("")}</tbody></table>`;
   void load();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  initI18n(); void load();
+  initI18n(); translateChrome(); void load();
   $("ev-run").onclick = () => void evaluate();
   $("ev-suite").onclick = () => void runSuite();
   $("gw-add").onclick = async () => {
-    if (!val("gw-name")) return toast("Name required", false);
+    if (!val("gw-name")) return toast(tr("azg.nameRequired", "Name required"), false);
     const r = await post("gateway", { name: val("gw-name"), gatewayType: val("gw-type"), authzModel: val("gw-model"),
       authnMethods: val("gw-authn"), pdpId: val("gw-pdp"), environment: val("gw-env"),
       denyByDefault: val("gw-deny"), decisionLogging: val("gw-log") });
-    if (r) { toast("Gateway added"); (document.getElementById("gw-name") as HTMLInputElement).value = ""; void load(); }
+    if (r) { toast(tr("azg.gwAdded", "Gateway added")); (document.getElementById("gw-name") as HTMLInputElement).value = ""; void load(); }
   };
   $("pdp-add").onclick = async () => {
-    if (!val("pdp-name")) return toast("Name required", false);
+    if (!val("pdp-name")) return toast(tr("azg.nameRequired", "Name required"), false);
     const r = await post("pdp", { name: val("pdp-name"), engine: val("pdp-engine"), endpoint: val("pdp-endpoint"),
       status: val("pdp-status"), authzenCompliant: (document.getElementById("pdp-authzen") as HTMLInputElement).checked,
       regressionEnabled: (document.getElementById("pdp-regression") as HTMLInputElement).checked });
-    if (r) { toast("PDP added"); (document.getElementById("pdp-name") as HTMLInputElement).value = ""; void load(); }
+    if (r) { toast(tr("azg.pdpAdded", "PDP added")); (document.getElementById("pdp-name") as HTMLInputElement).value = ""; void load(); }
   };
   $("pol-add").onclick = async () => {
-    if (!val("pol-name")) return toast("Name required", false);
+    if (!val("pol-name")) return toast(tr("azg.nameRequired", "Name required"), false);
     const vt = val("pol-vt");
     const r = await post("policy", { name: val("pol-name"), engine: val("pol-engine"), defaultDeny: val("pol-deny"),
       versioned: vt === "vt" || vt === "v" ? "1" : vt === "0" ? "0" : "", tested: vt === "vt" ? "1" : vt === "0" || vt === "v" ? "0" : "" });
-    if (r) { toast("Policy added"); (document.getElementById("pol-name") as HTMLInputElement).value = ""; void load(); }
+    if (r) { toast(tr("azg.polAdded", "Policy added")); (document.getElementById("pol-name") as HTMLInputElement).value = ""; void load(); }
   };
 });

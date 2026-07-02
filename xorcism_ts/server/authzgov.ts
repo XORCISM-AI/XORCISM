@@ -421,3 +421,33 @@ export async function runAuthzTestSuite(
   }
   return rep;
 }
+
+// ── Demo seed ──────────────────────────────────────────────────────────────────────────
+/** Seed a representative API-authorization estate so /authz-governance shows a useful posture:
+ *  3 PDPs (OPA / Cedar-AVP / AuthZEN-Topaz), 3 gateways (incl. one ungoverned → a real gap),
+ *  3 policy-as-code artifacts, BOLA/BFLA decision tests (incl. a failing privilege-escalation case)
+ *  and a couple of regression-suite runs for the trend. Idempotent per tenant. */
+export function seedAuthzDemo(tenant: number): { created: number } {
+  ensureAuthzTables();
+  const db = getDb("XORCISM");
+  if (db.prepare("SELECT 1 FROM AUTHZPDP WHERE IFNULL(TenantID,-1)=IFNULL(?,-1) LIMIT 1").get(tenant)) return { created: 0 };
+  const opa = registerPdp(tenant, { name: "OPA — cluster policy engine", engine: "opa", endpoint: "https://opa.internal/v1/data/authz/allow", authzenCompliant: 0, status: "healthy", regressionEnabled: 1, notes: "Rego RBAC/ABAC for microservice authorization" }, "demo").id;
+  const cedar = registerPdp(tenant, { name: "Amazon Verified Permissions (Cedar)", engine: "cedar", endpoint: "https://verifiedpermissions.eu-west-1.amazonaws.com", authzenCompliant: 0, status: "healthy", regressionEnabled: 1, notes: "Cedar PARC, deny-by-default" }, "demo").id;
+  const topaz = registerPdp(tenant, { name: "Topaz — AuthZEN PDP", engine: "authzen", endpoint: "https://topaz.internal/access/v1/evaluation", authzenCompliant: 1, status: "healthy", regressionEnabled: 1, notes: "OPA + Zanzibar ReBAC, AuthZEN-conformant" }, "demo").id;
+  registerGateway(tenant, { name: "Kong API Gateway (prod)", gatewayType: "kong", authnMethods: ["oidc", "jwt"], authzModel: "external-pdp", pdpId: opa, baseUrl: "https://api.example.com", environment: "prod", denyByDefault: 1, decisionLogging: 1, notes: "Delegates every request to OPA" }, "demo");
+  registerGateway(tenant, { name: "AWS API Gateway (payments)", gatewayType: "aws-apigw", authnMethods: ["jwt"], authzModel: "external-pdp", pdpId: cedar, baseUrl: "https://pay.example.com", environment: "prod", denyByDefault: 1, decisionLogging: 1 }, "demo");
+  registerGateway(tenant, { name: "Legacy ingress (partner API)", gatewayType: "nginx", authnMethods: ["apikey"], authzModel: "none", pdpId: null, baseUrl: "https://partner.example.com", environment: "prod", denyByDefault: 0, decisionLogging: 0, notes: "Ungoverned — no PDP, allow-by-default (BOLA/BFLA exposure)" }, "demo");
+  registerPolicy(tenant, { name: "microservice-authz (Rego)", engine: "opa", language: "rego", pdpId: opa, defaultDeny: 1, versioned: 1, tested: 1, content: "package authz\ndefault allow = false\nallow { input.subject.role == \"admin\" }", notes: "RBAC/ABAC baseline" }, "demo");
+  registerPolicy(tenant, { name: "payments-cedar", engine: "cedar", language: "cedar", pdpId: cedar, defaultDeny: 1, versioned: 1, tested: 1, content: "permit(principal, action == Action::\"pay\", resource) when { principal.dept == resource.owner };", notes: "PARC, deny-by-default" }, "demo");
+  registerPolicy(tenant, { name: "topaz-rebac", engine: "authzen", language: "rego", pdpId: topaz, defaultDeny: 1, versioned: 1, tested: 0, notes: "ReBAC relationship checks (not yet in regression suite)" }, "demo");
+  const dt = (pdpId: number, engine: string, subject: string, action: string, resource: string, decision: Decision, expected: string) =>
+    recordDecisionTest(tenant, { pdpId, engine, req: { subject, action, resource, context: {} }, decision, expected });
+  dt(opa, "opa", "user:alice", "GET", "order:1001", "deny", "deny");          // BOLA — cross-tenant object blocked
+  dt(opa, "opa", "user:alice", "GET", "order:alice-9", "allow", "allow");     // owner access allowed
+  dt(cedar, "cedar", "user:bob", "pay", "account:9001", "deny", "deny");      // not owner → denied
+  dt(cedar, "cedar", "role:teller", "adminReset", "account:9001", "allow", "deny"); // BFLA — privilege escalation NOT blocked (failing test)
+  dt(topaz, "authzen", "user:carol", "delete", "doc:secret", "deny", "deny");
+  recordSuiteRun(tenant, { engine: "opa", pdpId: opa, total: 12, passed: 11, failed: 1, errors: 0, findings: 1 }, "demo");
+  recordSuiteRun(tenant, { engine: "cedar", pdpId: cedar, total: 12, passed: 10, failed: 2, errors: 0, findings: 2 }, "demo");
+  return { created: 1 };
+}
