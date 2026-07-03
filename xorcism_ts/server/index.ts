@@ -144,6 +144,8 @@ import policyvalRouter from "./routes/policyval";
 import gapAssessRouter from "./routes/gapassess";
 import secplansRouter from "./routes/secplans";
 import { seedSystemPlanDemo } from "./secplans";
+import auditPlanningRouter from "./routes/auditplanning";
+import { ensureAuditPlanTables, seedAuditPlanDemo } from "./auditplanning";
 import configurationRouter from "./routes/configuration";
 import crisisRouter from "./routes/crisis";
 import fairmamRouter from "./routes/fairmam";
@@ -357,6 +359,7 @@ app.use("/api", easmRouter); // EASM: external attack surface inventory + exposu
 app.use("/api", frameworksRouter); // Frameworks management: FRAMEWORK catalogue + VOCABULARY mapping
 app.use("/api", incidentsRouter); // Incident Management: incident inventory + governance worklist
 app.use("/api", complianceRouter); // Compliance Management: audit inventory + findings/policy worklist
+app.use("/api", auditPlanningRouter); // Audit planning: audit programme + planned items + launch-to-AUDIT
 app.use("/api", otSecurityRouter); // OT Security: IEC 62443 / NIST 800-82 OT assessments + OT assets + zones
 app.use("/api", patchMgmtRouter); // Patch Management: asset↔vuln patch status, SLAs, remediation plans
 app.use("/api", ovalEditorRouter); // OVAL Definition editor: author defs + criteria trees reusing imported OVAL tests
@@ -811,6 +814,9 @@ app.get("/incident-management", pageGuard("/"), (_req: Request, res: Response) =
 app.get("/compliance-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "compliance-management.html"));
 });
+app.get("/audit-planning", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "audit-planning.html"));
+});
 app.get("/crisis-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "crisis-management.html"));
 });
@@ -1066,6 +1072,8 @@ ensureDetectionEvidenceTables(); // proof behind a detection: XTHREAT.DETECTIONE
 try { seedAve(); } catch { /* sample only */ } // load the bundled AVE sample catalogue if empty
 try { seedRemediationDemo(3); } catch { /* demo only */ } // AER demo (tenant 3): plans across the PLAN→GATE→EXECUTE→VERIFY→CLOSE lifecycle
 try { seedSystemPlanDemo(3); } catch { /* demo only */ } // NIST SP 800-18r2 demo (tenant 3): a consolidated system plan mid-RMF-journey
+try { ensureAuditPlanTables(); } catch { /* best-effort */ } // audit planning tables (XCOMPLIANCE.AUDITPLAN/AUDITPLANITEM)
+try { seedAuditPlanDemo(3); } catch { /* demo only */ } // Audit-planning demo (tenant 3): an annual audit programme with planned items
 ensureCbomTables(); // CBOM cryptographic bill of materials: CRYPTOASSET inventory (quantum-safe classification, feeds PQCMM)
 ensureAiSbomTables(); // AI SBOM minimum elements (CISA/G7): AISBOMELEMENT catalogue + AISBOM/AISBOMCOVERAGE conformance
 ensureThreatDebtTables(); // Adversary Opportunity Index: THREATDEBTSNAPSHOT (AOI STOCK/FLOW history)

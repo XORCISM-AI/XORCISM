@@ -46,7 +46,8 @@ function card(lbl: string, val: string, foot: string, color?: string, cls = "rr-
 
 function rowHtml(r: Row): string {
   const measureChip = `<button class="mchip" data-entry="${r.id}" data-name="${esc(r.ref)}" title="${t("rr.measuresTitle")}">🛡 ${r.measures || "+"}</button>`;
-  const treat = r.treatment !== "—" ? `<span class="tr">${esc(r.treatment)}</span>${r.hasPlan ? "" : ` <span class="muted" style="font-size:11px">${t("rr.noPlan")}</span>`} ${measureChip}` : `<span class="tag">${t("rr.untreated")}</span> ${measureChip}`;
+  const planChip = `<button class="mchip" data-plan-entry="${r.id}" data-name="${esc(r.ref)}" title="${t("rr.tp.chipTitle")}"${r.hasPlan ? ' style="border-color:#a78bfa;color:#c4b5fd"' : ""}>📋 ${t("rr.tp.plan")}</button>`;
+  const treat = r.treatment !== "—" ? `<span class="tr">${esc(r.treatment)}</span>${r.hasPlan ? "" : ` <span class="muted" style="font-size:11px">${t("rr.noPlan")}</span>`} ${measureChip} ${planChip}` : `<span class="tag">${t("rr.untreated")}</span> ${measureChip} ${planChip}`;
   const review = r.reviewInDays == null ? `<span class="muted">—</span>` : r.reviewOverdue ? `<span class="tag">${fmt("rr.overdueD", { n: -r.reviewInDays })}</span>` : `<span class="muted">${fmt("rr.inDays", { n: r.reviewInDays })}</span>`;
   return `<tr>
     <td><div class="rname">${esc(r.ref)} <span style="font-weight:400">${esc(r.title)}</span>${r.overAppetite ? ` <span class="appetite-flag" title="${t("rr.overAppetiteTitle")}">⚑ ${t("rr.overAppetite")}</span>` : ""}</div>
@@ -119,6 +120,7 @@ async function load(): Promise<void> {
     <div class="legend">${t("rr.legend")}</div>`;
   wireGov();
   document.querySelectorAll<HTMLButtonElement>(".mchip[data-entry]").forEach((b) => b.addEventListener("click", () => openEntryMeasures(Number(b.dataset.entry), b.dataset.name || "")));
+  document.querySelectorAll<HTMLButtonElement>(".mchip[data-plan-entry]").forEach((b) => b.addEventListener("click", () => void openTreatmentPlan(Number(b.dataset.planEntry), b.dataset.name || "")));
 }
 
 // ── Risk-management strategy & appetite ───────────────────────────────────────
@@ -401,6 +403,112 @@ function openAssessmentImport(): void {
       { key: "date", label: t("ra.imp.f.date"), guess: ["date", "assessment date", "date evaluation", "created", "creation"] },
     ],
     onDone: () => { void load(); },
+  });
+}
+
+// ── Advanced treatment plan modal ──────────────────────────────────────────────
+let PERSONS: { id: number; label: string }[] | null = null;
+async function loadPersons(): Promise<void> {
+  if (PERSONS) return;
+  try { const r = await fetch("/api/lookup?db=XORCISM&table=PERSON&idCol=PersonID&labelCol=FullName"); PERSONS = r.ok ? await r.json() : []; } catch { PERSONS = []; }
+}
+const personOpts = (sel: unknown, blank: string): string =>
+  `<option value="">${esc(blank)}</option>` + (PERSONS || []).map((p) => `<option value="${p.id}"${String(sel ?? "") === String(p.id) ? " selected" : ""}>${esc(p.label || ("#" + p.id))}</option>`).join("");
+const selOpts = (arr: readonly string[], sel: unknown, labelKey?: string): string =>
+  arr.map((o) => `<option value="${esc(o)}"${String(sel ?? "") === o ? " selected" : ""}>${labelKey ? esc(t(`${labelKey}.${o}`)) : esc(o)}</option>`).join("");
+
+let TP_ENTRY = 0;
+async function openTreatmentPlan(entryId: number, ref: string): Promise<void> {
+  TP_ENTRY = entryId;
+  await loadPersons();
+  document.getElementById("rr-tp-modal")?.remove();
+  const wrap = document.createElement("div"); wrap.id = "rr-tp-modal";
+  wrap.style.cssText = "position:fixed;inset:0;background:rgba(4,6,15,.72);display:flex;align-items:flex-start;justify-content:center;z-index:1200;overflow:auto";
+  wrap.innerHTML = `<div style="background:#0f1322;border:1px solid #2d3250;border-radius:12px;padding:18px 20px;margin:36px 16px;max-width:820px;width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><b style="font-size:16px;color:#e7ebf3">${t("rr.tp.title")}</b><span class="muted" style="font-size:12px">${esc(ref)}</span><span style="flex:1"></span><button id="rr-tp-close" class="rr-mini">✕</button></div>
+    <div id="rr-tp-body"><div class="muted" style="padding:20px;text-align:center">${t("rr.loading")}</div></div>
+  </div>`;
+  document.body.appendChild(wrap);
+  wrap.addEventListener("click", (e) => { if (e.target === wrap) wrap.remove(); });
+  document.getElementById("rr-tp-close")!.addEventListener("click", () => wrap.remove());
+  await renderTreatmentPlan();
+}
+
+async function renderTreatmentPlan(): Promise<void> {
+  const body = document.getElementById("rr-tp-body"); if (!body) return;
+  let d: any;
+  try { const r = await fetch(`/api/risk-register/entry/${TP_ENTRY}/treatment-plan`); d = await r.json(); if (!r.ok) throw new Error(d.error); }
+  catch (e) { body.innerHTML = `<div class="muted" style="padding:16px">⚠️ ${esc(e)}</div>`; return; }
+  const p = d.plan || {}; const o = d.options;
+  const inp = "background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:6px 9px;color:#e2e8f0;font-size:12px;font-family:inherit";
+  const barColor = d.overdue ? "#f87171" : d.progress >= 100 ? "#34d399" : "#a78bfa";
+  const actions = (d.actions || []).map((a: any) => {
+    const overdue = a.Status !== "done" && a.Status !== "cancelled" && a.DueDate && Date.parse(a.DueDate) < Date.now();
+    return `<tr data-aid="${a.ActionID}">
+      <td><input class="ta-title" value="${esc(a.Title)}" style="${inp};width:100%"></td>
+      <td><select class="ta-owner" style="${inp}">${personOpts(a.ActionOwnerPersonID, "—")}</select></td>
+      <td><input type="date" class="ta-due" value="${esc((a.DueDate || "").slice(0, 10))}" style="${inp}"${overdue ? ';border-color:#f87171' : ""}></td>
+      <td><select class="ta-status" style="${inp}">${selOpts(o.actionStatuses, a.Status, "rr.tp.as")}</select></td>
+      <td><input type="number" class="ta-prog" min="0" max="100" value="${a.Progress ?? 0}" style="${inp};width:64px"></td>
+      <td style="white-space:nowrap"><button class="rr-mini ta-save">${t("rr.tp.save")}</button> <button class="rr-mini ta-del" style="color:#f87171">✕</button></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="6" class="muted" style="padding:8px;text-align:center">${t("rr.tp.noActions")}</td></tr>`;
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+      <label class="tpf">${t("rr.tp.strategy")}<select id="tp-strategy" style="${inp}"><option value="">—</option>${selOpts(o.strategies, p.Strategy, "rr.tp.st")}</select></label>
+      <label class="tpf">${t("rr.tp.status")}<select id="tp-status" style="${inp}">${selOpts(o.planStatuses, p.Status || "draft", "rr.tp.ps")}</select></label>
+      <label class="tpf">${t("rr.tp.owner")}<select id="tp-owner" style="${inp}">${personOpts(p.OwnerPersonID, "—")}</select></label>
+      <label class="tpf">${t("rr.tp.targetLevel")}<input id="tp-trl" value="${esc(p.TargetResidualLevel || "")}" placeholder="Low" style="${inp}"></label>
+      <label class="tpf">${t("rr.tp.targetDate")}<input type="date" id="tp-td" value="${esc((p.TargetDate || "").slice(0, 10))}" style="${inp}"></label>
+      <label class="tpf">${t("rr.tp.budget")}<input type="number" id="tp-budget" value="${p.Budget ?? ""}" style="${inp}"></label>
+    </div>
+    <label class="tpf" style="display:block;margin-bottom:8px">${t("rr.tp.rationale")}<textarea id="tp-rat" rows="2" style="${inp};width:100%;box-sizing:border-box">${esc(p.Rationale || "")}</textarea></label>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><div style="height:8px;border-radius:4px;background:#1e2133;overflow:hidden"><i style="display:block;height:100%;width:${d.progress}%;background:${barColor}"></i></div></div>
+      <span class="muted" style="font-size:12px">${d.progress}%</span>
+      ${d.overdue ? `<span class="tag" style="background:#7f1d1d;color:#fecaca">${t("rr.tp.overdue")}</span>` : ""}
+      ${p.ApprovedBy ? `<span class="tag" style="background:#064e3b;color:#6ee7b7">✓ ${esc(p.ApprovedBy)} · ${esc((p.ApprovedDate || "").slice(0, 10))}</span>` : ""}
+      <button class="rr-mini" id="tp-save">${t("rr.tp.savePlan")}</button>
+      <button class="rr-mini" id="tp-approve" style="border-color:#34d399;color:#6ee7b7">${t("rr.tp.approve")}</button>
+    </div>
+    <div class="rr-section" style="margin-top:4px">${t("rr.tp.actions")}</div>
+    <table class="rr" style="font-size:12px"><thead><tr><th>${t("rr.tp.action")}</th><th>${t("rr.tp.owner")}</th><th>${t("rr.tp.due")}</th><th>${t("rr.tp.status")}</th><th>%</th><th></th></tr></thead><tbody>${actions}</tbody></table>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <input id="tp-new-title" placeholder="${t("rr.tp.newActionPh")}" style="${inp};flex:1;min-width:200px">
+      <input type="date" id="tp-new-due" style="${inp}">
+      <select id="tp-new-owner" style="${inp}">${personOpts("", "—")}</select>
+      <button class="rr-mini" id="tp-add">+ ${t("rr.tp.addAction")}</button>
+    </div>`;
+
+  const v = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
+  document.getElementById("tp-save")!.addEventListener("click", async () => {
+    try {
+      await api(`/api/risk-register/entry/${TP_ENTRY}/treatment-plan`, { strategy: v("tp-strategy"), status: v("tp-status"), ownerPersonId: v("tp-owner"), targetResidualLevel: v("tp-trl"), targetDate: v("tp-td"), budget: v("tp-budget"), rationale: v("tp-rat") });
+      toast(t("rr.tp.saved")); await renderTreatmentPlan(); void load();
+    } catch (e) { toast(`⚠️ ${esc(e)}`); }
+  });
+  document.getElementById("tp-approve")!.addEventListener("click", async () => {
+    try { await api(`/api/risk-register/entry/${TP_ENTRY}/treatment-plan/approve`, {}); toast(t("rr.tp.approved")); await renderTreatmentPlan(); }
+    catch (e) { toast(`⚠️ ${esc(e)}`); }
+  });
+  document.getElementById("tp-add")!.addEventListener("click", async () => {
+    const title = v("tp-new-title").trim(); if (!title) return;
+    try { await api(`/api/risk-register/entry/${TP_ENTRY}/treatment-plan/action`, { title, dueDate: v("tp-new-due"), actionOwnerPersonId: v("tp-new-owner") }); await renderTreatmentPlan(); void load(); }
+    catch (e) { toast(`⚠️ ${esc(e)}`); }
+  });
+  body.querySelectorAll<HTMLTableRowElement>("tr[data-aid]").forEach((tr) => {
+    const aid = Number(tr.dataset.aid);
+    const av = (cls: string) => (tr.querySelector("." + cls) as HTMLInputElement | HTMLSelectElement).value;
+    tr.querySelector(".ta-save")!.addEventListener("click", async () => {
+      try { const r = await fetch(`/api/risk-register/treatment-action/${aid}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: av("ta-title"), actionOwnerPersonId: av("ta-owner"), dueDate: av("ta-due"), status: av("ta-status"), progress: av("ta-prog") }) }); if (!r.ok) throw new Error((await r.json()).error); toast(t("rr.tp.actionSaved")); await renderTreatmentPlan(); void load(); }
+      catch (e) { toast(`⚠️ ${esc(e)}`); }
+    });
+    tr.querySelector(".ta-del")!.addEventListener("click", async () => {
+      if (!window.confirm(t("rr.tp.delConfirm"))) return;
+      try { await fetch(`/api/risk-register/treatment-action/${aid}`, { method: "DELETE" }); await renderTreatmentPlan(); void load(); }
+      catch (e) { toast(`⚠️ ${esc(e)}`); }
+    });
   });
 }
 

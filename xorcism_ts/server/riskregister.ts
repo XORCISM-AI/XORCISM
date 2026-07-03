@@ -422,9 +422,27 @@ export function ensureRiskGovTables(): void {
       LinkID INTEGER PRIMARY KEY AUTOINCREMENT,
       TenantID INTEGER, RiskRegisterEntryID INTEGER, RiskMeasureID INTEGER,
       ImplementationStatus TEXT, CreatedDate TEXT);
+    -- Advanced treatment plan (one per risk register entry): the 4T strategy, rationale/acceptance
+    -- justification, target residual + date, owner, budget, approval and status — plus a set of
+    -- tracked treatment actions/tasks (RISKTREATMENTACTION) each owned, dated and progress-tracked.
+    CREATE TABLE IF NOT EXISTS RISKTREATMENTPLAN(
+      PlanID INTEGER PRIMARY KEY AUTOINCREMENT,
+      TenantID INTEGER, RiskRegisterEntryID INTEGER,
+      Strategy TEXT, Rationale TEXT, TargetResidualLevel TEXT, TargetDate TEXT,
+      OwnerPersonID INTEGER, Budget REAL, Currency TEXT, Status TEXT DEFAULT 'draft',
+      ApprovedBy TEXT, ApprovedDate TEXT, CreatedBy TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+    CREATE TABLE IF NOT EXISTS RISKTREATMENTACTION(
+      ActionID INTEGER PRIMARY KEY AUTOINCREMENT,
+      TenantID INTEGER, PlanID INTEGER, RiskRegisterEntryID INTEGER,
+      Title TEXT NOT NULL, Description TEXT, ActionOwnerPersonID INTEGER,
+      DueDate TEXT, Status TEXT DEFAULT 'todo', Progress INTEGER DEFAULT 0,
+      Cost REAL, ControlRef TEXT, RiskMeasureID INTEGER,
+      SortOrder INTEGER, CompletedDate TEXT, CreatedDate TEXT, UpdatedDate TEXT);
     CREATE INDEX IF NOT EXISTS ix_riskappetite_tn ON RISKAPPETITE(TenantID, Category);
     CREATE INDEX IF NOT EXISTS ix_riskmeasure_tn ON RISKMEASURE(TenantID, RiskMeasureID);
     CREATE INDEX IF NOT EXISTS ix_riskmeasurelink_entry ON RISKMEASURELINK(RiskRegisterEntryID);
+    CREATE INDEX IF NOT EXISTS ix_risktplan_entry ON RISKTREATMENTPLAN(RiskRegisterEntryID);
+    CREATE INDEX IF NOT EXISTS ix_risktaction_plan ON RISKTREATMENTACTION(PlanID);
   `);
 }
 
@@ -543,5 +561,164 @@ export function unlinkMeasure(tenant: number | null, linkId: number): { ok: true
 export function setLinkStatus(tenant: number | null, linkId: number, status: string): { ok: true } {
   ensureRiskGovTables();
   getDb("XCOMPLIANCE").prepare(`UPDATE RISKMEASURELINK SET ImplementationStatus = ? WHERE LinkID = ?${tenant != null ? ` AND TenantID = ${tenant}` : ""}`).run(String(status).slice(0, 40), linkId);
+  return { ok: true };
+}
+
+// ── Advanced treatment plans ──────────────────────────────────────────────────
+// The ISO-27005 / ISO-31000 "risk treatment" 4T strategies + the plan/action lifecycles.
+export const TREATMENT_STRATEGIES = ["Mitigate", "Accept", "Transfer", "Avoid"] as const;
+export const PLAN_STATUSES = ["draft", "approved", "in-progress", "completed", "on-hold", "cancelled"] as const;
+export const ACTION_STATUSES = ["todo", "in-progress", "done", "blocked", "cancelled"] as const;
+const ACCEPT_STRAT = /accept|tolerat/i;
+
+const personName = (tenant: number | null): Map<number, string> => {
+  const m = new Map<number, string>();
+  try { for (const p of getDb("XORCISM").prepare("SELECT PersonID, FullName FROM PERSON").all() as { PersonID: number; FullName: string }[]) m.set(Number(p.PersonID), p.FullName); } catch { /* PERSON optional */ }
+  return m;
+};
+/** Progress = mean of action progress (a done/cancelled action counts 100/—); overdue = a plan past
+ *  its target (not completed) or any non-terminal action past its due date. */
+function planRollup(plan: Record<string, unknown> | null, actions: Record<string, unknown>[]): { progress: number; overdue: boolean; openActions: number; overdueActions: number } {
+  const live = actions.filter((a) => a.Status !== "cancelled");
+  const done = actions.filter((a) => a.Status === "done").length;
+  const progress = live.length ? Math.round(live.reduce((s, a) => s + (a.Status === "done" ? 100 : Number(a.Progress) || 0), 0) / live.length) : (plan && plan.Status === "completed" ? 100 : 0);
+  const overdueActions = actions.filter((a) => a.Status !== "done" && a.Status !== "cancelled" && (daysUntil(a.DueDate as string) ?? 1) < 0).length;
+  const planOverdue = !!plan && plan.Status !== "completed" && plan.Status !== "cancelled" && (daysUntil(plan.TargetDate as string) ?? 1) < 0;
+  return { progress, overdue: planOverdue || overdueActions > 0, openActions: live.length - done, overdueActions };
+}
+
+/** The full treatment plan (header + actions + rollup) for one risk register entry. */
+export function getTreatmentPlan(tenant: number | null, entryId: number): {
+  entryId: number; plan: Record<string, unknown> | null; actions: Record<string, unknown>[];
+  progress: number; overdue: boolean; openActions: number; overdueActions: number;
+  options: { strategies: readonly string[]; planStatuses: readonly string[]; actionStatuses: readonly string[] };
+} {
+  ensureRiskGovTables();
+  const cc = getDb("XCOMPLIANCE");
+  const tt = tenant != null ? ` AND TenantID = ${tenant}` : "";
+  const plan = (cc.prepare(`SELECT * FROM RISKTREATMENTPLAN WHERE RiskRegisterEntryID = ?${tt} ORDER BY PlanID DESC LIMIT 1`).get(entryId) as Record<string, unknown>) ?? null;
+  const names = personName(tenant);
+  if (plan && plan.OwnerPersonID != null) plan.OwnerName = names.get(Number(plan.OwnerPersonID)) ?? `#${plan.OwnerPersonID}`;
+  const actions = plan
+    ? (cc.prepare(`SELECT * FROM RISKTREATMENTACTION WHERE PlanID = ? ORDER BY COALESCE(SortOrder, ActionID)`).all(plan.PlanID) as Record<string, unknown>[])
+    : [];
+  for (const a of actions) if (a.ActionOwnerPersonID != null) a.OwnerName = names.get(Number(a.ActionOwnerPersonID)) ?? `#${a.ActionOwnerPersonID}`;
+  const roll = planRollup(plan, actions);
+  return { entryId, plan, actions, ...roll,
+    options: { strategies: TREATMENT_STRATEGIES, planStatuses: PLAN_STATUSES, actionStatuses: ACTION_STATUSES } };
+}
+
+const numOrNull = (v: unknown): number | null => (v != null && String(v).trim() !== "" && !Number.isNaN(Number(v)) ? Number(v) : null);
+const strOrNull = (v: unknown, n = 4000): string | null => (v != null && String(v).trim() !== "" ? String(v).slice(0, n) : null);
+
+/** Create or update the (single) treatment plan for a risk. Also mirrors the strategy/target onto
+ *  RISKREGISTERENTRY so the inventory worklist (hasPlan / treatment / target-overdue) stays coherent. */
+export function upsertTreatmentPlan(
+  tenant: number | null, entryId: number,
+  p: { strategy?: string; rationale?: string; targetResidualLevel?: string; targetDate?: string;
+       ownerPersonId?: number | null; budget?: number | null; currency?: string; status?: string; createdBy?: string },
+): { planId: number } {
+  ensureRiskGovTables();
+  const cc = getDb("XCOMPLIANCE");
+  const now = new Date().toISOString();
+  const tt = tenant != null ? ` AND TenantID = ${tenant}` : "";
+  const strategy = TREATMENT_STRATEGIES.includes(p.strategy as never) ? p.strategy! : (p.strategy ? String(p.strategy).slice(0, 40) : null);
+  const status = PLAN_STATUSES.includes(p.status as never) ? p.status! : "draft";
+  const existing = cc.prepare(`SELECT PlanID FROM RISKTREATMENTPLAN WHERE RiskRegisterEntryID = ?${tt} ORDER BY PlanID DESC LIMIT 1`).get(entryId) as { PlanID: number } | undefined;
+  let planId: number;
+  const fields = {
+    strat: strategy, rat: strOrNull(p.rationale), trl: strOrNull(p.targetResidualLevel, 40), td: strOrNull(p.targetDate, 40),
+    owner: numOrNull(p.ownerPersonId), budget: numOrNull(p.budget), cur: strOrNull(p.currency, 10) || "EUR", st: status,
+  };
+  if (existing) {
+    cc.prepare(`UPDATE RISKTREATMENTPLAN SET Strategy=@strat, Rationale=@rat, TargetResidualLevel=@trl, TargetDate=@td,
+        OwnerPersonID=@owner, Budget=@budget, Currency=@cur, Status=@st, UpdatedDate=@now WHERE PlanID=@id`)
+      .run({ ...fields, now, id: existing.PlanID });
+    planId = existing.PlanID;
+  } else {
+    const r = cc.prepare(`INSERT INTO RISKTREATMENTPLAN (TenantID, RiskRegisterEntryID, Strategy, Rationale, TargetResidualLevel, TargetDate,
+        OwnerPersonID, Budget, Currency, Status, CreatedBy, CreatedDate, UpdatedDate)
+        VALUES (@tn, @entry, @strat, @rat, @trl, @td, @owner, @budget, @cur, @st, @cb, @now, @now)`)
+      .run({ ...fields, tn: tenant, entry: entryId, cb: strOrNull(p.createdBy, 120), now });
+    planId = Number(r.lastInsertRowid);
+  }
+  // Mirror onto RISKREGISTERENTRY (best-effort; only columns that exist).
+  try {
+    const re = getDb("XCOMPLIANCE");
+    const rc = new Set((re.prepare(`PRAGMA table_info(RISKREGISTERENTRY)`).all() as { name: string }[]).map((c) => c.name));
+    const sets: string[] = []; const args: unknown[] = [];
+    if (rc.has("TreatmentStrategy") && strategy) { sets.push("TreatmentStrategy = ?"); args.push(strategy); }
+    if (rc.has("TreatmentPlan")) { sets.push("TreatmentPlan = ?"); args.push(strOrNull(p.rationale) || "See structured treatment plan"); }
+    if (rc.has("TargetDate") && fields.td) { sets.push("TargetDate = ?"); args.push(fields.td); }
+    if (sets.length) { args.push(entryId); re.prepare(`UPDATE RISKREGISTERENTRY SET ${sets.join(", ")} WHERE RiskRegisterEntryID = ?${tt}`).run(...args); }
+  } catch { /* mirror is best-effort */ }
+  return { planId };
+}
+
+/** Approve the plan (records approver + date, flips draft → approved). */
+export function approveTreatmentPlan(tenant: number | null, entryId: number, approver: string): { ok: boolean } {
+  ensureRiskGovTables();
+  const cc = getDb("XCOMPLIANCE");
+  const tt = tenant != null ? ` AND TenantID = ${tenant}` : "";
+  const r = cc.prepare(`UPDATE RISKTREATMENTPLAN SET ApprovedBy = ?, ApprovedDate = ?, Status = CASE WHEN Status = 'draft' THEN 'approved' ELSE Status END, UpdatedDate = ?
+      WHERE RiskRegisterEntryID = ?${tt}`).run(String(approver || "").slice(0, 120), new Date().toISOString(), new Date().toISOString(), entryId);
+  return { ok: r.changes > 0 };
+}
+
+/** Add a treatment action to a risk's plan (auto-creating a draft plan header if none exists). */
+export function addTreatmentAction(
+  tenant: number | null, entryId: number,
+  p: { title: string; description?: string; actionOwnerPersonId?: number | null; dueDate?: string; status?: string;
+       progress?: number | null; cost?: number | null; controlRef?: string; riskMeasureId?: number | null; createdBy?: string },
+): { actionId: number; planId: number } {
+  ensureRiskGovTables();
+  const cc = getDb("XCOMPLIANCE");
+  const title = String(p.title || "").trim();
+  if (!title) throw new Error("action title required");
+  let plan = cc.prepare(`SELECT PlanID FROM RISKTREATMENTPLAN WHERE RiskRegisterEntryID = ?${tenant != null ? ` AND TenantID = ${tenant}` : ""} ORDER BY PlanID DESC LIMIT 1`).get(entryId) as { PlanID: number } | undefined;
+  if (!plan) { const { planId } = upsertTreatmentPlan(tenant, entryId, { createdBy: p.createdBy }); plan = { PlanID: planId }; }
+  const now = new Date().toISOString();
+  const status = ACTION_STATUSES.includes(p.status as never) ? p.status! : "todo";
+  const progress = status === "done" ? 100 : Math.max(0, Math.min(100, Number(p.progress) || 0));
+  const nextSort = (cc.prepare(`SELECT COALESCE(MAX(SortOrder), 0) + 1 AS s FROM RISKTREATMENTACTION WHERE PlanID = ?`).get(plan.PlanID) as { s: number }).s;
+  const r = cc.prepare(`INSERT INTO RISKTREATMENTACTION (TenantID, PlanID, RiskRegisterEntryID, Title, Description, ActionOwnerPersonID,
+      DueDate, Status, Progress, Cost, ControlRef, RiskMeasureID, SortOrder, CompletedDate, CreatedDate, UpdatedDate)
+      VALUES (@tn, @plan, @entry, @title, @desc, @owner, @due, @st, @prog, @cost, @ctl, @rm, @sort, @done, @now, @now)`)
+    .run({ tn: tenant, plan: plan.PlanID, entry: entryId, title: title.slice(0, 300), desc: strOrNull(p.description),
+      owner: numOrNull(p.actionOwnerPersonId), due: strOrNull(p.dueDate, 40), st: status, prog: progress,
+      cost: numOrNull(p.cost), ctl: strOrNull(p.controlRef, 120), rm: numOrNull(p.riskMeasureId), sort: nextSort,
+      done: status === "done" ? now : null, now });
+  return { actionId: Number(r.lastInsertRowid), planId: plan.PlanID };
+}
+
+/** Update a treatment action (status → done auto-sets progress 100 + completion date). */
+export function updateTreatmentAction(tenant: number | null, actionId: number, patch: Record<string, unknown>): { ok: boolean } {
+  ensureRiskGovTables();
+  const cc = getDb("XCOMPLIANCE");
+  const now = new Date().toISOString();
+  const sets: string[] = []; const args: Record<string, unknown> = { id: actionId, now };
+  if ("title" in patch) { const t2 = String(patch.title || "").trim(); if (t2) { sets.push("Title = @title"); args.title = t2.slice(0, 300); } }
+  if ("description" in patch) { sets.push("Description = @desc"); args.desc = strOrNull(patch.description); }
+  if ("actionOwnerPersonId" in patch) { sets.push("ActionOwnerPersonID = @owner"); args.owner = numOrNull(patch.actionOwnerPersonId); }
+  if ("dueDate" in patch) { sets.push("DueDate = @due"); args.due = strOrNull(patch.dueDate, 40); }
+  if ("cost" in patch) { sets.push("Cost = @cost"); args.cost = numOrNull(patch.cost); }
+  if ("controlRef" in patch) { sets.push("ControlRef = @ctl"); args.ctl = strOrNull(patch.controlRef, 120); }
+  let statusDone = false;
+  if ("status" in patch && ACTION_STATUSES.includes(String(patch.status) as never)) {
+    sets.push("Status = @st"); args.st = String(patch.status); statusDone = patch.status === "done";
+    if (statusDone) { sets.push("Progress = 100", "CompletedDate = @cd"); args.cd = now; }
+    else if (patch.status === "todo" || patch.status === "in-progress" || patch.status === "blocked") { sets.push("CompletedDate = NULL"); }
+  }
+  if ("progress" in patch && !statusDone) { sets.push("Progress = @prog"); args.prog = Math.max(0, Math.min(100, Number(patch.progress) || 0)); }
+  if (!sets.length) return { ok: false };
+  sets.push("UpdatedDate = @now");
+  const tt = tenant != null ? ` AND TenantID = ${tenant}` : "";
+  const r = cc.prepare(`UPDATE RISKTREATMENTACTION SET ${sets.join(", ")} WHERE ActionID = @id${tt}`).run(args);
+  return { ok: r.changes > 0 };
+}
+
+export function deleteTreatmentAction(tenant: number | null, actionId: number): { ok: true } {
+  ensureRiskGovTables();
+  getDb("XCOMPLIANCE").prepare(`DELETE FROM RISKTREATMENTACTION WHERE ActionID = ?${tenant != null ? ` AND TenantID = ${tenant}` : ""}`).run(actionId);
   return { ok: true };
 }

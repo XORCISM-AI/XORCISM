@@ -10,6 +10,7 @@ import {
   getRiskGovernance, saveRiskStrategy, createMeasure, updateMeasure,
   entryMeasures, linkMeasure, unlinkMeasure, setLinkStatus,
   importRiskRegisterEntries, importRiskAssessments, RISK_REGISTER_IMPORT_FIELDS, RISK_ASSESSMENT_IMPORT_FIELDS,
+  getTreatmentPlan, upsertTreatmentPlan, approveTreatmentPlan, addTreatmentAction, updateTreatmentAction, deleteTreatmentAction,
 } from "../riskregister";
 import * as xid from "../xid";
 
@@ -187,6 +188,73 @@ router.post("/risk-register/link/delete", (req: Request, res: Response) => {
   const linkId = Number((req.body || {}).linkId);
   if (!linkId) return void res.status(400).json({ error: "linkId required" });
   try { unlinkMeasure(tenantOf(req), linkId); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// ── Advanced treatment plans ──────────────────────────────────────────────────
+const actorOf = (req: Request): string => req.user!.DisplayName || req.user!.Email || "user";
+
+// GET /api/risk-register/entry/:id/treatment-plan — plan header + actions + progress rollup
+router.get("/risk-register/entry/:id/treatment-plan", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canRead(req)) return void res.status(403).json({ error: "forbidden" });
+  const id = Number(req.params.id); if (!id) return void res.status(400).json({ error: "entry id required" });
+  try { res.json(getTreatmentPlan(tenantOf(req), id)); }
+  catch (e) { res.status(500).json({ error: String((e as Error).message || e) }); }
+});
+
+// POST /api/risk-register/entry/:id/treatment-plan — create/update the plan header
+router.post("/risk-register/entry/:id/treatment-plan", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const id = Number(req.params.id); if (!id) return void res.status(400).json({ error: "entry id required" });
+  try {
+    const out = upsertTreatmentPlan(tenantOf(req), id, { ...(req.body || {}), createdBy: actorOf(req) });
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "risk_treatment_plan", resourceType: "RISKREGISTERENTRY", resourceKey: String(id), detail: `planId=${out.planId} strategy=${(req.body || {}).strategy || ""}`, ip: clientIp(req) });
+    res.json({ ok: true, ...out });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// POST /api/risk-register/entry/:id/treatment-plan/approve — record approver + date
+router.post("/risk-register/entry/:id/treatment-plan/approve", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const id = Number(req.params.id); if (!id) return void res.status(400).json({ error: "entry id required" });
+  try {
+    const out = approveTreatmentPlan(tenantOf(req), id, (req.body || {}).approver || actorOf(req));
+    if (!out.ok) return void res.status(404).json({ error: "no plan to approve" });
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "risk_treatment_approve", resourceType: "RISKREGISTERENTRY", resourceKey: String(id), ip: clientIp(req) });
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// POST /api/risk-register/entry/:id/treatment-plan/action — add a treatment action
+router.post("/risk-register/entry/:id/treatment-plan/action", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const id = Number(req.params.id); if (!id) return void res.status(400).json({ error: "entry id required" });
+  try {
+    const out = addTreatmentAction(tenantOf(req), id, { ...(req.body || {}), createdBy: actorOf(req) });
+    xid.addAudit({ userId: req.user.UserID ?? null, action: "risk_treatment_action_add", resourceType: "RISKREGISTERENTRY", resourceKey: String(id), detail: `actionId=${out.actionId}`, ip: clientIp(req) });
+    res.json({ ok: true, ...out });
+  } catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// PATCH /api/risk-register/treatment-action/:aid — update an action (status/progress/owner/due…)
+router.patch("/risk-register/treatment-action/:aid", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const aid = Number(req.params.aid); if (!aid) return void res.status(400).json({ error: "action id required" });
+  try { updateTreatmentAction(tenantOf(req), aid, req.body || {}); res.json({ ok: true }); }
+  catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
+});
+
+// DELETE /api/risk-register/treatment-action/:aid — remove an action
+router.delete("/risk-register/treatment-action/:aid", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!canWrite(req)) return void res.status(403).json({ error: "forbidden" });
+  const aid = Number(req.params.aid); if (!aid) return void res.status(400).json({ error: "action id required" });
+  try { deleteTreatmentAction(tenantOf(req), aid); res.json({ ok: true }); }
   catch (e) { res.status(400).json({ error: String((e as Error).message || e) }); }
 });
 

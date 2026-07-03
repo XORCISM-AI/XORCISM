@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Audit Planning</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ap-wrap{max-width:1240px;margin:0 auto;padding:18px}.ap-wrap h1{font-size:20px;margin:0 0 2px}
+  .ap-sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:960px}
+  .ap-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+  .ap-card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:11px 13px}
+  .ap-card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px}.ap-card .val{font-size:24px;font-weight:700;margin-top:3px}.ap-card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .ap-sec{font-size:13px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:.4px;margin:18px 0 8px;display:flex;align-items:center;gap:10px}
+  .cal{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  @media(max-width:820px){.cal{grid-template-columns:repeat(3,1fr)}}
+  .mo{background:#0f1322;border:1px solid #2d3250;border-radius:8px;padding:7px 9px;min-height:52px}
+  .mo .m{font-size:11px;color:#94a3b8;text-transform:uppercase}.mo .n{font-size:18px;font-weight:700;color:#e2e8f0}
+  .mo.has{border-color:#7c83fd}.mo .b{display:inline-block;font-size:10px;border-radius:5px;padding:1px 5px;margin-top:3px}
+  .b-done{background:#064e3b;color:#6ee7b7}.b-over{background:#7f1d1d;color:#fecaca}
+  table.ap{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.ap th,table.ap td{text-align:left;padding:6px 8px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.ap th{color:#94a3b8;text-transform:uppercase;font-size:10px;letter-spacing:.4px}
+  .muted{color:#64748b}
+  .tag{display:inline-block;font-size:10.5px;border-radius:6px;padding:2px 8px;background:#161a2e;border:1px solid #2d3250;color:#cbd5e1}
+  .tag.t-Internal{background:#1e2940;color:#c4b5fd}.tag.t-External{background:#2a1e40;color:#d8b4fe}.tag.t-Certification,.tag.t-Surveillance{background:#3a2410;color:#fcd34d}.tag.t-Supplier{background:#0c2a1e;color:#6ee7b7}
+  .st{font-size:10.5px;border-radius:6px;padding:2px 8px}
+  .st-planned{background:#1e2133;color:#94a3b8}.st-scheduled{background:#1e2940;color:#a5b4fc}.st-in-progress{background:#3a2410;color:#fcd34d}.st-completed{background:#064e3b;color:#6ee7b7}.st-deferred,.st-cancelled{background:#3a1f1f;color:#fca5a5}
+  .ov{color:#fca5a5;font-weight:700}
+  .btn{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}.btn:hover{border-color:#7c83fd}.btn.pri{background:#7c83fd;color:#0b0d18;border-color:#7c83fd}.btn.sm{padding:3px 9px;font-size:11px}
+  input.in,select.in{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-t="aup.navExplorer">&#8592; Explorer</a>
+  <a href="/compliance-management" data-t="aup.navCompliance">&#9989; Compliance</a>
+  <a href="/risk-register" data-t="aup.navRisk">&#128202; Risk</a>
+  <span class="spacer"></span>
+  <span class="title" data-t="aup.barTitle">&#128197; Audit Planning</span>
+</div>
+<div class="ap-wrap">
+  <h1 data-t="aup.title">Audit Planning</h1>
+  <div class="ap-sub" data-t="aup.sub">Plan and schedule your audit programme: build an audit plan, add planned audits (type, framework, scope, lead auditor, planned window, recurrence), track them on a yearly calendar, and launch a planned audit into a real AUDIT when it starts. Completing a recurring audit auto-schedules the next occurrence.</div>
+  <div id="ap-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/audit-planning.js"></script>
+</body>
+</html>
