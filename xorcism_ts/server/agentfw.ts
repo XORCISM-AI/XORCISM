@@ -176,6 +176,64 @@ export function dashboard(tenant: number | null): any {
   return { ...ref, summary, policies, actions, receipts: verifyReceipts(tenant) };
 }
 
+// ── OWASP Agentic Top 10 verification (replicates AGT `agt verify`) ──────────────
+// Maps the Agent Policy Firewall's deterministic controls to the OWASP Agentic Security Initiative
+// Top‑10 agentic threats (T1–T10) and derives, from the tenant's *actual* firewall configuration
+// (policies, receipt chain, SoD/replay enforcement), a covered / partial / gap verdict per threat —
+// the same governance‑evidence idea Microsoft's Agent Governance Toolkit produces.
+export function owaspAgenticCoverage(tenant: number | null): {
+  categories: { code: string; name: string; control: string; nist: string; status: "covered" | "partial" | "gap"; detail: string }[];
+  summary: { covered: number; partial: number; gap: number; pct: number; policies: number; receiptChainOk: boolean };
+} {
+  const d = dashboard(tenant);
+  const pols = d.policies as { decision: string; actionType: string; enabled: boolean }[];
+  const active = pols.filter((p) => p.enabled);
+  const hasDeny = active.some((p) => p.decision === "deny");
+  const hasApprove = active.some((p) => p.decision === "approve");
+  const anyPolicy = active.length > 0;
+  const receiptsOk = !!d.receipts.ok && d.receipts.total > 0;
+  const s = (cond: boolean, partialCond = false): "covered" | "partial" | "gap" =>
+    cond ? "covered" : partialCond ? "partial" : "gap";
+
+  const categories: { code: string; name: string; control: string; nist: string; status: "covered" | "partial" | "gap"; detail: string }[] = [
+    { code: "T1", name: "Memory Poisoning", nist: "MAP 2.3",
+      control: "Approval / deny gate on state-writing actions; audited ledger",
+      status: s(false, anyPolicy), detail: "The firewall gates tool/action calls, not memory content — pair with input validation on memory writes." },
+    { code: "T2", name: "Tool Misuse", nist: "MANAGE 2.1",
+      control: "mcp_call policies + deny-by-default + blast-radius gate",
+      status: s(hasDeny || anyPolicy, true), detail: hasDeny ? "Deny policies block disallowed tool calls; high-blast calls are gated." : "Add a deny/approve policy for mcp_call to fully cover." },
+    { code: "T3", name: "Privilege Compromise", nist: "MANAGE 2.2",
+      control: "Separation-of-Duties (self-approval blocked) + approval gates",
+      status: s(hasApprove, true), detail: "SoD is enforced on every action; add approval gates on privileged actions." },
+    { code: "T4", name: "Resource Overload", nist: "MEASURE 2.6",
+      control: "Replay/idempotency block + blast-radius throttling",
+      status: "covered", detail: "Duplicate/replayed actions are blocked and high-blast actions are gated." },
+    { code: "T5", name: "Cascading Hallucination", nist: "MEASURE 2.5",
+      control: "Human-approval gate on high-blast / crown-jewel actions",
+      status: s(hasApprove, true), detail: hasApprove ? "High-impact actions require human approval before execution." : "Add an approval gate on high-blast actions." },
+    { code: "T6", name: "Intent Breaking & Goal Manipulation", nist: "GOVERN 1.2",
+      control: "Deny-by-default policy + approval gates",
+      status: s(hasDeny && hasApprove, anyPolicy), detail: "Deterministic policy makes out-of-policy intent structurally blocked." },
+    { code: "T7", name: "Misaligned & Deceptive Behaviors", nist: "MEASURE 2.11",
+      control: "Policy evaluation + tamper-evident action ledger (detective)",
+      status: s(false, anyPolicy || receiptsOk), detail: "Every decision is recorded for post-hoc review of misaligned behaviour." },
+    { code: "T8", name: "Repudiation & Untraceability", nist: "GOVERN 1.4",
+      control: "Signed, hash-chained decision records (Merkle-style receipts)",
+      status: s(receiptsOk), detail: receiptsOk ? "Receipt chain intact — every action is attributable and tamper-evident." : "No verified receipt chain yet; evaluate actions through the gate." },
+    { code: "T9", name: "Identity Spoofing & Impersonation", nist: "MAP 1.1",
+      control: "Actor identity stamped on every action + SoD",
+      status: s(false, true), detail: "Each action carries its actor; add SPIFFE/DID/mTLS agent identity for full zero-trust." },
+    { code: "T10", name: "Overwhelming Human-in-the-Loop", nist: "MANAGE 4.1",
+      control: "Approval gates with required-approver thresholds",
+      status: s(hasApprove, true), detail: "Approvals are scoped to high-risk actions to avoid approval fatigue." },
+  ];
+  const covered = categories.filter((c) => c.status === "covered").length;
+  const partial = categories.filter((c) => c.status === "partial").length;
+  const gap = categories.filter((c) => c.status === "gap").length;
+  const pct = Math.round(((covered + partial * 0.5) / categories.length) * 100);
+  return { categories, summary: { covered, partial, gap, pct, policies: active.length, receiptChainOk: receiptsOk } };
+}
+
 // ── policy CRUD + seeds ────────────────────────────────────────────────────
 export function addPolicy(p: any, tenant: number | null): { id: number } {
   const db = getDb("XORCISM");

@@ -16,6 +16,7 @@
  *    POST /api/agent-scan { agent, kind }   "launch a scan" from the ASSET window
  */
 import { Router, Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import {
   enrollAgent, agentByToken, touchAgent, listAgents, addAgentEvent, listAgentEvents,
   createAgentJob, claimAgentJobs, finishAgentJob, listAgentJobs, listIocs, iocCount, Agent,
@@ -44,11 +45,23 @@ function tokenAuth(req: AReq, res: Response, next: NextFunction): void {
   next();
 }
 
-// Enrollment: protected by a shared key (XOR_ENROLL_KEY). If not set → dev (open).
+// Enrollment gate. The presented X-Enroll-Key is accepted if it matches EITHER the
+// XOR_ENROLL_KEY env var (back-compat) OR an active managed enrollment key (admin →
+// /api/admin/enroll-keys, stored as SHA-256). A key is REQUIRED whenever the env var
+// is set or at least one managed key exists; if neither → open enrollment (dev/lab).
 agentTokenRouter.post("/agent/enroll", (req: Request, res: Response) => {
-  const need = process.env.XOR_ENROLL_KEY;
-  if (need && (req.headers["x-enroll-key"] !== need)) {
-    return void res.status(403).json({ error: "clé d'enrôlement invalide" });
+  const provided = String(req.headers["x-enroll-key"] || "");
+  const envKey = process.env.XOR_ENROLL_KEY;
+  const managedCount = xid.countActiveEnrollKeys();
+  if (envKey || managedCount > 0) {
+    const envOk = !!envKey && provided === envKey;
+    const managed = !envOk && provided
+      ? xid.enrollKeyByHash(crypto.createHash("sha256").update(provided).digest("hex"))
+      : undefined;
+    if (!envOk && !managed) {
+      return void res.status(403).json({ error: "clé d'enrôlement invalide" });
+    }
+    if (managed) xid.touchEnrollKey(managed.EnrollKeyID); // record last-used + count
   }
   const b = req.body as Record<string, string>;
   const name = String(b.name || "").trim();

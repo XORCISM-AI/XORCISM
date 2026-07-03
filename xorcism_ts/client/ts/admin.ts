@@ -30,6 +30,21 @@ async function jpost(url: string, body: unknown): Promise<any> {
   if (!r.ok) throw new Error(data.error || r.statusText);
   return data;
 }
+async function jdelete(url: string): Promise<any> {
+  const r = await fetch(url, { method: "DELETE" });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+function escHtml(s: string): string {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+function fmtDay(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "—" : d.toISOString().slice(0, 10);
+}
 
 interface Crud { c: boolean; r: boolean; u: boolean; d: boolean }
 type Role = { RoleID: number; RoleName: string; RoleDescription?: string };
@@ -338,6 +353,74 @@ function renderTenantsTable(): void {
   });
 }
 
+// ── Agent enrollment keys (managed XOR_ENROLL_KEYs) ────────────────────
+async function loadEnrollKeys(): Promise<void> {
+  // (Re)populate the optional tenant-scope selector from the loaded tenants.
+  const sel = $("enroll-tenant") as HTMLSelectElement;
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">${t("admin.enrollAnyTenant")}</option>`;
+  tenants.filter((tn) => tn.IsActive).forEach((tn) => {
+    const o = document.createElement("option");
+    o.value = String(tn.TenantID);
+    o.textContent = tn.TenantName;
+    sel.appendChild(o);
+  });
+  sel.value = prev;
+  const data = await jget("/api/admin/enroll-keys");
+  renderEnrollKeys(data);
+}
+
+function renderEnrollKeys(data: { keys: any[]; envKeySet: boolean; activeCount: number }): void {
+  const note = $("enroll-env-note");
+  const envTxt = data.envKeySet ? t("admin.enrollEnvSet") : t("admin.enrollEnvUnset");
+  note.textContent = `${envTxt} · ${data.activeCount} ${t("admin.enrollActive")}`;
+
+  const tb = $("enroll-keys-tbody");
+  tb.innerHTML = "";
+  if (!data.keys.length) {
+    tb.innerHTML = `<tr><td colspan="8" style="color:var(--text-dim)">${t("admin.enrollNone")}</td></tr>`;
+    return;
+  }
+  data.keys.forEach((k) => {
+    const tr = document.createElement("tr");
+    const revoked = !!k.Revoked;
+    const expired = !!k.expired;
+    const pill = revoked
+      ? `<span class="pill" style="background:#7f1d1d;color:#fecaca">${t("admin.enrollStRevoked")}</span>`
+      : expired
+        ? `<span class="pill" style="background:#78350f;color:#fed7aa">${t("admin.enrollStExpired")}</span>`
+        : `<span class="pill" style="background:#14532d;color:#86efac">${t("admin.enrollStActive")}</span>`;
+    const used = `${k.UseCount || 0}${k.LastUsedDate ? ` <span style="color:var(--text-dim)">(${fmtDay(k.LastUsedDate)})</span>` : ""}`;
+    tr.innerHTML =
+      `<td>${escHtml(k.Label)}</td>` +
+      `<td><code>${escHtml(k.Prefix)}</code></td>` +
+      `<td>${k.tenantName ? escHtml(k.tenantName) : `<span style="color:var(--text-dim)">—</span>`}</td>` +
+      `<td>${fmtDay(k.CreatedDate)}</td>` +
+      `<td>${k.ExpiresDate ? fmtDay(k.ExpiresDate) : "∞"}</td>` +
+      `<td>${used}</td>` +
+      `<td>${pill}</td>`;
+    const tdAct = document.createElement("td");
+    if (!revoked) {
+      const b = document.createElement("button");
+      b.className = "btn btn-ghost btn-sm";
+      b.textContent = t("admin.enrollRevoke");
+      b.onclick = async () => {
+        if (!confirm(t("admin.enrollRevokeConfirm"))) return;
+        try {
+          await jdelete(`/api/admin/enroll-keys/${k.EnrollKeyID}`);
+          await loadEnrollKeys();
+          toast(t("admin.enrollRevoked"));
+        } catch (e) {
+          toast(t("toast.error") + " " + e, "err");
+        }
+      };
+      tdAct.appendChild(b);
+    }
+    tr.appendChild(tdAct);
+    tb.appendChild(tr);
+  });
+}
+
 // ── Users ─────────────────────────────────────────────────────────────
 async function loadUsers(): Promise<void> {
   let url = "/api/admin/users";
@@ -491,6 +574,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.body.classList.add("is-super");
       resources = await jget("/api/admin/resources");
       await loadTenants();
+      await loadEnrollKeys();
       await loadRoles();
     } else {
       // Tenant admin: no permissions editor nor tenant management
@@ -520,6 +604,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       toast(t("admin.tenantCreated"));
     } catch (e) {
       toast(t("toast.error") + " " + e, "err");
+    }
+  };
+
+  // Create a managed agent enrollment key (super-admin)
+  $("btn-add-enroll-key").onclick = async () => {
+    const label = ($("enroll-label") as HTMLInputElement).value.trim();
+    if (!label) return void toast(t("admin.enrollNeedLabel"), "err");
+    const tenantId = ($("enroll-tenant") as HTMLSelectElement).value || null;
+    const expiryRaw = ($("enroll-expiry") as HTMLInputElement).value.trim();
+    const expiresInDays = expiryRaw ? Number(expiryRaw) : null;
+    const btn = $("btn-add-enroll-key") as HTMLButtonElement;
+    btn.disabled = true;
+    try {
+      const r = await jpost("/api/admin/enroll-keys", { label, tenantId, expiresInDays });
+      const box = $("enroll-new-key");
+      box.style.display = "block";
+      box.innerHTML = `${escHtml(t("admin.enrollNewKeyMsg"))}<br><code style="font-size:13px;word-break:break-all;user-select:all">${escHtml(r.key)}</code>`;
+      ($("enroll-label") as HTMLInputElement).value = "";
+      ($("enroll-expiry") as HTMLInputElement).value = "";
+      await loadEnrollKeys();
+      toast(t("admin.enrollCreated"));
+    } catch (e) {
+      toast(t("toast.error") + " " + e, "err");
+    } finally {
+      btn.disabled = false;
     }
   };
 

@@ -51,7 +51,7 @@ function renderTable(rows: Model[]): void {
   const body = rows.map((m) => {
     const c = m.counts;
     return `<tr>
-      <td>${modelLink(m.id, m.name)}${m.methodology ? ` <span class="tm-meth">${esc(m.methodology)}</span>` : ""}${m.owner ? `<div class="muted" style="font-size:11px">${esc(m.owner)}</div>` : ""}</td>
+      <td>${modelLink(m.id, m.name)} <a href="/threat-model-graph?id=${m.id}" title="${esc(t("tm.diagram"))}" style="text-decoration:none">🗺️</a>${m.methodology ? ` <span class="tm-meth">${esc(m.methodology)}</span>` : ""}${m.owner ? `<div class="muted" style="font-size:11px">${esc(m.owner)}</div>` : ""}</td>
       <td>${pill(m.status, STATUS_COLOR)}</td>
       <td>${pill(m.riskLevel, RISK_COLOR)}</td>
       <td class="num">${c.assets || ""}</td>

@@ -5,7 +5,7 @@
  */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { dashboard, evaluateAction, approveAction, denyAction, addPolicy, deletePolicy, verifyReceipts, seedDemo } from "../agentfw";
+import { dashboard, evaluateAction, approveAction, denyAction, addPolicy, deletePolicy, verifyReceipts, seedDemo, owaspAgenticCoverage } from "../agentfw";
 import * as xid from "../xid";
 
 const router = Router();
@@ -21,6 +21,12 @@ const auth = (req: Request, res: Response, act: "read" | "create" | "update" | "
 router.get("/agent-firewall", (req: Request, res: Response) => {
   if (!auth(req, res, "read")) return;
   res.json(dashboard(tenantOf(req)));
+});
+
+// GET /api/agent-firewall/owasp-agentic — OWASP Agentic Top 10 verification (replicates AGT `agt verify`)
+router.get("/agent-firewall/owasp-agentic", (req: Request, res: Response) => {
+  if (!auth(req, res, "read")) return;
+  res.json(owaspAgenticCoverage(tenantOf(req)));
 });
 
 // POST /api/agent-firewall/evaluate — the firewall gate: score + decide + sign a receipt for one action

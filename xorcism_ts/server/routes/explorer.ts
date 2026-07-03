@@ -127,6 +127,7 @@ import {
   getThreatModelAssets,
   setThreatModelAssets,
   getThreatModelThreats,
+  getThreatModelGraph,
   addThreatModelThreat,
   getThreatControls,
   setThreatControls,
@@ -1503,6 +1504,18 @@ router.get("/threatmodel-assets", (req: Request, res: Response) => {
     return deny(req, res, "read", "XORCISM", "THREATMODEL");
   if (!parentTenantOr403(req, res, "XORCISM", "THREATMODEL", "ThreatModelID", modelId, "read")) return;
   res.json(getThreatModelAssets(modelId));
+});
+
+// GET /api/threat-model/:id/graph — aggregated data for the graphical view of one threat model
+// (model header + in-scope assets + STRIDE threats + mitigating controls).
+router.get("/threat-model/:id/graph", (req: Request, res: Response) => {
+  const modelId = Number(req.params.id);
+  if (!modelId) return void res.status(400).json({ error: "model id required" });
+  if (!userCan(req.user, "read", "XORCISM", "THREATMODEL")) return deny(req, res, "read", "XORCISM", "THREATMODEL");
+  if (!parentTenantOr403(req, res, "XORCISM", "THREATMODEL", "ThreatModelID", modelId, "read")) return;
+  const g = getThreatModelGraph(modelId);
+  if (!g) return void res.status(404).json({ error: "not found" });
+  res.json(g);
 });
 
 // PUT /api/threatmodel-assets { modelId, assetIds:[...] } — replaces the scope

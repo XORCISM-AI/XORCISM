@@ -222,7 +222,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT", "ATTACKTECHNIQUE"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -2521,6 +2521,15 @@ STATIC_DATALIST_DEFAULTS["AUDITFINDING.WorkflowStatus"] = "New";
 GRID_VALUE_COLORS["AUDITFINDING.WorkflowStatus"] = OPENCTI_WORKFLOW_COLORS;
 STATIC_DATALIST_COLUMNS["AUDITFINDING.Severity"] = GRC_SEVERITY;
 GRID_VALUE_COLORS["AUDITFINDING.Severity"] = GRC_SEVERITY_COLORS;
+// TICKET Priority + Severity: colour the level in the grid (Critical/Urgent → red). Covers both the
+// plain values (Critical/High/Medium/Low) and the "S1-Critical…"/"Urgent" form values.
+const TICKET_LEVEL_COLORS: Record<string, string> = {
+  Critical: "var(--danger)", "S1-Critical": "var(--danger)", Urgent: "var(--danger)",
+  High: "#f59e0b", "S2-High": "#f59e0b", Medium: "#eab308", "S3-Medium": "#eab308",
+  Low: "#22c55e", "S4-Low": "#22c55e", Info: "#64748b",
+};
+GRID_VALUE_COLORS["TICKET.Priority"] = TICKET_LEVEL_COLORS;
+GRID_VALUE_COLORS["TICKET.Severity"] = TICKET_LEVEL_COLORS;
 for (const t of ["RISKREGISTERENTRY", "RISKSCENARIO"]) STATIC_DATALIST_COLUMNS[`${t}.Currency`] = ["EUR", "USD", "GBP", "CHF"];
 FK_COLUMNS["POLICY.OwnerPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };
 FK_COLUMNS["POLICY.ApprovedByPersonID"] = { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", distinct: true };

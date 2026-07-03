@@ -889,6 +889,9 @@ app.get("/tools", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/threat-model", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "threat-model.html"));
 });
+app.get("/threat-model-graph", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "threat-model-graph.html"));
+});
 app.get("/policy-management", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "policy-management.html"));
 });

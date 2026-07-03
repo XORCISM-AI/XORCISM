@@ -156,6 +156,56 @@ python xor_agent.py --scan honeypot --honeypot-duration 600         # deception 
   falls back to the channels it can read. The AI narrative needs Ollama reachable from the *server*;
   the deterministic ATT&CK heuristics run regardless.
 
+## BAS / AEV — adversary-emulation test library (`--scan emulate`)
+
+The agent runs **Breach-and-Attack-Simulation / Adversary-Emulation-Validation** plans: it executes a
+scenario's atomic tests on the host, then correlates each executed inject with the host's detection
+telemetry → **Detected / Logged / Executed (ran undetected — a visibility gap) / Prevented / Skipped**,
+written to `EMULATIONRUN` / `EMULATIONRESULT` and surfaced on the ATT&CK coverage heatmap (**/attack**).
+
+**Where the tests live.** The agent never touches the DB — it fetches a scenario's injects over HTTP
+(`GET /api/agent/emulation?scenario=N`) and POSTs the outcomes back. The tests themselves are stored
+in **`XTHREAT.db`**:
+
+| Table | Holds |
+|---|---|
+| `ATOMICTEST` | the test library (`AttackID`, `Platform`, `Executor`, `Command`, `Cleanup`, `Source`) |
+| `EMULATIONSCENARIO` | a runnable plan (a named group of tests) |
+| `SCENARIOTEST` | scenario → test ordering |
+| `EMULATIONRUN` / `EMULATIONRESULT` | the results of a run (per-test outcome) |
+
+**The XORCISM curated catalogue.** A ready-made, **safe-by-design** library ships with XORCISM:
+**61 atomic tests across 58 MITRE ATT&CK techniques** (all 12 tactics) + **7 runnable scenarios** —
+including modern techniques (cloud-metadata/IMDS credential theft on AWS & Azure, Kubernetes
+service-account token theft, LOLBins, AMSI-bypass patterns, ransomware-behavior simulation, fodhelper
+UAC bypass, WMI persistence, Kerberoasting). Tests are *faithful but non-destructive*: network tests
+hit localhost, every state change ships a `Cleanup`, and genuinely destructive techniques become safe
+simulations or `manual` injects the agent refuses to auto-run.
+
+- **Source of truth**: [`../xorcism_python/importers/xor_atomics_catalog.py`](../xorcism_python/importers/xor_atomics_catalog.py)
+  (`TESTS` + `SCENARIOS`). Edit this file to add or change tests.
+- **Import it** into `XTHREAT.db` (idempotent; resolves the ATT&CK technique link and builds the scenarios):
+  ```bash
+  python xorcism_python/importers/import_atomics.py --xorcism      # XORCISM curated catalogue + scenarios
+  python xorcism_python/importers/import_atomics.py --download     # OR the full Atomic Red Team library (needs PyYAML)
+  ```
+- **Run a scenario** from the agent (server assigns the scenario; execution is authorized per host):
+  ```bash
+  python xor_agent.py --scan emulate --scenario N
+  ```
+
+**Execution is opt-in and two-tier** (sensitive by nature, so off by default):
+
+| Env var (set on the agent host) | Behavior |
+|---|---|
+| *(none)* | read-only recon injects auto-run; everything else is **Skipped** |
+| `XOR_ALLOW_EMULATION=1` | run injects, but **only the read-only-recon allowlist** (whoami/ipconfig/netstat…) |
+| `XOR_ALLOW_ATOMIC_EXEC=1` | run the **full atomic-test procedure** for every assigned inject — real ATT&CK techniques, for authorized BAS/AEV on this host |
+
+`manual` injects (disruptive techniques: service stop, reboot, process injection, log clearing) are
+**always Skipped**. The operator authorizes execution per host via the env var; the admin still controls
+which scenario/techniques are assigned. Use only on systems you are authorized to test.
+
 ## Quick start (endpoint)
 ```bash
 # 1) Enrollment (the server may require a key: XOR_ENROLL_KEY)
@@ -169,7 +219,8 @@ python xor_agent.py --once               # one check-in (runs the scans requeste
 # 3) Daemon (periodic check-in)
 python xor_agent.py --run --interval 300
 ```
-The token is stored in `xor_agent.conf` (next to the script).
+The token is stored in `xor_agent.conf` (next to the script). For the full token lifecycle —
+issuance, storage, rotation, revocation and hardening — see **[TOKEN_MANAGEMENT.md](TOKEN_MANAGEMENT.md)**.
 
 ## XORCISM server side
 - Agent API (token): `/api/agent/{enroll,checkin,inventory,vulnerabilities,events,match,intel}`.

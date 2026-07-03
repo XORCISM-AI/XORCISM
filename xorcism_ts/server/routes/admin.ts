@@ -6,6 +6,7 @@
  */
 
 import { Router, Request, Response } from "express";
+import crypto from "crypto";
 import * as xid from "../xid";
 import { hashPassword, passwordPolicyError, clientIp } from "../auth";
 import { listDatabases, listTables, getSchema, backupDatabases, correlateCveToAssets } from "../db";
@@ -378,6 +379,74 @@ router.put("/landing-access", (req: Request, res: Response) => {
     xid.addAudit({ userId: req.user!.UserID ?? null, action: "landing_access_set", resourceType: "LANDINGACCESS", resourceKey: `${itemType}:${itemKey}`, ip: clientIp(req) });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// ── Agent enrollment keys (managed XOR_ENROLL_KEYs) ─────────────────────
+// Super-admin manages the shared secrets an endpoint agent presents (X-Enroll-Key)
+// to POST /api/agent/enroll. The raw key is returned once at creation; only its
+// SHA-256 is stored. These supplement (or replace) the single XOR_ENROLL_KEY env var.
+
+const sha256 = (s: string) => crypto.createHash("sha256").update(s).digest("hex");
+
+router.get("/enroll-keys", (req: Request, res: Response) => {
+  if (!superOnly(req, res)) return;
+  const now = Date.now();
+  const rows = xid.listEnrollKeys().map((k) => ({
+    ...k,
+    tenantName: k.TenantID == null ? null : (xid.getTenantById(k.TenantID)?.TenantName ?? String(k.TenantID)),
+    expired: !!(k.ExpiresDate && Date.parse(k.ExpiresDate) < now),
+  }));
+  res.json({ keys: rows, envKeySet: !!process.env.XOR_ENROLL_KEY, activeCount: xid.countActiveEnrollKeys() });
+});
+
+router.post("/enroll-keys", (req: Request, res: Response) => {
+  if (!superOnly(req, res)) return;
+  const b = req.body as { label?: string; tenantId?: number | string | null; expiresInDays?: number | string | null };
+  const label = String(b.label || "").trim();
+  if (!label || label.length > 120)
+    return void res.status(400).json({ error: tr(req, "err.badRequest") });
+  let tenantId: number | null = null;
+  if (b.tenantId != null && String(b.tenantId).trim() !== "") {
+    tenantId = Number(b.tenantId);
+    if (!Number.isInteger(tenantId) || !xid.getTenantById(tenantId))
+      return void res.status(400).json({ error: tr(req, "err.badRequest") });
+  }
+  let expiresInDays: number | null = null;
+  if (b.expiresInDays != null && String(b.expiresInDays).trim() !== "") {
+    expiresInDays = Number(b.expiresInDays);
+    if (!Number.isFinite(expiresInDays) || expiresInDays <= 0 || expiresInDays > 3650) expiresInDays = null;
+  }
+  const raw = `xen_${crypto.randomBytes(24).toString("hex")}`;
+  const prefix = `${raw.slice(0, 10)}…`;
+  const row = xid.createEnrollKey({
+    label, tenantId, prefix, keyHash: sha256(raw), createdByUserId: req.user!.UserID, expiresInDays,
+  });
+  xid.addAudit({
+    userId: req.user!.UserID,
+    action: "enroll_key_created",
+    resourceType: "enroll_key",
+    resourceKey: label,
+    ip: clientIp(req),
+    tenantId: tenantId ?? req.user!.tenantId ?? null,
+  });
+  // Raw key is returned ONCE — never persisted or shown again.
+  res.json({ key: raw, row });
+});
+
+router.delete("/enroll-keys/:id", (req: Request, res: Response) => {
+  if (!superOnly(req, res)) return;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return void res.status(400).json({ error: tr(req, "err.badRequest") });
+  const ok = xid.revokeEnrollKey(id);
+  if (ok) xid.addAudit({
+    userId: req.user!.UserID,
+    action: "enroll_key_revoked",
+    resourceType: "enroll_key",
+    resourceKey: String(id),
+    ip: clientIp(req),
+    tenantId: req.user!.tenantId ?? null,
+  });
+  res.json({ ok });
 });
 
 export default router;

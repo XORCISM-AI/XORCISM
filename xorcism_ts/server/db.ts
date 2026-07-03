@@ -1161,7 +1161,7 @@ export function ensureTenantColumns(): void {
 }
 
 // Tables that default to newest-first (rowid DESC) when the explorer requests no explicit sort.
-const DEFAULT_DESC_TABLES = new Set(["INTELEXCHANGE"]);
+const DEFAULT_DESC_TABLES = new Set(["INTELEXCHANGE", "TICKET"]);
 
 export function queryRows(
   dbName: string,
@@ -7573,6 +7573,54 @@ export function getThreatModelThreats(modelId: number): ThreatRow[] {
        FROM THREATMODELTHREAT WHERE ThreatModelID = ? ORDER BY ThreatModelThreatID`
     )
     .all(modelId) as ThreatRow[];
+}
+
+/**
+ * Aggregated data for the graphical view of a threat model (/threat-model-graph): the model header,
+ * its in-scope assets (THREATMODELASSET → ASSET), its STRIDE threats (THREATMODELTHREAT), and the
+ * controls mitigating each threat (THREATMODELCONTROL → CONTROL.ControlName). One query per relation.
+ */
+export interface ThreatModelGraph {
+  model: Record<string, unknown>;
+  assets: { id: number; name: string }[];
+  threats: { id: number; title: string; stride: string; likelihood: string; impact: string; risk: string; status: string; controls: { id: number; name: string; status: string }[] }[];
+}
+export function getThreatModelGraph(modelId: number): ThreatModelGraph | null {
+  const db = getDb("XORCISM");
+  const model = db.prepare(
+    `SELECT ThreatModelID id, ThreatModelName name, Methodology methodology, Status status,
+            RiskLevel risk, Owner owner, Scope scope, Description description
+     FROM THREATMODEL WHERE ThreatModelID = ?`).get(modelId) as Record<string, unknown> | undefined;
+  if (!model) return null;
+  const assets = getThreatModelAssets(modelId).map((a) => ({ id: Number(a.AssetID), name: a.AssetName }));
+  const threats = getThreatModelThreats(modelId);
+  const ctlByThreat = new Map<number, { id: number; name: string; status: string }[]>();
+  const hasTMC = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='THREATMODELCONTROL'").get();
+  const hasControl = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROL'").get();
+  if (hasTMC && threats.length) {
+    const tids = threats.map((t) => t.ThreatModelThreatID);
+    const ph = tids.map(() => "?").join(",");
+    const nameSel = hasControl ? "c.ControlName" : "NULL";
+    const join = hasControl ? "LEFT JOIN CONTROL c ON c.ControlID = tmc.ControlID" : "";
+    const rows = db.prepare(
+      `SELECT tmc.ThreatModelThreatID tid, tmc.ControlID cid, tmc.Status status, ${nameSel} name
+       FROM THREATMODELCONTROL tmc ${join} WHERE tmc.ThreatModelThreatID IN (${ph})`).all(...tids) as
+      { tid: number; cid: number; status: string; name: string | null }[];
+    for (const r of rows) {
+      const a = ctlByThreat.get(Number(r.tid)) ?? [];
+      a.push({ id: Number(r.cid), name: r.name || `Control #${r.cid}`, status: String(r.status || "") });
+      ctlByThreat.set(Number(r.tid), a);
+    }
+  }
+  return {
+    model,
+    assets,
+    threats: threats.map((t) => ({
+      id: t.ThreatModelThreatID, title: t.Title, stride: t.STRIDECategory,
+      likelihood: t.Likelihood, impact: t.Impact, risk: t.RiskScore, status: t.Status,
+      controls: ctlByThreat.get(t.ThreatModelThreatID) ?? [],
+    })),
+  };
 }
 
 /** Creates a threat in a model; returns its id. */

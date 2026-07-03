@@ -170,6 +170,24 @@ function ensureSchema(db: Database.Database): void {
       FailureCount INTEGER NOT NULL DEFAULT 0
     );
 
+    -- Managed agent enrollment keys. Multiple named secrets that an endpoint agent
+    -- presents (X-Enroll-Key) to POST /api/agent/enroll, as an alternative/supplement
+    -- to the single XOR_ENROLL_KEY env var. The raw value is shown once; only its
+    -- SHA-256 is stored. An optional TenantID scopes the key.
+    CREATE TABLE IF NOT EXISTS XENROLLKEY (
+      EnrollKeyID INTEGER PRIMARY KEY AUTOINCREMENT,
+      TenantID INTEGER,                  -- null = any/global
+      Label TEXT NOT NULL,               -- human name, e.g. "Prod Windows fleet"
+      Prefix TEXT NOT NULL,              -- displayable head, e.g. "xen_3f9a…"
+      KeyHash TEXT NOT NULL UNIQUE,      -- SHA-256(raw key)
+      CreatedByUserID INTEGER,
+      CreatedDate TEXT NOT NULL,
+      ExpiresDate TEXT,                  -- optional expiry (null = never)
+      LastUsedDate TEXT,
+      UseCount INTEGER NOT NULL DEFAULT 0,
+      Revoked INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE INDEX IF NOT EXISTS ix_userrole_user ON XUSERROLE(UserID);
     CREATE INDEX IF NOT EXISTS ix_perm_role ON XPERMISSION(RoleID);
     CREATE INDEX IF NOT EXISTS ix_session_user ON XSESSION(UserID);
@@ -1028,4 +1046,53 @@ export function touchApiKey(keyId: number): void {
 /** Revoke a key (only the owning user can). Returns true if a row changed. */
 export function revokeApiKey(keyId: number, userId: number): boolean {
   return getXidDb().prepare(`UPDATE XAPIKEY SET Revoked = 1 WHERE KeyID = ? AND UserID = ?`).run(keyId, userId).changes > 0;
+}
+
+// ── Agent enrollment keys (managed XOR_ENROLL_KEYs) ───────────────────────────
+// Multiple named secrets an endpoint agent presents (X-Enroll-Key) to enroll. Like
+// API keys, the raw value is shown once; only its SHA-256 is stored. Managed by admins
+// as an alternative/supplement to the single XOR_ENROLL_KEY env var.
+export interface EnrollKeyRow {
+  EnrollKeyID: number; TenantID: number | null; Label: string; Prefix: string;
+  CreatedByUserID: number | null; CreatedDate: string; ExpiresDate: string | null;
+  LastUsedDate: string | null; UseCount: number; Revoked: number;
+}
+const ENROLLKEY_FIELDS =
+  "EnrollKeyID, TenantID, Label, Prefix, CreatedByUserID, CreatedDate, ExpiresDate, LastUsedDate, UseCount, Revoked";
+
+export function createEnrollKey(opts: { label: string; tenantId: number | null; prefix: string; keyHash: string; createdByUserId: number | null; expiresInDays?: number | null }): EnrollKeyRow {
+  const db = getXidDb();
+  const expires = opts.expiresInDays && opts.expiresInDays > 0
+    ? new Date(Date.now() + opts.expiresInDays * 86_400_000).toISOString() : null;
+  const info = db
+    .prepare(`INSERT INTO XENROLLKEY (TenantID, Label, Prefix, KeyHash, CreatedByUserID, CreatedDate, ExpiresDate, UseCount, Revoked) VALUES (?,?,?,?,?,?,?,0,0)`)
+    .run(opts.tenantId, opts.label, opts.prefix, opts.keyHash, opts.createdByUserId, new Date().toISOString(), expires);
+  return db.prepare(`SELECT ${ENROLLKEY_FIELDS} FROM XENROLLKEY WHERE EnrollKeyID = ?`).get(Number(info.lastInsertRowid)) as EnrollKeyRow;
+}
+
+export function listEnrollKeys(): EnrollKeyRow[] {
+  return getXidDb().prepare(`SELECT ${ENROLLKEY_FIELDS} FROM XENROLLKEY ORDER BY EnrollKeyID DESC`).all() as EnrollKeyRow[];
+}
+
+/** Look up an active, unexpired enrollment key by its SHA-256 hash. */
+export function enrollKeyByHash(hash: string): EnrollKeyRow | undefined {
+  const row = getXidDb().prepare(`SELECT ${ENROLLKEY_FIELDS} FROM XENROLLKEY WHERE KeyHash = ? AND Revoked = 0`).get(hash) as EnrollKeyRow | undefined;
+  if (!row) return undefined;
+  if (row.ExpiresDate && Date.parse(row.ExpiresDate) < Date.now()) return undefined; // expired → treated as invalid
+  return row;
+}
+
+/** How many enrollment keys are currently active (not revoked, not expired). */
+export function countActiveEnrollKeys(): number {
+  const now = new Date().toISOString();
+  return (getXidDb().prepare(`SELECT COUNT(*) AS n FROM XENROLLKEY WHERE Revoked = 0 AND (ExpiresDate IS NULL OR ExpiresDate > ?)`).get(now) as { n: number }).n;
+}
+
+export function touchEnrollKey(id: number): void {
+  getXidDb().prepare(`UPDATE XENROLLKEY SET LastUsedDate = ?, UseCount = UseCount + 1 WHERE EnrollKeyID = ?`).run(new Date().toISOString(), id);
+}
+
+/** Revoke an enrollment key. Returns true if a row changed. */
+export function revokeEnrollKey(id: number): boolean {
+  return getXidDb().prepare(`UPDATE XENROLLKEY SET Revoked = 1 WHERE EnrollKeyID = ?`).run(id).changes > 0;
 }

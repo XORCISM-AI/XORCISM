@@ -9,6 +9,7 @@ const entryPoints = [
   "client/ts/app.ts",
   "client/ts/landing.ts",
   "client/ts/system-plans.ts",
+  "client/ts/threat-model-graph.ts",
   "client/ts/audit-planning.ts",
   "client/ts/bia.ts",
   "client/ts/bia-graph.ts",

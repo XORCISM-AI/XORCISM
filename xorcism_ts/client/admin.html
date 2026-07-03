@@ -72,6 +72,43 @@
     <div id="backup-result" style="font-size:12px;color:#94a3b8"></div>
   </div>
 
+  <div class="card super-only" id="card-enroll-keys">
+    <div class="card-header">
+      <span class="card-title" data-i18n="admin.enrollTitle">Cl&eacute;s d'enr&ocirc;lement des agents</span>
+    </div>
+    <p style="font-size:11px;color:#64748b;margin-bottom:8px" data-i18n="admin.enrollHelp">Secrets partag&eacute;s que l'agent endpoint pr&eacute;sente (en-t&ecirc;te X-Enroll-Key) pour s'enr&ocirc;ler via POST /api/agent/enroll. La cl&eacute; brute n'est affich&eacute;e qu'une seule fois &agrave; la cr&eacute;ation ; seul son SHA-256 est stock&eacute;. Ces cl&eacute;s compl&egrave;tent (ou remplacent) la variable d'environnement unique XOR_ENROLL_KEY.</p>
+    <div id="enroll-env-note" style="font-size:11px;color:#94a3b8;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:11px;color:#94a3b8" data-i18n="admin.enrollLabel">Libell&eacute;</label>
+        <input id="enroll-label" placeholder="ex. Parc Windows Prod" data-i18n-placeholder="admin.enrollLabelPh" style="background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:6px 9px;color:#e2e8f0;font-size:13px;min-width:200px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:11px;color:#94a3b8" data-i18n="admin.enrollTenant">Locataire (facultatif)</label>
+        <select id="enroll-tenant" style="background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:6px 9px;color:#e2e8f0;font-size:13px"></select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:11px;color:#94a3b8" data-i18n="admin.enrollExpiry">Expiration (jours, facultatif)</label>
+        <input id="enroll-expiry" type="number" min="1" max="3650" placeholder="&#8734;" style="background:#0f1117;border:1px solid #2d3250;border-radius:6px;padding:6px 9px;color:#e2e8f0;font-size:13px;width:150px">
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-add-enroll-key" data-i18n="admin.enrollCreate">&#128273; Cr&eacute;er la cl&eacute;</button>
+    </div>
+    <div id="enroll-new-key" style="display:none;font-size:12px;background:#0f2a1a;border:1px solid #14532d;border-radius:6px;padding:9px 11px;margin-bottom:10px;color:#bbf7d0"></div>
+    <table class="tbl" style="width:100%;font-size:12px">
+      <thead><tr>
+        <th data-i18n="admin.enrollColLabel">Libell&eacute;</th>
+        <th data-i18n="admin.enrollColPrefix">Pr&eacute;fixe</th>
+        <th data-i18n="admin.enrollColTenant">Locataire</th>
+        <th data-i18n="admin.enrollColCreated">Cr&eacute;&eacute;e</th>
+        <th data-i18n="admin.enrollColExpires">Expire</th>
+        <th data-i18n="admin.enrollColUsed">Utilis&eacute;e</th>
+        <th data-i18n="admin.enrollColStatus">Statut</th>
+        <th data-i18n="admin.actions">Actions</th>
+      </tr></thead>
+      <tbody id="enroll-keys-tbody"></tbody>
+    </table>
+  </div>
+
   <div class="card super-only" id="card-correlate">
     <div class="card-header">
       <span class="card-title" data-i18n="admin.correlateTitle">Corr&eacute;lation CVE &rarr; actifs</span>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat Model Diagram</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tmg-wrap{max-width:1280px;margin:0 auto;padding:18px}
+  .tmg-wrap h1{font-size:20px;margin:0 0 2px}
+  .tmg-sub{color:#94a3b8;font-size:13px;margin-bottom:14px}
+  .tmg-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .tmg-pick{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:8px;padding:7px 10px;font-size:13px;min-width:260px}
+  .tag{display:inline-block;font-size:11px;border-radius:6px;padding:2px 8px;background:#161a2e;border:1px solid #2d3250;color:#cbd5e1}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#94a3b8;margin:10px 0}
+  .legend .lg{display:inline-flex;align-items:center;gap:5px}
+  .legend .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .muted{color:#64748b}
+  #tmg-canvas{border:1px solid #2d3250;border-radius:12px;background:#0f1117;overflow:auto}
+  svg text{font-family:inherit}
+  a.tmg-node{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/threat-model">&#129504; Threat Models</a>
+  <a href="/trace">&#128737;&#65039; TRACE</a>
+  <span class="spacer"></span>
+  <span class="title" data-t="tmg.barTitle">&#128506;&#65039; Threat Model Diagram</span>
+</div>
+
+<div class="tmg-wrap">
+  <h1 data-t="tmg.title">Threat Model Diagram</h1>
+  <div class="tmg-sub" data-t="tmg.sub">A graphical view of a threat model: the in-scope assets, the STRIDE threats (coloured by category, bordered by risk) and the controls that mitigate them.</div>
+  <div class="tmg-head">
+    <label class="muted" style="font-size:12px" data-t="tmg.model">Threat model</label>
+    <select id="tmg-pick" class="tmg-pick"></select>
+    <span style="flex:1"></span>
+    <button class="tag" id="tmg-open" style="cursor:pointer" data-t="tmg.openModel">Open model ↗</button>
+  </div>
+  <div id="tmg-body"><div class="muted" style="padding:24px;text-align:center">Loading…</div></div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/threat-model-graph.js"></script>
+</body>
+</html>

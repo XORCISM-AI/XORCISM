@@ -42,6 +42,9 @@ async function load(): Promise<void> {
   $("af-body").innerHTML = `
     <div class="af-cards">${cards}</div>
 
+    <div class="af-sec">${t("af.owaspSec", "OWASP Agentic Top 10 verification")} <span class="muted" style="font-weight:400;text-transform:none">— ${t("af.owaspSub", "governance evidence from the firewall's controls (like AGT `agt verify`)")}</span></div>
+    <div id="af-owasp"><div class="muted" style="font-size:12px;padding:4px 0">…</div></div>
+
     <div class="af-sec">${t("af.testGate", "Test the gate")}</div>
     <div class="frm">
       <div class="grid">
@@ -63,6 +66,7 @@ async function load(): Promise<void> {
 
   renderPolicies(d.policies);
   renderLedger(d.actions);
+  void renderOwasp();
   $("t-eval").onclick = evalAction;
 }
 
@@ -121,6 +125,30 @@ async function evalAction(): Promise<void> {
     \n${esc(out.rationale || "")}
     \n${t("af.signedReceipt", "Signed receipt")}: ${esc(String(out.receipt || "").slice(0, 24))}…</div>`;
   load();
+}
+
+// OWASP Agentic Top 10 verification panel (replicates AGT `agt verify` from the firewall's controls).
+async function renderOwasp(): Promise<void> {
+  const host = document.getElementById("af-owasp"); if (!host) return;
+  let d: any;
+  try { d = await getJSON("/api/agent-firewall/owasp-agentic"); } catch { host.innerHTML = ""; return; }
+  const st = d.summary;
+  const dot = (s: string): string => s === "covered" ? "#22c55e" : s === "partial" ? "#fbbf24" : "#f87171";
+  const lbl = (s: string): string => s === "covered" ? t("af.owCovered", "covered") : s === "partial" ? t("af.owPartial", "partial") : t("af.owGap", "gap");
+  const barColor = st.pct >= 80 ? "#22c55e" : st.pct >= 50 ? "#fbbf24" : "#f87171";
+  const cells = (d.categories as any[]).map((c) => `<div style="background:#0f1322;border:1px solid #2d3250;border-left:3px solid ${dot(c.status)};border-radius:8px;padding:8px 10px">
+    <div style="display:flex;align-items:center;gap:6px"><span class="tag" style="background:#1e2440;color:#c4b5fd;font-size:10px">${esc(c.code)}</span><b style="font-size:12px;color:#e2e8f0">${esc(c.name)}</b><span style="flex:1"></span><span style="font-size:10.5px;color:${dot(c.status)};font-weight:700">${esc(lbl(c.status))}</span></div>
+    <div class="muted" style="font-size:10.5px;margin-top:3px">${esc(c.control)} · <span style="color:#94a3b8">NIST ${esc(c.nist)}</span></div>
+    <div class="muted" style="font-size:10px;margin-top:2px">${esc(c.detail)}</div></div>`).join("");
+  host.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="font-size:26px;font-weight:800;color:${barColor}">${st.pct}%</div>
+      <div style="flex:1;max-width:320px"><div style="height:8px;border-radius:4px;background:#1e2133;overflow:hidden"><i style="display:block;height:100%;width:${st.pct}%;background:${barColor}"></i></div>
+        <div class="muted" style="font-size:11px;margin-top:3px">${st.covered} ${t("af.owCovered", "covered")} · ${st.partial} ${t("af.owPartial", "partial")} · ${st.gap} ${t("af.owGap", "gap")}</div></div>
+      <span style="flex:1"></span>
+      <span class="muted" style="font-size:11px">${d.summary.policies} ${t("af.owPolicies", "active policies")} · ${st.receiptChainOk ? "✓ " + t("af.owReceipts", "receipt chain intact") : t("af.owNoReceipts", "no receipt chain")}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px">${cells}</div>`;
 }
 
 document.addEventListener("DOMContentLoaded", load);
