@@ -1,0 +1,16 @@
+{
+  "id": "pulsedive",
+  "name": "Pulsedive",
+  "type": "import",
+  "category": "threat-intel",
+  "description": "Pulsedive (pulsedive.com) is a threat-intelligence platform that ingests, enriches and scores indicators (IPs, domains, URLs, hashes), groups them into threats, and curates feeds — with a community free tier and a REST API. This connector pulls indicators from Pulsedive — live via the API (Explore PDQL search `explore.php?q=…` or single-indicator enrichment `info.php?indicator=…`, using a free/community API key in the PULSEDIVE_API_KEY env var) or offline by parsing a saved export (a bulk CSV, an Explore result, or an indicator JSON) — and normalizes each one into a XORCISM threat-intel record (XTHREAT.INTELEXCHANGE): the indicator value + type + Pulsedive risk (unknown/none/low/medium/high/critical/retired), its risk factors, and its linked threats and feeds (threats mapped to actor/malware tags). Feeds the CTI views, the STIX store and ATT&CK coverage. Worker-safe, read-only and licence-safe: it only calls the fixed pulsedive.com API with the operator's own key, or parses an operator-produced export — no Pulsedive code is vendored.",
+  "intrusive": false,
+  "permission": "connector:pulsedive",
+  "run": "run.py",
+  "mapping": "pulsedive",
+  "parameters": [
+    { "name": "query", "type": "string", "required": false, "help": "Live mode (needs PULSEDIVE_API_KEY): a single indicator to enrich (e.g. 8.8.8.8, evil.com, a URL or hash) via info.php, OR a Pulsedive Explore query in PDQL (e.g. `risk=high and type=ip`, `threat=Emotet`) via explore.php." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: a saved Pulsedive export to parse instead of calling the API — a bulk CSV export, an Explore result JSON ({results:[…]}), a single indicator JSON (info.php), or an array of indicators." },
+    { "name": "limit", "type": "number", "required": false, "min": 1, "max": 5000, "default": 500, "help": "Maximum number of indicators to import." }
+  ]
+}

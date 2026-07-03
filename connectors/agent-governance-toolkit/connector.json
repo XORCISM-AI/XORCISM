@@ -1,0 +1,16 @@
+{
+  "id": "agent-governance-toolkit",
+  "name": "Microsoft Agent Governance Toolkit",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Microsoft Agent Governance Toolkit (github.com/microsoft/agent-governance-toolkit, MIT) — a middleware framework that enforces deterministic governance for autonomous AI agents: a policy engine (allow / deny / require-approval / transform / log), zero-trust agent identity (SPIFFE/DID/mTLS), execution sandboxing (privilege rings), tamper-evident decision records (Merkle-tree audit), OWASP Agentic Top 10 verification (`agt verify`) and kill switches / SLOs — mapped to NIST AI RMF, EU AI Act and SOC 2. This connector imports an AGT export bundle (JSON) and maps it into XORCISM: each governed agent (registration) -> ASSET; every failing OWASP Agentic Top 10 verification category, MCP-gateway / tool finding and blocked policy violation (deny decision record) -> VULNERABILITY (tagged with its ASI-T# / OWASP-Agentic id and severity). Feeds the Agent Policy Firewall, AI-guardrails, exposure and vulnerability views — XORCISM's Agent Policy Firewall then replicates the same OWASP Agentic Top 10 verification from its own deterministic controls. Worker-safe & read-only: it only parses an exported bundle; AGT itself is run by the operator against the agents.",
+  "intrusive": false,
+  "permission": "connector:agent-governance-toolkit",
+  "run": "run.py",
+  "mapping": "agent-governance-toolkit",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "An AGT export bundle JSON: `agt verify --evidence evidence.json`, a decision-records / audit-log export, or a registry export. An object or an array of findings; the connector is defensive about the exact shape." },
+    { "name": "agent", "type": "string", "required": false, "help": "Override the agent/asset name (default: read from the bundle's agent / name / target)." },
+    { "name": "min_severity", "type": "string", "required": false, "help": "Only import findings at or above this severity (info|low|medium|high|critical). Default: low." }
+  ]
+}

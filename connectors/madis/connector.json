@@ -1,0 +1,16 @@
+{
+  "id": "madis",
+  "name": "MADIS (Soluris) — GDPR / RGPD",
+  "type": "import",
+  "category": "GRC",
+  "description": "MADIS (madis.app — Soluris, developed by Datakode, AGPLv3) is an open-source GDPR/RGPD compliance application for Data Protection Officers, widely used by French local authorities and public bodies. It manages the record of processing activities (registre des traitements / RoPA, Art 30), the processors register (sous-traitants, Art 28), data-subject rights requests, personal-data breaches (Art 33/34), protection actions / action plans, DPIAs (AIPD) and accountability maturity. This connector parses a MADIS export (CSV per register, or a JSON bundle) and normalizes it into XORCISM's GDPR / DPO cockpit registers via POST /api/privacy/import — processing -> PRIVACYPROCESSING, sous-traitants -> PRIVACYPROCESSOR, demandes -> DSAR, violations -> PRIVACYBREACH, actions -> PRIVACYACTION (CNIL DPIA-trigger criteria are carried through). Worker-safe, read-only and licence-safe: it only parses operator-produced exports; no MADIS code is vendored and MADIS itself is run by the operator.",
+  "intrusive": false,
+  "permission": "connector:madis",
+  "run": "run.py",
+  "mapping": "madis",
+  "parameters": [
+    { "name": "file", "type": "file", "required": true, "help": "A MADIS export: a JSON bundle ({processing,processors,dsar,breaches,actions} or a MADIS-shaped object), a single CSV register export, or a directory/zip of CSVs. French or English headers are both accepted (the parser is accent/case-insensitive)." },
+    { "name": "register", "type": "string", "required": false, "help": "For a single CSV whose register can't be auto-detected: traitements | sous-traitants | demandes | violations | actions." },
+    { "name": "server", "type": "string", "required": false, "help": "Optional XORCISM base URL to POST the normalized payload to /api/privacy/import directly (needs a session cookie in XOR_COOKIE). Default: just print the normalized JSON." }
+  ]
+}
