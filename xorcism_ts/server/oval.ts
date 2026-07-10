@@ -15,6 +15,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
 import { getDb } from "./db";
 import { createCollectedJob } from "./jobs";
 
@@ -66,10 +67,73 @@ export interface OvalIngestSummary {
   compliance: { pass: number; fail: number; other: number };
   byClass: Record<string, number>;
   jobs: number[];
+  assetProducts: { products: number; links: number };
 }
 
 const TRUE = new Set(["true", "1", "pass"]);
 const FAIL = new Set(["false", "fail"]);
+
+/** Parse a CPE 2.2/2.3 reference into normalized { vendor, product, version }, or null if unusable. */
+function parseCpe(cpe: string): { vendor: string; product: string; version: string } | null {
+  const s = String(cpe || "").trim();
+  if (!s.toLowerCase().startsWith("cpe:")) return null;
+  let vendor: string, product: string, version: string;
+  if (s.toLowerCase().startsWith("cpe:2.3:")) { const p = s.split(":"); vendor = p[3] || ""; product = p[4] || ""; version = p[5] || ""; }
+  else { const p = s.replace(/^cpe:\/?/i, "").split(":"); vendor = p[1] || ""; product = p[2] || ""; version = p[3] || ""; }
+  // CPE component values are conventionally lowercase — normalize so re-scans don't create a
+  // case-variant duplicate PRODUCT (and to match the downstream matcher, which lowercases).
+  const clean = (x: string): string => x.toLowerCase().replace(/_/g, " ").replace(/\\/g, "").trim();
+  vendor = clean(vendor); product = clean(product);
+  const v = clean(version);
+  version = v && v !== "*" && v !== "-" ? v : "";
+  if (!product || product === "*" || product === "-") return null;
+  return { vendor: vendor === "*" || vendor === "-" ? "" : vendor, product, version };
+}
+
+/**
+ * Create ASSETPRODUCT links for an asset from the CPEs referenced by OVAL definitions (during an
+ * inventory or compliance scan). Each CPE **get-or-creates** a PRODUCT — carrying its ProductName /
+ * ProductVendor / ProductVersion and the **CPEName** (which feeds the precise CVE↔CPE matcher, see
+ * cvematch.ts `cpeCanon`) — then links it to the asset (idempotent by AssetID+ProductID). Legacy
+ * XORCISM PKs are non-autoincrement → assigned via MAX+1. Returns rows created.
+ */
+export function linkAssetProductsFromCpes(assetId: number, cpeStrings: string[]): { products: number; links: number } {
+  const xo = getDb("XORCISM");
+  const findByCpe = xo.prepare(`SELECT ProductID FROM PRODUCT WHERE CPEName = ? LIMIT 1`);
+  const findByName = xo.prepare(`SELECT ProductID FROM PRODUCT WHERE ProductName = ? AND COALESCE(ProductVendor,'') = ? AND COALESCE(ProductVersion,'') = ? LIMIT 1`);
+  const insProd = xo.prepare(`INSERT INTO PRODUCT (ProductID, ProductGUID, ProductName, ProductVendor, ProductVersion, CPEName, CreatedDate) VALUES (?,?,?,?,?,?,?)`);
+  const findAp = xo.prepare(`SELECT 1 FROM ASSETPRODUCT WHERE AssetID = ? AND ProductID = ? LIMIT 1`);
+  const insAp = xo.prepare(`INSERT INTO ASSETPRODUCT (AssetProductID, AssetID, ProductID, ProductGUID, CreatedDate, LastCheckedDate) VALUES (?,?,?,?,?,?)`);
+  const touchAp = xo.prepare(`UPDATE ASSETPRODUCT SET LastCheckedDate = ? WHERE AssetID = ? AND ProductID = ?`);
+  const now = new Date().toISOString();
+  const seen = new Set<string>();
+  let products = 0, links = 0;
+  const tx = xo.transaction(() => {
+    for (const cpe of cpeStrings) {
+      const key = String(cpe || "").trim().toLowerCase();   // CPE lookup/store key (case-normalized)
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const parsed = parseCpe(cpe);
+      if (!parsed) continue;
+      let pid = (findByCpe.get(key) as { ProductID: number } | undefined)?.ProductID;
+      if (pid == null) pid = (findByName.get(parsed.product, parsed.vendor, parsed.version) as { ProductID: number } | undefined)?.ProductID;
+      if (pid == null) {
+        pid = ((xo.prepare(`SELECT COALESCE(MAX(ProductID),0)+1 n FROM PRODUCT`).get() as { n: number }).n);
+        insProd.run(pid, randomUUID(), parsed.product, parsed.vendor || null, parsed.version || null, key, now);
+        products++;
+      }
+      if (!findAp.get(assetId, pid)) {
+        const apId = (xo.prepare(`SELECT COALESCE(MAX(AssetProductID),0)+1 n FROM ASSETPRODUCT`).get() as { n: number }).n;
+        insAp.run(apId, assetId, pid, randomUUID(), now, now);
+        links++;
+      } else {
+        touchAp.run(now, assetId, pid);   // re-detected this scan → refresh freshness (enables future staleness pruning)
+      }
+    }
+  });
+  tx();
+  return { products, links };
+}
 
 function colset(dbName: string, table: string): Set<string> {
   try { return new Set((getDb(dbName).prepare(`PRAGMA table_info("${table}")`).all() as { name: string }[]).map((c) => c.name)); }
@@ -133,6 +197,7 @@ export function ingestOvalResults(assetName: string, payload: OvalPayload, hintT
   const compliance = { pass: 0, fail: 0, other: 0 };
   const vulns: { asset: string; ref: string; name: string; severity: string }[] = [];
   const cpes = new Set<string>();
+  const productCpes = new Set<string>();   // CPEs of applicable inventory/compliance defs → ASSETPRODUCT
   let stored = 0;
 
   const tx = xv.transaction((items: OvalResultItem[]) => {
@@ -157,9 +222,13 @@ export function ingestOvalResults(assetName: string, payload: OvalPayload, hintT
           if (/^CVE-\d{4}-\d{4,}$/i.test(cve)) vulns.push({ asset: assetName, ref: cve.toUpperCase(), name: (it.title || cve).slice(0, 200), severity: (it.severity || "unknown").toLowerCase() });
         }
       } else if (cls === "inventory" && TRUE.has(result)) {
-        for (const cpe of (it.cpes || [])) if (cpe && cpe.startsWith("cpe:")) cpes.add(cpe);
+        // The platform/product IS present on the host → CPE inventory (CPEFORASSET) + product inventory.
+        for (const cpe of (it.cpes || [])) if (cpe && cpe.startsWith("cpe:")) { cpes.add(cpe); productCpes.add(cpe); }
       } else if (cls === "compliance") {
         if (TRUE.has(result)) compliance.pass++; else if (FAIL.has(result)) compliance.fail++; else compliance.other++;
+        // A compliance rule that was actually evaluated (pass or fail) applies to a product present on
+        // the host → its platform CPE(s) become products of the asset (ASSETPRODUCT).
+        if (TRUE.has(result) || FAIL.has(result)) for (const cpe of (it.cpes || [])) if (cpe && cpe.startsWith("cpe:")) productCpes.add(cpe);
       }
     }
   });
@@ -173,9 +242,18 @@ export function ingestOvalResults(assetName: string, payload: OvalPayload, hintT
   if (uvulns.length) jobs.push(createCollectedJob("xor-vuln", { assets: host, vulns: uvulns }, assetName));
   if (cpes.size) jobs.push(createCollectedJob("xor-inventory", { assets: host, cpes: [...cpes] }, assetName));
 
+  // Curated software inventory: the CPEs of applicable inventory/compliance definitions become the
+  // asset's PRODUCTs (ASSETPRODUCT) — feeds the precision CVE→asset matcher (cvematch.ts). Immediate
+  // (direct XORCISM write), idempotent, and never allowed to break the OVAL ingest.
+  let assetProducts = { products: 0, links: 0 };
+  if (assetId != null && productCpes.size) {
+    try { assetProducts = linkAssetProductsFromCpes(assetId, [...productCpes]); }
+    catch (e) { console.warn(`[oval] ASSETPRODUCT link: ${(e as Error).message}`); }
+  }
+
   return {
     asset: assetName, assetId, engine, content,
-    stored, vulnerabilities: uvulns.length, inventory: cpes.size, compliance, byClass, jobs,
+    stored, vulnerabilities: uvulns.length, inventory: cpes.size, compliance, byClass, jobs, assetProducts,
   };
 }
 

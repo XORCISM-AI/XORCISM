@@ -2,22 +2,32 @@
  * cvematch.ts — Continuous CVE → ASSET matching ("New CVEs for ASSET"), precision-tuned.
  *
  * Links newly-imported CVEs to the assets whose *technologies* they affect. An asset's technologies
- * come from its CPE inventory (CPEFORASSET → CPE vendor/product) and its tech tags (ASSETTAG.Tag).
+ * come from two CURATED inventories — its CPE inventory (CPEFORASSET → CPE vendor/product) and its
+ * software products (ASSETPRODUCT → PRODUCT.ProductName / ProductVendor / CPE) — plus, as a weak
+ * fallback only, its free-text tech tags (ASSETTAG.Tag).
  *
  * The hard problem is FALSE POSITIVES: CVE titles are just the CVE id (VULName == VULReferentialID)
  * so the only text signal is the long VULDescription prose, and matching a generic tag like "email"
  * (in ~4,900 descriptions) or a bare vendor/OS token ("apple", "windows", "microsoft") against that
- * prose links an asset to thousands of irrelevant CVEs. To fix this, matches are now CONFIDENCE-TIERED
- * and only links at/above a threshold (default Medium) are auto-created:
+ * prose links an asset to thousands of irrelevant CVEs. To fix this, matches are CONFIDENCE-TIERED and
+ * only links at/above a threshold (default Medium) are auto-created; the trusted signals are the
+ * CURATED product & CPE inventories, NOT free tags:
  *
- *   High   — precise CPE link (VULNERABILITYFORCPE ↔ the asset's CPEID), or a CPE vendor+product
- *            *pair* both word-matched in the CVE text (strong, specific co-occurrence).
- *   Medium — a *specific product* token word-matched in the CVE text: any non-generic token taken
- *            from the asset's CPE products, or a tag that looks like a product (len ≥ 5, has a
- *            digit/hyphen/space, or a known short product like php/git/curl).
- *   Low    — a short, ambiguous tag token (e.g. 3–4 letters) — recorded but NOT auto-linked by default.
+ *   High   — precise CPE link: the CVE's affected CPE (VULNERABILITYFORCPE) shares a CPE *identity*
+ *            (part:vendor:product, via cpeCanon — the two DBs do NOT share a CPE integer id, and the
+ *            asset side is CPE 2.2 while the CVE side is CPE 2.3, so the match is by canonical name)
+ *            with a CPE of the asset — from CPEFORASSET *or* a linked PRODUCT's CPE. Also High: a
+ *            vendor+product *pair* both word-matched in the CVE text (from a CPE or a PRODUCT
+ *            vendor+name) — a strong, specific co-occurrence.
+ *   Medium — a *specific product* word/phrase matched in the CVE text: a non-generic token from the
+ *            asset's CPE products, or an ASSETPRODUCT → PRODUCT.ProductName (a curated name, matched
+ *            as its full phrase or a specific single token — never a generic sub-word).
+ *   Low    — any ASSETTAG token (free text). Tags are the weakest signal — a generic tag like "email"
+ *            must never link a mail asset to random CVEs — so they are deliberately kept BELOW the
+ *            auto-link threshold: recorded but NOT auto-linked by default (run with minConfidence=low
+ *            to include them).
  *   (dropped) — generic categories / protocols / OS / vendor names (email, web, dns, vpn, firewall,
- *            windows, apple, microsoft, …) and bare CPE vendor tokens never match on their own.
+ *            windows, apple, microsoft, …) and bare CPE/product vendor tokens never match on their own.
  *
  * Every auto-created link records MatchConfidence / MatchSource / MatchedToken on ASSETVULNERABILITY
  * so users can audit and triage (and bulk-flag FalsePositive). Idempotent; watermark-bounded.
@@ -41,6 +51,9 @@ const BLOCKLIST = new Set<string>([
   "laptop", "mobile", "tablet", "phone", "printer", "scanner", "camera", "sensor", "gateway", "proxy", "cache",
   "queue", "broker", "bus", "stream", "pipeline", "function", "lambda", "worker", "job", "task", "cron", "scheduler",
   "test", "dev", "prod", "staging", "demo", "sample", "example", "lab", "sandbox",
+  // generic product-name qualifiers (never a specific product on their own — guards single-word names)
+  "security", "update", "updates", "standard", "professional", "enterprise", "premium", "essentials",
+  "edition", "redistributable", "redist", "component", "components", "assistant", "utility", "utilities",
   // categories / protocols
   "email", "mail", "webmail", "smtp", "imap", "pop3", "exchange", "messaging", "chat", "im", "sms", "voice", "voip",
   "sip", "pbx", "telephony", "video", "conference", "meeting", "collaboration", "calendar", "contacts", "directory",
@@ -95,17 +108,75 @@ function cpeTokens(cpeName: string): [string, string] {
   const p = n.replace(/^cpe:\/?/i, "").split(":"); return [normToken(p[1]), normToken(p[2])];
 }
 
-/** Is a token specific enough to auto-link at Medium when it comes from a free-text tag? */
-function tagIsSpecific(tok: string): boolean {
-  return tok.length >= 5 || /[0-9]/.test(tok) || /[-.]/.test(tok) || tok.includes(" ") || KNOWN_SHORT_PRODUCTS.has(tok);
+/**
+ * Canonical CPE identity "part:vendor:product" from a 2.2 OR 2.3 CPE name, or null if unusable.
+ * CRITICAL: the two databases do NOT share a CPE integer id space — XORCISM.CPE.CPEID is an integer
+ * surrogate (its CPE URI lives in CPE.CPEName, in **2.2** form) whereas
+ * XVULNERABILITY.VULNERABILITYFORCPE.CPEID is a **2.3** CPE URI STRING. A precise asset↔CVE CPE match
+ * must therefore compare CPE *identities* (this key), never the ids. Version is intentionally dropped:
+ * NVD affected-CPE rows are usually version-wildcarded, so product-identity match = "the CVE affects a
+ * product the asset runs".
+ */
+function cpeCanon(cpeName: string): string | null {
+  const s = String(cpeName || "").toLowerCase();
+  if (!s.startsWith("cpe:")) return null;
+  const part = s.startsWith("cpe:2.3:") ? (s.split(":")[2] || "a") : ((/^cpe:\/?([aoh])/.exec(s) || [])[1] || "a");
+  const [vendor, product] = cpeTokens(cpeName);
+  if (!vendor || !product || vendor === "*" || product === "*") return null;
+  return `${part}:${vendor}:${product}`;
+}
+
+// Distinguishing brand/vendor/OS tokens (a subset of BLOCKLIST): a phrase containing one is NOT
+// "purely generic" — "microsoft office" is a specific product, "web server" is not.
+const BRANDS = new Set<string>([
+  "microsoft", "apple", "google", "amazon", "aws", "azure", "oracle", "ibm", "cisco", "juniper",
+  "adobe", "sap", "vmware", "citrix", "mozilla", "dell", "hp", "hpe", "lenovo", "intel", "amd",
+  "nvidia", "samsung", "huawei", "sony", "symantec", "mcafee", "kaspersky", "canonical", "redhat",
+  "fortinet", "sophos", "atlassian", "salesforce", "windows", "linux", "ubuntu", "debian", "android",
+  "macos", "ios", "solaris", "freebsd", "unix",
+]);
+// Common English words that are also product/CPE names but far too generic as a BARE single token
+// (e.g. "access" matches "unauthorized access" in a huge share of CVE prose). Rejected as standalone
+// keywords/pairs, but still allowed inside a multi-word phrase ("microsoft access") that disambiguates.
+const AMBIGUOUS_WORDS = new Set<string>([
+  "access", "reader", "viewer", "player", "studio", "central", "express", "connect", "bridge",
+  "insight", "insights", "discovery", "commerce", "contact", "partner", "protect",
+]);
+/** True iff every non-version word of a phrase is BLOCKLISTed AND none is a distinguishing brand. */
+function allGeneric(phrase: string): boolean {
+  const ws = phrase.split(/\s+/).filter(Boolean).filter((w) => !/^v?\d+(\.\d+)*$/.test(w));
+  return ws.length > 0 && ws.every((w) => BLOCKLIST.has(w)) && !ws.some((w) => BRANDS.has(w));
+}
+
+/**
+ * Precise keyword(s) from a CURATED PRODUCT.ProductName. Precision-first (this feeds auto-linking):
+ *  - a single-token name → that token, iff specific (len ≥ 5, or a known short product) and not generic;
+ *  - a multi-word name → the FULL phrase (+ a version-stripped variant, dropping trailing "8"/"2019"/
+ *    "v3"/"11.0" tokens) — NEVER individual generic sub-words (so "Kaspersky Endpoint Security" links on
+ *    the phrase, not on the bare word "security").
+ */
+function productNameKeywords(name: string): string[] {
+  const n = normToken(name);
+  if (!n) return [];
+  const words = n.split(/\s+/).filter(Boolean);
+  const out = new Set<string>();
+  if (words.length === 1) {
+    const w = words[0];
+    if ((w.length >= 5 || KNOWN_SHORT_PRODUCTS.has(w)) && !BLOCKLIST.has(w) && !AMBIGUOUS_WORDS.has(w)) out.add(w);
+  } else {
+    if (n.length >= 4 && !BLOCKLIST.has(n) && !allGeneric(n)) out.add(n);
+    const stripped = words.filter((w) => !/^v?\d+(\.\d+)*$/.test(w)).join(" ");
+    if (stripped && stripped !== n && stripped.length >= 4 && !BLOCKLIST.has(stripped) && !allGeneric(stripped)) out.add(stripped);
+  }
+  return [...out];
 }
 
 export interface AssetTech {
   assetId: number; name: string; tenantId: number | null;
-  cpeIds: Set<number>;
+  cpeKeys: Set<string>;                     // canonical CPE identities (part:vendor:product), from cpeCanon()
   pairs: { vendor: string; product: string; rxV: RegExp; rxP: RegExp }[];
   specific: string[]; weak: string[];
-  sourceOf: Map<string, string>;            // token → "cpe-keyword" | "tag"
+  sourceOf: Map<string, string>;            // token → "cpe-keyword" | "product" | "tag"
   rxSpecific: RegExp | null; rxWeak: RegExp | null;
 }
 
@@ -114,21 +185,62 @@ export function buildAssetTechIndex(tenant: number | null): AssetTech[] {
   const db = getDb("XORCISM");
   const tw = tenant != null ? `WHERE COALESCE(TenantID, ${tenant}) = ${tenant}` : "";
   const assets = db.prepare(`SELECT AssetID id, AssetName name, TenantID t FROM ASSET ${tw}`).all() as { id: number; name: string | null; t: number | null }[];
-  type Acc = { name: string | null; t: number | null; cpe: Set<number>; pairs: Map<string, { vendor: string; product: string }>; src: Map<string, string> };
+  type Acc = { name: string | null; t: number | null; cpe: Set<string>; pairs: Map<string, { vendor: string; product: string }>; src: Map<string, string> };
   const byAsset = new Map<number, Acc>();
   for (const a of assets) byAsset.set(a.id, { name: a.name, t: a.t, cpe: new Set(), pairs: new Map(), src: new Map() });
 
-  // CPE inventory → product tokens (standalone, if specific) + vendor+product pairs (always, if product is specific).
-  for (const r of db.prepare(`SELECT ca.AssetID aid, c.CPEID cid, c.CPEName name FROM CPEFORASSET ca JOIN CPE c ON c.CPEID = ca.CPEID`).all() as { aid: number; cid: number; name: string }[]) {
+  // CPE inventory → canonical CPE identity (for precise CVE match) + product tokens (standalone, if
+  // specific) + vendor+product pairs (always, if product is specific). Match by CPE *name*, not id.
+  for (const r of db.prepare(`SELECT ca.AssetID aid, c.CPEName name FROM CPEFORASSET ca JOIN CPE c ON c.CPEID = ca.CPEID`).all() as { aid: number; name: string }[]) {
     const e = byAsset.get(r.aid); if (!e) continue;
-    e.cpe.add(r.cid);
+    const canon = cpeCanon(r.name); if (canon) e.cpe.add(canon);
     const [vendor, product] = cpeTokens(r.name);
-    if (product && product.length >= 3 && !BLOCKLIST.has(product)) {
+    if (product && product.length >= 3 && !BLOCKLIST.has(product) && !AMBIGUOUS_WORDS.has(product)) {
       if (!e.src.has(product)) e.src.set(product, "cpe-keyword");   // CPE products are trusted (curated inventory)
       if (vendor && vendor.length >= 3) e.pairs.set(`${vendor}|${product}`, { vendor, product });
     }
   }
-  // Tech tags → only specific, non-generic ones become standalone keywords.
+
+  // Software products (ASSETPRODUCT → PRODUCT): a CURATED inventory — the most reliable per-asset
+  // signal after a precise CPE. Contributes: the product's CPE identity (PRODUCT.CPEName, or its
+  // CPEID resolved to CPE.CPEName → the asset's CPE key set, so a product linked to the asset yields a
+  // precise CPE↔CVE match, High); a vendor+product pair (High) and product token(s) from that CPE
+  // name (like the CPE inventory); and the curated PRODUCT.ProductName as a specific keyword (Medium)
+  // — matched precisely (full phrase / specific token), never a generic sub-word.
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETPRODUCT'").get()
+    && db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='PRODUCT'").get()) {
+    const prodRows = db.prepare(
+      `SELECT ap.AssetID aid, p.ProductName name, p.ProductVendor vendor,
+              COALESCE(NULLIF(TRIM(p.CPEName), ''), pc.CPEName) cpeName
+         FROM ASSETPRODUCT ap JOIN PRODUCT p ON p.ProductID = ap.ProductID
+         LEFT JOIN CPE pc ON pc.CPEID = p.CPEID`
+    ).all() as { aid: number; name: string | null; vendor: string | null; cpeName: string | null }[];
+    for (const r of prodRows) {
+      const e = byAsset.get(r.aid); if (!e) continue;
+      // Product's CPE identity → the asset's CPE key set (precise CPE↔CVE match, High) + same token
+      // treatment as the CPE inventory (pair High + product keyword Medium).
+      if (r.cpeName) {
+        const canon = cpeCanon(r.cpeName); if (canon) e.cpe.add(canon);
+        const [cv, cp] = cpeTokens(r.cpeName);
+        if (cp && cp.length >= 3 && !BLOCKLIST.has(cp) && !AMBIGUOUS_WORDS.has(cp)) {
+          if (!e.src.has(cp)) e.src.set(cp, "product");
+          if (cv && cv.length >= 3) e.pairs.set(`${cv}|${cp}`, { vendor: cv, product: cp });
+        }
+      }
+      // Product NAME → specific keyword(s), precise (phrase / specific token, no generic sub-words).
+      const pvendor = normToken(r.vendor || "");
+      for (const kw of productNameKeywords(r.name || "")) {
+        if (!e.src.has(kw)) e.src.set(kw, "product");
+        // Vendor + the (already-specific) product name → a strong (High) co-occurrence pair. Like the
+        // CPE pairs, the vendor is NOT blocklisted (the specific product narrows a broad vendor).
+        if (pvendor && pvendor.length >= 3 && !kw.includes(pvendor)) {
+          e.pairs.set(`${pvendor}|${kw}`, { vendor: pvendor, product: kw });
+        }
+      }
+    }
+  }
+
+  // Tech tags → WEAK fallback only (Low tier; not auto-linked at the default Medium threshold).
   if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ASSETTAG'").get()) {
     for (const r of db.prepare(`SELECT AssetID aid, Tag tag FROM ASSETTAG WHERE Tag IS NOT NULL`).all() as { aid: number; tag: string }[]) {
       const e = byAsset.get(r.aid); if (!e) continue;
@@ -141,33 +253,38 @@ export function buildAssetTechIndex(tenant: number | null): AssetTech[] {
   for (const [id, e] of byAsset) {
     const specific: string[] = []; const weak: string[] = [];
     for (const [tok, source] of e.src) {
-      const isSpec = source === "cpe-keyword" ? true : tagIsSpecific(tok);
+      // CURATED inventories (CPE + PRODUCT) are specific (Medium, auto-link); free tags are weak (Low).
+      const isSpec = source === "cpe-keyword" || source === "product";
       (isSpec ? specific : weak).push(tok);
     }
-    const rx = (toks: string[]): RegExp | null => toks.length ? new RegExp("\\b(" + toks.map(escapeRe).join("|") + ")\\b", "i") : null;
-    const wb = (t: string): RegExp => new RegExp("\\b" + escapeRe(t) + "\\b", "i");
+    // Interior spaces in a phrase token match any whitespace run (double space, newline) — a curated
+    // product name should still match line-wrapped / oddly-spaced CVE prose.
+    const esc = (t: string): string => escapeRe(t).replace(/ /g, "\\s+");
+    const rx = (toks: string[]): RegExp | null => toks.length ? new RegExp("\\b(" + toks.map(esc).join("|") + ")\\b", "i") : null;
+    const wb = (t: string): RegExp => new RegExp("\\b" + esc(t) + "\\b", "i");
     const tech: AssetTech = {
-      assetId: id, name: e.name || `#${id}`, tenantId: e.t ?? null, cpeIds: e.cpe,
+      assetId: id, name: e.name || `#${id}`, tenantId: e.t ?? null, cpeKeys: e.cpe,
       pairs: [...e.pairs.values()].map((p) => ({ ...p, rxV: wb(p.vendor), rxP: wb(p.product) })),
       specific, weak, sourceOf: e.src, rxSpecific: rx(specific), rxWeak: rx(weak),
     };
-    if (tech.cpeIds.size || tech.pairs.length || tech.rxSpecific || tech.rxWeak) out.push(tech);
+    if (tech.cpeKeys.size || tech.pairs.length || tech.rxSpecific || tech.rxWeak) out.push(tech);
   }
   return out;
 }
 
 /** Score one CVE against one asset → the best {confidence (3/2/1), source, token}, or null. */
-function scoreMatch(a: AssetTech, hay: string, cpes: Set<number> | undefined): { conf: number; source: string; token: string } | null {
-  // High — precise CPE link.
-  if (cpes && cpes.size) { const c = [...a.cpeIds].find((x) => cpes.has(x)); if (c != null) return { conf: 3, source: "cpe", token: `cpe:${c}` }; }
+function scoreMatch(a: AssetTech, hay: string, cpes: Set<string> | undefined): { conf: number; source: string; token: string } | null {
+  // High — precise CPE link: the asset and the CVE share a CPE identity (part:vendor:product).
+  if (cpes && cpes.size) { const c = [...a.cpeKeys].find((x) => cpes.has(x)); if (c != null) return { conf: 3, source: "cpe", token: c.slice(0, 100) }; }
   // High — CPE vendor+product pair both present.
   for (const p of a.pairs) {
     if (p.rxP.test(hay) && p.rxV.test(hay)) return { conf: 3, source: "cpe-pair", token: `${p.vendor}+${p.product}` };
   }
-  // Medium — a specific product token.
-  if (a.rxSpecific) { const m = a.rxSpecific.exec(hay); if (m) { const tok = m[1].toLowerCase(); return { conf: 2, source: a.sourceOf.get(tok) || "cpe-keyword", token: tok }; } }
+  // Medium — a specific product token. Collapse whitespace runs in the matched text so the source
+  // lookup hits the canonical token key (the phrase regex may have matched varied spacing/newlines).
+  if (a.rxSpecific) { const m = a.rxSpecific.exec(hay); if (m) { const tok = m[1].toLowerCase().replace(/\s+/g, " ").trim(); return { conf: 2, source: a.sourceOf.get(tok) || "cpe-keyword", token: tok }; } }
   // Low — a short ambiguous tag token.
-  if (a.rxWeak) { const m = a.rxWeak.exec(hay); if (m) return { conf: 1, source: "tag", token: m[1].toLowerCase() }; }
+  if (a.rxWeak) { const m = a.rxWeak.exec(hay); if (m) return { conf: 1, source: "tag", token: m[1].toLowerCase().replace(/\s+/g, " ").trim() }; }
   return null;
 }
 
@@ -244,15 +361,17 @@ export function matchCves(opts: { tenant?: number | null; sinceVulnId?: number; 
   }
   if (!rows.length) { if (usingWatermark) setWatermark(since, 0); return empty; }
 
-  // Precise CPE links for the candidate CVEs (VULNERABILITYFORCPE — populated).
-  const cveCpe = new Map<number, Set<number>>();
+  // Precise CPE links for the candidate CVEs. VULNERABILITYFORCPE.CPEID holds the affected CPE as a
+  // 2.3 URI STRING (NOT an integer id) → normalize to the same canonical identity as the asset side.
+  const cveCpe = new Map<number, Set<string>>();
   try {
     if (xv.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='VULNERABILITYFORCPE'").get()) {
       const ids = rows.map((r) => r.id);
       for (let i = 0; i < ids.length; i += 800) {
         const chunk = ids.slice(i, i + 800); const ph = chunk.map(() => "?").join(",");
-        for (const r of xv.prepare(`SELECT VulnerabilityID v, CPEID c FROM VULNERABILITYFORCPE WHERE VulnerabilityID IN (${ph})`).all(...chunk) as { v: number; c: number }[]) {
-          (cveCpe.get(r.v) ?? cveCpe.set(r.v, new Set()).get(r.v)!).add(r.c);
+        for (const r of xv.prepare(`SELECT VulnerabilityID v, CPEID c FROM VULNERABILITYFORCPE WHERE VulnerabilityID IN (${ph})`).all(...chunk) as { v: number; c: string }[]) {
+          const canon = cpeCanon(String(r.c)); if (!canon) continue;
+          (cveCpe.get(r.v) ?? cveCpe.set(r.v, new Set()).get(r.v)!).add(canon);
         }
       }
     }
@@ -300,7 +419,7 @@ export function matchCves(opts: { tenant?: number | null; sinceVulnId?: number; 
       if (!recips.length) continue;
       notifyUsers(recips, {
         title: `New CVEs for ${e.name}`,
-        message: `${e.count} new CVE${e.count > 1 ? "s" : ""} matched this asset's technologies (CPE / tags).`,
+        message: `${e.count} new CVE${e.count > 1 ? "s" : ""} matched this asset's technologies (CPE / products).`,
         level: "warning", source: "cve-match",
         link: `/?db=XORCISM&table=ASSETVULNERABILITY&filterCol=AssetID&filterVal=${aid}`,
         tenantId: e.tenant,
@@ -349,14 +468,16 @@ export function rescoreLegacyMatches(tenant: number | null, minConfidence?: stri
 
   // Fetch CVE text + CPE for the distinct vulns involved.
   const vids = [...new Set(links.map((l) => l.vid))];
-  const cveText = new Map<number, string>(); const cveCpe = new Map<number, Set<number>>();
+  const cveText = new Map<number, string>(); const cveCpe = new Map<number, Set<string>>();
   for (let i = 0; i < vids.length; i += 800) {
     const chunk = vids.slice(i, i + 800); const ph = chunk.map(() => "?").join(",");
     for (const r of xv.prepare(`SELECT VulnerabilityID v, VULDescription d, VULShortName s FROM VULNERABILITY WHERE VulnerabilityID IN (${ph})`).all(...chunk) as { v: number; d: string | null; s: string | null }[])
       cveText.set(Number(r.v), `${r.d || ""} ${r.s || ""}`);
     try {
-      for (const r of xv.prepare(`SELECT VulnerabilityID v, CPEID c FROM VULNERABILITYFORCPE WHERE VulnerabilityID IN (${ph})`).all(...chunk) as { v: number; c: number }[])
-        (cveCpe.get(r.v) ?? cveCpe.set(r.v, new Set()).get(r.v)!).add(r.c);
+      for (const r of xv.prepare(`SELECT VulnerabilityID v, CPEID c FROM VULNERABILITYFORCPE WHERE VulnerabilityID IN (${ph})`).all(...chunk) as { v: number; c: string }[]) {
+        const canon = cpeCanon(String(r.c)); if (!canon) continue;
+        (cveCpe.get(r.v) ?? cveCpe.set(r.v, new Set()).get(r.v)!).add(canon);
+      }
     } catch { /* table absent */ }
   }
 

@@ -295,21 +295,6 @@ install_xor_agent.bat uninstall     :: stop + remove (keeps xor_agent.conf)
 The installer auto-finds `xor_agent.exe` (next to the .bat, or in `..\dist` / `.\dist`) and writes
 `xor_agent.conf` beside it. Requires Windows 8 / Server 2012+.
 
-#### Upgrading the packaged binary in place
-
-When you rebuild `xor_agent.exe` (`pyinstaller --onefile xor_agent.py`), the **running** service /
-task locks the old binary, so it can't simply be overwritten. Drop the new build next to the live
-exe as `xor_agent.new.exe`, then run [`install/redeploy_agent.bat`](install/redeploy_agent.bat) — it
-self-elevates (UAC), **backs up** the current exe to `xor_agent.exe.prev`, stops the
-`XORCISMXORAgent` service (and any residual processes), swaps in the new binary, and restarts:
-
-```bat
-redeploy_agent.bat                    :: deploy dist\xor_agent.new.exe (default)
-redeploy_agent.bat C:\path\new.exe    :: deploy a specific build
-redeploy_agent.bat rollback           :: restore xor_agent.exe.prev
-redeploy_agent.bat status             :: show service + process state
-```
-
 ### Windows — Task Scheduler (manual / from source)
 
 For a source checkout, register the daemon at startup yourself (adjust the python path; use

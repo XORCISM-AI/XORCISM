@@ -75,6 +75,7 @@ function newGuid(): string {
 // Columns rendered as a dropdown: key "TABLE.Column" → values.
 const ENUM_COLUMNS: Record<string, string[]> = {
   "INCIDENT.Criticity": ["Critical", "High", "Medium", "Low"],
+  "APPLICATION.Criticality": ["Very Low", "Low", "Moderate", "High", "Very High"],
   // STIX 2.1 object type of the bundle generated from the THREAT form
   "THREAT.STIXType": [
     "threat-actor", "attack-pattern", "malware", "tool",
@@ -222,7 +223,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT", "ATTACKTECHNIQUE"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT", "ATTACKTECHNIQUE", "CONTROL", "PRODUCT", "APPLICATION", "APPLICATIONPERSON", "APPLICATIONFORASSET"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -252,6 +253,8 @@ const GRID_VALUE_LABELS: Record<string, Record<string, string>> = {
   "ASSETVULNERABILITY.Status": { "0": "Unpatched", "1": "Patched" },
   // Business value 1–5 → label (form select stores the int; grid shows the label).
   "ASSET.BusinessValue": { "1": "Very Low", "2": "Low", "3": "Medium", "4": "High", "5": "Very High" },
+  // Control reliability 1–5 → label (form select stores the int; grid shows the label).
+  "CONTROL.ReliabilityID": { "1": "Very Low", "2": "Low", "3": "Moderate", "4": "High", "5": "Very High" },
 };
 // Cell color based on the DISPLAYED value (key "TABLE.Column" → value → CSS color).
 // E.g. "Yes" in red for the computed columns Exploited / KEV.
@@ -1145,6 +1148,12 @@ const GRID_DISPLAY_COLUMNS: Record<string, GridDisplaySpec[]> = {
   AUDITFINDING: [
     { db: "XCOMPLIANCE", table: "AUDIT", idCol: "AuditID", labelCol: "AuditName", hintLabel: "AuditName", srcCol: "AuditFindingGUID", keyCol: "AuditID", colLabel: "AuditName" },
   ],
+  // ASSETPRODUCT: resolved asset & product names, shown right after AssetGUID / ProductGUID
+  // (looked up by AssetID / ProductID, which sit just before their GUIDs in the schema).
+  ASSETPRODUCT: [
+    { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetGUID", keyCol: "AssetID", colLabel: "AssetName" },
+    { db: "XORCISM", table: "PRODUCT", idCol: "ProductID", labelCol: "ProductName", hintLabel: "ProductName", srcCol: "ProductGUID", keyCol: "ProductID", colLabel: "ProductName" },
+  ],
   // ASSETCONTROL: resolved asset & control names, shown right after AssetID / ControlID.
   ASSETCONTROL: [
     { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetID", colLabel: "AssetName" },
@@ -1985,6 +1994,8 @@ const VALUE_ENUM_COLUMNS: Record<string, { options: LabeledOption[]; default?: s
   "RISKREGISTERENTRY.CurrentImpact": { options: RISK_PI_OPTIONS },
   "RISKREGISTERENTRY.ResidualProbability": { options: RISK_PI_OPTIONS },
   "RISKREGISTERENTRY.ResidualImpact": { options: RISK_PI_OPTIONS },
+  // CONTROL reliability: 1–5 scale (Very Low … Very High); the ReliabilityID INTEGER stores the int.
+  "CONTROL.ReliabilityID": { options: RISK_PI_OPTIONS },
   // Asset publicly exposed / on the Internet: Yes/No → 1/0, default No (0)
   "ASSET.PublicFacing": {
     options: [
@@ -3433,6 +3444,17 @@ async function init(): Promise<void> {
         showSetupBanner();
         await openInsertModal();
       }
+      // Generic "add a linked record" deep-link (&new=1): open the insert form for the target
+      // table and best-effort pre-fill fields from extra query params (e.g. &AssetID=42 → f_AssetID).
+      else if (qp.get("new") === "1" && qtable) {
+        await openInsertModal();
+        const RESERVED = new Set(["db", "table", "new", "filterCol", "filterVal", "editCol", "editVal", "setup"]);
+        for (const [k, v] of qp.entries()) {
+          if (RESERVED.has(k)) continue;
+          const el = document.getElementById(`f_${k}`) as HTMLInputElement | HTMLSelectElement | null;
+          if (el) { el.value = v; el.dispatchEvent(new Event("change", { bubbles: true })); }
+        }
+      }
     }
   } catch (e) {
     toast(t("toast.errLoadDbs") + " " + e, "err");
@@ -4746,6 +4768,7 @@ async function appendWebScanPanel(prefix: string): Promise<void> {
   if (!after || !urlInput) return;
 
   const panel = document.createElement("div");
+  panel.className = "fs-wide"; // span the full form width when inside a section grid
   panel.style.cssText = "margin:0 0 10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2)";
   const label = document.createElement("div");
   label.textContent = t("webscan.label");
@@ -4808,6 +4831,7 @@ async function appendNetworkScanPanel(prefix: string): Promise<void> {
   if (!after || !v4) return;
 
   const panel = document.createElement("div");
+  panel.className = "fs-wide"; // span the full form width when inside a section grid
   panel.style.cssText = "margin:0 0 10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);display:none";
   const label = document.createElement("div");
   label.textContent = t("netscan.label");
@@ -5412,7 +5436,10 @@ function renderTable(rows: Record<string, unknown>[]): void {
         (currentTable === "POLICY" && col === "PolicyName") ||
         (currentTable === "IDENTITY" && col === "IdentityName") ||
         (currentTable === "CRISISSCENARIO" && col === "ScenarioName") ||
-        (currentTable === "OVALDEFINITION" && col === "OVALDefinitionTitle")
+        (currentTable === "OVALDEFINITION" && col === "OVALDefinitionTitle") ||
+        (currentTable === "CONTROL" && col === "ControlName") ||
+        (currentTable === "PRODUCT" && col === "ProductName") ||
+        (currentTable === "APPLICATION" && col === "ApplicationName")
       )) {
         // Name column → clickable to open this record's edit form.
         const a = document.createElement("a");
@@ -5811,6 +5838,151 @@ function isWideField(el: HTMLElement): boolean {
   return el.querySelectorAll("input, select, textarea").length >= 2;
 }
 
+// ── ASSET form: bespoke field order + groups (user-defined layout) ──────────────
+// Cleaner labels for the ASSET columns whose raw names don't humanize well, plus
+// the exact labels requested for the IPv4 / IPv6 addressing block.
+const ASSET_FIELD_LABELS: Record<string, string> = {
+  websiteurl: "Website URL", documentroot: "Document root",
+  systemname: "System name", version: "Version", locale: "Locale", OSName: "OS name",
+  hostname: "Hostname", instancename: "Instance name", networkname: "Network name",
+  X500name: "X.500 name", fqdn: "FQDN",
+  installationid: "Installation ID", license: "License", motherboardguid: "Motherboard GUID",
+  ipaddressIPv4: "IP address IPv4", subnetmaskIPv4: "Subnet mask IPv4", defaultrouteIPv4: "Default route IPv4",
+  ipnetrangestartIPv4: "IP net range start IPv4", ipnetrangeendIPv4: "IP net range end IPv4",
+  ipaddressIPv6: "IP address IPv6", subnetmaskIPv6: "Subnet mask IPv6", defaultrouteIPv6: "Default route IPv6",
+  ipnetrangestartIPv6: "IP net range start IPv6", ipnetrangeendIPv6: "IP net range end IPv6",
+  cidr: "CIDR",
+};
+// AssetName sits first, then websiteurl + documentroot; then the named groups.
+const ASSET_LEAD = ["AssetName", "websiteurl", "documentroot"];
+const ASSET_GROUPS: { title: string; fields?: string[]; subgroups?: { title: string; fields: string[] }[] }[] = [
+  { title: "System & OS", fields: ["systemname", "version", "locale", "OSName", "hostname", "instancename", "networkname", "X500name", "fqdn"] },
+  { title: "Identifiers & licence", fields: ["installationid", "license", "motherboardguid"] },
+  { title: "Network addressing", subgroups: [
+      { title: "IPv4", fields: ["ipaddressIPv4", "subnetmaskIPv4", "defaultrouteIPv4", "ipnetrangestartIPv4", "ipnetrangeendIPv4"] },
+      { title: "IPv6", fields: ["ipaddressIPv6", "subnetmaskIPv6", "defaultrouteIPv6", "ipnetrangestartIPv6", "ipnetrangeendIPv6"] },
+    ], fields: ["cidr"] },
+];
+
+// Custom ASSET layout: lead fields (AssetName, websiteurl, documentroot) then the
+// ordered groups above (Network has IPv4/IPv6 subgroups + cidr), then whatever
+// columns remain fall back to Details / Advanced & system so nothing is lost.
+// Returns false (→ generic grouping) when the form is too short to bother.
+function layoutAssetForm(prefix: string, body: HTMLElement, tag: string): boolean {
+  const fieldEls = ([...body.children] as HTMLElement[]).filter((el) => el.id && el.id.startsWith(tag));
+  if (fieldEls.length < 8) return false;
+  const colOf = (el: HTMLElement): string => el.id.slice(tag.length).replace(/_(search|vulnsearch)$/, "");
+  const map = new Map<string, HTMLElement>();
+  for (const el of fieldEls) if (!map.has(colOf(el))) map.set(colOf(el), el);
+  const byName = new Map(schema.map((c) => [c.name, c] as const));
+
+  // Cleaner labels (preserve any required "*" span).
+  for (const [col, text] of Object.entries(ASSET_FIELD_LABELS)) {
+    const lbl = map.get(col)?.querySelector("label");
+    if (!lbl) continue;
+    const star = lbl.querySelector("span");
+    lbl.textContent = text;
+    lbl.title = col;
+    if (star) lbl.appendChild(star);
+  }
+
+  const marker = document.createComment("asset-form");
+  body.insertBefore(marker, fieldEls[0]);
+  const frag = document.createDocumentFragment();
+  const used = new Set<string>();
+  const place = (parent: HTMLElement, col: string): void => {
+    const el = map.get(col);
+    if (!el || used.has(col)) return;
+    used.add(col);
+    if (isWideField(el)) el.classList.add("fs-wide");
+    parent.appendChild(el);
+  };
+  const section = (title: string, open: boolean, count: number): [HTMLDetailsElement, HTMLElement] => {
+    const det = document.createElement("details");
+    det.open = open;
+    det.dataset.defaultOpen = open ? "1" : "0";
+    det.className = "form-section";
+    const sum = document.createElement("summary");
+    sum.innerHTML = `<span class="fs-h"><span class="fs-chev">▸</span>${title}</span><span class="fs-n">${count}</span>`;
+    const wrap = document.createElement("div");
+    wrap.className = "fs-body";
+    det.appendChild(sum);
+    det.appendChild(wrap);
+    return [det, wrap];
+  };
+
+  // Field filter (same behaviour as the generic grouper).
+  const filter = document.createElement("input");
+  filter.className = "form-field-filter";
+  filter.type = "search";
+  filter.placeholder = "🔍 Filter fields…";
+  filter.autocomplete = "off";
+  frag.appendChild(filter);
+
+  // Lead: AssetName, then websiteurl + documentroot.
+  const leadCount = ASSET_LEAD.filter((c) => map.has(c)).length;
+  if (leadCount) {
+    const [det, wrap] = section("General", true, leadCount);
+    for (const col of ASSET_LEAD) place(wrap, col);
+    frag.appendChild(det);
+  }
+
+  // Named groups (with optional subgroups).
+  for (const g of ASSET_GROUPS) {
+    const all = [...(g.subgroups || []).flatMap((s) => s.fields), ...(g.fields || [])];
+    const count = all.filter((c) => map.has(c) && !used.has(c)).length;
+    if (!count) continue;
+    const [det, wrap] = section(g.title, true, count);
+    for (const s of g.subgroups || []) {
+      if (!s.fields.some((c) => map.has(c))) continue;
+      const sub = document.createElement("div");
+      sub.className = "fs-subhead fs-wide";
+      sub.textContent = s.title;
+      wrap.appendChild(sub);
+      for (const c of s.fields) place(wrap, c);
+    }
+    for (const c of g.fields || []) place(wrap, c);
+    frag.appendChild(det);
+  }
+
+  // Leftovers → Details (open) + Advanced & system (collapsed).
+  const details: HTMLElement[] = [];
+  const advanced: HTMLElement[] = [];
+  for (const el of fieldEls) {
+    const col = colOf(el);
+    if (used.has(col)) continue;
+    const ci = byName.get(col);
+    if (ci && isAdvancedFormCol("ASSET", ci)) advanced.push(el);
+    else details.push(el);
+  }
+  for (const [title, els, open] of [["Details", details, true], ["Advanced & system", advanced, false]] as const) {
+    if (!els.length) continue;
+    const [det, wrap] = section(title, open, els.length);
+    for (const el of els) { if (isWideField(el)) el.classList.add("fs-wide"); wrap.appendChild(el); }
+    frag.appendChild(det);
+  }
+
+  filter.addEventListener("input", () => {
+    const q = filter.value.trim().toLowerCase();
+    body.querySelectorAll<HTMLElement>(".form-section").forEach((sec) => {
+      let anyVisible = false;
+      sec.querySelectorAll<HTMLElement>(".fs-body > div").forEach((f) => {
+        if (f.classList.contains("fs-subhead")) return; // subgroup headers aren't fields
+        const hay = ((f.querySelector("label")?.textContent || "") + " " + f.id).toLowerCase();
+        const show = !q || hay.includes(q);
+        f.style.display = show ? "" : "none";
+        if (show) anyVisible = true;
+      });
+      sec.style.display = !q || anyVisible ? "" : "none";
+      (sec as HTMLDetailsElement).open = q ? anyVisible : sec.dataset.defaultOpen === "1";
+    });
+  });
+
+  body.insertBefore(frag, marker);
+  marker.remove();
+  return true;
+}
+
 // Splits a long form into collapsible sections (required → details → advanced)
 // by reparenting the per-column wrappers (id "<prefix>field_<col>", incl. the
 // "_search"/"_vulnsearch" helpers). Adds a field filter + responsive 2-col layout.
@@ -5820,6 +5992,8 @@ function groupFormFields(prefix: string, table: string): void {
   const body = document.getElementById(prefix === "ef_" ? "edit-modal-body" : "modal-body");
   if (!body) return;
   const tag = `${prefix}field_`;
+  // ASSET has a bespoke, user-defined field order + groups.
+  if (table === "ASSET" && layoutAssetForm(prefix, body, tag)) return;
   const fieldEls = ([...body.children] as HTMLElement[]).filter((el) => el.id && el.id.startsWith(tag));
   if (fieldEls.length < 8) return; // short forms stay flat — grouping only helps long ones
   const colOf = (el: HTMLElement): string => el.id.slice(tag.length).replace(/_(search|vulnsearch)$/, "");
@@ -6215,6 +6389,8 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     appendAttackSurfaceButton(body, aid);
     appendAgentScan(body, String(row["AssetName"] ?? ""));
     await appendCpeTable(body, aid);
+    await appendAssetLinkTable(body, aid, { childTable: "ASSETPRODUCT", fkCol: "ProductID", refTable: "PRODUCT", refIdCol: "ProductID", refLabelCol: "ProductName", titleKey: "alink.products.title" });
+    await appendAssetLinkTable(body, aid, { childTable: "APPLICATIONFORASSET", fkCol: "ApplicationID", refTable: "APPLICATION", refIdCol: "ApplicationID", refLabelCol: "ApplicationName", titleKey: "alink.apps.title" });
     await appendOvalTable(body, aid);
     await appendVulnTable(body, aid);
     await appendAuditTable(body, aid);
@@ -6223,6 +6399,8 @@ async function openEditModal(row: Record<string, unknown>): Promise<void> {
     appendTagsPanel(body, "Tags (ASSETTAG)", aid, api.getAssetTags, api.setAssetTags, null);
     await appendAssetOrgPanel(body, aid);
     await appendAssetPersonPanel(body, aid);
+  } else if (currentTable === "APPLICATION") {
+    await appendApplicationPersonPanel(body, Number(row["ApplicationID"]) || null);
   } else if (currentTable === "VULNERABILITY") {
     await appendVulnCpeTable(body, Number(row["VulnerabilityID"]) || null);
     appendTagsPanel(body, "Tags (VULNERABILITYTAG)", Number(row["VulnerabilityID"]) || null,
@@ -7238,6 +7416,97 @@ async function appendAssetPersonPanel(body: HTMLElement, assetId: number | null)
   render();
 }
 
+// Suggested roles (APPLICATIONPERSON.Usage) — free input, so any role can be entered.
+const APPLICATION_PERSON_ROLES = ["Owner", "Maintainer", "Architect", "Developer", "Operator", "Tester", "User", "Business Owner", "Product Owner", "Security Champion"];
+
+/**
+ * People linked to an APPLICATION (APPLICATIONPERSON, Usage = the role: Owner/Maintainer/…), inside the
+ * APPLICATION edit modal. Lists the linked people + lets the user add (person picker + role) / remove one.
+ * Uses the generic row API (getRows filtered by ApplicationID + insertRow + deleteRow) — no dedicated
+ * endpoint. Persists immediately (the application already exists in the edit form).
+ */
+async function appendApplicationPersonPanel(body: HTMLElement, appId: number | null): Promise<void> {
+  const div = document.createElement("div");
+  div.style.cssText = "margin-top:14px";
+  const header = document.createElement("div");
+  header.style.cssText = "font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text)";
+  header.textContent = "People (APPLICATIONPERSON)";
+  const box = document.createElement("div");
+  box.style.cssText = "border:1px solid var(--border);border-radius:6px;padding:8px;margin-bottom:6px";
+  div.appendChild(header); div.appendChild(box);
+
+  if (!appId) {
+    box.innerHTML = `<div style="color:var(--text-dim);font-size:12px">Save the application first, then link people.</div>`;
+    body.appendChild(div);
+    return;
+  }
+
+  // PersonID → FullName (best-effort; the raw id is shown if the lookup is unavailable).
+  const idToName = new Map<string, string>();
+  try {
+    for (const o of await api.getLookup("XORCISM", "PERSON", "PersonID", "FullName")) {
+      const id = o.id == null ? "" : String(o.id); if (id) idToName.set(id, o.label == null ? "" : String(o.label));
+    }
+  } catch { /* rights / unavailable */ }
+
+  const render = async (): Promise<void> => {
+    box.innerHTML = `<div style="color:var(--text-dim);font-size:12px">Loading…</div>`;
+    let rows: Record<string, unknown>[] = [];
+    try { rows = (await api.getRows("XORCISM", "APPLICATIONPERSON", 500, 0, undefined, undefined, undefined, null, { ApplicationID: String(appId) })).rows || []; }
+    catch (e) { box.innerHTML = `<div style="color:var(--danger);font-size:12px">${String(e)}</div>`; return; }
+    header.textContent = `People (APPLICATIONPERSON) — ${rows.length}`;
+    box.innerHTML = "";
+    if (!rows.length) { box.innerHTML = `<div style="color:var(--text-dim);font-size:12px">No person linked.</div>`; return; }
+    rows.forEach((r) => {
+      const pid = String(r["PersonID"] ?? "");
+      const pname = idToName.get(pid) || (pid ? `#${pid}` : "—");
+      const usage = String(r["Usage"] ?? "") || "—";
+      const chip = document.createElement("div");
+      chip.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:4px 6px;font-size:12px;border-bottom:1px solid var(--surface)";
+      const lbl = document.createElement("span"); lbl.textContent = `${pname} — ${usage}`;
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.className = "btn btn-ghost btn-sm"; x.style.cssText = "padding:0 6px";
+      x.onclick = async () => { try { await api.deleteRow("XORCISM", "APPLICATIONPERSON", Number(r["rowid"])); await render(); } catch (e) { toast(t("link.removeErr") + " " + e, "err"); } };
+      chip.appendChild(lbl); chip.appendChild(x); box.appendChild(chip);
+    });
+  };
+
+  const addRow = document.createElement("div");
+  addRow.style.cssText = "display:flex;gap:6px;align-items:center;flex-wrap:wrap";
+  let picked: { id: number; name: string } | null = null;
+  const personLabel = document.createElement("span");
+  personLabel.style.cssText = "font-size:12px;color:var(--text-soft);min-width:80px";
+  const personPicker = makeSearchPicker(
+    "Search person…",
+    async (q) => (await api.lookupPersons(q)).map((p) => ({ id: p.PersonID, name: p.PersonName })),
+    (item) => { picked = item; personLabel.textContent = `${item.name} (#${item.id})`; }
+  );
+  const roleListId = `appperson-role-${Math.random().toString(36).slice(2)}`;
+  const roleInput = document.createElement("input");
+  roleInput.setAttribute("list", roleListId);
+  roleInput.placeholder = "Role (Owner, Maintainer, …)";
+  roleInput.value = "Owner";
+  roleInput.style.cssText = "flex:0 0 150px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px";
+  const dl = document.createElement("datalist"); dl.id = roleListId;
+  APPLICATION_PERSON_ROLES.forEach((r) => { const o = document.createElement("option"); o.value = r; dl.appendChild(o); });
+  const addBtn = document.createElement("button");
+  addBtn.type = "button"; addBtn.className = "btn btn-primary btn-sm"; addBtn.textContent = "+ Add";
+  addBtn.onclick = async () => {
+    if (!picked) { toast("Select a person first", "err"); return; }
+    try {
+      const nid = await api.getNextId("XORCISM", "APPLICATIONPERSON");
+      const row: Record<string, unknown> = { ApplicationID: appId, PersonID: picked.id, Usage: roleInput.value.trim() || "User", CreatedDate: new Date().toISOString() };
+      if (nid.column && nid.value != null) row[nid.column] = nid.value;
+      await api.insertRow("XORCISM", "APPLICATIONPERSON", row);
+      picked = null; personLabel.textContent = ""; roleInput.value = "Owner";
+      await render();
+    } catch (e) { toast(t("link.addErr") + " " + e, "err"); }
+  };
+  addRow.appendChild(personPicker); addRow.appendChild(personLabel); addRow.appendChild(roleInput); addRow.appendChild(dl); addRow.appendChild(addBtn);
+  div.appendChild(addRow);
+  body.appendChild(div);
+  await render();
+}
+
 // Questions selected/created pending during the CREATION of a QUESTIONNAIRE
 // (QuestionnaireID not yet assigned); saved into QUESTIONFORQUESTIONNAIRE
 // right after the insertion. The insertion order (Set) = the order of the links.
@@ -7320,6 +7589,72 @@ async function appendCpeTable(body: HTMLElement, assetId: number | null): Promis
   } else {
     box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("link.saveFirst")}</div>`;
   }
+}
+
+// Read-only table of a child link table for the current asset (ASSETPRODUCT → PRODUCT,
+// APPLICATIONFORASSET → APPLICATION): lists the linked entity's name, with a "View" link that
+// opens the dedicated grid filtered to this asset and an "Add" link that opens that grid's
+// insert form with the AssetID pre-filled (generic ?new=1 deep-link).
+async function appendAssetLinkTable(
+  body: HTMLElement,
+  assetId: number | null,
+  cfg: { childTable: string; fkCol: string; refTable: string; refIdCol: string; refLabelCol: string; titleKey: string }
+): Promise<void> {
+  const esc = (s: unknown): string => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const div = document.createElement("div");
+  div.style.marginTop = "12px";
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px";
+  const label = document.createElement("label");
+  label.style.cssText = "font-size:12px;color:var(--text-muted)";
+  label.textContent = t(cfg.titleKey);
+  const actions = document.createElement("div");
+  actions.style.cssText = "display:flex;gap:12px;align-items:center";
+  header.appendChild(label); header.appendChild(actions);
+
+  const box = document.createElement("div");
+  box.style.cssText = "max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:6px;background:var(--bg)";
+  div.appendChild(header); div.appendChild(box); body.appendChild(div);
+
+  if (!assetId) {
+    box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("link.saveFirst")}</div>`;
+    return;
+  }
+
+  // "View" (open the dedicated grid filtered to this asset) + "Add" (insert form, AssetID pre-filled).
+  const viewLink = document.createElement("a");
+  viewLink.href = `/?db=XORCISM&table=${encodeURIComponent(cfg.childTable)}&filterCol=AssetID&filterVal=${assetId}`;
+  viewLink.textContent = t("alink.view");
+  viewLink.title = t("alink.view.title");
+  viewLink.style.cssText = "color:var(--accent);font-size:12px;text-decoration:none";
+  const addLink = document.createElement("a");
+  addLink.href = `/?db=XORCISM&table=${encodeURIComponent(cfg.childTable)}&new=1&AssetID=${assetId}`;
+  addLink.textContent = t("alink.add");
+  addLink.title = t("alink.add.title");
+  addLink.style.cssText = "color:var(--accent);font-size:12px;text-decoration:none;font-weight:600";
+  actions.appendChild(viewLink); actions.appendChild(addLink);
+
+  // Resolve the linked entity's id → display name (best-effort; falls back to #id).
+  const idToName = new Map<string, string>();
+  try {
+    for (const o of await api.getLookup("XORCISM", cfg.refTable, cfg.refIdCol, cfg.refLabelCol)) {
+      const id = o.id == null ? "" : String(o.id); if (id) idToName.set(id, o.label == null ? "" : String(o.label));
+    }
+  } catch { /* rights / unavailable */ }
+
+  let rows: Record<string, unknown>[] = [];
+  try { rows = (await api.getRows("XORCISM", cfg.childTable, 500, 0, undefined, undefined, undefined, null, { AssetID: String(assetId) })).rows || []; }
+  catch (e) { box.innerHTML = `<div style="padding:8px;color:var(--danger);font-size:12px">${esc(e)}</div>`; return; }
+  label.textContent = `${t(cfg.titleKey)} (${rows.length})`;
+  if (!rows.length) { box.innerHTML = `<div style="padding:8px;color:var(--text-dim);font-size:12px">${t("alink.none")}</div>`; return; }
+  box.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr><th style="text-align:left;padding:5px 8px;color:var(--text-muted);border-bottom:1px solid var(--border)">${esc(cfg.refLabelCol)}</th></tr></thead>
+    <tbody>${rows.map((r) => {
+      const rid = String(r[cfg.fkCol] ?? "");
+      const name = idToName.get(rid) || (rid ? `#${rid}` : "—");
+      return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:5px 8px">${esc(name)}</td></tr>`;
+    }).join("")}</tbody></table>`;
 }
 
 // Read-only table of the CPEs affected by a vulnerability (XVULNERABILITY.VULNERABILITYFORCPE → CPE).
@@ -9937,6 +10272,8 @@ async function openInsertModal(): Promise<void> {
   if (currentTable === "ASSET") {
     resetPendingAssetLinks(); // enables link staging (saved at insertion)
     await appendCpeTable(body, null);
+    await appendAssetLinkTable(body, null, { childTable: "ASSETPRODUCT", fkCol: "ProductID", refTable: "PRODUCT", refIdCol: "ProductID", refLabelCol: "ProductName", titleKey: "alink.products.title" });
+    await appendAssetLinkTable(body, null, { childTable: "APPLICATIONFORASSET", fkCol: "ApplicationID", refTable: "APPLICATION", refIdCol: "ApplicationID", refLabelCol: "ApplicationName", titleKey: "alink.apps.title" });
     await appendOvalTable(body, null);
     await appendVulnTable(body, null);
     await appendAuditTable(body, null);
@@ -9948,6 +10285,8 @@ async function openInsertModal(): Promise<void> {
     });
     await appendAssetOrgPanel(body, null);
     await appendAssetPersonPanel(body, null);
+  } else if (currentTable === "APPLICATION") {
+    await appendApplicationPersonPanel(body, null); // shows a "save first" hint until the app exists
   } else if (currentTable === "VULNERABILITY") {
     pendingVulnTags = new Set(); // buffered tags (creation) → saved after the insert
     appendTagsPanel(body, "Tags (VULNERABILITYTAG)", null, api.getVulnerabilityTags, api.setVulnerabilityTags, {

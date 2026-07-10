@@ -5473,6 +5473,8 @@ export function ensureGrcColumns(): void {
   // adequate), and/or OPERATING EFFECTIVENESS (does it operate over a period). Default 'Operating
   // Effectiveness' is applied lazily by the compliance module, not here, to leave existing audits as-is.
   addCols("XCOMPLIANCE", "AUDIT", { AssessmentType: "TEXT" });
+  // Application criticality (business impact) — a Very Low…Very High scale on the APPLICATION inventory.
+  addCols("XORCISM", "APPLICATION", { Criticality: "TEXT" });
   // Policy lifecycle (GRC) + document/management-system metadata (ISO 42001 / 27001 …).
   addCols("XORCISM", "POLICY", {
     Status: "TEXT", WorkflowStatus: "TEXT", Version: "TEXT", PolicyReference: "TEXT",

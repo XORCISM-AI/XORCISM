@@ -39,18 +39,18 @@
 <body>
 <div class="topbar">
   <span class="logo">&#9670; XORCISM</span>
-  <a href="/">&#8592; Explorer</a>
-  <a href="/identities">&#128100; Identities</a>
-  <a href="/identity-governance">&#9989; Certification</a>
-  <a href="/itdr">&#128270; ITDR</a>
+  <a href="/" data-t="agov.navExplorer">&#8592; Explorer</a>
+  <a href="/identities" data-t="agov.navIdentities">&#128100; Identities</a>
+  <a href="/identity-governance" data-t="agov.navCert">&#9989; Certification</a>
+  <a href="/itdr" data-t="agov.navItdr">&#128270; ITDR</a>
   <span class="spacer"></span>
-  <span class="title">&#128273; Access Governance</span>
+  <span class="title" data-t="agov.navTitle">&#128273; Access Governance</span>
 </div>
 
 <div class="ag-wrap">
-  <h1>Access Governance</h1>
-  <div class="ag-sub">The entitlement fabric over your identities, with the controls Saviynt is built on. An <b>entitlement catalogue</b> (who holds what access, direct / role / time-bound JIT), a <b>Segregation-of-Duties</b> engine that detects toxic combinations across the estate (e.g. <i>create-vendor + pay-invoice</i>) at the function level, <b>access requests</b> with a <b>preventive SoD pre-check</b> (block conflicting grants before they happen), and <b>JIT</b> time-bound privileged elevation that auto-expires. Complements identity inventory (/identities) and access certification (/identity-governance).</div>
-  <div id="ag-body"><div class="muted" style="padding:24px;text-align:center">Loading access governance…</div></div>
+  <h1 data-t="agov.h1">Access Governance</h1>
+  <div class="ag-sub" data-t-html="agov.sub">The entitlement fabric over your identities, with the controls Saviynt is built on. An <b>entitlement catalogue</b> (who holds what access, direct / role / time-bound JIT), a <b>Segregation-of-Duties</b> engine that detects toxic combinations across the estate (e.g. <i>create-vendor + pay-invoice</i>) at the function level, <b>access requests</b> with a <b>preventive SoD pre-check</b> (block conflicting grants before they happen), and <b>JIT</b> time-bound privileged elevation that auto-expires. Complements identity inventory (/identities) and access certification (/identity-governance).</div>
+  <div id="ag-body"><div class="muted" style="padding:24px;text-align:center" data-t="agov.loading">Loading access governance…</div></div>
 </div>
 
 <script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>

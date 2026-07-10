@@ -132,6 +132,8 @@ tr:hover td{background:var(--row-hover)}
 .form-section .fs-body>div[id$="_namehint"],
 .form-section .fs-body>div[id$="_search"],
 .form-section .fs-body>div[id$="_vulnsearch"]{grid-column:1 / -1}
+.form-section .fs-body>.fs-subhead{grid-column:1 / -1;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin:8px 0 2px;padding-top:8px;border-top:1px solid var(--border)}
+.form-section .fs-body>.fs-subhead:first-child{margin-top:0;padding-top:0;border-top:0}
 .form-field-filter{margin:0 0 12px}
 .field-invalid{outline:1px solid var(--danger);outline-offset:3px;border-radius:6px}
 

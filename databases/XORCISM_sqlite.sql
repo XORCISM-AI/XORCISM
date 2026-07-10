@@ -1336,6 +1336,7 @@ CREATE TABLE "APPLICATION"(
 	"ApplicationGUID" TEXT NULL,
 	"ApplicationName" TEXT NOT NULL,
 	"ApplicationDescription" TEXT NULL,
+	"Criticality" TEXT NULL,
 	"CreatedDate" TEXT NULL,
 	"CreationObjectID" INTEGER NULL,
 	BLOB TEXT NULL,
