@@ -350,13 +350,13 @@ const SEV_WEIGHT = (s: string): number => {
 
 export interface EnterpriseRiskBreakdown {
   total: number;
-  assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number;
+  assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number; threatModels: number;
   drivers: { key: string; label: string; value: number }[];   // signed contributors (for charts)
 }
 
 /** Full enterprise-risk breakdown for a tenant (the score + its signed contributors). */
 export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRiskBreakdown {
-  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, drivers: [] };
+  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, drivers: [] };
   if (tenantId == null) return empty;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -458,9 +458,25 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
     credits += num(tr.n) * -0.5;
   } catch { /* no trainings */ }
 
-  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits));
+  // — THREAT-MODEL ASSURANCE (negative): proactive threat modeling that covers assets &
+  //   applications reduces risk — like completed audits, but a deliberately SMALLER per-item
+  //   weight (−2 per approved model, −1 per asset/application actually covered; capped at −30,
+  //   strictly weaker than the audit credit's −5/each and −40 completion cap). THREATMODEL and
+  //   its ASSET/APPLICATION coverage links all live in the XORCISM db (the `xo` handle).
+  let threatModels = 0;
+  try {
+    const nApproved = num((xo.prepare(
+      "SELECT COUNT(*) n FROM THREATMODEL WHERE TenantID = ? AND LOWER(COALESCE(Status,'')) IN ('approved','completed','closed','done','published','validated')"
+    ).get(tenantId) as { n: number }).n);
+    let covAssets = 0, covApps = 0;
+    try { covAssets = num((xo.prepare("SELECT COUNT(DISTINCT AssetID) n FROM ASSETTHREATMODEL WHERE TenantID = ? AND AssetID IS NOT NULL").get(tenantId) as { n: number }).n); } catch { /* table absent */ }
+    try { covApps = num((xo.prepare("SELECT COUNT(DISTINCT ApplicationID) n FROM APPLICATIONTHREATMODEL WHERE TenantID = ? AND ApplicationID IS NOT NULL").get(tenantId) as { n: number }).n); } catch { /* table absent */ }
+    threatModels = Math.max(-30, -(2 * nApproved + covAssets + covApps));
+  } catch { /* no threat models */ }
+
+  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels));
   return {
-    total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits),
+    total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits), threatModels: Math.round(threatModels),
     drivers: [
       { key: "assets", label: "Asset hygiene", value: Math.round(assets) },
       { key: "riskRegister", label: "Risk register", value: riskRegister },
@@ -468,6 +484,7 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
       { key: "compliance", label: "Compliance debt", value: compliance },
       { key: "patch", label: "Overdue patches", value: patch },
       { key: "credits", label: "Assurance credits", value: Math.round(credits) },
+      { key: "threatModels", label: "Threat modeling", value: Math.round(threatModels) },
     ].filter((d) => d.value !== 0),
   };
 }

@@ -223,7 +223,7 @@ function isReadonlyFormColumn(table: string, col: string): boolean {
 }
 
 // Tables whose modal is widened (relational sub-panels).
-const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT", "ATTACKTECHNIQUE", "CONTROL", "PRODUCT", "APPLICATION", "APPLICATIONPERSON", "APPLICATIONFORASSET"]);
+const WIDE_MODAL_TABLES = new Set<string>(["ASSET", "THREATMODEL", "THREATMODELTHREAT", "OVALDEFINITION", "QUESTIONNAIRE", "ANSWER", "THREAT", "CRISISSCENARIO", "VULNERABILITY", "AUDIT", "ASSETVULNERABILITY", "DOCUMENT", "BUGBOUNTYSUBMISSION", "IDENTITY", "AUDITFINDING", "RISKREGISTERENTRY", "BUGBOUNTYPROGRAM", "HUNT", "SIGMARULE", "INTELEXCHANGE", "TICKET", "ASSETVULNERABILITYREMEDIATION", "INCIDENT", "ATTACKTECHNIQUE", "CONTROL", "PRODUCT", "APPLICATION", "APPLICATIONPERSON", "APPLICATIONFORASSET", "ASSETTHREATMODEL", "APPLICATIONTHREATMODEL"]);
 
 // Display reordering of fields in the forms:
 // table → list of [columnToMove, columnAfterWhich].
@@ -821,6 +821,14 @@ const NAME_SEARCH_COLUMNS: Record<string, NameSearchSpec> = {
   "ASSETPLATFORM.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName" },
   "ASSETPRODUCT.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName" },
   "ASSETPRODUCT.ProductID": { db: "XORCISM", table: "PRODUCT", idCol: "ProductID", labelCol: "ProductName" },
+  // ASSETTHREATMODEL: searchable name comboboxes replace the raw ID fields (fill the IDs).
+  "ASSETTHREATMODEL.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName", replaceIdField: true },
+  "ASSETTHREATMODEL.ThreatModelID": { db: "XORCISM", table: "THREATMODEL", idCol: "ThreatModelID", labelCol: "ThreatModelName", searchLabel: "ThreatModelName", replaceIdField: true },
+  "ASSETTHREATMODEL.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "PersonName", replaceIdField: true },
+  // APPLICATIONTHREATMODEL: searchable name comboboxes replace the raw ID fields (fill the IDs).
+  "APPLICATIONTHREATMODEL.ApplicationID": { db: "XORCISM", table: "APPLICATION", idCol: "ApplicationID", labelCol: "ApplicationName", searchLabel: "ApplicationName", replaceIdField: true },
+  "APPLICATIONTHREATMODEL.ThreatModelID": { db: "XORCISM", table: "THREATMODEL", idCol: "ThreatModelID", labelCol: "ThreatModelName", searchLabel: "ThreatModelName", replaceIdField: true },
+  "APPLICATIONTHREATMODEL.PersonID": { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", searchLabel: "PersonName", replaceIdField: true },
   // ASSETBLACKLIST: searchable name comboboxes replace the raw ID fields (fill the IDs).
   "ASSETBLACKLIST.AssetID": { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", searchLabel: "AssetName", replaceIdField: true },
   "ASSETBLACKLIST.OrganisationID": { db: "XORCISM", table: "ORGANISATION", idCol: "OrganisationID", labelCol: "OrganisationName", searchLabel: "OrganisationName", replaceIdField: true },
@@ -1158,6 +1166,18 @@ const GRID_DISPLAY_COLUMNS: Record<string, GridDisplaySpec[]> = {
   ASSETCONTROL: [
     { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetID", colLabel: "AssetName" },
     { db: "XORCISM", table: "CONTROL", idCol: "ControlID", labelCol: "ControlName", hintLabel: "ControlName", srcCol: "ControlID", colLabel: "ControlName" },
+    { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "PersonName", srcCol: "PersonID", colLabel: "PersonName" },
+  ],
+  // ASSETTHREATMODEL: resolved asset / threat-model / person names, shown right after each ID.
+  ASSETTHREATMODEL: [
+    { db: "XORCISM", table: "ASSET", idCol: "AssetID", labelCol: "AssetName", hintLabel: "AssetName", srcCol: "AssetID", colLabel: "AssetName" },
+    { db: "XORCISM", table: "THREATMODEL", idCol: "ThreatModelID", labelCol: "ThreatModelName", hintLabel: "ThreatModelName", srcCol: "ThreatModelID", colLabel: "ThreatModelName" },
+    { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "PersonName", srcCol: "PersonID", colLabel: "PersonName" },
+  ],
+  // APPLICATIONTHREATMODEL: resolved application / threat-model / person names, right after each ID.
+  APPLICATIONTHREATMODEL: [
+    { db: "XORCISM", table: "APPLICATION", idCol: "ApplicationID", labelCol: "ApplicationName", hintLabel: "ApplicationName", srcCol: "ApplicationID", colLabel: "ApplicationName" },
+    { db: "XORCISM", table: "THREATMODEL", idCol: "ThreatModelID", labelCol: "ThreatModelName", hintLabel: "ThreatModelName", srcCol: "ThreatModelID", colLabel: "ThreatModelName" },
     { db: "XORCISM", table: "PERSON", idCol: "PersonID", labelCol: "FullName", hintLabel: "PersonName", srcCol: "PersonID", colLabel: "PersonName" },
   ],
   // BACKUPPLAN: resolved asset & owner names, shown right after AssetID / PersonID.
@@ -3028,6 +3048,8 @@ function mkEnumSelect(id: string, options: string[], selected: string): HTMLSele
 // Columns with a calendar icon (date picker) WITHOUT
 // automatic pre-fill. Key "TABLE.Column".
 const DATE_PICKER_COLUMNS = new Set<string>([
+  "ASSETTHREATMODEL.CreatedDate", "ASSETTHREATMODEL.ValidFrom", "ASSETTHREATMODEL.ValidUntil",
+  "APPLICATIONTHREATMODEL.CreatedDate", "APPLICATIONTHREATMODEL.ValidFrom", "APPLICATIONTHREATMODEL.ValidUntil",
   "INCIDENT.datetime_reported",
   "INCIDENT.start_datetime",
   "INCIDENT.end_datetime",
@@ -3129,6 +3151,8 @@ function hasDatePicker(table: string, col: string): boolean {
 
 // Columns whose picker returns only a DATE ("YYYY-MM-DD", no time).
 const DATE_ONLY_PICKER_COLUMNS = new Set<string>([
+  "ASSETTHREATMODEL.CreatedDate", "ASSETTHREATMODEL.ValidFrom", "ASSETTHREATMODEL.ValidUntil",
+  "APPLICATIONTHREATMODEL.CreatedDate", "APPLICATIONTHREATMODEL.ValidFrom", "APPLICATIONTHREATMODEL.ValidUntil",
   "VULNERABILITY.DueDate",
   "QUESTIONNAIREFORORGANISATION.DueDate",
   "QUESTIONNAIREFORORGANISATION.CompletedDate",

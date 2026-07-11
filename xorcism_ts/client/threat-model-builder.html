@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Threat Model Builder</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tmb-wrap{max-width:1400px;margin:0 auto;padding:16px}
+  .tmb-wrap h1{font-size:20px;margin:0 0 2px}
+  .tmb-sub{color:#94a3b8;font-size:13px;margin-bottom:12px}
+  .tmb-grid{display:grid;grid-template-columns:390px 1fr;gap:16px;align-items:start}
+  @media(max-width:980px){.tmb-grid{grid-template-columns:1fr}}
+  .panel{background:#0f1117;border:1px solid #2d3250;border-radius:12px;padding:14px}
+  .panel h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#8b95b5;margin:0 0 8px}
+  .fld{margin-bottom:10px}
+  .fld label{display:block;font-size:11px;color:#8b95b5;margin-bottom:3px}
+  .in{width:100%;background:#161a2e;border:1px solid #2d3250;border-radius:7px;padding:7px 9px;color:#e2e8f0;font-size:13px;box-sizing:border-box}
+  .palette{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+  .sbtn{border:1px solid;border-radius:8px;padding:6px 9px;font-size:12px;font-weight:700;cursor:pointer;background:#161a2e;display:flex;align-items:center;gap:6px}
+  .sbtn .dot{width:16px;height:16px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#0b0d18;font-weight:800}
+  .tcard{border:1px solid #2d3250;border-radius:9px;padding:9px;margin-bottom:8px;background:#12162a}
+  .tcard .trow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .badge{width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#0b0d18;flex:0 0 auto}
+  .sel{background:#161a2e;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12px;padding:4px 6px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#1e2940;border:1px solid #2d3250;border-radius:14px;padding:2px 8px;font-size:11px;color:#cbd5e1;margin:2px 3px 0 0}
+  .chip b{cursor:pointer;color:#f87171}
+  .x{cursor:pointer;color:#f87171;font-weight:700;border:none;background:none;font-size:14px}
+  .mini{font-size:11px;color:#64748b}
+  .save{width:100%;background:#7c83fd;color:#0b0d18;border:none;border-radius:9px;font-size:14px;font-weight:800;padding:11px;cursor:pointer;margin-top:6px}
+  .save:hover{background:#9aa0ff}
+  .save:disabled{opacity:.5;cursor:not-allowed}
+  .ghost{background:#161a2e;border:1px solid #2d3250;color:#cbd5e1;border-radius:7px;padding:5px 8px;font-size:11px;cursor:pointer}
+  #tmb-canvas{border:1px solid #2d3250;border-radius:12px;background:#0f1117;overflow:auto;min-height:420px}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#94a3b8;margin:8px 0 0}
+  .legend .lg{display:inline-flex;align-items:center;gap:5px}
+  .legend .sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+  #tmb-status{font-size:12px;margin-top:8px;min-height:16px}
+  svg text{font-family:inherit}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/threat-model">&#129504; Threat Models</a>
+  <a href="/threat-model-graph">&#128506;&#65039; Diagram</a>
+  <a href="/trace">&#128737;&#65039; TRACE</a>
+  <span class="spacer"></span>
+  <span class="title" data-t="tmb.barTitle">&#129513; Threat Model Builder</span>
+</div>
+
+<div class="tmb-wrap">
+  <h1 data-t="tmb.title">Visual Threat Model Builder</h1>
+  <div class="tmb-sub" data-t="tmb.sub">Assemble a threat model on a live graph — name it, drop STRIDE threats, attach mitigating controls and the assets in scope — then create it in one click. The saved model opens in the diagram view.</div>
+
+  <div class="tmb-grid">
+    <!-- ── controls ── -->
+    <div>
+      <div class="panel">
+        <h3 data-t="tmb.model">Model</h3>
+        <div class="fld"><label data-t="tmb.name">Name *</label><input class="in" id="ml-name" placeholder="e.g. Payment flow (STRIDE)"></div>
+        <div class="fld"><label data-t="tmb.owner">Owner</label><input class="in" id="ml-owner" placeholder="optional"></div>
+        <div class="mini" data-t="tmb.method">Methodology: STRIDE · Status: Draft</div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3 data-t="tmb.addThreat">Add a STRIDE threat</h3>
+        <div class="palette" id="ml-palette"></div>
+        <div class="mini" data-t="tmb.paletteHint">Click a category to add a threat node.</div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3><span data-t="tmb.threats">Threats</span> <span id="ml-tcount" class="mini"></span></h3>
+        <div id="ml-threats"><div class="mini" data-t="tmb.noThreats">No threats yet — add one above.</div></div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <h3 data-t="tmb.scope">Assets in scope</h3>
+        <div class="fld">
+          <input class="in" id="ml-asset-input" list="ml-asset-dl" placeholder="Search AssetName…">
+          <datalist id="ml-asset-dl"></datalist>
+        </div>
+        <div id="ml-assets"></div>
+      </div>
+
+      <div class="panel" style="margin-top:12px">
+        <button class="save" id="ml-save" data-t="tmb.create">✚ Create threat model</button>
+        <div id="tmb-status"></div>
+      </div>
+    </div>
+
+    <!-- ── live graph ── -->
+    <div>
+      <div class="panel" style="padding:10px">
+        <div id="tmb-canvas"><div class="mini" style="padding:40px;text-align:center" data-t="tmb.empty">Name your model and add STRIDE threats — the graph builds itself here.</div></div>
+        <div class="legend" id="ml-legend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/threat-model-builder.js"></script>
+</body>
+</html>

@@ -3849,6 +3849,24 @@ export function ensureThreatModelTables(): void {
       ThreatModelControlID INTEGER PRIMARY KEY,
       ThreatModelThreatID INTEGER, ControlID INTEGER, Status TEXT,
       CreatedDate TEXT, TenantID INTEGER);
+    -- ASSET ↔ THREATMODEL coverage link: which threat model covers an asset, over a
+    -- validity window, with the accountable person. (Asset-side coverage record — distinct
+    -- from THREATMODELASSET, which records a model's scope.)
+    CREATE TABLE IF NOT EXISTS ASSETTHREATMODEL (
+      AssetThreatModelID INTEGER PRIMARY KEY,
+      AssetID INTEGER, ThreatModelID INTEGER,
+      CreatedDate TEXT, ValidFrom TEXT, ValidUntil TEXT,
+      PersonID INTEGER, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_assetthreatmodel_asset ON ASSETTHREATMODEL(AssetID);
+    CREATE INDEX IF NOT EXISTS ix_assetthreatmodel_tm ON ASSETTHREATMODEL(ThreatModelID);
+    -- APPLICATION ↔ THREATMODEL coverage link (application-side counterpart of ASSETTHREATMODEL).
+    CREATE TABLE IF NOT EXISTS APPLICATIONTHREATMODEL (
+      ApplicationThreatModelID INTEGER PRIMARY KEY,
+      ApplicationID INTEGER, ThreatModelID INTEGER,
+      CreatedDate TEXT, ValidFrom TEXT, ValidUntil TEXT,
+      PersonID INTEGER, TenantID INTEGER);
+    CREATE INDEX IF NOT EXISTS ix_appthreatmodel_app ON APPLICATIONTHREATMODEL(ApplicationID);
+    CREATE INDEX IF NOT EXISTS ix_appthreatmodel_tm ON APPLICATIONTHREATMODEL(ThreatModelID);
     -- Attack trees (Schneier-style): a root goal decomposed via AND/OR gates into leaf attacks.
     CREATE TABLE IF NOT EXISTS ATTACKTREE (
       AttackTreeID INTEGER PRIMARY KEY, AttackTreeGUID TEXT,
