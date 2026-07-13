@@ -4123,7 +4123,7 @@ export function ensureThreatTables(): void {
       SigmaRuleGUID TEXT, SigmaRuleName TEXT, SigmaRuleDescription TEXT,
       SigmaYaml TEXT, LogSource TEXT, Level TEXT, Status TEXT, Author TEXT,
       SigmaReference TEXT, AttackTags TEXT,
-      SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT,
+      SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT, CqlQuery TEXT,
       CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
     -- YARA detection rules (malware classification). YaraSource = the full rule text; the
     -- store is the "support" side of YARA in XORCISM (browsable in the explorer, served to
@@ -4136,6 +4136,17 @@ export function ensureThreatTables(): void {
       CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
     CREATE INDEX IF NOT EXISTS ix_yararule_ref ON YARARULE(YaraReference);
     CREATE INDEX IF NOT EXISTS ix_yararule_name ON YARARULE(YaraRuleName);
+    -- Multi-platform detection rules (the Detection Engineering studio, /detection-engineering).
+    -- Sigma/YARA keep their own rich stores (SIGMARULE/YARARULE); DETECTIONRULE holds the network
+    -- (Suricata/Snort), host (Falco/Sysmon/OSQuery) and vendor (Sentinel/Defender/Splunk/Elastic/
+    -- CrowdStrike) detections generated from an ATT&CK technique. Platform+Language identify the tech.
+    CREATE TABLE IF NOT EXISTS DETECTIONRULE (
+      DetectionRuleID INTEGER PRIMARY KEY, DetectionRuleGUID TEXT,
+      Name TEXT, Description TEXT, Platform TEXT, Language TEXT, RuleText TEXT,
+      AttackTags TEXT, Level TEXT, Status TEXT, Author TEXT, Source TEXT, Reference TEXT,
+      CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+    CREATE INDEX IF NOT EXISTS ix_detectionrule_platform ON DETECTIONRULE(Platform);
+    CREATE INDEX IF NOT EXISTS ix_detectionrule_attack ON DETECTIONRULE(AttackTags);
     -- HUNT ↔ ATT&CK techniques links (derived from HUNT.AttackTags) and HUNT ↔ IOC.
     CREATE TABLE IF NOT EXISTS HUNTATTACK (
       HuntAttackID INTEGER PRIMARY KEY, HuntID INTEGER, AttackID TEXT,
@@ -4178,6 +4189,17 @@ export function ensureThreatTables(): void {
       Component TEXT, ResponsibleParty TEXT, Controls TEXT, MatrixOrder INTEGER, URL TEXT,
       CreatedDate TEXT);
     CREATE INDEX IF NOT EXISTS ix_saifrisk_component ON SAIFRISK(Component);
+    -- MAESTRO — CSA agentic-AI threat-modeling framework (Multi-Agent Environment, Security,
+    -- Threat, Risk & Outcome): 7 architecture layers + cross-layer threats, populated by
+    -- import_maestro.py. MAESTROTHREAT.LayerName='Cross-Layer' holds the cross-layer threats.
+    CREATE TABLE IF NOT EXISTS MAESTROLAYER (
+      MaestroLayerID INTEGER PRIMARY KEY, LayerNumber INTEGER, Name TEXT UNIQUE, Description TEXT,
+      IsVertical INTEGER, MatrixOrder INTEGER, URL TEXT);
+    -- MaestroID (e.g. M1.3, MX.2) is unique; threat Name repeats across layers so it is NOT unique.
+    CREATE TABLE IF NOT EXISTS MAESTROTHREAT (
+      MaestroThreatID INTEGER PRIMARY KEY, MaestroID TEXT UNIQUE, Name TEXT, Description TEXT,
+      LayerName TEXT, IsCrossLayer INTEGER, MatrixOrder INTEGER, URL TEXT);
+    CREATE INDEX IF NOT EXISTS ix_maestrothreat_layer ON MAESTROTHREAT(LayerName);
     -- Community threat-intel reports (detections.ai Intel Exchange), imported by
     -- the detections-ai connector. Idempotent by IntelReference (source URL).
     CREATE TABLE IF NOT EXISTS INTELEXCHANGE (
@@ -4368,6 +4390,35 @@ export function getA3mMatrix(): A3mMatrix {
   return { tactics: ordered.map((name) => ({ name, techniques: byTactic.get(name) ?? [] })).filter((t) => t.techniques.length || tactics.some((x) => x.name === t.name)) };
 }
 
+export interface MaestroThreat { maestroId: string; name: string; description: string | null }
+export interface MaestroMatrix {
+  layers: { number: number | null; name: string; description: string | null; isVertical: boolean; threats: MaestroThreat[] }[];
+  crossLayer: MaestroThreat[];
+  summary: { layers: number; threats: number; crossLayer: number };
+}
+
+/** MAESTRO matrix (CSA agentic-AI threat model): 7 architecture layers → threats, plus cross-layer threats. */
+export function getMaestroMatrix(): MaestroMatrix {
+  const empty: MaestroMatrix = { layers: [], crossLayer: [], summary: { layers: 0, threats: 0, crossLayer: 0 } };
+  const db = getDb("XTHREAT");
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='MAESTROTHREAT'").get())
+    return empty;
+  const layers = db.prepare("SELECT LayerNumber AS number, Name AS name, Description AS description, IsVertical AS isVertical FROM MAESTROLAYER ORDER BY CASE WHEN MatrixOrder IS NULL THEN 1 ELSE 0 END, MatrixOrder, LayerNumber").all() as { number: number | null; name: string; description: string | null; isVertical: number }[];
+  const threats = db.prepare("SELECT MaestroID AS maestroId, Name AS name, Description AS description, LayerName AS lay, IsCrossLayer AS isCross FROM MAESTROTHREAT ORDER BY CASE WHEN MatrixOrder IS NULL THEN 1 ELSE 0 END, MatrixOrder, MaestroID").all() as { maestroId: string; name: string; description: string | null; lay: string; isCross: number }[];
+  const byLayer = new Map<string, MaestroThreat[]>();
+  const crossLayer: MaestroThreat[] = [];
+  for (const t of threats) {
+    const item = { maestroId: t.maestroId, name: t.name, description: t.description };
+    if (t.isCross) { crossLayer.push(item); continue; }
+    if (!byLayer.has(t.lay)) byLayer.set(t.lay, []);
+    byLayer.get(t.lay)!.push(item);
+  }
+  const out = layers.map((l) => ({ number: l.number, name: l.name, description: l.description, isVertical: !!l.isVertical, threats: byLayer.get(l.name) ?? [] }));
+  // any layer present only in threats (no MAESTROLAYER row) — keep it too
+  for (const k of byLayer.keys()) if (!layers.some((l) => l.name === k)) out.push({ number: null, name: k, description: null, isVertical: false, threats: byLayer.get(k)! });
+  return { layers: out, crossLayer, summary: { layers: out.length, threats: threats.length - crossLayer.length, crossLayer: crossLayer.length } };
+}
+
 export interface MitigantTech { techId: string; title: string; description: string | null; severity: string | null; service: string | null; mitre: string | null; commands: string[]; cloudtrail: string[]; }
 export interface MitigantMatrix {
   tactics: { key: string; name: string; mitre: string | null; techniques: MitigantTech[] }[];
@@ -4464,6 +4515,8 @@ export function ensureOpenctiColumns(): void {
   }
   addCols("IOC", { TLP: "TEXT", Score: "INTEGER", Detection: "INTEGER DEFAULT 0" });
   addCols("RELATIONSHIP", { Confidence: "INTEGER", TLP: "TEXT", Labels: "TEXT", CreatedByRef: "TEXT" });
+  // CrowdStrike Falcon LogScale (CQL) query variant, alongside SplQuery (Splunk) / KqlQuery (KQL).
+  addCols("SIGMARULE", { CqlQuery: "TEXT" });
 
   // Workflow status (OpenCTI) on the entities + indicators.
   for (const t of ["THREAT", "THREATACTOR", "THREATCAMPAIGN", "ATTACKGROUP", "ATTACKSOFTWARE",

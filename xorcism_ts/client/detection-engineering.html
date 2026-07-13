@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Detection Engineering</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .de-wrap{padding:14px 16px 40px;max-width:1500px}
+  .de-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .de-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .de-sub{font-size:12.5px;color:#94a3b8;max-width:1000px;line-height:1.5;margin:0 0 14px}
+  .de-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .de-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .de-field{display:flex;flex-direction:column;gap:4px}
+  .de-field label{font-size:11px;color:#94a3b8;font-weight:600}
+  .de-field input,.de-field select,.de-field textarea{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:7px 9px}
+  #de-tech{min-width:340px}
+  #de-cmd{min-width:340px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+  .de-plats{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0}
+  .de-plat{display:flex;align-items:center;gap:5px;font-size:12px;color:#cbd5e1}
+  .de-btn{background:#6d3bf5;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:9px 18px;cursor:pointer}
+  .de-btn:disabled{opacity:.5;cursor:default}
+  .de-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:5px 11px;font-size:11.5px}
+  .de-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .de-badge{font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:600}
+  .b-ai{background:#0e2f22;color:#4ade80;border:1px solid #16a34a}
+  .b-offline{background:#2a2440;color:#c4b5fd;border:1px solid #6d3bf5}
+  .de-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:14px}
+  .de-card{background:#13162a;border:1px solid #2d3250;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .de-card-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #2d3250;background:#171b30}
+  .de-card-head .pn{font-size:13px;font-weight:700;color:#a78bfa}
+  .de-card-head .pk{font-size:10.5px;color:#64748b}
+  .de-card-head .sp{flex:1}
+  .de-card pre{margin:0;padding:11px 13px;overflow-x:auto;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;line-height:1.45;color:#d7dcea;max-height:340px;white-space:pre}
+  .de-insights{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-top:10px}
+  .de-ins{background:#0f1117;border:1px solid #232843;border-left-width:3px;border-radius:7px;padding:10px 12px}
+  .de-ins.high{border-left-color:#ef4444}.de-ins.medium{border-left-color:#f59e0b}.de-ins.low{border-left-color:#3b82f6}.de-ins.info{border-left-color:#64748b}
+  .de-ins .it{font-size:12.5px;font-weight:600;color:#e2e8f0;margin-bottom:3px}
+  .de-ins .id{font-size:11px;color:#94a3b8;line-height:1.4}
+  .de-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .de-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:8px 14px;min-width:96px}
+  .de-kpi .v{font-size:20px;font-weight:700;color:#a78bfa}.de-kpi .l{font-size:10.5px;color:#94a3b8}
+  .de-gaps{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .de-gap{font-size:10.5px;background:#221a2e;border:1px solid #3a2a4a;border-radius:5px;padding:2px 7px;color:#e9d5ff;cursor:pointer}
+  .de-section-h{font-size:14px;color:#e2e8f0;font-weight:600;margin:4px 0 8px}
+  .muted{color:#64748b}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/attack">&#127919; ATT&amp;CK</a>
+  <a href="/hunting">&#128269; Hunting</a>
+  <a href="/detection-engineering" style="color:#a78bfa">&#128736;&#65039; Detection Eng</a>
+  <a href="/purple-team">&#129526; Purple Team</a>
+  <a href="/threat-informed-defense">&#127919; TID</a>
+  <a href="/ask">&#129302; Ask AI</a>
+</div>
+
+<div class="de-wrap">
+  <div class="de-head">
+    <h2>&#128736;&#65039; Detection Engineering</h2>
+    <span id="de-ai-badge"></span>
+  </div>
+  <p class="de-sub">Adaptive Cybersecurity Intelligence — pick a MITRE ATT&amp;CK technique and generate production-ready
+    detection logic across 12 platforms at once (Sigma, YARA, Sentinel KQL, Splunk SPL, Elastic EQL, CrowdStrike CQL,
+    Defender XDR, Suricata, Snort, Falco, Sysmon, OSQuery). AI-assisted when a local model is available, deterministic
+    templates otherwise. Save any rule into the detection library. Inspired by OrchiCyb AI ATTACK.</p>
+
+  <div class="de-panel">
+    <div class="de-row">
+      <div class="de-field">
+        <label for="de-tech">ATT&amp;CK technique</label>
+        <input id="de-tech" list="de-tech-list" placeholder="T1059.001 — PowerShell" autocomplete="off">
+        <datalist id="de-tech-list"></datalist>
+      </div>
+      <div class="de-field">
+        <label for="de-cmd">Procedure / command context (optional — tunes the rules)</label>
+        <input id="de-cmd" placeholder="powershell -enc ZQBjAGgAbwA=  /  evil.example.com">
+      </div>
+      <div class="de-field">
+        <label class="de-plat" style="gap:6px"><input type="checkbox" id="de-useai" checked> Use local AI when available</label>
+      </div>
+    </div>
+    <div class="de-plats" id="de-plats"></div>
+    <div class="de-toolbar">
+      <button class="de-btn" id="de-gen">Generate detections</button>
+      <button class="de-btn ghost" id="de-all">Select all</button>
+      <button class="de-btn ghost" id="de-none">Select none</button>
+      <span class="muted" id="de-status" style="font-size:12px"></span>
+    </div>
+  </div>
+
+  <div id="de-results"></div>
+
+  <div class="de-panel">
+    <div class="de-section-h">&#128200; Cyber Insights</div>
+    <div class="de-kpis" id="de-kpis"></div>
+    <div id="de-topgaps"></div>
+    <div class="de-insights" id="de-insights"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/detection-engineering.js"></script>
+</body>
+</html>

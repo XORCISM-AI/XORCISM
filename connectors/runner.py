@@ -942,6 +942,8 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_netflow(result))
     if result.get("alerts") or result.get("incidents"):
         counts.update(import_incidents(result))
+    if result.get("exercises"):
+        counts.update(import_exercises(result))
     if result.get("compliance"):
         counts.update(import_compliance(result))
     if result.get("wifi") or result.get("wifi_networks"):
@@ -2090,6 +2092,81 @@ def import_euvd(result: Dict[str, Any]) -> Dict[str, int]:
             next_id += 1
             counts["euvd"] += 1
 
+    con.commit()
+    con.close()
+    return counts
+
+
+def import_exercises(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import cyber-exercise scenarios (SkillAegis / CEXF) into XCOMPLIANCE crisis tables.
+    Each exercise → CRISISSCENARIO (a reusable tabletop template, IsTemplate=1) and its ordered
+    injects → EXERCISEINJECT (AuditID NULL = template injects, launched into an AUDIT later at
+    /crisis-management). Idempotent by ScenarioGUID (the CEXF exercise UUID) — an existing scenario
+    is updated and its template injects rebuilt. Self-creates the tables; stamps the import tenant.
+
+    Each exercise item (dict): {"guid", "name", "description", "type", "severity", "objectives",
+        "attack" (T-codes csv), "refs", "injects": [{"guid","title","description","type","expected","order"}]}"""
+    from uuid import uuid4
+
+    def _oi(v: Any) -> Optional[int]:
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    items = result.get("exercises") or []
+    counts = {"scenarios": 0, "scenarios_updated": 0, "injects": 0}
+    if not items:
+        return counts
+    tid = _import_tenant_id()
+    source = str(result.get("source") or "SkillAegis (CEXF)").strip() or "SkillAegis (CEXF)"
+    con = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS CRISISSCENARIO (
+        ScenarioID INTEGER PRIMARY KEY, ScenarioGUID TEXT, ScenarioName TEXT, ScenarioType TEXT,
+        Description TEXT, Severity TEXT, Objectives TEXT, ThreatActor TEXT, AttackTechniques TEXT,
+        Refs TEXT, IsTemplate INTEGER DEFAULT 1, Source TEXT, CreatedDate TEXT, TenantID INTEGER)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS EXERCISEINJECT (
+        InjectID INTEGER PRIMARY KEY, InjectGUID TEXT, AuditID INTEGER, ScenarioID INTEGER,
+        StepOrder INTEGER, InjectTime TEXT, Title TEXT, Description TEXT, InjectType TEXT,
+        ExpectedAction TEXT, ActualResponse TEXT, Status TEXT, CreatedDate TEXT, TenantID INTEGER)""")
+    now = _now() if "_now" in globals() else __import__("datetime").datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    for ex in items:
+        if not isinstance(ex, dict) or not ex.get("name"):
+            continue
+        guid = str(ex.get("guid") or "").strip() or f"skillaegis:{ex['name']}"
+        vals = (str(ex.get("name"))[:300], "Cyber Exercise", (ex.get("description") or "")[:8000],
+                ex.get("severity"), (ex.get("objectives") or "")[:4000], ex.get("attack") or None,
+                (ex.get("refs") or "")[:2000], source)
+        row = cur.execute("SELECT ScenarioID FROM CRISISSCENARIO WHERE ScenarioGUID=?", (guid,)).fetchone()
+        if row:
+            sid = row[0]
+            cur.execute("""UPDATE CRISISSCENARIO SET ScenarioName=?, ScenarioType=?, Description=?, Severity=?,
+                Objectives=?, AttackTechniques=?, Refs=?, Source=?, IsTemplate=1 WHERE ScenarioID=?""", (*vals, sid))
+            counts["scenarios_updated"] += 1
+        else:
+            sid = (cur.execute("SELECT COALESCE(MAX(ScenarioID),0) FROM CRISISSCENARIO").fetchone()[0] or 0) + 1
+            cur.execute("""INSERT INTO CRISISSCENARIO (ScenarioID, ScenarioGUID, ScenarioName, ScenarioType,
+                Description, Severity, Objectives, AttackTechniques, Refs, IsTemplate, Source, CreatedDate, TenantID)
+                VALUES (?,?,?,?,?,?,?,?,?,1,?,?,?)""",
+                (sid, guid, vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], now, tid))
+            counts["scenarios"] += 1
+        # rebuild this scenario's template injects (AuditID NULL)
+        cur.execute("DELETE FROM EXERCISEINJECT WHERE ScenarioID=? AND AuditID IS NULL", (sid,))
+        nid = (cur.execute("SELECT COALESCE(MAX(InjectID),0) FROM EXERCISEINJECT").fetchone()[0] or 0)
+        for inj in (ex.get("injects") or []):
+            if not isinstance(inj, dict):
+                continue
+            nid += 1
+            cur.execute("""INSERT INTO EXERCISEINJECT (InjectID, InjectGUID, AuditID, ScenarioID, StepOrder,
+                Title, Description, InjectType, ExpectedAction, CreatedDate, TenantID)
+                VALUES (?,?,NULL,?,?,?,?,?,?,?,?)""",
+                (nid, str(inj.get("guid") or uuid4()), sid, _oi(inj.get("order")),
+                 str(inj.get("title") or "Inject")[:300], (inj.get("description") or "")[:4000],
+                 (inj.get("type") or "task")[:80], inj.get("expected"), now, tid))
+            counts["injects"] += 1
     con.commit()
     con.close()
     return counts

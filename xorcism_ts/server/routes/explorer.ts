@@ -49,6 +49,7 @@ import {
   searchAttackTechniques,
   getD3fendMatrix,
   getA3mMatrix,
+  getMaestroMatrix,
   getMitigantMatrix,
   getHuntsStixBundle,
   getReportsStixBundle,
@@ -913,6 +914,14 @@ router.get("/a3m/matrix", (req: Request, res: Response) => {
   if (!userCan(req.user, "read", "XTHREAT", "A3MTECHNIQUE"))
     return deny(req, res, "read", "XTHREAT", "A3MTECHNIQUE");
   try { res.json(getA3mMatrix()); }
+  catch (e) { res.status(500).json({ error: (e as Error).message }); }
+});
+
+// GET /api/maestro/matrix — MAESTRO (CSA agentic-AI threat model): 7 layers → threats + cross-layer
+router.get("/maestro/matrix", (req: Request, res: Response) => {
+  if (!userCan(req.user, "read", "XTHREAT", "MAESTROTHREAT"))
+    return deny(req, res, "read", "XTHREAT", "MAESTROTHREAT");
+  try { res.json(getMaestroMatrix()); }
   catch (e) { res.status(500).json({ error: (e as Error).message }); }
 });
 

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — MAESTRO (Agentic AI Threat Modeling)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .att-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 16px}
+  .att-toolbar h2{margin:0;font-size:18px;color:#e2e8f0}
+  .att-toolbar input{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:6px 9px;min-width:240px}
+  .att-stats{font-size:12px;color:#94a3b8}
+  .maestro-intro{margin:0 16px 10px;font-size:12.5px;color:#94a3b8;line-height:1.5;max-width:1100px}
+  .maestro-steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 16px 14px}
+  .maestro-step{flex:1 1 160px;min-width:150px;background:#13162a;border:1px solid #2d3250;border-radius:8px;padding:8px 10px}
+  .maestro-step .sn{color:#f59e0b;font-size:11px;font-weight:700}
+  .maestro-step .st{color:#cbd5e1;font-size:12px;font-weight:600;margin-top:2px}
+  .maestro-step .sd{color:#7c8398;font-size:10.5px;margin-top:3px;line-height:1.35}
+  .matrix{display:flex;gap:8px;overflow-x:auto;padding:0 16px 24px;align-items:flex-start}
+  .att-col{flex:0 0 230px;width:230px;background:#13162a;border:1px solid #2d3250;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;max-height:78vh}
+  .att-col.vertical{border-color:#f59e0b}
+  .att-col.cross{border-color:#ef4444}
+  .att-col-head{padding:8px 10px;border-bottom:1px solid #2d3250;background:#171b30;position:sticky;top:0}
+  .att-tac-name{font-size:12.5px;font-weight:600;color:#a78bfa;line-height:1.2}
+  .att-col.vertical .att-tac-name{color:#f59e0b}
+  .att-col.cross .att-tac-name{color:#ef4444}
+  .att-tac-desc{font-size:10px;color:#7c8398;margin-top:3px;line-height:1.35}
+  .att-tac-meta{font-size:10px;color:#64748b;margin-top:3px}
+  .att-col-body{overflow-y:auto;padding:4px}
+  .att-cell{border:1px solid #232843;border-radius:5px;margin:3px 0;background:#0f1117;padding:5px 7px}
+  .att-id{color:#64748b;font-size:10px;font-family:ui-monospace,Consolas,monospace}
+  .att-cell .tn{color:#cbd5e1;font-size:11.5px;line-height:1.3;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/?db=XORCISM&amp;table=ASSET">&#128450;&#65039; Assets</a>
+  <a href="/dashboard">&#128202; Dashboard</a>
+  <a href="/attack">&#127919; ATT&amp;CK</a>
+  <a href="/a3m">&#129302; A3M</a>
+  <a href="/maestro" style="color:#f59e0b">&#127917;&#65039; MAESTRO</a>
+  <a href="/ask">&#129302; Ask AI</a>
+</div>
+
+<div class="att-toolbar">
+  <h2>&#127917;&#65039; MAESTRO — Agentic AI Threat Modeling</h2>
+  <input id="maestro-search" type="search" placeholder="Filter (M-ID or threat name)…">
+  <span class="att-stats" id="maestro-stats"></span>
+</div>
+<p class="maestro-intro">
+  <strong>MAESTRO</strong> (Multi-Agent Environment, Security, Threat, Risk &amp; Outcome) is the Cloud Security Alliance's
+  threat-modeling framework for agentic AI. It decomposes an agentic system into a <strong>seven-layer</strong> reference
+  architecture and enumerates layer-specific and cross-layer threats. Layer&nbsp;6 (Security &amp; Compliance, in
+  <span style="color:#f59e0b">amber</span>) is a <em>vertical</em> layer cutting across all others; the
+  <span style="color:#ef4444">red</span> column holds cross-layer threats.
+  <a href="https://cloudsecurityalliance.org/blog/2025/02/06/agentic-ai-threat-modeling-framework-maestro" target="_blank" rel="noopener" style="color:#a78bfa">CSA reference &#8599;</a>
+</p>
+<div class="maestro-steps" id="maestro-steps"></div>
+<div class="matrix" id="maestro-matrix"></div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/maestro.js"></script>
+</body>
+</html>

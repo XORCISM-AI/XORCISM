@@ -1,0 +1,64 @@
+{
+  "detections": [
+    {
+      "id": "de_1a2b3c4d-0001",
+      "type": "RULE_DETECTION",
+      "detectionTime": "2026-07-12T09:02:00Z",
+      "createdTime": "2026-07-12T09:02:07Z",
+      "detection": [
+        {
+          "ruleName": "Suspicious PowerShell Encoded Command",
+          "ruleId": "ru_0001",
+          "alertState": "ALERTING",
+          "severity": "HIGH",
+          "description": "Detects base64-encoded PowerShell (-enc) launched from Office, a common initial-access technique.",
+          "urlBackToProduct": "https://mytenant.backstory.chronicle.security/ruleDetections?ruleId=ru_0001",
+          "mitreAttack": ["T1059.001", "T1027"]
+        }
+      ],
+      "collectionElements": [
+        { "references": [ { "event": { "principal": { "hostname": "WKS-014", "ip": ["10.0.0.14"] }, "target": { "process": { "commandLine": "powershell -enc ZQBjAGgAbwA=" } } } } ] }
+      ]
+    },
+    {
+      "id": "de_1a2b3c4d-0002",
+      "type": "RULE_DETECTION",
+      "detectionTime": "2026-07-12T09:15:30Z",
+      "createdTime": "2026-07-12T09:15:36Z",
+      "detection": [
+        {
+          "ruleName": "Impossible Travel Sign-in",
+          "ruleId": "ru_0002",
+          "alertState": "ALERTING",
+          "severity": "MEDIUM",
+          "description": "Two successful logins for the same user from geographically distant locations within a short window.",
+          "urlBackToProduct": "https://mytenant.backstory.chronicle.security/ruleDetections?ruleId=ru_0002",
+          "mitreAttack": ["T1078"]
+        }
+      ],
+      "collectionElements": [
+        { "references": [ { "event": { "principal": { "user": { "userid": "j.doe" }, "ip": ["203.0.113.7"] }, "target": { "hostname": "vpn-gw-01" } } } ] }
+      ]
+    },
+    {
+      "id": "de_1a2b3c4d-0003",
+      "type": "RULE_DETECTION",
+      "detectionTime": "2026-07-12T09:41:10Z",
+      "createdTime": "2026-07-12T09:41:14Z",
+      "detection": [
+        {
+          "ruleName": "Ransomware Shadow Copy Deletion (vssadmin)",
+          "ruleId": "ru_0003",
+          "alertState": "ALERTING",
+          "severity": "CRITICAL",
+          "description": "vssadmin.exe delete shadows observed — a hallmark of ransomware pre-encryption.",
+          "urlBackToProduct": "https://mytenant.backstory.chronicle.security/ruleDetections?ruleId=ru_0003",
+          "mitreAttack": ["T1490"]
+        }
+      ],
+      "collectionElements": [
+        { "references": [ { "event": { "principal": { "hostname": "FS-PROD-02", "ip": ["10.0.1.32"] }, "target": { "process": { "commandLine": "vssadmin delete shadows /all /quiet" } } } } ] }
+      ]
+    }
+  ]
+}

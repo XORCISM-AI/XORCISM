@@ -27,3 +27,8 @@ sessions:
   - { src: 10.0.0.30,   dst: 10.0.0.22, protocol: tcp, src_port: 40122, dst_port: 5432, service: postgresql, bytes: 982144, packets: 1450, flows: 22, state: established, direction: internal, first_seen: 2026-06-22T08:01:00Z, last_seen: 2026-06-22T08:59:00Z }
   - { src: 10.0.0.21,   dst: 10.0.0.30, protocol: tcp, src_port: 33990, dst_port: 8080, service: http-app, bytes: 451000, packets: 690, flows: 14, state: established, direction: internal, first_seen: 2026-06-22T08:02:00Z, last_seen: 2026-06-22T08:58:00Z }
   - { src: 198.51.100.9, dst: 10.0.0.21, protocol: tcp, src_port: 44210, dst_port: 22, service: ssh, bytes: 8400, packets: 60, flows: 5, state: rejected, direction: inbound, first_seen: 2026-06-22T03:14:00Z, last_seen: 2026-06-22T03:15:00Z }
+
+# Detection alerts (Obserae /api/alerts) -> XINCIDENT.ALERT (surfaced in /soc)
+alerts:
+  - { id: obs-2026-0001, title: "SSH brute-force from external host", severity: high, host: web-prod-01, src: 198.51.100.9, dst: 10.0.0.21, attack: T1110.001, status: open, created: 2026-06-22T03:15:10Z, description: "60 rejected SSH connections in 60s" }
+  - { id: obs-2026-0002, title: "Unusual east-west data transfer", severity: medium, host: app-prod-01, src: 10.0.0.30, dst: 10.0.0.22, attack: [T1048], status: open, created: 2026-06-22T08:59:30Z, description: "982 KB app->db, above baseline" }

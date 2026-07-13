@@ -4,7 +4,7 @@
  * Replicates the MITRE ATLAS Knowledge Base Agent (mitre-atlas/atlas-knowledge-base-agent — a
  * Langflow RAG chatbot over the ATLAS matrix) and generalises it across ALL the adversarial /
  * defensive matrices XORCISM already imports: MITRE ATT&CK, MITRE ATLAS, A3M (Agentic AI Attack
- * Matrix), Google SAIF, MITRE D3FEND and the Mitigant cloud matrix. Ask a natural-language
+ * Matrix), Google SAIF, CSA MAESTRO, MITRE D3FEND and the Mitigant cloud matrix. Ask a natural-language
  * question; the agent does keyword retrieval over the matrix tables (the "dataset/vector-store"
  * step — offline, no embeddings) then composes an answer with the local AI (Ollama), citing the
  * exact techniques (the "graph" step → cited entities + links). Degrades to a structured retrieval
@@ -25,6 +25,7 @@ export const MATRICES: MatrixDef[] = [
   { key: "atlas", label: "MITRE ATLAS (AI/ML)", scope: "ai", db: "XTHREAT", table: "ATLASTECHNIQUE", idCol: "AtlasID", nameCol: "Name", descCol: "Description", ref: (id) => `https://atlas.mitre.org/techniques/${id}` },
   { key: "a3m", label: "A3M — Agentic AI Attack Matrix", scope: "ai", db: "XTHREAT", table: "A3MTECHNIQUE", idCol: "AATID", nameCol: "Name", descCol: "Description", ref: (id) => `https://github.com/precize/Agentic-AI-Attack-Matrix` },
   { key: "saif", label: "Google SAIF", scope: "ai", db: "XTHREAT", table: "SAIFRISK", idCol: "SaifID", nameCol: "Name", descCol: "Description", ref: () => `https://saif.google` },
+  { key: "maestro", label: "MAESTRO (CSA agentic-AI)", scope: "ai", db: "XTHREAT", table: "MAESTROTHREAT", idCol: "MaestroID", nameCol: "Name", descCol: "Description", ref: () => `https://cloudsecurityalliance.org/blog/2025/02/06/agentic-ai-threat-modeling-framework-maestro` },
   { key: "d3fend", label: "MITRE D3FEND", scope: "defensive", db: "XTHREAT", table: "D3FENDTECHNIQUE", idCol: "D3FENDID", nameCol: "Name", descCol: "Definition", ref: (id) => `https://d3fend.mitre.org/technique/${id}` },
   { key: "mitigant", label: "Mitigant (cloud)", scope: "cloud", db: "XTHREAT", table: "MITIGANTTECHNIQUE", idCol: "TechID", nameCol: "Title", descCol: "Description", ref: () => `https://threats.mitigant.io` },
 ];
@@ -82,12 +83,12 @@ export async function askMatrix(question: string, matrixKey?: string): Promise<{
   const hits = searchMatrices(question, matrixKey, 12);
   const sources = hits.slice(0, 8);
   if (!sources.length) {
-    return { answer: "No matching techniques were found in the imported matrices for that question. Try different keywords, or import the relevant matrix (ATT&CK / ATLAS / A3M / SAIF / D3FEND / Mitigant).", sources: [], model: "", offline: true };
+    return { answer: "No matching techniques were found in the imported matrices for that question. Try different keywords, or import the relevant matrix (ATT&CK / ATLAS / A3M / SAIF / MAESTRO / D3FEND / Mitigant).", sources: [], model: "", offline: true };
   }
   const context = sources.map((h) => `[${h.matrixLabel} ${h.id}] ${h.name}: ${h.snippet}`).join("\n");
   const system =
     "You are a threat-intelligence analyst answering questions about adversarial & defensive technique matrices " +
-    "(MITRE ATT&CK, MITRE ATLAS for AI/ML, the A3M agentic-AI attack matrix, Google SAIF, MITRE D3FEND, Mitigant). " +
+    "(MITRE ATT&CK, MITRE ATLAS for AI/ML, the A3M agentic-AI attack matrix, Google SAIF, CSA MAESTRO, MITRE D3FEND, Mitigant). " +
     "Answer ONLY from the provided CONTEXT (retrieved matrix entries). Be concise and cite the technique ids inline " +
     "like [ATLAS AML.T0011]. If the context is insufficient, say so. Never invent technique ids that are not in the CONTEXT.";
   const user = `Question: ${question}\n\nCONTEXT (retrieved matrix techniques):\n${context}`;

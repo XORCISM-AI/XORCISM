@@ -32,6 +32,7 @@ import exploitdbRouter from "./routes/exploitdb";
 import fusionRouter from "./routes/fusion";
 import attackPathRouter from "./routes/attackpath";
 import purpleTeamRouter from "./routes/purpleteam";
+import detectionEngRouter from "./routes/detectioneng";
 import ransomwareRouter from "./routes/ransomware";
 import assuranceRouter from "./routes/assurance";
 import qaaRouter from "./routes/qaa";
@@ -346,6 +347,7 @@ app.use("/api", exploitdbRouter); // Exploit-DB search (local SearchSploit index
 app.use("/api", fusionRouter); // exploitability & relevance fusion score + prioritized exposure worklist
 app.use("/api", attackPathRouter); // attack-path & choke-point graph (reachability entry→crown-jewel)
 app.use("/api", purpleTeamRouter); // purple-team: chain ATT&CK detection coverage (Sigma) + rule generation
+app.use("/api", detectionEngRouter); // detection-engineering: multi-platform detection generator + Cyber Insights
 app.use("/api", ransomwareRouter); // ransomware-to-$ scenario simulator (BIA/FAIR impact + D3FEND controls)
 app.use("/api", assuranceRouter); // continuously-proven compliance (control assurance from live telemetry)
 app.use("/api", qaaRouter); // security questionnaire auto-answer (drafts from the knowledge base + local AI)
@@ -545,6 +547,9 @@ app.get("/cloud-attacks", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/a3m", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "a3m.html"));
+});
+app.get("/maestro", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "maestro.html"));
 });
 app.get("/hunting", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "hunting.html"));
@@ -783,6 +788,9 @@ app.get("/exposure", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/attack-path", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "attack-path.html"));
+});
+app.get("/detection-engineering", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "detection-engineering.html"));
 });
 app.get("/purple-team", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "purple-team.html"));

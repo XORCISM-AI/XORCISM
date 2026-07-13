@@ -1,15 +1,17 @@
 {
   "id": "obserae",
-  "name": "Obserae",
+  "name": "Obserae — NDR (Network Detection & Response)",
   "type": "import",
   "category": "Network Monitoring",
-  "description": "Imports network observability from Obserae (spartan-conseil/obserae) — a self-hosted NetFlow/IPFIX collector that reconstructs sessions and builds a cartography of hosts & services. Parses an Obserae YAML export (cartography + sessions) and turns it into network discovery & monitoring data around ASSET: each host becomes/updates an ASSET, each listening service becomes an ASSET↔SERVICE relationship (ASSETSERVICE: protocol/port/service), and each reconstructed flow becomes a NETWORKSESSION (protocol, source↔destination assets/IPs/ports, bytes/packets, first/last seen, state). Surfaced at /network-sessions — useful for asset discovery, monitoring and SOC investigation. Worker-safe (no DB, no network); accepts YAML or JSON.",
+  "description": "Integrates Obserae (https://obserae.com), a self-hosted Network Detection & Response platform: a NetFlow/IPFIX collector that reconstructs sessions, builds a cartography of hosts & services, and raises detection alerts. Two modes. LIVE — the Obserae REST API (docs: obserae.com/docs/api-reference): Bearer auth with an `obs_` token, reading GET /api/carto/graph (hosts -> ASSET, listening services -> ASSETSERVICE), GET /api/sessions/riverview (reconstructed flows -> NETWORKSESSION), GET /api/alerts (detection alerts -> XINCIDENT.ALERT, the SOC alert layer, idempotent by source+external_id, with impacted-asset links) and GET /api/status (version/health). OFFLINE — an Obserae cartography+sessions(+alerts) export (YAML or JSON). Network cartography & monitoring surfaces at /network-sessions; detection alerts at /soc. Set OBSERAE_URL + OBSERAE_API_TOKEN in the worker environment for live mode, or pass a 'file' for offline. Python stdlib only.",
   "intrusive": false,
   "permission": "connector:obserae",
   "run": "run.py",
   "mapping": "obserae",
   "parameters": [
-    { "name": "file", "type": "file", "required": true, "help": "Path on the worker to an Obserae cartography + sessions export (YAML or JSON). See the connector README for the expected schema." },
+    { "name": "base_url", "type": "string", "required": false, "help": "Live API mode: Obserae base URL, e.g. http://127.0.0.1:8080 (or set OBSERAE_URL). Needs OBSERAE_API_TOKEN (an obs_ Bearer token) in the worker environment." },
+    { "name": "file", "type": "file", "required": false, "help": "Offline mode: path on the worker to an Obserae cartography + sessions (+ alerts) export (YAML or JSON). Used when no base_url is given. See the connector README for the schema." },
+    { "name": "max_alerts", "type": "int", "required": false, "default": 500, "min": 1, "max": 10000, "help": "Live mode: maximum detection alerts to pull from /api/alerts." },
     { "name": "default_protocol", "type": "string", "required": false, "default": "tcp", "pattern": "^[a-z0-9]+$", "help": "Protocol assumed when a session/service omits it (default tcp)." }
   ]
 }

@@ -28,6 +28,28 @@ import uuid
 from datetime import datetime, timezone
 
 VOCAB = "SCF"
+SRC = "SCF 2026.2"  # CONTROLMAPPING.Source marker (idempotency key for the cross-mappings)
+_SCF_ID_RE = re.compile(r"^[A-Z]{3}-\d{2}(?:\.\d+)?$")
+# Header substrings that mark SCF-internal columns (NOT external-authority framework mappings):
+# metadata, MCR/DSR designations, and the SCF Risk/Threat catalog applicability matrices.
+_META_HINTS = ("conformity validation", "evidence request", "possible solutions", "control question",
+               "relative control weighting", "pptdf", "function grouping", "scrm focus", "scr-cmm",
+               "community derived", "threat summary", "errata", "minimum security requirements",
+               "minimum compliance requirements", "discretionary security requirements")
+
+
+def _clean_hdr(h) -> str:
+    return " ".join(str(h if h is not None else "").replace("\n", " ").split())
+
+
+def _is_authority(hdr: str) -> bool:
+    """A column header that names an external framework/authority (vs SCF-internal columns)."""
+    lo = hdr.lower()
+    if not lo or lo.startswith("scf"):
+        return False
+    if lo.startswith("risk ") or lo.startswith("threat "):  # SCF Risk / Threat catalog columns
+        return False
+    return not any(k in lo for k in _META_HINTS)
 
 DOMAINS = {
     "GOV": "Security & Privacy Governance", "AST": "Asset Management",
@@ -105,60 +127,112 @@ def _ensure_vocab(cur: sqlite3.Cursor, name: str) -> int:
 
 
 def _from_excel(path: str):
-    """Parse the official SCF spreadsheet → list of (scf_id, title, description)."""
+    """Parse the official SCF worksheet → list of control dicts.
+
+    Each = {sid, domain, title, desc, maps:[(framework, ref), …]}. The control columns
+    (SCF Domain / SCF Control / SCF # / Control Description) are located by header text;
+    every remaining external-authority column (ISO, NIST, PCI, CIS, ATT&CK…) with a value
+    yields cross-mappings (cells are newline-separated reference lists).
+    """
     from openpyxl import load_workbook  # type: ignore
 
     wb = load_workbook(path, read_only=True, data_only=True)
-    out = []
-    seen = set()
-    scf_re = re.compile(r"^[A-Z]{3}-\d{2}(?:\.\d+)?$")
-    for ws in wb.worksheets:
-        for row in ws.iter_rows(values_only=True):
-            cells = [str(c).strip() if c is not None else "" for c in row]
-            sid = next((c for c in cells if scf_re.match(c)), "")
-            if not sid or sid in seen:
+    ws = next((w for w in wb.worksheets if re.match(r"SCF\s*\d", w.title or "")), wb.worksheets[0])
+    it = ws.iter_rows(values_only=True)
+    hdr = [_clean_hdr(h) for h in next(it)]
+
+    def _col(pred, default):
+        for i, h in enumerate(hdr):
+            if pred(h.lower()):
+                return i
+        return default
+    c_id = _col(lambda h: h == "scf #" or h.startswith("scf #"), 2)
+    c_dom = _col(lambda h: h.startswith("scf domain"), 0)
+    c_ttl = _col(lambda h: h == "scf control", 1)
+    c_desc = _col(lambda h: "control description" in h, 3)
+    auth_cols = [i for i in range(c_desc + 1, len(hdr)) if _is_authority(hdr[i])]
+
+    out, seen = [], set()
+    for row in it:
+        cells = ["" if c is None else str(c) for c in row]
+        if len(cells) <= c_id:
+            continue
+        sid = cells[c_id].strip()
+        if not _SCF_ID_RE.match(sid) or sid in seen:
+            continue
+        seen.add(sid)
+        get = lambda i: cells[i].strip() if i < len(cells) else ""
+        maps = []
+        for i in auth_cols:
+            if i >= len(cells) or not cells[i].strip():
                 continue
-            idx = cells.index(sid)
-            rest = [c for c in cells[idx + 1:] if c]
-            title = rest[0] if rest else sid
-            desc = rest[1] if len(rest) > 1 else ""
-            seen.add(sid)
-            out.append((sid, title[:300], desc[:4000]))
+            for ref in re.split(r"[\r\n]+", cells[i]):
+                ref = ref.strip()
+                if ref:
+                    maps.append((hdr[i], ref[:120]))
+        out.append({"sid": sid, "domain": get(c_dom), "title": get(c_ttl)[:300] or sid,
+                    "desc": get(c_desc)[:4000], "maps": maps})
     return out
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Import the Secure Controls Framework into XORCISM.CONTROL")
-    ap.add_argument("--file", help="official SCF .xlsx (full catalogue)")
+    ap.add_argument("--file", help="official SCF .xlsx (full catalogue + cross-mappings)")
+    ap.add_argument("--db-dir", help="directory holding XORCISM.db (default: $XORCISM_DB_DIR)")
     a = ap.parse_args()
 
-    controls = _from_excel(a.file) if a.file else [(sid, title, "") for sid, title in SEED]
-    if not controls:
+    if a.file:
+        records = _from_excel(a.file)
+    else:  # no file → the embedded representative seed (framework present immediately, no mappings)
+        records = [{"sid": sid, "domain": DOMAINS.get(sid.split("-")[0], ""), "title": title, "desc": "", "maps": []}
+                   for sid, title in SEED]
+    if not records:
         print("[scf] no controls parsed"); return 1
 
-    con = sqlite3.connect(_db_path()); con.execute("PRAGMA busy_timeout=15000"); cur = con.cursor()
+    dbp = os.path.join(a.db_dir, "XORCISM.db") if a.db_dir else _db_path()
+    con = sqlite3.connect(dbp); con.execute("PRAGMA busy_timeout=30000"); cur = con.cursor()
     now = datetime.now(timezone.utc).isoformat()
     vid = _ensure_vocab(cur, VOCAB)
     ccols = {r[1] for r in cur.execute("PRAGMA table_info(CONTROL)").fetchall()}
-    cur.execute("DELETE FROM CONTROL WHERE VocabularyID=?", (vid,))
-    next_id = (cur.execute("SELECT COALESCE(MAX(ControlID),0) FROM CONTROL").fetchone()[0] or 0) + 1
+    have_map = bool(cur.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='CONTROLMAPPING'").fetchone())
 
-    n = 0
-    for sid, title, desc in controls:
-        dom = sid.split("-")[0]
+    # Idempotent refresh: drop the previous SCF controls (by vocab) and its cross-mappings (by source).
+    cur.execute("DELETE FROM CONTROL WHERE VocabularyID=?", (vid,))
+    if have_map:
+        cur.execute("DELETE FROM CONTROLMAPPING WHERE Source=?", (SRC,))
+    next_id = (cur.execute("SELECT COALESCE(MAX(ControlID),0) FROM CONTROL").fetchone()[0] or 0) + 1
+    next_map = ((cur.execute("SELECT COALESCE(MAX(MappingID),0) FROM CONTROLMAPPING").fetchone()[0] or 0) + 1) if have_map else 0
+
+    domains, map_rows = set(), []
+    for r in records:
+        dom = r["sid"].split("-")[0]; domains.add(dom)
         rec = {
-            "ControlID": next_id, "ControlGUID": str(uuid.uuid4()),
-            "ControlName": f"{sid} {title}".strip(),
-            "ControlDescription": f"SCF — {DOMAINS.get(dom, dom)}",
-            "VocabularyID": vid, "Statement": desc or None,
+            "ControlID": next_id, "ControlGUID": f"scf-{r['sid']}",
+            "ControlName": f"{r['sid']} {r['title']}".strip(),
+            "ControlDescription": r["domain"] or f"SCF — {DOMAINS.get(dom, dom)}",
+            "VocabularyID": vid, "Statement": r["desc"] or None,
             "CreatedDate": now, "ValidFromDate": now[:10], "isEncrypted": 0,
         }
         keys = [k for k in rec if k in ccols]
         cur.execute(f"INSERT INTO CONTROL ({','.join(keys)}) VALUES ({','.join('?'*len(keys))})", [rec[k] for k in keys])
-        next_id += 1; n += 1
+        if have_map:
+            for fw, ref in r["maps"]:
+                map_rows.append((next_map, str(uuid.uuid4()), next_id, fw, ref, "mapped-to", SRC, now))
+                next_map += 1
+        next_id += 1
+    if have_map and map_rows:
+        cur.executemany(
+            "INSERT INTO CONTROLMAPPING (MappingID, MappingGUID, ControlID, Framework, ExternalID, "
+            "Relationship, Source, CreatedDate) VALUES (?,?,?,?,?,?,?,?)", map_rows)
+    try:  # keep the SCF FRAMEWORK row's version current
+        cur.execute("UPDATE FRAMEWORK SET FrameworkVersion=? WHERE FrameworkName LIKE '%Secure Controls Framework%' "
+                    "OR FrameworkName LIKE '%SCF%'", ("2026.2",))
+    except Exception:  # noqa: BLE001
+        pass
     con.commit(); con.close()
     src = a.file if a.file else "embedded seed"
-    print(f"[scf] VocabularyID={vid}: {n} controls across {len({c.split('-')[0] for c,_,_ in controls})} domains ({src}).")
+    print(f"[scf] VocabularyID={vid}: {len(records)} controls / {len(domains)} domains, "
+          f"{len(map_rows)} cross-mappings across {len({fw for _,_,_,fw,_,_,_,_ in map_rows})} authorities ({src}).")
     return 0
 
 

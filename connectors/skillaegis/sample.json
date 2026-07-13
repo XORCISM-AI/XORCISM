@@ -1,0 +1,26 @@
+{
+  "exercise": {
+    "uuid": "b1e7c0de-5a91-4d2e-9f33-2a7c6b0e1122",
+    "name": "Ransomware Incident — Tabletop",
+    "namespace": "xorcism-sample",
+    "description": "A guided tabletop exercise: detect, contain and recover from an Akira-style ransomware intrusion, coordinating SOC, IT and management.",
+    "expanded": "Objectives: exercise detection of initial access, decision-making on isolation, invocation of the IR plan, stakeholder communication and recovery-from-backup validation.",
+    "meta": { "author": "XORCISM sample", "level": "intermediate", "priority": 2 },
+    "tags": ["exercise:software-scope=\"generic\"", "state:production", "attack.t1486", "attack.t1490"],
+    "total_duration": "5400",
+    "version": "202601"
+  },
+  "inject_flow": [
+    { "inject_uuid": "11111111-1111-1111-1111-111111111111", "description": "SIEM raises a mass-encryption alert on a file server.", "requirements": {}, "sequence": { "completion_trigger": ["completion"], "followed_by": ["22222222-2222-2222-2222-222222222222"] } },
+    { "inject_uuid": "22222222-2222-2222-2222-222222222222", "description": "Decide whether to isolate the affected VLAN and pull the crown-jewel DB offline.", "requirements": {}, "sequence": { "completion_trigger": ["completion"], "followed_by": ["33333333-3333-3333-3333-333333333333"] } },
+    { "inject_uuid": "33333333-3333-3333-3333-333333333333", "description": "Validate offline backups and plan recovery; brief executives and (if required) the regulator.", "requirements": {}, "sequence": { "completion_trigger": ["time_expiration", "completion"], "followed_by": [] } }
+  ],
+  "injects": [
+    { "uuid": "11111111-1111-1111-1111-111111111111", "name": "Initial detection", "action": "siem_alert", "target_tool": "siem",
+      "inject_evaluation": [ { "result": "Ransomware mass-encryption alert triaged and confirmed", "evaluation_strategy": "manual", "score_range": [0, 10] } ] },
+    { "uuid": "22222222-2222-2222-2222-222222222222", "name": "Containment decision", "action": "decision", "target_tool": "manual",
+      "inject_evaluation": [ { "result": "Affected segment isolated; crown-jewel DB protected", "evaluation_strategy": "manual", "score_range": [0, 15] } ] },
+    { "uuid": "33333333-3333-3333-3333-333333333333", "name": "Recovery & communication", "action": "decision", "target_tool": "manual",
+      "inject_evaluation": [ { "result": "Backups validated, recovery plan approved, stakeholders briefed", "evaluation_strategy": "manual", "score_range": [0, 15] } ] }
+  ]
+}

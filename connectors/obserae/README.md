@@ -1,95 +1,64 @@
-# Obserae connector — NetFlow/IPFIX → network discovery, services & sessions
+# Obserae — NDR (Network Detection & Response)
 
-[Obserae](https://github.com/spartan-conseil/obserae) (by **Spartan Conseil**) is a self-hosted
-**NetFlow v5/v9 & IPFIX collector** that reconstructs network sessions, builds a *cartography* of
-hosts and services, and lets you investigate by logical name rather than raw IP. It runs as a Docker
-container or a Linux binary (amd64/arm64, incl. Raspberry Pi) on top of DuckDB, with a web GUI
-(Cockpit / Cartography / Sessions / Queries) and a CLI.
+`obserae` · **import** connector · category **Network Monitoring**
 
-This connector turns an Obserae **cartography + sessions export** into network-observability data
-**around ASSET** in XORCISM — for discovery, monitoring and SOC investigation:
+Integrates [Obserae](https://obserae.com), a **self-hosted Network Detection & Response** platform — a NetFlow/IPFIX collector that reconstructs sessions, builds a cartography of hosts & services, and raises detection alerts. The connector brings all three into XORCISM around **ASSET**, **NETWORKSESSION** and the SOC **ALERT** layer.
 
-| Obserae           | XORCISM                                                                 |
-|-------------------|------------------------------------------------------------------------|
-| host / cartography| **ASSET** (created or updated — network discovery)                     |
-| listening service | **ASSETSERVICE** (the ASSET↔SERVICE relationship: protocol / port / service) |
-| reconstructed flow| **NETWORKSESSION** (protocol, source↔destination assets/IPs/ports, bytes/packets, first/last seen, state) |
+## Two modes
 
-The result is visible at **`/network-sessions`** (top services/ports, top talkers, the session list,
-newly-discovered assets) and links straight into Asset Management.
+### 1. Live REST API (recommended)
+Talks to the Obserae REST API ([docs](https://obserae.com/docs/api-reference/)) using an `obs_…` **Bearer** token:
 
-## Usage
+| Obserae endpoint | → XORCISM |
+|---|---|
+| `GET /api/carto/graph` | host nodes → **ASSET** (name, IP, OS, zone); their listening services → **ASSETSERVICE** (protocol/port/service) |
+| `GET /api/sessions/riverview` | reconstructed flows → **NETWORKSESSION** (src↔dst asset/IP/port, bytes/packets, first/last seen) |
+| `GET /api/alerts` | detection alerts → **XINCIDENT.ALERT** (title, severity, ATT&CK, impacted asset), idempotent by source + external id, surfaced in **/soc** |
+| `GET /api/status` | Obserae version / health (summary) |
 
-This is an **import** connector (worker-safe — no DB, no network access; PyYAML preferred, JSON
-accepted as a fallback). Export your cartography + sessions from Obserae (or build the YAML below),
-then run the connector with the file path.
-
+Set in the **worker environment**:
+```bash
+OBSERAE_URL=http://127.0.0.1:8080      # or pass the base_url param
+OBSERAE_API_TOKEN=obs_xxxxxxxxxxxxxxxx # an obs_ Bearer token (mint one in Obserae → tokens)
 ```
-# from XORCISM → Connectors → Obserae, set:
-file = /path/on/worker/obserae-export.yaml
+Non-host cartography nodes (networks/groups) are ignored; alert severities (`critical/high/medium/low/info`) and field names are parsed tolerantly.
+
+### 2. Offline export (file)
+Point `file` at an Obserae cartography + sessions (+ optional `alerts`) export (YAML or JSON) — e.g. an air-gapped or lab export. Same normalization, no network.
+
+## Parameters
+
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| `base_url` | string | no | — | Live API mode: Obserae base URL (or set `OBSERAE_URL`). Needs `OBSERAE_API_TOKEN` in the worker env. |
+| `file` | file | no | — | Offline mode: an Obserae cartography + sessions (+ alerts) export (YAML/JSON). Used when no `base_url` is given. |
+| `max_alerts` | int | no | `500` | Live mode: max detection alerts to pull from `/api/alerts`. |
+| `default_protocol` | string | no | `tcp` | Protocol assumed when a session/service omits it. |
+
+Provide **either** `base_url`/`OBSERAE_URL` (live) **or** `file` (offline).
+
+## Output → XORCISM
+
+`run(params, workdir)` returns:
+```jsonc
+{
+  "source": "Obserae NDR",
+  "netflow": { "assets": [...], "services": [...], "sessions": [...] },  // → import_netflow
+  "alerts":  [ { "external_id", "name", "severity", "attack", "asset", "created", ... } ],  // → import_incidents
+  "summary": { "assets", "services", "sessions", "alerts", "mode", "obserae_version" }
+}
 ```
+The connector performs **no database access** (runs on a remote worker); the XORCISM runner imports the normalized result. Required permission: `connector:obserae`.
 
-A sample is provided in [`sample.yaml`](sample.yaml). To preview the normalized output:
+## Running it
 
-```
-python run.py sample.yaml
-```
+- **From XORCISM** — **Connectors → Obserae**, fill parameters, run (admin only; creates a job for `connectors/runner.py`).
+- **Offline self-test** — parse & import the bundled `sample.yaml` (no live tool):
+  ```bash
+  python connectors/runner.py --selftest connectors/obserae/sample.yaml --connector obserae
+  ```
+  > `--selftest` writes to the DB — use a throwaway `XORCISM_DB_DIR` to avoid touching live data.
+- **Live CLI test** — `OBSERAE_URL=… OBSERAE_API_TOKEN=obs_… python connectors/obserae/run.py` prints the normalized JSON.
 
-## Expected YAML schema
-
-All three sections are optional; provide what you have. Sessions reference assets by **IP or name**
-(unknown endpoints are auto-discovered as new assets).
-
-```yaml
-assets:                       # cartography (network discovery)
-  - name: web-prod-01         # logical name (falls back to hostname / ip)
-    ip: 10.0.0.21
-    hostname: web-prod-01.corp
-    os: Linux
-    zone: DMZ
-    tags: [server, internet-facing]
-
-services:                     # listening services  →  ASSET ↔ SERVICE
-  - asset: 10.0.0.21          # ip or name
-    protocol: tcp
-    port: 443
-    service: https
-    banner: nginx/1.25
-    first_seen: 2026-06-22T08:00:00Z
-    last_seen:  2026-06-22T09:00:00Z
-    flows: 128
-
-sessions:                     # reconstructed flows  →  NETWORKSESSION
-  - src: 203.0.113.5          # source (ip or name)
-    dst: 10.0.0.21            # destination (ip or name)
-    protocol: tcp
-    src_port: 51514
-    dst_port: 443
-    service: https
-    bytes: 184320
-    packets: 220
-    flows: 3
-    state: established        # tcp state, optional
-    direction: inbound        # optional
-    first_seen: 2026-06-22T08:00:00Z
-    last_seen:  2026-06-22T08:05:00Z
-```
-
-### Field aliases accepted
-
-So an export from a different stage of the Obserae pipeline still imports:
-
-- assets: `hosts`, `cartography`; `address`→ip, `os_name`→os, `network`→zone, `labels`→tags
-- services: `ports`; `host`/`ip`/`name`→asset, `proto`→protocol, `app`/`name`→service, `flow_count`→flows
-- sessions: `flows`, `netflow`; `source`/`src_ip`/`client`→src, `destination`/`dst_ip`/`server`→dst,
-  `sport`/`dport`→ports, `octets`→bytes, `pkts`→packets, `start`/`end`→first/last_seen, `tcp_state`→state
-
-## Normalized output (runner contract)
-
-```json
-{ "source": "Obserae",
-  "netflow": { "assets": [...], "services": [...], "sessions": [...] } }
-```
-
-`runner.import_netflow` upserts assets (by name), `ASSETSERVICE` (unique per asset+protocol+port,
-flow counts accumulated) and `NETWORKSESSION` rows. No `ToolID`/DB coupling in `run.py`.
+---
+<sub>Obserae REST API integration — cartography, sessions and detection alerts. Set `OBSERAE_URL` + `OBSERAE_API_TOKEN` for live mode.</sub>
