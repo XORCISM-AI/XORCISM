@@ -4147,6 +4147,16 @@ export function ensureThreatTables(): void {
       CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
     CREATE INDEX IF NOT EXISTS ix_detectionrule_platform ON DETECTIONRULE(Platform);
     CREATE INDEX IF NOT EXISTS ix_detectionrule_attack ON DETECTIONRULE(AttackTags);
+    -- Report → ATT&CK technique mappings (the Report Mapper, /report-mapper; MITRE TRAM parity).
+    -- One row per (report sentence → ATT&CK technique) with a confidence and the evidence sentence.
+    -- ThreatReportID → THREATREPORT; Source = tram|ai|keyword; Disposition = accept|review|reject.
+    CREATE TABLE IF NOT EXISTS REPORTMAPPING (
+      ReportMappingID INTEGER PRIMARY KEY, ReportMappingGUID TEXT,
+      ThreatReportID INTEGER, AttackID TEXT, AttackTechniqueID INTEGER, TechniqueName TEXT,
+      Confidence REAL, Sentence TEXT, SentenceOrder INTEGER, Disposition TEXT, Source TEXT,
+      MlModel TEXT, CreatedDate DATE);
+    CREATE INDEX IF NOT EXISTS ix_reportmapping_report ON REPORTMAPPING(ThreatReportID);
+    CREATE INDEX IF NOT EXISTS ix_reportmapping_attack ON REPORTMAPPING(AttackID);
     -- HUNT ↔ ATT&CK techniques links (derived from HUNT.AttackTags) and HUNT ↔ IOC.
     CREATE TABLE IF NOT EXISTS HUNTATTACK (
       HuntAttackID INTEGER PRIMARY KEY, HuntID INTEGER, AttackID TEXT,

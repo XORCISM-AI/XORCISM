@@ -33,6 +33,7 @@ import fusionRouter from "./routes/fusion";
 import attackPathRouter from "./routes/attackpath";
 import purpleTeamRouter from "./routes/purpleteam";
 import detectionEngRouter from "./routes/detectioneng";
+import reportMapperRouter from "./routes/reportmapper";
 import ransomwareRouter from "./routes/ransomware";
 import assuranceRouter from "./routes/assurance";
 import qaaRouter from "./routes/qaa";
@@ -348,6 +349,7 @@ app.use("/api", fusionRouter); // exploitability & relevance fusion score + prio
 app.use("/api", attackPathRouter); // attack-path & choke-point graph (reachability entry→crown-jewel)
 app.use("/api", purpleTeamRouter); // purple-team: chain ATT&CK detection coverage (Sigma) + rule generation
 app.use("/api", detectionEngRouter); // detection-engineering: multi-platform detection generator + Cyber Insights
+app.use("/api", reportMapperRouter); // report-mapper: report text → ATT&CK techniques (MITRE TRAM parity)
 app.use("/api", ransomwareRouter); // ransomware-to-$ scenario simulator (BIA/FAIR impact + D3FEND controls)
 app.use("/api", assuranceRouter); // continuously-proven compliance (control assurance from live telemetry)
 app.use("/api", qaaRouter); // security questionnaire auto-answer (drafts from the knowledge base + local AI)
@@ -791,6 +793,9 @@ app.get("/attack-path", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/detection-engineering", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "detection-engineering.html"));
+});
+app.get("/report-mapper", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "report-mapper.html"));
 });
 app.get("/purple-team", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "purple-team.html"));

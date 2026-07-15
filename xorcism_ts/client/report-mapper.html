@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Report ATT&CK Mapper</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .rm-wrap{padding:14px 16px 40px;max-width:1400px}
+  .rm-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .rm-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .rm-sub{font-size:12.5px;color:#94a3b8;max-width:1000px;line-height:1.5;margin:0 0 14px}
+  .rm-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .rm-panel textarea{width:100%;box-sizing:border-box;min-height:150px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:9px;font-family:ui-monospace,Consolas,monospace;resize:vertical}
+  .rm-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .rm-name{flex:1;min-width:260px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:7px 9px}
+  .rm-btn{background:#0ea5a0;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:9px 18px;cursor:pointer}
+  .rm-btn:disabled{opacity:.5;cursor:default}
+  .rm-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:6px 12px;font-size:12px}
+  .rm-plat label{font-size:12px;color:#cbd5e1;display:flex;align-items:center;gap:5px}
+  .rm-badge{font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:600}
+  .b-ai{background:#0e2f22;color:#4ade80;border:1px solid #16a34a}
+  .b-kw{background:#2a2440;color:#c4b5fd;border:1px solid #6d3bf5}
+  .rm-stats{display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 12px}
+  .rm-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:7px 13px;min-width:88px}
+  .rm-kpi .v{font-size:19px;font-weight:700;color:#2dd4bf}.rm-kpi .l{font-size:10.5px;color:#94a3b8}
+  table.rm-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.rm-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250;position:sticky;top:0;background:#13162a}
+  table.rm-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.rm-nomap td{color:#64748b}
+  .rm-sent{color:#cbd5e1;line-height:1.4;max-width:640px}
+  .rm-tech{display:flex;flex-direction:column;gap:5px}
+  .rm-tag{display:flex;align-items:center;gap:6px}
+  .rm-tid{font-family:ui-monospace,Consolas,monospace;color:#a78bfa;font-size:11.5px;min-width:78px}
+  .rm-tname{color:#cbd5e1;font-size:11.5px;flex:1}
+  .rm-src{font-size:9.5px;padding:1px 5px;border-radius:8px}
+  .rm-src.ai{background:#0e2f22;color:#4ade80}.rm-src.keyword{background:#221a2e;color:#c4b5fd}
+  .rm-bar{width:60px;height:6px;border-radius:3px;background:#232843;overflow:hidden}
+  .rm-bar span{display:block;height:100%;background:linear-gradient(90deg,#fbbf24,#ef4444)}
+  .rm-conf{font-size:10.5px;color:#94a3b8;min-width:30px}
+  .rm-chk{width:15px;height:15px}
+  .rm-section-h{font-size:14px;color:#e2e8f0;font-weight:600;margin:4px 0 8px}
+  .muted{color:#64748b;font-size:12px}
+  a.rm-link{color:#5eead4;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/attack">&#127919; ATT&amp;CK</a>
+  <a href="/hunting">&#128269; Hunting</a>
+  <a href="/report-mapper" style="color:#2dd4bf">&#128220; Report Mapper</a>
+  <a href="/detection-engineering">&#128736;&#65039; Detection Eng</a>
+  <a href="/cti-expert">&#129302; CTI Expert</a>
+  <a href="/ask">&#129302; Ask AI</a>
+</div>
+
+<div class="rm-wrap">
+  <div class="rm-head">
+    <h2>&#128220; Report ATT&amp;CK Mapper</h2>
+    <span class="rm-badge b-kw" id="rm-engine">keyword + local-AI</span>
+  </div>
+  <p class="rm-sub">MITRE <strong>TRAM</strong> parity — paste a finished threat report and map each sentence to MITRE ATT&amp;CK
+    techniques with a confidence score and the evidence sentence. A deterministic keyword engine runs over the ATT&amp;CK
+    catalogue always; the local AI (Ollama) refines it when available. Review, accept, and save to a threat report +
+    export an ATT&amp;CK Navigator layer. Or pull mappings from a real TRAM deployment with the <code>tram</code> connector.</p>
+
+  <div class="rm-panel">
+    <textarea id="rm-text" placeholder="Paste the threat report text here…"></textarea>
+    <div class="rm-row">
+      <label class="rm-plat"><input type="checkbox" id="rm-useai" checked> Use local AI when available</label>
+      <button class="rm-btn" id="rm-map">Map to ATT&amp;CK</button>
+      <button class="rm-btn ghost" id="rm-sample">Load sample report</button>
+      <span class="muted" id="rm-status"></span>
+    </div>
+  </div>
+
+  <div id="rm-results" style="display:none">
+    <div class="rm-stats" id="rm-stats"></div>
+    <div class="rm-panel">
+      <table class="rm-tbl">
+        <thead><tr><th style="width:34px"></th><th>Sentence</th><th style="width:340px">ATT&amp;CK techniques (accept ✓)</th></tr></thead>
+        <tbody id="rm-body"></tbody>
+      </table>
+      <div class="rm-row">
+        <input class="rm-name" id="rm-name" placeholder="Report name (for the saved THREATREPORT)">
+        <button class="rm-btn" id="rm-save">Save mappings</button>
+        <span class="muted" id="rm-save-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rm-panel">
+    <div class="rm-section-h">&#128203; Mapped reports</div>
+    <table class="rm-tbl">
+      <thead><tr><th>Report</th><th style="width:90px">Source</th><th style="width:80px">Techniques</th><th style="width:80px">Mappings</th><th style="width:120px">Navigator</th></tr></thead>
+      <tbody id="rm-reports"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/report-mapper.js"></script>
+</body>
+</html>

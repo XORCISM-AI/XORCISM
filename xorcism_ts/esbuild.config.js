@@ -34,6 +34,7 @@ const entryPoints = [
   "client/ts/attack-path.ts",
   "client/ts/purple-team.ts",
   "client/ts/detection-engineering.ts",
+  "client/ts/report-mapper.ts",
   "client/ts/ransomware.ts",
   "client/ts/assurance.ts",
   "client/ts/sla.ts",

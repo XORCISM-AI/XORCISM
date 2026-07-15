@@ -1,0 +1,16 @@
+{
+  "id": "giskard",
+  "name": "Giskard — AI model scan (LLM vulnerabilities) import",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports Giskard (github.com/Giskard-AI/giskard, Apache-2.0) scan results into XORCISM's AI red-team cockpit. Giskard scans ML/LLM models and agents and reports issues by IssueGroup — Prompt Injection, Sensitive Information Disclosure, Harmfulness, Hallucination & Misinformation, Stereotypes, Robustness, Output Formatting, Performance, Data Leakage, Stochasticity — each with a level (major/medium/minor), a metric/deviation and examples. This connector parses a Giskard scan report (report.to_json()), maps each issue to the OWASP LLM Top 10 and to XORCISM's AI-BAS probe categories, and imports them as red-team results (XORCISM.AIBASRUN + AIBASRESULT) so they appear at /ai-redteam alongside garak / PyRIT / promptfoo. Config (worker environment variables): GISKARD_HUB_URL + GISKARD_API_KEY (optional Giskard Hub), GISKARD_PROJECT. Offline: pass `file` = a saved Giskard scan report JSON, or run with no config for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:giskard",
+  "run": "run.py",
+  "mapping": "giskard",
+  "parameters": [
+    { "name": "system", "type": "string", "required": false, "help": "XORCISM AI system name to attach the run to (defaults to the model name in the report)" },
+    { "name": "min_level", "type": "string", "default": "minor", "help": "Drop issues below this Giskard level: minor | medium | major" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a saved Giskard scan report JSON (report.to_json()) to parse instead of the Hub API" }
+  ]
+}

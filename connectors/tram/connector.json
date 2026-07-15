@@ -1,0 +1,17 @@
+{
+  "id": "tram",
+  "name": "MITRE TRAM — Threat Report ATT&CK Mapper import",
+  "type": "import",
+  "category": "Threat Intelligence",
+  "description": "Imports MITRE TRAM (Threat Report ATT&CK Mapper, github.com/center-for-threat-informed-defense/tram) results into XORCISM. TRAM uses NLP (SciBERT) to map the sentences of a finished CTI report to MITRE ATT&CK techniques with a confidence score; this connector ingests TRAM's report-export JSON and turns each report into a XTHREAT.THREATREPORT plus its sentence-level technique mappings (REPORTMAPPING), cross-linked to ATTACKTECHNIQUE so they feed ATT&CK coverage. Config (worker environment variables): TRAM_URL (a TRAM instance, e.g. http://localhost:8000), TRAM_TOKEN (API token), optional TRAM_REPORT_ID (export one report). Offline: pass `file` = a saved TRAM report-export JSON, or run with no config for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:tram",
+  "run": "run.py",
+  "mapping": "tram",
+  "parameters": [
+    { "name": "limit", "type": "int", "default": 50, "min": 1, "max": 500, "help": "Maximum number of reports to import" },
+    { "name": "min_confidence", "type": "float", "default": 0, "min": 0, "max": 1, "help": "Drop technique mappings below this confidence (0–1)" },
+    { "name": "only_accepted", "type": "bool", "default": false, "help": "Keep only sentences the analyst accepted in TRAM" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a saved TRAM report-export JSON to parse instead of the live API" }
+  ]
+}

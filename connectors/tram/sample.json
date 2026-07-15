@@ -1,0 +1,64 @@
+{
+  "id": 42,
+  "document_id": 108,
+  "name": "APT-CozyDuke Spearphishing Campaign",
+  "byline": "analyst on 2026-07-10 14:22:00 UTC",
+  "accepted_sentences": 4,
+  "reviewing_sentences": 1,
+  "total_sentences": 5,
+  "text": "Full report text (truncated in sample).",
+  "ml_model": "SciBERT multi-label",
+  "created_by": "analyst",
+  "created_on": "2026-07-10T14:00:00Z",
+  "updated_on": "2026-07-10T14:22:00Z",
+  "status": "Reviewing",
+  "sentences": [
+    {
+      "id": 501,
+      "text": "The actor sent spearphishing emails containing a malicious link to targeted employees.",
+      "order": 0,
+      "disposition": "accept",
+      "mappings": [
+        { "id": 9001, "attack_id": "T1566.002", "name": "Spearphishing Link", "confidence": 0.94 },
+        { "id": 9002, "attack_id": "T1566", "name": "Phishing", "confidence": 0.71 }
+      ]
+    },
+    {
+      "id": 502,
+      "text": "Once opened, the loader executed an encoded PowerShell command to download the next stage.",
+      "order": 1,
+      "disposition": "accept",
+      "mappings": [
+        { "id": 9003, "attack_id": "T1059.001", "name": "PowerShell", "confidence": 0.97 },
+        { "id": 9004, "attack_id": "T1027", "name": "Obfuscated Files or Information", "confidence": 0.63 }
+      ]
+    },
+    {
+      "id": 503,
+      "text": "The malware established persistence by creating a new scheduled task named MicrosoftUpdate.",
+      "order": 2,
+      "disposition": "accept",
+      "mappings": [
+        { "id": 9005, "attack_id": "T1053.005", "name": "Scheduled Task", "confidence": 0.9 }
+      ]
+    },
+    {
+      "id": 504,
+      "text": "It then collected credentials from the LSASS process memory using a custom tool.",
+      "order": 3,
+      "disposition": "accept",
+      "mappings": [
+        { "id": 9006, "attack_id": "T1003.001", "name": "LSASS Memory", "confidence": 0.92 }
+      ]
+    },
+    {
+      "id": 505,
+      "text": "Exfiltration occurred over an encrypted channel to an attacker-controlled server.",
+      "order": 4,
+      "disposition": "review",
+      "mappings": [
+        { "id": 9007, "attack_id": "T1041", "name": "Exfiltration Over C2 Channel", "confidence": 0.58 }
+      ]
+    }
+  ]
+}

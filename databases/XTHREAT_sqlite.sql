@@ -1215,7 +1215,7 @@ CREATE TABLE IF NOT EXISTS SIGMARULE (
   SigmaRuleGUID TEXT, SigmaRuleName TEXT, SigmaRuleDescription TEXT,
   SigmaYaml TEXT, LogSource TEXT, Level TEXT, Status TEXT, Author TEXT,
   SigmaReference TEXT, AttackTags TEXT,
-  SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT,
+  SplQuery TEXT, KqlQuery TEXT, EqlQuery TEXT, CqlQuery TEXT,
   CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
 -- Free-text tags for a SIGMARULE (like ASSETTAG): "ransomware", "tier-1", "needs-tuning"…
 CREATE TABLE IF NOT EXISTS SIGMARULETAG (
@@ -1512,6 +1512,33 @@ CREATE TABLE IF NOT EXISTS A3MTECHNIQUE (
         A3MTechniqueID INTEGER PRIMARY KEY, AATID TEXT UNIQUE, Name TEXT, Description TEXT,
         TacticName TEXT, MatrixOrder INTEGER, URL TEXT);
 CREATE INDEX IF NOT EXISTS ix_a3mtech_tactic ON A3MTECHNIQUE(TacticName);
+-- Multi-platform detection rules — the Detection Engineering studio (/detection-engineering).
+-- Sigma/YARA keep SIGMARULE/YARARULE; DETECTIONRULE holds network/host/vendor detections
+-- generated from an ATT&CK technique (Suricata, Snort, Falco, Sysmon, OSQuery, Sentinel/Defender KQL, ...).
+CREATE TABLE IF NOT EXISTS DETECTIONRULE (
+        DetectionRuleID INTEGER PRIMARY KEY, DetectionRuleGUID TEXT,
+        Name TEXT, Description TEXT, Platform TEXT, Language TEXT, RuleText TEXT,
+        AttackTags TEXT, Level TEXT, Status TEXT, Author TEXT, Source TEXT, Reference TEXT,
+        CreatedDate DATE, ValidFrom DATE, ValidUntil DATE);
+CREATE INDEX IF NOT EXISTS ix_detectionrule_platform ON DETECTIONRULE(Platform);
+CREATE INDEX IF NOT EXISTS ix_detectionrule_attack ON DETECTIONRULE(AttackTags);
+-- Report → ATT&CK technique mappings — the Report Mapper (/report-mapper; MITRE TRAM parity).
+-- One row per (report sentence → ATT&CK technique) with a confidence and the evidence sentence.
+CREATE TABLE IF NOT EXISTS REPORTMAPPING (
+        ReportMappingID INTEGER PRIMARY KEY, ReportMappingGUID TEXT,
+        ThreatReportID INTEGER, AttackID TEXT, AttackTechniqueID INTEGER, TechniqueName TEXT,
+        Confidence REAL, Sentence TEXT, SentenceOrder INTEGER, Disposition TEXT, Source TEXT,
+        MlModel TEXT, CreatedDate DATE);
+CREATE INDEX IF NOT EXISTS ix_reportmapping_report ON REPORTMAPPING(ThreatReportID);
+CREATE INDEX IF NOT EXISTS ix_reportmapping_attack ON REPORTMAPPING(AttackID);
+-- MAESTRO — CSA agentic-AI threat-modeling framework (7 layers + cross-layer), populated by import_maestro.py.
+CREATE TABLE IF NOT EXISTS MAESTROLAYER (
+        MaestroLayerID INTEGER PRIMARY KEY, LayerNumber INTEGER, Name TEXT UNIQUE, Description TEXT,
+        IsVertical INTEGER, MatrixOrder INTEGER, URL TEXT);
+CREATE TABLE IF NOT EXISTS MAESTROTHREAT (
+        MaestroThreatID INTEGER PRIMARY KEY, MaestroID TEXT UNIQUE, Name TEXT, Description TEXT,
+        LayerName TEXT, IsCrossLayer INTEGER, MatrixOrder INTEGER, URL TEXT);
+CREATE INDEX IF NOT EXISTS ix_maestrothreat_layer ON MAESTROTHREAT(LayerName);
 -- Mitigant Threat Catalog — cloud (AWS) attack-technique matrix (threats.mitigant.io), populated by import_mitigant.py.
 CREATE TABLE IF NOT EXISTS MITIGANTTACTIC (
         MitigantTacticID INTEGER PRIMARY KEY, TacticKey TEXT UNIQUE, Name TEXT, MitreTacticID TEXT, MatrixOrder INTEGER);
