@@ -1,0 +1,16 @@
+{
+  "id": "vigilsoc",
+  "name": "Vigil SOC — AI-SOC detection rules + agent cases import",
+  "type": "import",
+  "category": "SOC",
+  "description": "Imports from Vigil SOC (vigilsoc.org, github.com/Vigil-SOC/vigil, Apache-2.0) — an open-source local-first AI-SOC built on Bifrost + MCP (FastAPI on :6987, PostgreSQL/pgvector, sponsored by DeepTempo). Vigil runs 13 coordinated agents (Triage, Investigator, Threat Hunter, Correlator, Responder, Reporter, MITRE Analyst, Forensics, Threat Intel, Compliance, Malware Analyst, Network Analyst, Auto Responder) over 30+ MCP integrations, and ships a detection library of 7,200+ rules across Sigma, Splunk, Elastic and KQL. This connector imports (a) those detection rules into XTHREAT.SIGMARULE — keeping the Sigma YAML *and* the Splunk/Elastic/KQL variants on one rule row, so they feed /detection-engineering, /purple-team and /threat-informed-defense; and (b) Vigil's cases (the agents' output, with their MITRE ATT&CK tags, confidence and containment state) into XINCIDENT.ALERT, so an autonomous Vigil containment lands in the XORCISM incident layer next to every other alert source. Config (worker environment variables, never UI params): VIGILSOC_URL (e.g. http://localhost:6987), VIGILSOC_API_KEY (optional Bearer), VIGILSOC_RULES_PATH / VIGILSOC_CASES_PATH (optional endpoint overrides — Vigil publishes /docs but not a frozen path list, so live mode probes the plausible paths). Offline: pass `file` = a saved Vigil export JSON, or run with no config for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:vigilsoc",
+  "run": "run.py",
+  "mapping": "vigilsoc",
+  "parameters": [
+    { "name": "import", "type": "string", "default": "both", "help": "What to import: rules | cases | both" },
+    { "name": "limit", "type": "number", "default": 500, "help": "Maximum rules and cases to pull per run" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a saved Vigil SOC export JSON to parse instead of the API" }
+  ]
+}

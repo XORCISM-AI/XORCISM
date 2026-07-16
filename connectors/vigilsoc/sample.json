@@ -1,0 +1,73 @@
+{
+  "rules": [
+    {
+      "id": "vigil-rule-0001",
+      "title": "Suspicious PowerShell Encoded Command",
+      "description": "Detects base64-encoded PowerShell launched from an Office process.",
+      "level": "high",
+      "status": "stable",
+      "author": "Vigil SOC community",
+      "logsource": "windows/process_creation",
+      "tags": ["attack.t1059.001", "attack.execution"],
+      "sigma": "title: Suspicious PowerShell Encoded Command\nid: 9d1b0d02-1f0a-4f21-9d1a-0f0a1b2c3d4e\nstatus: stable\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\powershell.exe'\n    CommandLine|contains: '-enc'\n  condition: selection\nlevel: high",
+      "splunk": "index=windows EventCode=1 Image=\"*\\\\powershell.exe\" CommandLine=\"*-enc*\" | stats count by host, User, CommandLine",
+      "elastic": "process where event.type == \"start\" and process.name : \"powershell.exe\" and process.command_line : \"*-enc*\"",
+      "kql": "DeviceProcessEvents | where FileName =~ \"powershell.exe\" and ProcessCommandLine has \"-enc\" | project Timestamp, DeviceName, AccountName, ProcessCommandLine"
+    },
+    {
+      "id": "vigil-rule-0002",
+      "title": "Shadow Copy Deletion via vssadmin",
+      "description": "vssadmin delete shadows — a hallmark of ransomware pre-encryption.",
+      "level": "critical",
+      "status": "stable",
+      "author": "Vigil SOC community",
+      "logsource": "windows/process_creation",
+      "tags": ["attack.t1490", "attack.impact"],
+      "sigma": "title: Shadow Copy Deletion via vssadmin\nid: 2c4a1b33-7e55-4a9c-8f11-5b6c7d8e9f00\nstatus: stable\nlogsource:\n  category: process_creation\n  product: windows\ndetection:\n  selection:\n    Image|endswith: '\\vssadmin.exe'\n    CommandLine|contains|all:\n      - 'delete'\n      - 'shadows'\n  condition: selection\nlevel: critical",
+      "splunk": "index=windows EventCode=1 Image=\"*\\\\vssadmin.exe\" CommandLine=\"*delete*shadows*\"",
+      "kql": "DeviceProcessEvents | where FileName =~ \"vssadmin.exe\" and ProcessCommandLine has_all (\"delete\",\"shadows\")"
+    },
+    {
+      "id": "vigil-rule-0003",
+      "title": "LSASS Memory Access",
+      "description": "Credential dumping via direct access to the LSASS process memory.",
+      "level": "high",
+      "status": "experimental",
+      "author": "Vigil SOC community",
+      "logsource": "windows/process_access",
+      "tags": ["attack.t1003.001", "attack.credential_access"],
+      "sigma": "title: LSASS Memory Access\nid: 7f3c9a11-2b44-4d66-9c88-1a2b3c4d5e6f\nstatus: experimental\nlogsource:\n  category: process_access\n  product: windows\ndetection:\n  selection:\n    TargetImage|endswith: '\\lsass.exe'\n    GrantedAccess: '0x1410'\n  condition: selection\nlevel: high",
+      "elastic": "process where event.action == \"process_access\" and process.target.name : \"lsass.exe\""
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-20260712-a1b2c3",
+      "title": "Suspected ransomware staging on FS-PROD-02",
+      "summary": "Auto-Response agent correlated encoded PowerShell, LSASS access and shadow-copy deletion on one host within 9 minutes. Confidence 0.94 — host isolated automatically.",
+      "severity": "critical",
+      "status": "contained",
+      "assignee": "auto-responder",
+      "confidence": 0.94,
+      "created_at": "2026-07-12T09:41:00Z",
+      "host": "FS-PROD-02",
+      "mitre": ["T1059.001", "T1003.001", "T1490"],
+      "url": "http://localhost:6987/cases/case-20260712-a1b2c3",
+      "agent": "Auto Responder"
+    },
+    {
+      "id": "case-20260712-d4e5f6",
+      "title": "Impossible travel sign-in for j.doe",
+      "summary": "Investigator agent traced two successful sign-ins 6,400 km apart in 40 minutes. Confidence 0.71 — routed to a human analyst (below the 0.90 auto-containment threshold).",
+      "severity": "medium",
+      "status": "investigating",
+      "assignee": "tier2",
+      "confidence": 0.71,
+      "created_at": "2026-07-12T10:15:00Z",
+      "host": "vpn-gw-01",
+      "mitre": ["T1078"],
+      "url": "http://localhost:6987/cases/case-20260712-d4e5f6",
+      "agent": "Investigator"
+    }
+  ]
+}

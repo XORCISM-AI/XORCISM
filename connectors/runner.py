@@ -946,6 +946,8 @@ def import_result(mapping: str, result: Dict[str, Any]) -> Dict[str, int]:
         counts.update(import_incidents(result))
     if result.get("exercises"):
         counts.update(import_exercises(result))
+    if result.get("sme_maturity") or result.get("sme_assessments"):
+        counts.update(import_sme_maturity(result))
     if result.get("compliance"):
         counts.update(import_compliance(result))
     if result.get("wifi") or result.get("wifi_networks"):
@@ -1486,6 +1488,10 @@ _SIGMA_COLUMNS = {
     "SigmaRuleID": "INTEGER PRIMARY KEY", "SigmaRuleGUID": "TEXT", "SigmaRuleName": "TEXT",
     "SigmaRuleDescription": "TEXT", "SigmaYaml": "TEXT", "LogSource": "TEXT", "Level": "TEXT",
     "Status": "TEXT", "Author": "TEXT", "SigmaReference": "TEXT", "AttackTags": "TEXT",
+    # Per-platform query variants (kept in sync with db.ts SIGMARULE): a rule is often shipped as
+    # Sigma PLUS a backend-specific query. Multi-platform detection sources (Vigil SOC, SOC Prime,
+    # the threat-hunting-detections repo) fill these; single-format sources leave them NULL.
+    "SplQuery": "TEXT", "KqlQuery": "TEXT", "EqlQuery": "TEXT", "CqlQuery": "TEXT",
     "CreatedDate": "DATE",
 }
 _SIGMA_ATTACK_RE = re.compile(r"\bT\d{4}(?:\.\d{3})?\b")
@@ -1525,15 +1531,26 @@ def import_sigma_rules(result: Dict[str, Any]) -> Dict[str, int]:
         attack = it.get("attack_tags")
         if not attack and yaml_text:
             attack = ", ".join(sorted({m.upper() for m in _SIGMA_ATTACK_RE.findall(yaml_text)}))
+        # Per-platform query variants — a multi-platform source (Vigil SOC…) ships the same
+        # detection as Sigma + backend queries; keep them all on the one rule row.
+        spl = it.get("spl") or it.get("splunk")
+        kql = it.get("kql") or it.get("sentinel") or it.get("defender")
+        eql = it.get("eql") or it.get("elastic")
+        cql = it.get("cql") or it.get("logscale") or it.get("crowdstrike")
+        if not attack:  # a query-only rule still carries its ATT&CK ids in the query text
+            blob = " ".join(str(x) for x in (spl, kql, eql, cql) if x)
+            if blob:
+                attack = ", ".join(sorted({m.upper() for m in _SIGMA_ATTACK_RE.findall(blob)})) or None
         common = (it.get("name") or it.get("title"), it.get("description"), yaml_text,
                   it.get("logsource"), (it.get("level") or "medium"),
                   (it.get("status") or "experimental"), (it.get("author") or src),
-                  ref, attack)
+                  ref, attack, spl, kql, eql, cql)
         row = cur.execute("SELECT SigmaRuleID FROM SIGMARULE WHERE SigmaReference=?", (ref,)).fetchone()
         if row:
             cur.execute(
                 """UPDATE SIGMARULE SET SigmaRuleName=?, SigmaRuleDescription=?, SigmaYaml=?,
-                     LogSource=?, Level=?, Status=?, Author=?, SigmaReference=?, AttackTags=?
+                     LogSource=?, Level=?, Status=?, Author=?, SigmaReference=?, AttackTags=?,
+                     SplQuery=?, KqlQuery=?, EqlQuery=?, CqlQuery=?
                    WHERE SigmaRuleID=?""",
                 (*common, row[0]),
             )
@@ -1541,8 +1558,9 @@ def import_sigma_rules(result: Dict[str, Any]) -> Dict[str, int]:
         else:
             cur.execute(
                 """INSERT INTO SIGMARULE (SigmaRuleName, SigmaRuleDescription, SigmaYaml, LogSource,
-                     Level, Status, Author, SigmaReference, AttackTags, SigmaRuleGUID, CreatedDate)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                     Level, Status, Author, SigmaReference, AttackTags,
+                     SplQuery, KqlQuery, EqlQuery, CqlQuery, SigmaRuleGUID, CreatedDate)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (*common, it.get("guid") or str(uuid4()), _now()),
             )
             counts["sigma"] += 1
@@ -2407,6 +2425,89 @@ def import_exercises(result: Dict[str, Any]) -> Dict[str, int]:
                  str(inj.get("title") or "Inject")[:300], (inj.get("description") or "")[:4000],
                  (inj.get("type") or "task")[:80], inj.get("expected"), now, tid))
             counts["injects"] += 1
+    con.commit()
+    con.close()
+    return counts
+
+
+def import_sme_maturity(result: Dict[str, Any]) -> Dict[str, int]:
+    """Import ENISA SME Cyber Resilience Maturity self-checks into XCOMPLIANCE.
+
+    Each assessment -> one SMEMATURITYASSESSMENT (idempotent by TenantID + Name); its 25 scored
+    questions -> SMEMATURITYANSWER rows. Mirrors server/smematurity.ts (the /cra-maturity cockpit):
+    5 domains x 5 questions on the 1-5 rubric, overall = mean of answered, band Basic<=2.5 /
+    Intermediate<=3.9 / Advanced<=5. The cockpit recomputes on read, but we also cache the
+    OverallScore/Band so a raw DB read is correct. Self-creates the tables; stamps the import tenant.
+
+    Each assessment item (dict): {"name", "org", "product_scope", "assessor",
+        "answers": [{"ref": "1.1", "score": 1-5, "evidence": ""}, ...]}."""
+    from uuid import uuid4
+
+    items = result.get("sme_maturity") or result.get("sme_assessments") or []
+    counts = {"assessments": 0, "assessments_updated": 0, "answers": 0}
+    if not items:
+        return counts
+    tid = _import_tenant_id()
+    con = sqlite3.connect(os.path.join(_db_dir(), "XCOMPLIANCE.db"), timeout=15)
+    con.execute("PRAGMA busy_timeout=15000")
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS SMEMATURITYASSESSMENT (
+        AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, OrgName TEXT,
+        ProductScope TEXT, Assessor TEXT, Status TEXT, OverallScore REAL, Band TEXT, Notes TEXT,
+        CreatedDate TEXT, UpdatedDate TEXT)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS SMEMATURITYANSWER (
+        AnswerID INTEGER PRIMARY KEY, AssessmentID INTEGER, Ref TEXT, DomainKey TEXT, Score INTEGER,
+        Evidence TEXT, UpdatedDate TEXT)""")
+    cur.execute("CREATE INDEX IF NOT EXISTS ix_smeanswer_assess ON SMEMATURITYANSWER(AssessmentID)")
+    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_smeanswer_ref ON SMEMATURITYANSWER(AssessmentID, Ref)")
+    now = _now()
+
+    def _band(score: float) -> str:
+        if score <= 0:
+            return ""
+        return "BASIC" if score <= 2.5 else "INTERMEDIATE" if score <= 3.9 else "ADVANCED"
+
+    tw = "TenantID IS NULL" if tid is None else "TenantID = ?"
+    for a in items:
+        if not isinstance(a, dict):
+            continue
+        name = str(a.get("name") or "ENISA SME CRA maturity self-check")[:300]
+        answers = [x for x in (a.get("answers") or []) if isinstance(x, dict)
+                   and re.match(r"^\d+\.\d+$", str(x.get("ref") or ""))
+                   and isinstance(x.get("score"), int) and 1 <= x["score"] <= 5]
+        scores = [x["score"] for x in answers]
+        overall = round(sum(scores) / len(scores), 1) if scores else 0.0
+        band = _band(overall)
+        status = "completed" if len(scores) >= 25 else "in-progress" if scores else "draft"
+        args = [name] if tid is None else [name, tid]
+        row = cur.execute(f"SELECT AssessmentID FROM SMEMATURITYASSESSMENT WHERE Name=? AND {tw}", args).fetchone()
+        if row:
+            aid = row[0]
+            cur.execute("""UPDATE SMEMATURITYASSESSMENT SET OrgName=?, ProductScope=?, Assessor=?, Status=?,
+                OverallScore=?, Band=?, UpdatedDate=? WHERE AssessmentID=?""",
+                (str(a.get("org") or "")[:200], str(a.get("product_scope") or "")[:500],
+                 str(a.get("assessor") or "")[:200], status, overall, band, now, aid))
+            counts["assessments_updated"] += 1
+        else:
+            aid = (cur.execute("SELECT COALESCE(MAX(AssessmentID),0) FROM SMEMATURITYASSESSMENT").fetchone()[0] or 0) + 1
+            cur.execute("""INSERT INTO SMEMATURITYASSESSMENT (AssessmentID, AssessmentGUID, TenantID, Name, OrgName,
+                ProductScope, Assessor, Status, OverallScore, Band, Notes, CreatedDate, UpdatedDate)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (aid, str(uuid4()), tid, name, str(a.get("org") or "")[:200], str(a.get("product_scope") or "")[:500],
+                 str(a.get("assessor") or "")[:200], status, overall, band, "", now, now))
+            counts["assessments"] += 1
+        nid = (cur.execute("SELECT COALESCE(MAX(AnswerID),0) FROM SMEMATURITYANSWER").fetchone()[0] or 0)
+        for x in answers:
+            ref = str(x["ref"]); dk = ref.split(".")[0]
+            exist = cur.execute("SELECT AnswerID FROM SMEMATURITYANSWER WHERE AssessmentID=? AND Ref=?", (aid, ref)).fetchone()
+            if exist:
+                cur.execute("UPDATE SMEMATURITYANSWER SET Score=?, Evidence=?, UpdatedDate=? WHERE AnswerID=?",
+                    (x["score"], str(x.get("evidence") or "")[:2000], now, exist[0]))
+            else:
+                nid += 1
+                cur.execute("""INSERT INTO SMEMATURITYANSWER (AnswerID, AssessmentID, Ref, DomainKey, Score, Evidence, UpdatedDate)
+                    VALUES (?,?,?,?,?,?,?)""", (nid, aid, ref, dk, x["score"], str(x.get("evidence") or "")[:2000], now))
+            counts["answers"] += 1
     con.commit()
     con.close()
     return counts

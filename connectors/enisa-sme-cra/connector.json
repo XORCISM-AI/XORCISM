@@ -1,0 +1,17 @@
+{
+  "id": "enisa-sme-cra",
+  "name": "ENISA SME Cyber Resilience Maturity (CRA self-check) import",
+  "type": "import",
+  "category": "Compliance",
+  "description": "Imports a filled-in copy of ENISA's official SME Cyber Resilience Maturity Assessment tool (CRA_Maturity_Model_TOOL.xlsx, from enisa.europa.eu/publications/sme-cyber-resilience-maturity-assessment-model, July 2026, TLP:CLEAR) into XORCISM's native /cra-maturity cockpit. The model is a Cyber Resilience Act (Reg. (EU) 2024/2847) readiness self-check for SMEs making products with digital elements: 25 questions across five domains (governance & documentation; risk management & security-by-design/default; vulnerability & patch management; product lifecycle management; awareness, competence & skills), each scored 1-5 on an anchored rubric. This connector reads the Questionnaire sheet's 25 scores (a stdlib-only .xlsx parser — no openpyxl) and imports them as an SMEMATURITYASSESSMENT + SMEMATURITYANSWER rows (runner.import_sme_maturity), where XORCISM recomputes the domain averages, the overall maturity band (Basic 1-2.5 / Intermediate 2.6-3.9 / Advanced 4-5) and the Annex B improvement roadmap. Offline only (the ENISA tool is a spreadsheet, no API/secrets): pass `file` = the filled ENISA .xlsx or a JSON export ({assessments:[...]} / {scores:{\"1.1\":3,...}}), or run with no file for the bundled sample (ENISA's worked example, overall 3.0 -> Intermediate). It is a maturity self-check, NOT a proof of CRA compliance.",
+  "intrusive": false,
+  "permission": "connector:enisa-sme-cra",
+  "run": "run.py",
+  "mapping": "enisa-sme-cra",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "The filled-in ENISA CRA_Maturity_Model_TOOL.xlsx, or a JSON export of the scores" },
+    { "name": "name", "type": "string", "required": false, "help": "Assessment name (defaults to the ENISA tool title)" },
+    { "name": "org", "type": "string", "required": false, "help": "Organisation (SME) name" },
+    { "name": "product_scope", "type": "string", "required": false, "help": "Product(s) with digital elements in scope" }
+  ]
+}

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — SME Cyber Resilience Maturity (CRA)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .sm-wrap{padding:14px 16px 48px;max-width:1560px}
+  .sm-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .sm-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .sm-sub{font-size:12.5px;color:#94a3b8;max-width:1080px;line-height:1.5;margin:0 0 14px}
+  .sm-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .sm-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .sm-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:8px 14px;min-width:104px}
+  .sm-kpi .v{font-size:20px;font-weight:700;color:#38bdf8}.sm-kpi .l{font-size:10.5px;color:#94a3b8}
+  .sm-btn{background:#0284c7;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer}
+  .sm-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:5px 11px;font-size:11.5px}
+  .sm-btn.danger{background:#3b1220;border:1px solid #7f1d1d;color:#fca5a5}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:6px 8px}
+  table.sm-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.sm-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.sm-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.sm-row:hover{background:#171b30;cursor:pointer}
+  tr.sm-row.sel{background:#16233a}
+  .sm-chip{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:600;white-space:nowrap}
+  .b-ADVANCED{background:#0e2f22;color:#4ade80;border:1px solid #16a34a}
+  .b-INTERMEDIATE{background:#1e2a4a;color:#7dd3fc;border:1px solid #0284c7}
+  .b-BASIC{background:#3a2f12;color:#fbbf24;border:1px solid #a16207}
+  .rag-good{color:#4ade80}.rag-moderate{color:#fbbf24}.rag-needs-work{color:#fca5a5}
+  .sm-cols{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+  @media(max-width:1100px){.sm-cols{grid-template-columns:1fr}}
+  .sm-sect-h{font-size:13px;color:#e2e8f0;font-weight:600;margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .sm-bar{height:8px;border-radius:4px;background:#232843;overflow:hidden;width:150px;display:inline-block;vertical-align:middle}
+  .sm-bar span{display:block;height:100%;background:linear-gradient(90deg,#a16207,#0284c7,#4ade80)}
+  .muted{color:#64748b;font-size:12px}
+  .sm-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .sm-form input{min-width:150px}
+  a.sm-link{color:#5eead4;text-decoration:none}
+  .sm-overall{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .sm-score-big{font-size:40px;font-weight:800;color:#38bdf8;line-height:1}
+  .sm-domblock{border:1px solid #232843;border-radius:9px;margin-bottom:12px;overflow:hidden}
+  .sm-domhdr{background:#0f1117;padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer}
+  .sm-domhdr .nm{font-weight:600;color:#e2e8f0;font-size:13px}
+  .sm-domhdr .avg{margin-left:auto;font-weight:700;color:#7dd3fc}
+  .sm-q{padding:10px 12px;border-top:1px solid #1c2036}
+  .sm-q .qref{color:#64748b;font-weight:600;margin-right:6px}
+  .sm-q .qtext{color:#cbd5e1;font-size:12.5px}
+  .sm-levels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+  .sm-lvl{border:1px solid #232843;border-radius:7px;padding:7px 8px;cursor:pointer;background:#0f1117;transition:border-color .1s}
+  .sm-lvl:hover{border-color:#0284c7}
+  .sm-lvl.sel{border-color:#38bdf8;background:#16233a}
+  .sm-lvl .lh{font-size:10.5px;font-weight:700;color:#7dd3fc;margin-bottom:3px}
+  .sm-lvl .ld{font-size:10.5px;color:#94a3b8;line-height:1.35}
+  .sm-cra{border-left:3px solid #3b82f6;background:#0f1117;border-radius:6px;padding:8px 11px;font-size:11px;color:#94a3b8;line-height:1.45;margin-top:6px}
+  .sm-road-band{border-left:3px solid #0284c7;background:#0f1117;border-radius:6px;padding:10px 12px;font-size:12px;color:#cbd5e1;line-height:1.5;margin-bottom:10px}
+  .sm-road-grp{margin-bottom:11px}
+  .sm-road-grp h4{margin:0 0 5px;font-size:12px;color:#e2e8f0;display:flex;gap:8px;align-items:center}
+  .sm-road-grp ul{margin:0;padding-left:18px}
+  .sm-road-grp li{font-size:11.5px;color:#94a3b8;line-height:1.5;margin-bottom:3px}
+  .sm-pri{background:#3b1220;color:#fca5a5;border:1px solid #7f1d1d;font-size:9.5px;padding:1px 6px;border-radius:8px}
+  .sm-dist{display:flex;gap:4px;align-items:flex-end;height:44px}
+  .sm-dist .bar{flex:1;background:#1e2a4a;border-radius:3px 3px 0 0;min-height:3px;position:relative}
+  .sm-dist .bar b{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:10px;color:#7dd3fc}
+  .sm-dist .bar i{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:9px;color:#64748b;font-style:normal}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/compliance-management">&#128203; Compliance</a>
+  <a href="/cra-maturity" style="color:#38bdf8">&#128202; SME CRA Maturity</a>
+  <a href="/cra-compliance">&#128230; CRA</a>
+  <a href="/common-criteria">&#127942; Common Criteria</a>
+  <a href="/essential-eight">&#128737;&#65039; Essential Eight</a>
+</div>
+
+<div class="sm-wrap">
+  <div class="sm-head">
+    <h2>&#128202; SME Cyber Resilience Maturity <span class="muted" style="font-size:13px">— ENISA CRA self-check</span></h2>
+    <span class="sm-chip b-INTERMEDIATE" id="sm-cat"></span>
+  </div>
+  <p class="sm-sub">A faithful replication of ENISA's <strong>SME Cyber Resilience Maturity Assessment Model</strong> (July 2026).
+    Score 25 questions across five domains on the 1&ndash;5 rubric; the tool computes each domain average, the overall
+    <strong>maturity band</strong> (Basic&nbsp;1&ndash;2.5 &middot; Intermediate&nbsp;2.6&ndash;3.9 &middot; Advanced&nbsp;4&ndash;5) and a
+    prioritised improvement roadmap from the model's Annex&nbsp;B checklist. The domains map to
+    <a class="sm-link" href="/cra-compliance">CRA</a> Annex&nbsp;I / Articles&nbsp;13&ndash;14 &mdash; but this is a maturity
+    self-check, <strong>not</strong> a proof of compliance.</p>
+
+  <div class="sm-kpis" id="sm-kpis"></div>
+
+  <div class="sm-panel">
+    <div class="sm-sect-h">&#10133; New self-assessment</div>
+    <div class="sm-form">
+      <input id="sm-name" placeholder="Assessment name (e.g. 2026 CRA self-check)" style="min-width:250px">
+      <input id="sm-org" placeholder="Organisation (SME)">
+      <input id="sm-scope" placeholder="Product scope (PDE)" style="min-width:200px">
+      <input id="sm-assessor" placeholder="Assessor">
+      <button class="sm-btn" id="sm-add">Create</button>
+      <span class="muted" id="sm-msg"></span>
+    </div>
+  </div>
+
+  <div class="sm-panel">
+    <div class="sm-sect-h">&#128203; Assessments</div>
+    <table class="sm-tbl">
+      <thead><tr><th>Assessment</th><th style="width:130px">Overall</th><th style="width:120px">Band</th><th style="width:110px">Progress</th><th style="width:100px">Status</th><th style="width:60px"></th></tr></thead>
+      <tbody id="sm-body"></tbody>
+    </table>
+  </div>
+
+  <div id="sm-detail" style="display:none">
+    <div class="sm-panel">
+      <div class="sm-sect-h"><span id="sm-d-title"></span></div>
+      <div class="sm-overall">
+        <div style="text-align:center">
+          <div class="sm-score-big" id="sm-d-score">0.0</div>
+          <div class="muted">overall / 5</div>
+        </div>
+        <div>
+          <div id="sm-d-band" style="margin-bottom:6px"></div>
+          <div class="muted" id="sm-d-bandsum" style="max-width:520px;line-height:1.5"></div>
+        </div>
+        <div style="margin-left:auto;text-align:center">
+          <div class="sm-dist" id="sm-d-dist"></div>
+          <div class="muted" style="margin-top:18px">score distribution</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sm-cols">
+      <div>
+        <div class="sm-panel">
+          <div class="sm-sect-h">&#128221; Self-check questionnaire <span class="muted" id="sm-d-progress"></span></div>
+          <div id="sm-questions"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sm-panel">
+          <div class="sm-sect-h">&#128200; Domain maturity</div>
+          <table class="sm-tbl"><tbody id="sm-domscores"></tbody></table>
+        </div>
+        <div class="sm-panel">
+          <div class="sm-sect-h">&#128736;&#65039; Improvement roadmap <span class="muted" id="sm-road-band-lbl"></span></div>
+          <div id="sm-roadmap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/cra-maturity.js"></script>
+</body>
+</html>

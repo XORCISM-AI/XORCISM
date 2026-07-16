@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Common Criteria (ISO/IEC 15408)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cc-wrap{padding:14px 16px 40px;max-width:1500px}
+  .cc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .cc-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .cc-sub{font-size:12.5px;color:#94a3b8;max-width:1050px;line-height:1.5;margin:0 0 14px}
+  .cc-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .cc-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .cc-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:8px 14px;min-width:104px}
+  .cc-kpi .v{font-size:20px;font-weight:700;color:#38bdf8}.cc-kpi .l{font-size:10.5px;color:#94a3b8}
+  .cc-btn{background:#0284c7;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer}
+  .cc-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:5px 11px;font-size:11.5px}
+  .cc-btn.danger{background:#3b1220;border:1px solid #7f1d1d;color:#fca5a5}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:6px 8px}
+  table.cc-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.cc-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.cc-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.cc-row:hover{background:#171b30;cursor:pointer}
+  tr.cc-row.sel{background:#16233a}
+  .cc-chip{font-size:10px;padding:2px 7px;border-radius:9px;font-weight:600;white-space:nowrap}
+  .c-high{background:#0e2f22;color:#4ade80;border:1px solid #16a34a}
+  .c-sub{background:#1e2a4a;color:#7dd3fc;border:1px solid #0284c7}
+  .c-none{background:#2a2440;color:#a5b4fc;border:1px solid #4c4a7a}
+  .c-met{background:#0e2f22;color:#4ade80}.c-partial{background:#3a2f12;color:#fbbf24}
+  .c-gap{background:#3b1220;color:#fca5a5}.c-na{background:#232843;color:#94a3b8}
+  .cc-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cc-sect-h{font-size:13px;color:#e2e8f0;font-weight:600;margin:0 0 8px;display:flex;gap:8px;align-items:center}
+  .cc-bar{height:6px;border-radius:3px;background:#232843;overflow:hidden;width:90px;display:inline-block;vertical-align:middle}
+  .cc-bar span{display:block;height:100%;background:linear-gradient(90deg,#0284c7,#4ade80)}
+  .cc-eucc{border-left:3px solid #0284c7;background:#0f1117;border-radius:6px;padding:10px 12px;font-size:12px;color:#cbd5e1;line-height:1.5;margin-top:10px}
+  .cc-eucc b{color:#7dd3fc}
+  .muted{color:#64748b;font-size:12px}
+  .cc-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .cc-form input{min-width:150px}
+  a.cc-link{color:#5eead4;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/compliance-management">&#128203; Compliance</a>
+  <a href="/common-criteria" style="color:#38bdf8">&#127942; Common Criteria</a>
+  <a href="/cra-compliance">&#128230; CRA</a>
+  <a href="/essential-eight">&#128737;&#65039; Essential Eight</a>
+  <a href="/control-management">&#9989; Controls</a>
+</div>
+
+<div class="cc-wrap">
+  <div class="cc-head">
+    <h2>&#127942; Common Criteria — Security Targets</h2>
+    <span class="cc-chip c-sub" id="cc-cat"></span>
+  </div>
+  <p class="cc-sub">ISO/IEC 15408 (CC:2022) — define the <strong>TOE</strong> and its <strong>Security Target</strong>, claim the
+    Security Functional Requirements from Part 2, and pick an <strong>EAL</strong>: the assurance worklist is seeded automatically
+    from the EAL package (CC Part 5 defines exactly which components each level comprises). Under
+    <strong>EUCC</strong> (Reg. (EU) 2024/482) the <strong>AVA_VAN</strong> level — not the EAL — sets the assurance level
+    (AVA_VAN.1–2 → <em>substantial</em>, AVA_VAN.3–5 → <em>high</em>), which drives the
+    <a class="cc-link" href="/cra-compliance">CRA Art. 27</a> presumption of conformity.</p>
+
+  <div class="cc-kpis" id="cc-kpis"></div>
+
+  <div class="cc-panel">
+    <div class="cc-sect-h">&#10133; New Security Target</div>
+    <div class="cc-form">
+      <input id="cc-name" placeholder="ST title (e.g. Gateway Security Target)" style="min-width:230px">
+      <input id="cc-toe" placeholder="TOE name">
+      <input id="cc-ver" placeholder="TOE version" style="min-width:90px">
+      <input id="cc-dev" placeholder="Developer">
+      <select id="cc-scheme"><option value="">Scheme…</option><option>EUCC</option><option>NIAP</option><option>BSI</option><option>ANSSI</option><option>SOG-IS</option><option>Other</option></select>
+      <select id="cc-eal"><option value="">Target EAL…</option></select>
+      <button class="cc-btn" id="cc-add">Create</button>
+      <span class="muted" id="cc-msg"></span>
+    </div>
+  </div>
+
+  <div class="cc-panel">
+    <div class="cc-sect-h">&#128203; Security Targets</div>
+    <table class="cc-tbl">
+      <thead><tr><th>Security Target / TOE</th><th style="width:70px">EAL</th><th style="width:110px">EUCC</th><th style="width:70px">SFRs</th><th style="width:150px">Assurance</th><th style="width:100px">Status</th><th style="width:60px"></th></tr></thead>
+      <tbody id="cc-body"></tbody>
+    </table>
+  </div>
+
+  <div id="cc-detail" style="display:none">
+    <div class="cc-panel">
+      <div class="cc-sect-h"><span id="cc-d-title"></span></div>
+      <div class="cc-form" style="margin-bottom:6px">
+        <label class="muted">Target EAL</label>
+        <select id="cc-d-eal"></select>
+        <span class="muted">changing the EAL reseeds the assurance worklist (existing assessments are kept)</span>
+      </div>
+      <div class="cc-eucc" id="cc-d-eucc"></div>
+    </div>
+    <div class="cc-cols">
+      <div class="cc-panel">
+        <div class="cc-sect-h">&#128273; Security Functional Requirements <span class="muted" id="cc-d-nsfr"></span></div>
+        <div class="cc-form" style="margin-bottom:8px">
+          <input id="cc-sfr-q" list="cc-sfr-list" placeholder="Add an SFR (e.g. FAU_GEN.1)" style="min-width:230px">
+          <datalist id="cc-sfr-list"></datalist>
+          <button class="cc-btn ghost" id="cc-sfr-add">Add SFR</button>
+        </div>
+        <table class="cc-tbl"><tbody id="cc-sfr-body"></tbody></table>
+      </div>
+      <div class="cc-panel">
+        <div class="cc-sect-h">&#128220; Assurance (SARs from the EAL package) <span class="muted" id="cc-d-nsar"></span></div>
+        <table class="cc-tbl">
+          <thead><tr><th>Component</th><th style="width:110px">Status</th><th style="width:36%">Evidence</th></tr></thead>
+          <tbody id="cc-sar-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/common-criteria.js"></script>
+</body>
+</html>

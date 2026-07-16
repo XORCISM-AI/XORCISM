@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS RISKREGISTERENTRYCONTROL ( RiskRegisterEntryControlID
 CREATE TABLE IF NOT EXISTS ANSWERFORQUESTION ( AnswerForQuestionID INTEGER PRIMARY KEY, QuestionID INTEGER, AnswerID INTEGER, CreatedDate TEXT, PersonID INTEGER, Result TEXT, DisplayOrder INTEGER, "TenantID" INTEGER);
 CREATE TABLE IF NOT EXISTS ANSWEREVIDENCE ( AnswerEvidenceID INTEGER PRIMARY KEY, AnswerID INTEGER, EvidenceID INTEGER, CreatedDate TEXT, PersonID INTEGER, ConfidenceLevel TEXT);
 CREATE TABLE IF NOT EXISTS CRISISSCENARIO ( ScenarioID INTEGER PRIMARY KEY, ScenarioGUID TEXT, ScenarioName TEXT, ScenarioType TEXT, Description TEXT, Severity TEXT, Objectives TEXT, ThreatActor TEXT, AttackTechniques TEXT, Refs TEXT, IsTemplate INTEGER DEFAULT 1, Source TEXT, CreatedDate TEXT, TenantID INTEGER);
+-- ENISA SME Cyber Resilience Maturity self-check (/cra-maturity, server/smematurity.ts): 5 domains x 5 questions on the 1-5 rubric.
+CREATE TABLE IF NOT EXISTS SMEMATURITYASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, OrgName TEXT, ProductScope TEXT, Assessor TEXT, Status TEXT, OverallScore REAL, Band TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS SMEMATURITYANSWER ( AnswerID INTEGER PRIMARY KEY, AssessmentID INTEGER, Ref TEXT, DomainKey TEXT, Score INTEGER, Evidence TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEINJECT ( InjectID INTEGER PRIMARY KEY, InjectGUID TEXT, AuditID INTEGER, ScenarioID INTEGER, StepOrder INTEGER, InjectTime TEXT, Title TEXT, Description TEXT, InjectType TEXT, ExpectedAction TEXT, ActualResponse TEXT, Status TEXT, CreatedDate TEXT, TenantID INTEGER, Channel TEXT, OffsetMinutes INTEGER, Sender TEXT, Recipients TEXT, Subject TEXT, DeliveredDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEPARTICIPANT ( ParticipantID INTEGER PRIMARY KEY, ParticipantGUID TEXT, AuditID INTEGER, PersonID INTEGER, ParticipantName TEXT, CrisisRole TEXT, Team TEXT, Attended INTEGER, CreatedDate TEXT, TenantID INTEGER, Email TEXT, Phone TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISELOG ( LogID INTEGER PRIMARY KEY, LogGUID TEXT, AuditID INTEGER, InjectID INTEGER, ParticipantID INTEGER, EventType TEXT, Channel TEXT, Message TEXT, LoggedAt TEXT, ByUser TEXT, CreatedDate TEXT, TenantID INTEGER);
@@ -127,6 +130,9 @@ CREATE INDEX IF NOT EXISTS ix_exerciseinject_audit ON EXERCISEINJECT(AuditID);
 CREATE INDEX IF NOT EXISTS ix_exerciseinject_scenario ON EXERCISEINJECT(ScenarioID);
 CREATE INDEX IF NOT EXISTS ix_exerciseparticipant_audit ON EXERCISEPARTICIPANT(AuditID);
 CREATE INDEX IF NOT EXISTS ix_crisisscenario_tenant ON CRISISSCENARIO(TenantID);
+CREATE INDEX IF NOT EXISTS ix_smeassess_tenant ON SMEMATURITYASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_smeanswer_assess ON SMEMATURITYANSWER(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_smeanswer_ref ON SMEMATURITYANSWER(AssessmentID, Ref);
 CREATE INDEX IF NOT EXISTS ix_exerciselog_audit ON EXERCISELOG(AuditID);
 CREATE INDEX IF NOT EXISTS ix_auditfindingremediation_finding ON AUDITFINDINGREMEDIATION(AuditFindingID);
 CREATE INDEX IF NOT EXISTS ix_auditfinding_audit ON AUDITFINDING(AuditID);
