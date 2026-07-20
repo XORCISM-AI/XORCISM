@@ -1,0 +1,23 @@
+{
+  "soa": [
+    {"id": "ISO-5.1", "framework": "ISO27001", "theme": "Organizational", "title": "Policies for information security", "applicable": true, "status": "implemented", "owner": "ciso", "justification": "Approved InfoSec policy set is published and reviewed annually.", "linkedPolicies": ["POL-001"]},
+    {"id": "ISO-5.7", "framework": "ISO27001", "theme": "Organizational", "title": "Threat intelligence", "applicable": true, "status": "in_progress", "owner": "soc", "justification": "CTI feeds ingested; formal process being documented.", "linkedPolicies": []},
+    {"id": "ISO-5.23", "framework": "ISO27001", "theme": "Organizational", "title": "Information security for use of cloud services", "applicable": true, "status": "not_started", "owner": "it", "justification": "Cloud security baseline not yet defined.", "linkedPolicies": []},
+    {"id": "ISO-8.8", "framework": "ISO27001", "theme": "Technological", "title": "Management of technical vulnerabilities", "applicable": true, "status": "in_progress", "owner": "secops", "justification": "Scanning in place; SLA-based remediation being formalised.", "linkedPolicies": ["POL-002"]},
+    {"id": "ISO-8.12", "framework": "ISO27001", "theme": "Technological", "title": "Data leakage prevention", "applicable": true, "status": "not_started", "owner": "it", "justification": "DLP tooling not yet procured."},
+    {"id": "ISO-8.16", "framework": "ISO27001", "theme": "Technological", "title": "Monitoring activities", "applicable": true, "status": "implemented", "owner": "soc", "justification": "SIEM with 24/7 monitoring."},
+    {"id": "ISO-7.4", "framework": "ISO27001", "theme": "Physical", "title": "Physical security monitoring", "applicable": false, "status": "not_applicable", "owner": "facilities", "justification": "Fully remote organisation; no owned premises."},
+    {"id": "NIS2-21.2a", "framework": "NIS2", "theme": "Risk management", "title": "Policies on risk analysis and information system security", "applicable": true, "status": "in_progress", "owner": "ciso", "justification": "Risk methodology adopted; policy under review."}
+  ],
+  "risks": [
+    {"id": "RISK-001", "title": "Ransomware encrypts production data", "category": "Operational", "description": "Phishing-delivered ransomware could encrypt shared file stores.", "probability": 4, "impact": 5, "score": 20, "treatment": "mitigate", "status": "open", "owner": "ciso"},
+    {"id": "RISK-002", "title": "Unpatched internet-facing service", "category": "Technical", "description": "Known-CVE service exposed without a remediation SLA.", "probability": 3, "impact": 4, "score": 12, "treatment": "mitigate", "status": "open", "owner": "secops"},
+    {"id": "RISK-003", "title": "Supplier data breach", "category": "Third-party", "description": "A processor mishandles personal data.", "probability": 2, "impact": 3, "score": 6, "treatment": "transfer", "status": "open", "owner": "dpo"},
+    {"id": "RISK-004", "title": "Accepted legacy TLS on internal tool", "category": "Technical", "description": "Internal-only tool still allows TLS 1.1.", "probability": 2, "impact": 2, "score": 4, "treatment": "accept", "status": "accepted", "owner": "it"}
+  ],
+  "templates": [
+    {"id": "POL-001", "type": "Information Security Policy", "language": "en", "title": "Information Security Policy", "content": "# Information Security Policy\nThis policy establishes the ISMS scope, roles and management commitment...", "owner": "ciso", "version": "2.1", "status": "approved", "updatedAt": "2026-05-10T09:00:00Z"},
+    {"id": "POL-002", "type": "Vulnerability Management Policy", "language": "en", "title": "Vulnerability Management Policy", "content": "# Vulnerability Management\nDefines scanning cadence, severity SLAs and verification...", "owner": "secops", "version": "1.3", "status": "review", "updatedAt": "2026-06-01T09:00:00Z"},
+    {"id": "POL-003", "type": "Acceptable Use Policy", "language": "en", "title": "Acceptable Use Policy", "content": "# Acceptable Use\nRules for the acceptable use of information assets...", "owner": "hr", "version": "1.0", "status": "draft", "updatedAt": "2026-06-20T09:00:00Z"}
+  ]
+}

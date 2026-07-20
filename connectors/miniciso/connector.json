@@ -1,0 +1,15 @@
+{
+  "id": "miniciso",
+  "name": "miniCISO — evidence-driven security assessment import",
+  "type": "import",
+  "category": "AI Security",
+  "description": "Imports a miniCISO assessment (github.com/icidade/miniCISO, MIT, by Irlan Cidade — 'agentic security staff') into XORCISM's native /miniciso cockpit. miniCISO runs nine specialist roles (Chief of Staff + Threat Modeling, Security Architecture, Code Review, AppSec, Compliance Mapper, Offensive Security, Recon & Attack Surface, Security QA) through a disciplined, evidence-driven workflow that classifies every output as a Finding, Observation, Hypothesis or Missing-Evidence, with a mandatory Security-QA gate before delivery — evidence before narrative, recon surfaces candidates not findings, confidence follows evidence quality. This connector parses a miniCISO export (tolerant: {assessments:[...]}, a single assessment {name, evidence, outputs}, or a bare list of outputs) and maps it to XCOMPLIANCE.MINICISOASSESSMENT + MINICISOEVIDENCE (tiered declared/runtime/validated) + MINICISOOUTPUT (role, class, gate, confidence, QA status, cited evidence) via runner.import_miniciso; the cockpit re-applies the discipline on import (recon output never lands as a finding; a finding with no cited evidence is demoted to a hypothesis) and enforces the QA delivery gate. Offline only (no secrets): pass `file` = a miniCISO JSON export, or run with no file for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:miniciso",
+  "run": "run.py",
+  "mapping": "miniciso",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "A miniCISO assessment export (JSON): {assessments:[...]} / a single assessment / a list of outputs" },
+    { "name": "name", "type": "string", "required": false, "help": "Override the assessment name" }
+  ]
+}

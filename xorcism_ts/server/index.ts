@@ -80,6 +80,9 @@ import authzGovRouter from "./routes/authzgov";
 import craRouter from "./routes/cra";
 import ccRouter from "./routes/cc";
 import smeMaturityRouter from "./routes/smematurity";
+import miniCisoRouter from "./routes/miniciso";
+import controlWeightRouter from "./routes/controlweight";
+import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
 import itdrRouter from "./routes/itdr";
 import { seedItdrDemo } from "./itdr";
@@ -174,6 +177,7 @@ import ess8Router from "./routes/ess8";
 import { ensureEss8Tables, seedEss8Demo } from "./ess8";
 import { ensureCcTables, seedCcDemo } from "./cc";
 import { ensureSmeTables, seedSmeDemo } from "./smematurity";
+import { ensureMcTables, seedMcDemo } from "./miniciso";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -390,6 +394,8 @@ app.use("/api", zeroTrustRouter); // Zero Trust cockpit: CISA ZTMM maturity + li
 app.use("/api", authzGovRouter); // API Authorization Governance: gateways (PEP) + PDPs (OPA/Cedar/AuthZEN) + posture
 app.use("/api", ccRouter); // Common Criteria (ISO/IEC 15408): Security Target / TOE, EAL assurance worklist, EUCC/CRA link
 app.use("/api", smeMaturityRouter); // ENISA SME Cyber Resilience Maturity self-check (CRA): 5 domains × 5 questions, band + roadmap
+app.use("/api", miniCisoRouter); // miniCISO: evidence-driven multi-role security assessment (9 staff, output classes, QA gate, synthesis)
+app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
 app.use("/api", itdrRouter); // ITDR: identity threat detection (sign-in telemetry + posture) → ATT&CK-mapped detections + response
@@ -639,6 +645,12 @@ app.get("/common-criteria", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/cra-maturity", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "cra-maturity.html"));
+});
+app.get("/control-weight", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "control-weight.html"));
+});
+app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "miniciso.html"));
 });
 app.get("/cra-compliance", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "cra-compliance.html"));
@@ -996,6 +1008,7 @@ ensureCveMatchTables(); // CVE→ASSET matcher watermark (CVEMATCHCURSOR); initi
 ensurePatchTables(); // Patch Management: ASSETVULNERABILITY patch-status cols + ASSETVULNERABILITYREMEDIATION plan cols
 ensureMonitoringTables(); // Asset Monitoring (CheckCle-style): MONITORINGCHECK + MONITORINGINCIDENT
 ensureControlImplementationTables(); // NIST 800-53 management: CONTROLIMPLEMENTATION + CONTROL.Baseline* columns
+try { ensureControlWeightColumns(); } catch { /* boot */ } // CapGRC control-weight columns on CONTROLIMPLEMENTATION
 ensureCisBenchmarkTables(); // CIS Benchmarks catalogue + CIS-CAT results (Configuration Management)
 ensureTrustCenterTables(); // Trust Center: public posture page config (per tenant)
 ensureIdentityTables(); // IAM registry: XORCISM.IDENTITY + IDENTITYPERSON (human + non-human identities)
@@ -1074,6 +1087,8 @@ try { ensureCcTables(); } catch { /* boot */ } // Common Criteria Security Targe
 try { seedCcDemo(3); } catch { /* demo only */ } // CC demo (tenant 3): an EAL4 ST mid-evaluation
 try { ensureSmeTables(); } catch { /* boot */ } // ENISA SME CRA maturity store (XCOMPLIANCE.SMEMATURITYASSESSMENT/ANSWER)
 try { seedSmeDemo(3); } catch { /* demo only */ } // SME maturity demo (tenant 3): ENISA worked example → INTERMEDIATE
+try { ensureMcTables(); } catch { /* boot */ } // miniCISO evidence-driven assessment store (XCOMPLIANCE.MINICISO*)
+try { seedMcDemo(3); } catch { /* demo only */ } // miniCISO demo (tenant 3): a checkout review with a QA-blocked delivery
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store

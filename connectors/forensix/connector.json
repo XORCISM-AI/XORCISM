@@ -1,0 +1,16 @@
+{
+  "id": "forensix",
+  "name": "Forensix — DFIR mission conformity checklist import",
+  "type": "import",
+  "category": "Forensics",
+  "description": "Imports a filled-in Forensix DFIR mission workbook (Excel) into XORCISM's CERT/Forensics module (/cert-ops). Forensix is a digital-forensics / incident-response mission checklist: 85 controls across 6 phases (methodology & legal framework, disk acquisition, network PCAP, memory & live forensics, correlation & report, logs & SIEM), each with a status (compliant / non-compliant / in-progress / to-verify) and a normative reference (ISO/IEC 27037, RFC 3227, French CPP, GDPR/RGPD, Code penal, NIS2, ANSSI, MITRE ATT&CK). XORCISM replicates this natively as the per-case forensic conformity checklist; this connector reads each phase sheet's control statuses (a stdlib-only .xlsx reader — no openpyxl), positions them onto the bundled English control catalogue, and imports them as a FORENSICCASE + its FORENSICCHECK rows (runner.import_forensic_checklist), so the case shows its per-phase and overall methodology conformity. Offline only (no secrets): pass `file` = the filled Forensix .xlsx (or a JSON export {case, checks}), or run with no file for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:forensix",
+  "run": "run.py",
+  "mapping": "forensix",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "The filled Forensix .xlsx (or a JSON export of the checklist statuses)" },
+    { "name": "name", "type": "string", "required": false, "help": "Forensic case title (defaults to 'Forensix DFIR mission')" },
+    { "name": "examiner", "type": "string", "required": false, "help": "Examiner / responder name" }
+  ]
+}

@@ -627,6 +627,8 @@ CREATE TABLE IF NOT EXISTS ESCALATIONPOLICY ( PolicyID INTEGER PRIMARY KEY, Poli
 CREATE TABLE IF NOT EXISTS ESCALATIONTIER ( TierID INTEGER PRIMARY KEY, PolicyID INTEGER, Level INTEGER, Name TEXT, TargetRole TEXT, AckMinutes INTEGER, ResolveMinutes INTEGER, TenantID INTEGER);
 CREATE TABLE IF NOT EXISTS FORENSICCASE ( CaseID INTEGER PRIMARY KEY, CaseGUID TEXT, CaseNumber TEXT, Title TEXT, IncidentID INTEGER, Status TEXT, Severity TEXT, Examiner TEXT, ExaminerPersonID INTEGER, Description TEXT, Methodology TEXT, OpenedDate TEXT, ClosedDate TEXT, TenantID INTEGER, CreatedDate TEXT);
 CREATE TABLE IF NOT EXISTS FORENSICEVIDENCE ( EvidenceID INTEGER PRIMARY KEY, EvidenceGUID TEXT, CaseID INTEGER, ExhibitNumber TEXT, Description TEXT, EvidenceType TEXT, Source TEXT, AcquisitionTool TEXT, Sha256 TEXT, Md5 TEXT, Size TEXT, Status TEXT, CollectedBy TEXT, CollectedAt TEXT, StorageLocation TEXT, TenantID INTEGER, CreatedDate TEXT);
+-- Forensix DFIR methodology conformity checklist (/cert-ops, server/certops.ts): 85 controls / 6 phases per forensic case.
+CREATE TABLE IF NOT EXISTS FORENSICCHECK ( CheckID INTEGER PRIMARY KEY, CaseID INTEGER, PhaseKey TEXT, Ref TEXT, Title TEXT, Description TEXT, Norm TEXT, Status TEXT, EvidenceRef TEXT, EvidenceID INTEGER, Notes TEXT, UpdatedDate TEXT, TenantID INTEGER);
 CREATE TABLE IF NOT EXISTS INCIDENTESCALATION ( EscalationID INTEGER PRIMARY KEY, IncidentID INTEGER, FromTier TEXT, ToTier TEXT, Reason TEXT, ByPerson TEXT, ToPerson TEXT, EscalatedAt TEXT, TenantID INTEGER);
 CREATE TABLE IF NOT EXISTS INCIDENTPLAYBOOKSTEP ( RunStepID INTEGER PRIMARY KEY, IncidentID INTEGER, PlaybookID INTEGER, Phase TEXT, StepOrder INTEGER, Title TEXT, Description TEXT, Status TEXT DEFAULT 'todo', CompletedBy TEXT, CompletedAt TEXT, TenantID INTEGER);
 CREATE TABLE IF NOT EXISTS PLAYBOOK ( PlaybookID INTEGER PRIMARY KEY, PlaybookGUID TEXT, Name TEXT, Category TEXT, Description TEXT, Severity TEXT, StepCount INTEGER, TenantID INTEGER, CreatedDate TEXT, "Scenario" TEXT, "IncidentType" TEXT, "Priority" TEXT, "DetectionSources" TEXT, "AttackTechniques" TEXT, "Tools" TEXT, "Metrics" TEXT, "Source" TEXT);
@@ -667,6 +669,8 @@ CREATE INDEX IF NOT EXISTS ix_certact_tenant ON CERTACTIVITY(TenantID);
 CREATE INDEX IF NOT EXISTS ix_custody_evid ON CUSTODYEVENT(EvidenceID);
 CREATE INDEX IF NOT EXISTS ix_esctier_policy ON ESCALATIONTIER(PolicyID);
 CREATE INDEX IF NOT EXISTS ix_fcase_tenant ON FORENSICCASE(TenantID);
+CREATE INDEX IF NOT EXISTS ix_fcheck_case ON FORENSICCHECK(CaseID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_fcheck_case_ref ON FORENSICCHECK(CaseID, Ref);
 CREATE INDEX IF NOT EXISTS ix_fevid_case ON FORENSICEVIDENCE(CaseID);
 CREATE INDEX IF NOT EXISTS ix_incesc_incident ON INCIDENTESCALATION(IncidentID);
 CREATE INDEX IF NOT EXISTS ix_incpbstep_incident ON INCIDENTPLAYBOOKSTEP(IncidentID);

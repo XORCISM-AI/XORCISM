@@ -1,0 +1,17 @@
+{
+  "id": "pyahmia",
+  "name": "PyAhmia — Tor hidden-service search (Ahmia.fi) → CTI",
+  "type": "import",
+  "category": "OSINT",
+  "description": "Imports Tor hidden-service discovery from PyAhmia (codeberg.org/rly0nheart/pyahmia, MIT, by rly0nheart) — a CLI that searches .onion services via Ahmia.fi (the clearnet search engine for Tor hidden services, by Juha Nurmi). Each result is a discovered hidden service (title, .onion URL, description, 'last seen' timestamp); this is darkweb OSINT, so results map to XORCISM's CTI intel exchange: each onion service becomes one XTHREAT.INTELEXCHANGE item (runner.import_threat_intel), keyed by its .onion URL and tagged darkweb/tor/onion/ahmia — surfacing at /cti-expert, the STIX graph and the threat-intel views (the same home as the X-OSINT / RedRoom / IRONSIGHT OSINT connectors). Search for a brand, domain or keyword to find matching onion services and pull them into CTI. Live: pass `query` (the worker fetches Ahmia.fi via AHMIA_BASE, default https://ahmia.fi; set AHMIA_BASE to Ahmia's onion + AHMIA_SOCKS/HTTPS_PROXY to route through Tor). Offline: pass `file` = a PyAhmia CSV export or a saved Ahmia results HTML page. Authorised OSINT only; worker-safe (stdlib only, fixed operator-configurable endpoint, no secrets).",
+  "intrusive": false,
+  "permission": "connector:pyahmia",
+  "run": "run.py",
+  "mapping": "pyahmia",
+  "parameters": [
+    { "name": "query", "type": "string", "required": false, "help": "Search query (live mode) — a brand, domain or keyword to find matching Tor hidden services" },
+    { "name": "period", "type": "string", "required": false, "help": "Time filter: day | week | month (Ahmia last-seen window)" },
+    { "name": "limit", "type": "number", "default": 100, "help": "Maximum results to import" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a PyAhmia CSV export or a saved Ahmia results HTML page" }
+  ]
+}

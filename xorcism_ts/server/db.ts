@@ -6961,10 +6961,15 @@ export function ensureCertOpsTables(): void {
         ActivityID INTEGER PRIMARY KEY, ActivityGUID TEXT, Title TEXT, ActivityType TEXT, Service TEXT,
         Status TEXT, Priority TEXT, IncidentID INTEGER, CaseID INTEGER, AssignedTo TEXT, Description TEXT,
         DueDate TEXT, TenantID INTEGER, CreatedDate TEXT);
+      CREATE TABLE IF NOT EXISTS FORENSICCHECK (
+        CheckID INTEGER PRIMARY KEY, CaseID INTEGER, PhaseKey TEXT, Ref TEXT, Title TEXT, Description TEXT,
+        Norm TEXT, Status TEXT, EvidenceRef TEXT, EvidenceID INTEGER, Notes TEXT, UpdatedDate TEXT, TenantID INTEGER);
       CREATE INDEX IF NOT EXISTS ix_fcase_tenant ON FORENSICCASE(TenantID);
       CREATE INDEX IF NOT EXISTS ix_fevid_case ON FORENSICEVIDENCE(CaseID);
       CREATE INDEX IF NOT EXISTS ix_custody_evid ON CUSTODYEVENT(EvidenceID);
-      CREATE INDEX IF NOT EXISTS ix_certact_tenant ON CERTACTIVITY(TenantID);`);
+      CREATE INDEX IF NOT EXISTS ix_certact_tenant ON CERTACTIVITY(TenantID);
+      CREATE INDEX IF NOT EXISTS ix_fcheck_case ON FORENSICCHECK(CaseID);
+      CREATE UNIQUE INDEX IF NOT EXISTS ux_fcheck_case_ref ON FORENSICCHECK(CaseID, Ref);`);
   } catch { /* best-effort */ }
 }
 

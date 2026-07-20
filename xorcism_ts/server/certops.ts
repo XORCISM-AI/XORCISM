@@ -9,6 +9,10 @@
  */
 import { randomUUID } from "crypto";
 import { getDb } from "./db";
+import { FORENSIX_METHODOLOGY } from "./data/forensixMethodology";
+
+/** Forensic-checklist conformity statuses (Forensix: Conforme / Non conforme / En cours / À vérifier). */
+export const FORENSIC_CHECK_STATUS = ["compliant", "non-compliant", "in-progress", "to-verify"] as const;
 
 export const SOTA_REFERENCES = [
   { ref: "NIST SP 800-86", title: "Guide to Integrating Forensic Techniques into Incident Response" },
@@ -74,7 +78,82 @@ export function caseDetail(caseId: number, tenant: number | null): any | null {
       examiner: String(c.Examiner ?? ""), incidentId: c.IncidentID != null ? Number(c.IncidentID) : null, description: String(c.Description ?? ""), methodology: String(c.Methodology ?? ""),
       opened: c.OpenedDate ? String(c.OpenedDate).slice(0, 16).replace("T", " ") : "", closed: c.ClosedDate ? String(c.ClosedDate).slice(0, 10) : "" },
     evidence,
+    checklist: caseChecklist(caseId, tenant),
   };
+}
+
+// ── Forensic investigation methodology checklist (Forensix replication) ───────
+/** The baked FORENSIX methodology catalogue (85 controls / 6 phases) for the UI reference. */
+export function forensicMethodology(): typeof FORENSIX_METHODOLOGY { return FORENSIX_METHODOLOGY; }
+
+/** Instantiate the 85-control methodology checklist for a case (idempotent; keeps existing statuses). */
+export function seedCaseChecklist(caseId: number, tenant: number | null): { seeded: number } {
+  const db = getDb("XINCIDENT");
+  if (!db.prepare("SELECT 1 FROM FORENSICCASE WHERE CaseID = ?").get(caseId)) return { seeded: 0 };
+  const have = new Set((db.prepare("SELECT Ref FROM FORENSICCHECK WHERE CaseID = ?").all(caseId) as any[]).map((r) => String(r.Ref)));
+  const ins = db.prepare(`INSERT INTO FORENSICCHECK (CheckID, CaseID, PhaseKey, Ref, Title, Description, Norm, Status, EvidenceRef, EvidenceID, Notes, UpdatedDate, TenantID)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+  let id = nextId(db, "FORENSICCHECK", "CheckID");
+  let seeded = 0;
+  const tx = db.transaction(() => {
+    for (const ph of FORENSIX_METHODOLOGY.phases) for (const c of ph.controls) {
+      if (have.has(c.ref)) continue;
+      ins.run(id++, caseId, ph.key, c.ref, c.title, c.description, c.norm, "to-verify", "", null, "", now(), tenant);
+      seeded++;
+    }
+  });
+  tx();
+  return { seeded };
+}
+
+/** The case's checklist grouped by phase with per-phase and overall conformity stats. */
+export function caseChecklist(caseId: number, tenant: number | null): any {
+  const db = getDb("XINCIDENT");
+  const rows = db.prepare("SELECT * FROM FORENSICCHECK WHERE CaseID = ? ORDER BY Ref").all(caseId) as any[];
+  const started = rows.length > 0;
+  const byPhase: Record<string, any> = {};
+  const cnt = (arr: any[], s: string) => arr.filter((r) => String(r.status) === s).length;
+  const phases = FORENSIX_METHODOLOGY.phases.map((ph) => {
+    const items = rows.filter((r) => String(r.PhaseKey) === ph.key).map((r) => ({
+      id: Number(r.CheckID), ref: String(r.Ref), title: String(r.Title ?? ""), description: String(r.Description ?? ""),
+      norm: String(r.Norm ?? ""), status: String(r.Status ?? "to-verify"), evidenceRef: String(r.EvidenceRef ?? ""),
+      evidenceId: r.EvidenceID != null ? Number(r.EvidenceID) : null, notes: String(r.Notes ?? ""),
+    }));
+    const total = started ? items.length : ph.controls.length;
+    const compliant = cnt(items, "compliant");
+    const stat = { total, compliant, nonCompliant: cnt(items, "non-compliant"), inProgress: cnt(items, "in-progress"),
+      toVerify: started ? cnt(items, "to-verify") : total, conformity: total ? Math.round((compliant / total) * 100) : 0 };
+    byPhase[ph.key] = { key: ph.key, name: ph.name, sub: ph.sub, items, ...stat };
+    return byPhase[ph.key];
+  });
+  const total = phases.reduce((n, p) => n + p.total, 0);
+  const compliant = phases.reduce((n, p) => n + p.compliant, 0);
+  return {
+    started, phases,
+    summary: {
+      total, compliant,
+      nonCompliant: phases.reduce((n, p) => n + p.nonCompliant, 0),
+      inProgress: phases.reduce((n, p) => n + p.inProgress, 0),
+      toVerify: phases.reduce((n, p) => n + p.toVerify, 0),
+      conformity: total ? Math.round((compliant / total) * 100) : 0,
+    },
+  };
+}
+
+/** Set a checklist item's status / evidence reference / notes; may link a FORENSICEVIDENCE exhibit. */
+export function setCheck(checkId: number, p: { status?: string; evidenceRef?: string; evidenceId?: number | null; notes?: string }, tenant: number | null): { ok: boolean } {
+  const db = getDb("XINCIDENT");
+  const row = db.prepare("SELECT CheckID FROM FORENSICCHECK WHERE CheckID = ?").get(checkId) as any;
+  if (!row) return { ok: false };
+  const sets: string[] = [], vals: any[] = [];
+  if (p.status && (FORENSIC_CHECK_STATUS as readonly string[]).includes(p.status)) { sets.push("Status = ?"); vals.push(p.status); }
+  if (p.evidenceRef != null) { sets.push("EvidenceRef = ?"); vals.push(String(p.evidenceRef).slice(0, 500)); }
+  if ("evidenceId" in p) { sets.push("EvidenceID = ?"); vals.push(p.evidenceId != null ? Number(p.evidenceId) : null); }
+  if (p.notes != null) { sets.push("Notes = ?"); vals.push(String(p.notes).slice(0, 2000)); }
+  if (!sets.length) return { ok: true };
+  sets.push("UpdatedDate = ?"); vals.push(now());
+  db.prepare(`UPDATE FORENSICCHECK SET ${sets.join(", ")} WHERE CheckID = ?`).run(...vals, checkId);
+  return { ok: true };
 }
 
 export function createCase(p: { title: string; incidentId?: number; severity?: string; examiner?: string; description?: string; methodology?: string }, tenant: number | null): { id: number } {
@@ -137,5 +216,17 @@ export function seedCertOps(tenant: number): { cases: number; activities: number
     { title: "After-action report — ransomware case", type: "Report", service: "Knowledge transfer", priority: "Medium" },
   ];
   for (const a of acts) createActivity({ ...a, assignedTo: "Omar Haddad", incidentId: inc?.IncidentID }, tenant);
+  // seed the forensic methodology checklist for the case and mark early phases progressed
+  seedCaseChecklist(c.id, tenant);
+  const db2 = getDb("XINCIDENT");
+  const byRef = new Map((db2.prepare("SELECT CheckID, Ref FROM FORENSICCHECK WHERE CaseID = ?").all(c.id) as any[]).map((r) => [String(r.Ref), Number(r.CheckID)]));
+  const demoStatus: Record<string, string> = {
+    "P1.1": "compliant", "P1.2": "compliant", "P1.3": "compliant", "P1.6": "compliant", "P1.7": "compliant",
+    "P1.9": "compliant", "P1.13": "in-progress", "P1.16": "in-progress",
+    "P2.1": "compliant", "P2.2": "compliant", "P2.3": "compliant", "P2.5": "compliant", "P2.6": "in-progress", "P2.7": "in-progress",
+    "P4.1": "compliant", "P4.2": "compliant", "P4.3": "compliant", "P4.5": "in-progress",
+    "P3.1": "in-progress", "P6.4": "non-compliant",
+  };
+  for (const [ref, st] of Object.entries(demoStatus)) { const id = byRef.get(ref); if (id != null) setCheck(id, { status: st }, tenant); }
   return { cases: 1, activities: acts.length };
 }

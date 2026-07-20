@@ -1,0 +1,15 @@
+{
+  "case": { "title": "Forensix demo — ransomware DFIR mission", "examiner": "R. Patel", "severity": "High" },
+  "checks": [
+    {"ref": "P1.1", "status": "compliant"}, {"ref": "P1.2", "status": "compliant"}, {"ref": "P1.3", "status": "compliant"},
+    {"ref": "P1.6", "status": "compliant", "evidence": "PV-2026-014 signed"}, {"ref": "P1.7", "status": "compliant"},
+    {"ref": "P1.9", "status": "compliant"}, {"ref": "P1.13", "status": "in-progress"}, {"ref": "P1.16", "status": "in-progress"},
+    {"ref": "P2.1", "status": "compliant"}, {"ref": "P2.2", "status": "compliant"},
+    {"ref": "P2.3", "status": "compliant", "evidence": "SHA256 acquisition log — exhibit E-01"},
+    {"ref": "P2.5", "status": "compliant"}, {"ref": "P2.6", "status": "in-progress"},
+    {"ref": "P3.1", "status": "in-progress"}, {"ref": "P3.8", "status": "to-verify"},
+    {"ref": "P4.1", "status": "compliant"}, {"ref": "P4.2", "status": "compliant"}, {"ref": "P4.3", "status": "compliant"},
+    {"ref": "P4.5", "status": "in-progress"}, {"ref": "P4.7", "status": "in-progress"},
+    {"ref": "P6.4", "status": "non-compliant"}, {"ref": "P6.10", "status": "in-progress"}
+  ]
+}

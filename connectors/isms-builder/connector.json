@@ -1,0 +1,14 @@
+{
+  "id": "isms-builder",
+  "name": "ISMS Builder — Statement of Applicability + risks + policies import",
+  "type": "import",
+  "category": "Compliance",
+  "description": "Imports from ISMS Builder (github.com/coolstartnow/isms-builder, AGPL-3.0, by Claude Hecker) — a self-hosted Information Security Management System covering ISO 27001:2022, NIS2, GDPR/DSGVO, BSI IT-Grundschutz, EUCS, EU AI Act and CRA. ISMS Builder gives SMEs and consultants a real ISMS (Statement of Applicability across 313 controls / 8 frameworks, policy templates with a draft→review→approved→archived lifecycle, a risk register with treatment plans, assets, suppliers, BCM and audit tooling) without a five-figure vendor contract; Node/Express + JSON/SQLite, self-hosted. XORCISM already has native homes for each ISMS module, so this connector feeds them: the Statement of Applicability → one Compliance AUDIT per framework with one AUDITFINDING per applicable-but-unimplemented control (the gap), via runner.import_soa → /compliance-management; the risk register → a 'Risk register' AUDIT with a finding per open risk (severity from probability×impact); and policy templates → XORCISM.DOCUMENT (runner.import_documents) → /policy-management, keeping the lifecycle status and version. Accepts a combined ISMS Builder export ({soa|controls, risks, templates|policies}) or a single-entity file. Offline only (no secrets): pass `file` = an ISMS Builder JSON export, or run with no file for the bundled sample.",
+  "intrusive": false,
+  "permission": "connector:isms-builder",
+  "run": "run.py",
+  "mapping": "isms-builder",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "An ISMS Builder JSON export ({soa, risks, templates}) or a single-entity file" }
+  ]
+}

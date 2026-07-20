@@ -26696,7 +26696,21 @@ CREATE TABLE IF NOT EXISTS "CONTROLIMPLEMENTATION" (
   "AssessorPersonID" INTEGER,
   "AssessmentRemarks" TEXT,
   "CreatedDate" TEXT,
-  "TenantID" INTEGER);
+  "TenantID" INTEGER,
+  -- Control weight (CapGRC PfC model, server/controlweight.ts): PfC = (T x E x PfO x P)/100, 1..180.
+  -- Per-tenant because P (share of the estate protected) is organisation-specific; feeds the
+  -- EnterpriseRiskScore "Weighted controls" driver together with Status.
+  "WeightType" INTEGER,
+  "WeightScope" INTEGER,
+  "ObjConfidentiality" INTEGER,
+  "ObjIntegrity" INTEGER,
+  "ObjAvailability" INTEGER,
+  "ObjNonRepudiation" INTEGER,
+  "AssetQty" INTEGER,
+  "AssetQtyTotal" INTEGER,
+  "ControlWeight" INTEGER,
+  "WeightBand" TEXT,
+  "WeightUpdatedDate" TEXT);
 CREATE INDEX IF NOT EXISTS ix_ctrlimpl_control ON "CONTROLIMPLEMENTATION"("ControlID");
 CREATE INDEX IF NOT EXISTS ix_ctrlimpl_tenant ON "CONTROLIMPLEMENTATION"("TenantID");
 -- Crosswalk: an 800-53 control mapped to another framework object (ATT&CK technique, D3FEND, CSF…).

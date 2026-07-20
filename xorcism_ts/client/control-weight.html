@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Control weight calculator</title><link rel="stylesheet" href="/css/style.css">
+<style>
+  .mw{max-width:1400px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1060px;line-height:1.55}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
+  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+  .card .val{font-size:24px;font-weight:700;margin-top:3px;color:#38bdf8}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:10px}.sec .spacer{flex:1}
+  .grid{display:grid;grid-template-columns:minmax(340px,420px) 1fr;gap:16px}
+  @media(max-width:1050px){.grid{grid-template-columns:1fr}}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px}
+  label.fl{display:block;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px}
+  select,input{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:6px 8px;width:100%}
+  input[type=range]{padding:0;accent-color:#38bdf8}
+  .obj{display:flex;align-items:center;gap:10px;margin:5px 0}
+  .obj .on{flex:1;font-size:12.5px;color:#cbd5e1}.obj .ov{width:26px;text-align:right;font-weight:700;color:#7dd3fc}
+  .qrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .res{margin-top:14px;border-top:1px solid #232843;padding-top:12px;text-align:center}
+  .res .w{font-size:44px;font-weight:800;line-height:1}
+  .res .f{font-family:ui-monospace,monospace;font-size:11px;color:#64748b;margin-top:8px;word-break:break-all}
+  .band{font-size:11px;font-weight:700;border-radius:6px;padding:3px 12px;display:inline-block;margin-top:6px}
+  .b-low{background:#1e2133;color:#94a3b8;border:1px solid #3b4468}
+  .b-medium{background:#3a2f12;color:#fbbf24;border:1px solid #a16207}
+  .b-high{background:#3b1220;color:#fca5a5;border:1px solid #7f1d1d}
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.t th,table.t td{text-align:left;padding:7px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
+  table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
+  .nm{font-weight:600;color:#e2e8f0}.muted{color:#64748b}.mono{font-family:ui-monospace,monospace;font-size:11px}
+  .btn{background:#0284c7;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 15px;cursor:pointer;width:100%;margin-top:12px}
+  .btn-sm{background:#1e2440;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:11px;padding:3px 9px;cursor:pointer}
+  .btn-sm:hover{border-color:#fb923c}
+  .pos{color:#fca5a5;font-weight:700}.neg{color:#4ade80;font-weight:700}
+  .bar{height:8px;border-radius:4px;background:#232843;overflow:hidden;width:110px;display:inline-block;vertical-align:middle}
+  .bar span{display:block;height:100%;background:linear-gradient(90deg,#3b4468,#fbbf24,#f87171)}
+  .term{border-left:3px solid #0284c7;background:#0f1117;border-radius:6px;padding:10px 12px;font-size:12px;color:#cbd5e1;line-height:1.55;margin-top:10px}
+  .term b{color:#7dd3fc}
+  datalist{background:#0f1117}
+</style></head><body>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/control-management">&#9989; Controls</a><a href="/assurance">&#128200; Assurance</a><a href="/dashboard">&#128202; Dashboard</a>
+  <span class="spacer"></span><span class="title">&#9878;&#65039; Control weight</span></div>
+<div class="mw"><h1>Control weight calculator</h1>
+<div class="sub">Not every control matters equally. This is the <b>CapGRC control-weight model</b>:
+  <span class="mono">PfC = (T &times; E &times; PfO &times; P) / 100</span> — control <b>type</b> (T 1–3), <b>scope</b> (E 1–3),
+  the sum of the four <b>security objectives</b> (PfO 0–20) and the <b>% of assets protected</b> (P 0–100),
+  giving a weight of <b>1–180</b> banded <i>Faible / Moyen / Élevé</i>. Weights are stored per organisation
+  (P depends on <i>your</i> estate) and feed the <b>Enterprise Risk Score</b>: a heavy control that is implemented
+  earns assurance credit, a heavy control left unimplemented is a weighted gap that costs more.</div>
+<div class="cards" id="cards"></div>
+<div class="grid">
+  <div class="panel">
+    <div class="sec" style="margin-top:0">&#129518; Calculator</div>
+    <label class="fl">T — Type de contrôle</label>
+    <select id="f-type"></select>
+    <label class="fl">E — Étendue d'application</label>
+    <select id="f-scope"></select>
+    <label class="fl">PfO — Objectifs de sécurité (0–5 each) <span id="pfo-tot" class="muted"></span></label>
+    <div id="objs"></div>
+    <label class="fl">P — Pourcentage des actifs protégés</label>
+    <div class="qrow">
+      <div><input id="f-qty" type="number" min="0" step="1" value="0" placeholder="Quantité (Q)"><div class="muted" style="font-size:10.5px;margin-top:2px">Quantité (Q)</div></div>
+      <div><input id="f-qtot" type="number" min="0" step="1" value="0" placeholder="Quantité totale (QT)"><div class="muted" style="font-size:10.5px;margin-top:2px">Quantité totale (QT)</div></div>
+    </div>
+    <div class="muted" style="font-size:11.5px;margin-top:4px">P = <span id="p-val">0</span> %</div>
+    <div class="res">
+      <div class="w" id="w-val">1</div>
+      <div class="muted" style="font-size:11px">poids du contrôle (1–180)</div>
+      <div><span class="band b-low" id="w-band">Faible</span></div>
+      <div class="f" id="w-formula"></div>
+    </div>
+    <label class="fl">Apply to a control</label>
+    <input id="f-ctrl" list="ctrl-list" placeholder="Search a control (CIS or name)…">
+    <datalist id="ctrl-list"></datalist>
+    <button class="btn" id="apply">Assign this weight</button>
+    <div class="muted" id="msg" style="font-size:11.5px;margin-top:6px;text-align:center"></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="sec" style="margin-top:0">&#9878;&#65039; Enterprise Risk Score contribution</div>
+      <div id="term"></div>
+    </div>
+    <div class="sec">Weighted controls <span class="muted" id="n-rows"></span><span class="spacer"></span></div>
+    <div class="panel" style="padding:6px 10px"><div id="rows"></div></div>
+  </div>
+</div></div>
+<div id="toast"></div><script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script><script src="/js/control-weight.js"></script>
+</body></html>

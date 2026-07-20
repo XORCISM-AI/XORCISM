@@ -1,7 +1,7 @@
 /** certops.ts (routes) — CERT/CSIRT operations: forensic cases + chain of custody. RBAC XINCIDENT.INCIDENT. */
 import { Router, Request, Response } from "express";
 import { userCan, clientIp } from "../auth";
-import { certInventory, caseDetail, createCase, addEvidence, addCustody, createActivity } from "../certops";
+import { certInventory, caseDetail, createCase, addEvidence, addCustody, createActivity, forensicMethodology, seedCaseChecklist, setCheck } from "../certops";
 import * as xid from "../xid";
 
 const router = Router();
@@ -52,6 +52,38 @@ router.post("/cert-ops/evidence/:id/custody", (req: Request, res: Response) => {
   if (!out) return void res.status(404).json({ error: "evidence not found" });
   xid.addAudit({ userId: req.user.UserID ?? null, action: "cert_custody", resourceType: "CUSTODYEVENT", resourceKey: String(out.id), detail: String(b.action), ip: clientIp(req) });
   res.json({ ok: true, ...out });
+});
+
+// GET the FORENSIX methodology catalogue (85 controls / 6 phases) — reference
+router.get("/cert-ops/methodology", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!rd(req)) return void res.status(403).json({ error: "forbidden" });
+  res.json(forensicMethodology());
+});
+
+// POST seed a case's forensic methodology checklist (85 controls)
+router.post("/cert-ops/case/:id/checklist/seed", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!wr(req)) return void res.status(403).json({ error: "forbidden" });
+  const out = seedCaseChecklist(Number(req.params.id), ten(req));
+  if (!out.seeded && !caseDetail(Number(req.params.id), ten(req))) return void res.status(404).json({ error: "case not found" });
+  xid.addAudit({ userId: req.user.UserID ?? null, action: "cert_checklist_seed", resourceType: "FORENSICCASE", resourceKey: String(req.params.id), ip: clientIp(req) });
+  res.json({ ok: true, ...out });
+});
+
+// POST update a checklist item's status / evidence / notes
+router.post("/cert-ops/check/:id", (req: Request, res: Response) => {
+  if (!req.user) return void res.status(401).json({ error: "auth" });
+  if (!wr(req)) return void res.status(403).json({ error: "forbidden" });
+  const b = (req.body || {}) as Record<string, unknown>;
+  const out = setCheck(Number(req.params.id), {
+    status: b.status ? String(b.status) : undefined,
+    evidenceRef: b.evidenceRef != null ? String(b.evidenceRef) : undefined,
+    evidenceId: "evidenceId" in b ? (b.evidenceId != null ? Number(b.evidenceId) : null) : undefined,
+    notes: b.notes != null ? String(b.notes) : undefined,
+  }, ten(req));
+  if (!out.ok) return void res.status(404).json({ error: "check not found" });
+  res.json({ ok: true });
 });
 
 router.post("/cert-ops/activity", (req: Request, res: Response) => {

@@ -1,0 +1,599 @@
+{
+ "controls": [
+  {
+   "ref": "P1.1",
+   "phase": "P1",
+   "title": "Unique incident identifier assigned",
+   "norm": "ISO/IEC 27037 §6.2",
+   "description": "Every engagement receives a unique identifier at intake."
+  },
+  {
+   "ref": "P1.2",
+   "phase": "P1",
+   "title": "Legal framework and mandate verified",
+   "norm": "CPP art. 56 (flagrance) / art. 76 (préliminaire) / art. 94, 97 (commission rogatoire) / art. 60",
+   "description": "Authorization and legal scope confirmed before any action, per the applicable procedural framework (flagrante / preliminary inquiry / rogatory commission)."
+  },
+  {
+   "ref": "P1.3",
+   "phase": "P1",
+   "title": "Order of volatility respected",
+   "norm": "ISO/IEC 27037 §7",
+   "description": "Acquisition planned RAM to network connections to disk, in that order."
+  },
+  {
+   "ref": "P1.4",
+   "phase": "P1",
+   "title": "Forensic Git repository initialized",
+   "norm": "Bonnes pratiques ANSSI",
+   "description": "Versioned, timestamped and hashed action log (chain of evidence)."
+  },
+  {
+   "ref": "P1.5",
+   "phase": "P1",
+   "title": "Acquisition protocol written",
+   "norm": "ISO/IEC 27037 §6.3",
+   "description": "Document describing the planned steps for the compromised workstation."
+  },
+  {
+   "ref": "P1.6",
+   "phase": "P1",
+   "title": "Seizure report (PV) completed",
+   "norm": "CPP art. 56 (flagrance) ; art. 76 (préliminaire) ; art. 94, 97 (commission rogatoire)",
+   "description": "Signed seizure record per exhibit, consistent with the procedural framework."
+  },
+  {
+   "ref": "P1.7",
+   "phase": "P1",
+   "title": "Chain-of-custody form initiated",
+   "norm": "ISO/IEC 27037 §8",
+   "description": "Who / when / where / how tracking for each piece of evidence."
+  },
+  {
+   "ref": "P1.8",
+   "phase": "P1",
+   "title": "Lessons from similar incidents leveraged",
+   "norm": "Retour d'expérience ANSSI",
+   "description": "Methodological and legal lessons from comparable incidents integrated into the approach."
+  },
+  {
+   "ref": "P1.9",
+   "phase": "P1",
+   "title": "Digital scene documented",
+   "norm": "ISO/IEC 27037 §6.1",
+   "description": "Power state, devices present and persons on site recorded."
+  },
+  {
+   "ref": "P1.10",
+   "phase": "P1",
+   "title": "Unauthorized access prevented",
+   "norm": "ISO/IEC 27037 §6.1",
+   "description": "Perimeter isolated and access restricted during the engagement."
+  },
+  {
+   "ref": "P1.11",
+   "phase": "P1",
+   "title": "Official forensic tools identified",
+   "norm": "Procédure interne SOC",
+   "description": "Validated toolset (Autopsy, FTK Imager, Wireshark, Volatility 3)."
+  },
+  {
+   "ref": "P1.12",
+   "phase": "P1",
+   "title": "Investigator responsibilities recalled",
+   "norm": "CPP art. 60 / Déontologie",
+   "description": "Neutrality, integrity and professional ethics of the expert."
+  },
+  {
+   "ref": "P1.13",
+   "phase": "P1",
+   "title": "GDPR compliance verified",
+   "norm": "RGPD art. 5, 32",
+   "description": "Processing of personal data contained in the evidence is framed."
+  },
+  {
+   "ref": "P1.14",
+   "phase": "P1",
+   "title": "Secure evidence storage prepared",
+   "norm": "ISO/IEC 27037 §8",
+   "description": "Restricted access, physical or logical seals planned."
+  },
+  {
+   "ref": "P1.15",
+   "phase": "P1",
+   "title": "Evidence integrity guaranteed (criminal offence)",
+   "norm": "Code pénal art. 434-4",
+   "description": "Destroying, altering, removing or falsifying digital evidence exposes the author to criminal prosecution and engages the responder liability."
+  },
+  {
+   "ref": "P1.16",
+   "phase": "P1",
+   "title": "Evidence and data retention period defined",
+   "norm": "RGPD art. 5 ; CPP art. 8 (prescription des délits)",
+   "description": "Retention set per data-minimisation and the applicable prescription (e.g. 6 years for delits); disposal organised at term."
+  },
+  {
+   "ref": "P1.17",
+   "phase": "P1",
+   "title": "Regulatory incident-response obligations identified",
+   "norm": "Code de la défense art. L.2321-1 et s. ; RGPD art. 33-34 ; Directive (UE) 2022/2555 (NIS2)",
+   "description": "Check whether the entity is subject to sector obligations for detection, handling and notification (OIV/OSE, banking, telecom operators)."
+  },
+  {
+   "ref": "P2.1",
+   "phase": "P2",
+   "title": "Write blocker used",
+   "norm": "ISO/IEC 27037 §7.2",
+   "description": "Source medium protected read-only before any handling."
+  },
+  {
+   "ref": "P2.2",
+   "phase": "P2",
+   "title": "Bit-for-bit acquisition performed",
+   "norm": "ISO/IEC 27037 §7.3",
+   "description": "Full forensic image of the medium, E01 or raw format (dd / FTK Imager)."
+  },
+  {
+   "ref": "P2.3",
+   "phase": "P2",
+   "title": "SHA-256 hash computed before/after",
+   "norm": "ISO/IEC 27037 §7.4",
+   "description": "Image integrity verified by comparing fingerprints."
+  },
+  {
+   "ref": "P2.4",
+   "phase": "P2",
+   "title": "Image stored as E01 / DD",
+   "norm": "Procédure interne SOC",
+   "description": "Standard format usable by Autopsy and FTK Imager."
+  },
+  {
+   "ref": "P2.5",
+   "phase": "P2",
+   "title": "Original sealed, working copy created",
+   "norm": "ISO/IEC 27037 §8",
+   "description": "Distinction between the original medium and the analysis copy."
+  },
+  {
+   "ref": "P2.6",
+   "phase": "P2",
+   "title": "Autopsy analysis performed",
+   "norm": "Procédure interne SOC",
+   "description": "Timeline, keyword search and browser / USB / registry artefacts explored."
+  },
+  {
+   "ref": "P2.7",
+   "phase": "P2",
+   "title": "Timeline built (Autopsy / Plaso)",
+   "norm": "Procédure interne SOC",
+   "description": "Super timeline cross-referencing the available timestamps (log2timeline)."
+  },
+  {
+   "ref": "P2.8",
+   "phase": "P2",
+   "title": "Deleted files searched",
+   "norm": "Procédure interne SOC",
+   "description": "Recovery and documentation of erased data."
+  },
+  {
+   "ref": "P2.9",
+   "phase": "P2",
+   "title": "Browser artefacts extracted",
+   "norm": "Procédure interne SOC",
+   "description": "History, downloads and cookies documented."
+  },
+  {
+   "ref": "P2.10",
+   "phase": "P2",
+   "title": "Windows registry analyzed",
+   "norm": "Procédure interne SOC",
+   "description": "SAM, SYSTEM, SOFTWARE and NTUSER.DAT hives examined."
+  },
+  {
+   "ref": "P2.11",
+   "phase": "P2",
+   "title": "Persistence and autoruns checked",
+   "norm": "Procédure interne SOC",
+   "description": "Search for persistent malware and scheduled tasks."
+  },
+  {
+   "ref": "P2.12",
+   "phase": "P2",
+   "title": "5 significant artefacts documented",
+   "norm": "Livrable client",
+   "description": "Minimum expected deliverable for the disk-analysis report."
+  },
+  {
+   "ref": "P2.13",
+   "phase": "P2",
+   "title": "MAC metadata preserved",
+   "norm": "ISO/IEC 27037 §7.5",
+   "description": "Modified / Accessed / Created timestamps kept intact."
+  },
+  {
+   "ref": "P2.14",
+   "phase": "P2",
+   "title": "Hidden partitions explored",
+   "norm": "Procédure interne SOC",
+   "description": "Search for disk space not visible by default."
+  },
+  {
+   "ref": "P3.1",
+   "phase": "P3",
+   "title": "Network capture collected (PCAP)",
+   "norm": "Procédure interne SOC",
+   "description": "Relevant network traffic captured for analysis."
+  },
+  {
+   "ref": "P3.2",
+   "phase": "P3",
+   "title": "PCAP integrity preserved",
+   "norm": "ISO/IEC 27037 §7",
+   "description": "Capture hashed and stored so it cannot be silently altered."
+  },
+  {
+   "ref": "P3.3",
+   "phase": "P3",
+   "title": "Wireshark filters applied",
+   "norm": "Procédure interne SOC",
+   "description": "Display / capture filters used to isolate the relevant traffic."
+  },
+  {
+   "ref": "P3.4",
+   "phase": "P3",
+   "title": "Follow TCP/HTTP Stream performed",
+   "norm": "Procédure interne SOC",
+   "description": "Streams reassembled to read the exchanged payloads."
+  },
+  {
+   "ref": "P3.5",
+   "phase": "P3",
+   "title": "Expert Info reviewed",
+   "norm": "Procédure interne SOC",
+   "description": "Wireshark Expert Info consulted for anomalies."
+  },
+  {
+   "ref": "P3.6",
+   "phase": "P3",
+   "title": "Zeek run on the capture",
+   "norm": "Procédure interne SOC",
+   "description": "PCAP turned into structured logs (conn/dns/http/ssl)."
+  },
+  {
+   "ref": "P3.7",
+   "phase": "P3",
+   "title": "Scan / brute-force patterns identified",
+   "norm": "Procédure interne SOC",
+   "description": "Reconnaissance and credential-guessing patterns detected."
+  },
+  {
+   "ref": "P3.8",
+   "phase": "P3",
+   "title": "Beaconing / C2 searched",
+   "norm": "Procédure interne SOC",
+   "description": "Periodic implant-to-C2 communication looked for."
+  },
+  {
+   "ref": "P3.9",
+   "phase": "P3",
+   "title": "Exfiltration searched",
+   "norm": "Procédure interne SOC",
+   "description": "Large or covert outbound data transfers looked for."
+  },
+  {
+   "ref": "P3.10",
+   "phase": "P3",
+   "title": "Objects extracted from the PCAP",
+   "norm": "Procédure interne SOC",
+   "description": "Files / objects carved out of the capture."
+  },
+  {
+   "ref": "P3.11",
+   "phase": "P3",
+   "title": "Extracted files verified",
+   "norm": "Procédure interne SOC",
+   "description": "Carved files hashed and safely inspected (never executed directly)."
+  },
+  {
+   "ref": "P3.12",
+   "phase": "P3",
+   "title": "Network IoCs consolidated",
+   "norm": "Livrable client",
+   "description": "Network indicators of compromise gathered for the report."
+  },
+  {
+   "ref": "P3.13",
+   "phase": "P3",
+   "title": "Network incident timeline established",
+   "norm": "Livrable client",
+   "description": "Chronology of the network events reconstructed."
+  },
+  {
+   "ref": "P3.14",
+   "phase": "P3",
+   "title": "Network recommendations formulated",
+   "norm": "Livrable client",
+   "description": "Network hardening / containment recommendations produced."
+  },
+  {
+   "ref": "P4.1",
+   "phase": "P4",
+   "title": "Order of volatility respected",
+   "norm": "ISO/IEC 27037 §7",
+   "description": "Memory prioritised over less-volatile sources."
+  },
+  {
+   "ref": "P4.2",
+   "phase": "P4",
+   "title": "Live memory acquisition performed",
+   "norm": "Procédure interne SOC",
+   "description": "RAM captured with winpmem (Windows) or LiME (Linux)."
+  },
+  {
+   "ref": "P4.3",
+   "phase": "P4",
+   "title": "Memory dump hash computed",
+   "norm": "ISO/IEC 27037 §7.4",
+   "description": "Dump fingerprinted to prove integrity."
+  },
+  {
+   "ref": "P4.4",
+   "phase": "P4",
+   "title": "Volatility profile / symbol table identified",
+   "norm": "Procédure interne SOC",
+   "description": "Correct OS profile / symbols selected for analysis."
+  },
+  {
+   "ref": "P4.5",
+   "phase": "P4",
+   "title": "pslist / pstree executed",
+   "norm": "Procédure interne SOC",
+   "description": "Process list and tree enumerated."
+  },
+  {
+   "ref": "P4.6",
+   "phase": "P4",
+   "title": "netscan executed",
+   "norm": "Procédure interne SOC",
+   "description": "Network connections and sockets recovered from memory."
+  },
+  {
+   "ref": "P4.7",
+   "phase": "P4",
+   "title": "malfind executed",
+   "norm": "Procédure interne SOC",
+   "description": "Injected / hidden code regions detected."
+  },
+  {
+   "ref": "P4.8",
+   "phase": "P4",
+   "title": "cmdline executed",
+   "norm": "Procédure interne SOC",
+   "description": "Process command lines recovered."
+  },
+  {
+   "ref": "P4.9",
+   "phase": "P4",
+   "title": "DLL injection searched",
+   "norm": "Procédure interne SOC",
+   "description": "Injected DLLs looked for."
+  },
+  {
+   "ref": "P4.10",
+   "phase": "P4",
+   "title": "Rootkits / concealment searched",
+   "norm": "Procédure interne SOC",
+   "description": "Hidden processes, hooks and rootkit artefacts looked for."
+  },
+  {
+   "ref": "P4.11",
+   "phase": "P4",
+   "title": "Anti-forensic techniques assessed",
+   "norm": "Procédure interne SOC",
+   "description": "Timestomping, fileless and evasion techniques evaluated."
+  },
+  {
+   "ref": "P4.12",
+   "phase": "P4",
+   "title": "Memory / disk comparison performed",
+   "norm": "Livrable client",
+   "description": "Memory findings cross-checked against the disk image."
+  },
+  {
+   "ref": "P4.13",
+   "phase": "P4",
+   "title": "Memory IOCs consolidated",
+   "norm": "Livrable client",
+   "description": "Memory indicators of compromise gathered for the report."
+  },
+  {
+   "ref": "P4.14",
+   "phase": "P4",
+   "title": "Memory analysis report written",
+   "norm": "Livrable client",
+   "description": "Findings of the memory analysis documented."
+  },
+  {
+   "ref": "P5.1",
+   "phase": "P5",
+   "title": "Multiple sources cross-referenced",
+   "norm": "Procédure interne SOC",
+   "description": "Disk, memory, network and log sources correlated."
+  },
+  {
+   "ref": "P5.2",
+   "phase": "P5",
+   "title": "Correlated timeline built",
+   "norm": "Procédure interne SOC",
+   "description": "Single timeline merging all sources."
+  },
+  {
+   "ref": "P5.3",
+   "phase": "P5",
+   "title": "Divergences between sources explained",
+   "norm": "Procédure interne SOC",
+   "description": "Conflicts between sources reconciled and explained."
+  },
+  {
+   "ref": "P5.4",
+   "phase": "P5",
+   "title": "Incident storytelling written",
+   "norm": "Procédure interne SOC",
+   "description": "Coherent narrative of the incident produced."
+  },
+  {
+   "ref": "P5.5",
+   "phase": "P5",
+   "title": "Report structure respected",
+   "norm": "Procédure interne SOC",
+   "description": "Standard report template and structure followed."
+  },
+  {
+   "ref": "P5.6",
+   "phase": "P5",
+   "title": "Methodology documented in the report",
+   "norm": "ISO/IEC 27037 §9",
+   "description": "Methods and tools recorded for reproducibility."
+  },
+  {
+   "ref": "P5.7",
+   "phase": "P5",
+   "title": "Chain of evidence traced in the report",
+   "norm": "Procédure interne SOC",
+   "description": "Evidence provenance traceable throughout the report."
+  },
+  {
+   "ref": "P5.8",
+   "phase": "P5",
+   "title": "Factual and neutral conclusions",
+   "norm": "Déontologie de l'expert",
+   "description": "Conclusions stay factual, neutral and evidence-backed."
+  },
+  {
+   "ref": "P5.9",
+   "phase": "P5",
+   "title": "Remediation recommendations formulated",
+   "norm": "Procédure interne SOC",
+   "description": "Actionable remediation recommendations provided."
+  },
+  {
+   "ref": "P5.10",
+   "phase": "P5",
+   "title": "Plain-language summary prepared",
+   "norm": "Procédure interne SOC",
+   "description": "Non-technical summary prepared for a lay audience."
+  },
+  {
+   "ref": "P5.11",
+   "phase": "P5",
+   "title": "Report reviewed and validated by the team",
+   "norm": "Bonnes pratiques",
+   "description": "Cross-review before submission."
+  },
+  {
+   "ref": "P5.12",
+   "phase": "P5",
+   "title": "Client debrief material prepared",
+   "norm": "Livrable client",
+   "description": "Restitution deck / material prepared for the client."
+  },
+  {
+   "ref": "P5.13",
+   "phase": "P5",
+   "title": "Speaking roles distributed",
+   "norm": "Livrable client",
+   "description": "Presentation roles assigned across the team."
+  },
+  {
+   "ref": "P5.14",
+   "phase": "P5",
+   "title": "Final report submitted on time",
+   "norm": "Contrat / SLA client",
+   "description": "Report delivered within the contractual deadline."
+  },
+  {
+   "ref": "P6.1",
+   "phase": "P6",
+   "title": "Centralized log collection",
+   "norm": "Cadre SOC",
+   "description": "Logs centrally collected across sources."
+  },
+  {
+   "ref": "P6.2",
+   "phase": "P6",
+   "title": "Event correlation configured",
+   "norm": "Cadre SOC",
+   "description": "Correlation rules configured in the SIEM."
+  },
+  {
+   "ref": "P6.3",
+   "phase": "P6",
+   "title": "Anomaly detection enabled",
+   "norm": "Cadre SOC",
+   "description": "Behavioural / anomaly detection active."
+  },
+  {
+   "ref": "P6.4",
+   "phase": "P6",
+   "title": "MITRE ATT&CK mapping performed",
+   "norm": "MITRE ATT&CK",
+   "description": "Observed activity mapped to ATT&CK tactics/techniques."
+  },
+  {
+   "ref": "P6.5",
+   "phase": "P6",
+   "title": "IOC identification",
+   "norm": "Cadre SOC",
+   "description": "Indicators of compromise identified from the logs."
+  },
+  {
+   "ref": "P6.6",
+   "phase": "P6",
+   "title": "Authentication-failure analysis",
+   "norm": "Cadre SOC",
+   "description": "Failed-authentication patterns analysed."
+  },
+  {
+   "ref": "P6.7",
+   "phase": "P6",
+   "title": "Privileged-access audit",
+   "norm": "Cadre SOC",
+   "description": "Privileged access reviewed."
+  },
+  {
+   "ref": "P6.8",
+   "phase": "P6",
+   "title": "Log normalization",
+   "norm": "Cadre SOC",
+   "description": "Logs normalised to a common schema."
+  },
+  {
+   "ref": "P6.9",
+   "phase": "P6",
+   "title": "Consistent timestamps across sources",
+   "norm": "Cadre SOC",
+   "description": "All sources aligned to a single time reference (NTP)."
+  },
+  {
+   "ref": "P6.10",
+   "phase": "P6",
+   "title": "Log retention compliant",
+   "norm": "RGPD / LPM",
+   "description": "Retention durations meet legal / regulatory requirements."
+  },
+  {
+   "ref": "P6.11",
+   "phase": "P6",
+   "title": "Critical alerts qualified",
+   "norm": "Cadre SOC",
+   "description": "Critical alerts triaged and qualified."
+  },
+  {
+   "ref": "P6.12",
+   "phase": "P6",
+   "title": "SIEM report produced",
+   "norm": "Cadre SOC",
+   "description": "SIEM findings documented in a report."
+  }
+ ]
+}

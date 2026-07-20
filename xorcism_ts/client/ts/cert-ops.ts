@@ -6,6 +6,32 @@ function toast(m: string): void { const t = $("toast"); t.textContent = m; t.cla
 const card = (lbl: string, val: string, foot: string, color?: string): string =>
   `<div class="card"><div class="lbl">${esc(lbl)}</div><div class="val"${color ? ` style="color:${color}"` : ""}>${val}</div><div class="foot">${esc(foot)}</div></div>`;
 const scls = (s: string): string => `sv-${["Critical", "High", "Medium", "Low"].includes(s) ? s : "Low"}`;
+const CHK_STATUS = ["compliant", "non-compliant", "in-progress", "to-verify"];
+const chkLabel: Record<string, string> = { "compliant": "Compliant", "non-compliant": "Non-compliant", "in-progress": "In progress", "to-verify": "To verify" };
+
+function renderChecklist(id: number, cl: any): string {
+  if (!cl || !cl.started) {
+    return `<div class="muted" style="font-size:12px;margin:6px 0">No methodology checklist yet — the FORENSIX DFIR methodology has <b>85 controls</b> across 6 phases (ISO/IEC 27037, RFC 3227, French CPP/RGPD, NIS2, ANSSI, MITRE ATT&CK).</div>
+      <button class="btn-sm2" id="seed-chk" data-id="${id}">▶ Start methodology checklist (85 controls)</button>`;
+  }
+  const s = cl.summary;
+  const bar = (pct: number): string => `<span class="cbar"><span style="width:${pct}%"></span></span> <b>${pct}%</b>`;
+  const head = `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:4px 0 10px">
+    ${bar(s.conformity)} <span class="muted" style="font-size:12px">${s.compliant}/${s.total} compliant</span>
+    <span class="pill ok">${s.compliant} compliant</span> <span class="pill bad">${s.nonCompliant} non-compliant</span>
+    <span class="pill" style="background:#3a2f12;color:#fbbf24">${s.inProgress} in progress</span> <span class="pill">${s.toVerify} to verify</span></div>`;
+  const phases = cl.phases.map((ph: any) => `
+    <div class="phbox"><div class="phhdr"><span class="pn">${esc(ph.name)}</span><span class="muted" style="font-size:11px">${esc(ph.sub)}</span>
+      <span class="pa">${ph.conformity}% <span class="muted" style="font-weight:400">(${ph.compliant}/${ph.total})</span></span></div>
+      ${ph.items.map((it: any) => `<div class="chk">
+        <span class="cref">${esc(it.ref)}</span>
+        <span class="ct">${esc(it.title)}<div class="cn" title="normative reference">${esc(it.norm)}</div></span>
+        <select class="chk-st" data-id="${it.id}">${CHK_STATUS.map((x) => `<option value="${x}" ${x === it.status ? "selected" : ""}>${chkLabel[x]}</option>`).join("")}</select>
+        <input class="chk-ev" data-id="${it.id}" value="${esc(it.evidenceRef)}" placeholder="evidence / proof ref…">
+      </div>`).join("")}
+    </div>`).join("");
+  return head + phases;
+}
 
 function load(): void {
   fetch("/api/cert-ops").then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }).then((d) => {
@@ -49,11 +75,26 @@ function openCase(id: number): void {
       <div style="margin-top:6px;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px">Chain of custody (${e.custody.length})</div>
       ${e.custody.map((x: any) => `<div class="cust"><span class="pill">${esc(x.action)}</span> ${esc(x.from || "?")} → <b style="color:#e2e8f0">${esc(x.to || "?")}</b> <span class="muted">${esc(x.purpose)}</span> ${x.verified ? `<span class="pill ok">hash ✓</span>` : `<span class="pill bad">unverified</span>`} <span class="muted" style="margin-left:auto;font-size:11px">${esc(x.at)}</span></div>`).join("") || `<div class="muted" style="font-size:11px">(no custody events)</div>`}
     </div>`).join("") : `<div class="muted">No evidence yet.</div>`;
+    const cl = d.checklist;
+    const clSummary = cl && cl.started ? ` · methodology conformity <b>${cl.summary.conformity}%</b>` : "";
     $("dlg").innerHTML = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="mono">${esc(c.number)}</span><b style="font-size:16px;color:#e7ebf3">${esc(c.title)}</b><span class="sev ${scls(c.severity)}">${esc(c.severity)}</span><span class="spacer" style="flex:1"></span><button class="btn-sm2" id="add-ev">+ evidence</button><button class="btn-sm2" id="close">Close</button></div>
-      <div class="muted" style="font-size:12px;margin-bottom:10px">${esc(c.description)} · methodology: ${esc(c.methodology)} · opened ${esc(c.opened)}${c.incidentId ? ` · incident #${c.incidentId}` : ""}</div>
-      <div class="sec" style="margin-top:0">Evidence & chain of custody</div>${ev}`;
+      <div class="muted" style="font-size:12px;margin-bottom:10px">${esc(c.description)} · methodology: ${esc(c.methodology)} · opened ${esc(c.opened)}${c.incidentId ? ` · incident #${c.incidentId}` : ""}${clSummary}</div>
+      <div style="margin-bottom:10px"><span class="tab on" data-tab="chk">🔎 Forensic methodology</span><span class="tab" data-tab="ev">📦 Evidence & custody</span></div>
+      <div id="pane-chk">${renderChecklist(id, cl)}</div>
+      <div id="pane-ev" style="display:none"><div class="sec" style="margin-top:0">Evidence & chain of custody</div>${ev}</div>`;
     $("modal").classList.add("show");
     $("close").onclick = () => $("modal").classList.remove("show");
+    // tab switching
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), (t: HTMLElement) => { t.onclick = () => {
+      Array.prototype.forEach.call(document.querySelectorAll(".tab"), (x: HTMLElement) => x.classList.remove("on"));
+      t.classList.add("on"); const which = t.getAttribute("data-tab");
+      $("pane-chk").style.display = which === "chk" ? "" : "none"; $("pane-ev").style.display = which === "ev" ? "" : "none";
+    }; });
+    const seedBtn = document.getElementById("seed-chk");
+    if (seedBtn) seedBtn.onclick = () => post(`/api/cert-ops/case/${id}/checklist/seed`, {}, () => openCase(id));
+    const saveCheck = (checkId: string, body: unknown) => fetch(`/api/cert-ops/check/${checkId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json()).then(() => openCase(id)).catch((e) => toast("⚠️ " + e));
+    Array.prototype.forEach.call(document.querySelectorAll(".chk-st"), (sel: HTMLSelectElement) => { sel.onchange = () => saveCheck(sel.getAttribute("data-id")!, { status: sel.value }); });
+    Array.prototype.forEach.call(document.querySelectorAll(".chk-ev"), (inp: HTMLInputElement) => { inp.onchange = () => saveCheck(inp.getAttribute("data-id")!, { evidenceRef: inp.value }); });
     $("add-ev").onclick = () => {
       const description = prompt("Evidence description:"); if (!description) return;
       const type = prompt("Type (disk-image / memory / log / file / network):", "disk-image") || "file";

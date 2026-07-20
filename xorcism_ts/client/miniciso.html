@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Evidence-driven security assessment (miniCISO)</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .mc-wrap{padding:14px 16px 48px;max-width:1600px}
+  .mc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .mc-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .mc-sub{font-size:12.5px;color:#94a3b8;max-width:1100px;line-height:1.5;margin:0 0 14px}
+  .mc-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .mc-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .mc-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:8px 14px;min-width:104px}
+  .mc-kpi .v{font-size:20px;font-weight:700;color:#a78bfa}.mc-kpi .l{font-size:10.5px;color:#94a3b8}
+  .mc-btn{background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 15px;cursor:pointer}
+  .mc-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:5px 11px;font-size:11.5px}
+  .mc-btn.danger{background:#3b1220;border:1px solid #7f1d1d;color:#fca5a5}
+  .mc-btn.go{background:#0e2f22;border:1px solid #16a34a;color:#4ade80}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:6px 8px;font-family:inherit}
+  textarea{width:100%;resize:vertical;min-height:44px}
+  table.mc-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.mc-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.mc-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.mc-row:hover{background:#171b30;cursor:pointer}tr.mc-row.sel{background:#1e1b34}
+  .mc-chip{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:600;white-space:nowrap;display:inline-block}
+  .cl-finding{background:#3b1220;color:#fca5a5;border:1px solid #7f1d1d}
+  .cl-observation{background:#1e2a4a;color:#7dd3fc;border:1px solid #0284c7}
+  .cl-hypothesis{background:#2a2440;color:#c4b5fd;border:1px solid #6d28d9}
+  .cl-missing-evidence{background:#232843;color:#94a3b8;border:1px solid #3b4468}
+  .qa-passed{background:#0e2f22;color:#4ade80}.qa-pending{background:#3a2f12;color:#fbbf24}.qa-rejected{background:#3b1220;color:#fca5a5}
+  .gate-go{color:#4ade80}.gate-research{color:#fbbf24}.gate-no-go{color:#fca5a5}
+  .sev-critical{color:#f87171}.sev-high{color:#fb923c}.sev-medium{color:#fbbf24}.sev-low{color:#a3e635}.sev-info{color:#94a3b8}
+  .tier-validated{color:#4ade80}.tier-runtime{color:#7dd3fc}.tier-declared{color:#94a3b8}
+  .mc-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+  @media(max-width:1150px){.mc-cols{grid-template-columns:1fr}}
+  .mc-sect-h{font-size:13px;color:#e2e8f0;font-weight:600;margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .muted{color:#64748b;font-size:12px}
+  .mc-form{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+  .mc-form input{min-width:150px}
+  a.mc-link{color:#c4b5fd;text-decoration:none}
+  .mc-stages{display:flex;gap:4px;flex-wrap:wrap;margin:2px 0 12px}
+  .mc-stage{font-size:10px;padding:3px 9px;border-radius:12px;background:#0f1117;border:1px solid #232843;color:#64748b;cursor:pointer}
+  .mc-stage.done{background:#1e1b34;color:#a78bfa;border-color:#6d28d9}
+  .mc-stage.cur{background:#7c3aed;color:#fff;border-color:#7c3aed;font-weight:600}
+  .mc-out{border:1px solid #232843;border-radius:8px;padding:9px 11px;margin-bottom:8px;background:#0f1117}
+  .mc-out .oh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+  .mc-out .ot{font-weight:600;color:#e2e8f0;font-size:12.5px}
+  .mc-out .om{font-size:11.5px;color:#94a3b8;line-height:1.45;margin:3px 0}
+  .mc-out .orow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px}
+  .mc-ev{border:1px solid #232843;border-radius:7px;padding:7px 10px;margin-bottom:6px;background:#0f1117;font-size:11.5px}
+  .mc-ev .et{font-weight:600;color:#cbd5e1}
+  .mc-role{border:1px solid #232843;border-radius:7px;padding:7px 10px;margin-bottom:6px;background:#0f1117}
+  .mc-role .rn{font-weight:600;color:#c4b5fd;font-size:12px}.mc-role .rm{font-size:11px;color:#94a3b8;line-height:1.4}
+  .mc-gate-box{border-left:3px solid #7c3aed;background:#0f1117;border-radius:6px;padding:10px 12px;font-size:12px;color:#cbd5e1;line-height:1.5;margin-top:8px}
+  .mc-block{border-left:3px solid #7f1d1d;background:#1a0f14;border-radius:6px;padding:8px 11px;font-size:11.5px;color:#fca5a5;margin-top:6px}
+  .mc-ready{border-left:3px solid #16a34a;background:#0e1a14;color:#86efac}
+  pre.mc-syn{white-space:pre-wrap;font-size:11.5px;color:#cbd5e1;background:#0b0d16;border:1px solid #232843;border-radius:7px;padding:12px;line-height:1.5;max-height:420px;overflow:auto}
+  .mc-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  @media(max-width:700px){.mc-add-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/miniciso" style="color:#a78bfa">&#129302; miniCISO</a>
+  <a href="/trace">&#128736;&#65039; TRACE</a>
+  <a href="/threat-model">&#129513; Threat Models</a>
+  <a href="/detection-evidence">&#128269; Evidence</a>
+  <a href="/compliance-management">&#128203; Compliance</a>
+</div>
+
+<div class="mc-wrap">
+  <div class="mc-head">
+    <h2>&#129302; Evidence-driven security assessment <span class="muted" style="font-size:13px">— miniCISO staff</span></h2>
+    <span class="mc-chip cl-hypothesis" id="mc-cat"></span>
+  </div>
+  <p class="mc-sub">A native replication of <strong>miniCISO</strong> (agentic security staff). Nine specialist roles run a disciplined,
+    <strong>evidence-driven</strong> workflow: collect tiered evidence, form <strong>hypotheses</strong>, and only promote a candidate to a
+    <strong>Finding</strong> once it has linked evidence, a GO gate and a pass through <strong>Security&nbsp;QA</strong>. Recon surfaces candidates —
+    never findings. Delivery is <strong>blocked</strong> until every finding clears QA. It is an assessment discipline, not a guarantee — human
+    judgment and authorization stay with the operator.</p>
+
+  <div class="mc-kpis" id="mc-kpis"></div>
+
+  <div class="mc-panel">
+    <div class="mc-sect-h">&#10133; New assessment</div>
+    <div class="mc-form">
+      <input id="mc-name" placeholder="Assessment name" style="min-width:230px">
+      <input id="mc-obj" placeholder="Objective / success criteria" style="min-width:250px">
+      <input id="mc-scope" placeholder="Scope (repo / endpoints)" style="min-width:200px">
+      <input id="mc-operator" placeholder="Accountable operator">
+      <button class="mc-btn" id="mc-add">Create</button>
+      <span class="muted" id="mc-msg"></span>
+    </div>
+  </div>
+
+  <div class="mc-panel">
+    <div class="mc-sect-h">&#128203; Assessments</div>
+    <table class="mc-tbl">
+      <thead><tr><th>Assessment</th><th style="width:150px">Stage</th><th style="width:230px">Outputs</th><th style="width:120px">Delivery</th><th style="width:60px"></th></tr></thead>
+      <tbody id="mc-body"></tbody>
+    </table>
+  </div>
+
+  <div id="mc-detail" style="display:none">
+    <div class="mc-panel">
+      <div class="mc-sect-h"><span id="mc-d-title"></span></div>
+      <div class="muted" id="mc-d-meta" style="margin-bottom:6px"></div>
+      <div class="mc-stages" id="mc-d-stages"></div>
+    </div>
+
+    <div class="mc-cols">
+      <div>
+        <div class="mc-panel">
+          <div class="mc-sect-h">&#128220; Evidence <span class="muted" id="mc-d-nev"></span>
+            <span style="margin-left:auto"></span>
+            <button class="mc-btn ghost" id="mc-suggest">&#129302; AI: suggest candidates from evidence</button>
+          </div>
+          <div id="mc-evidence"></div>
+          <div class="mc-add-grid">
+            <input id="mc-ev-title" placeholder="Evidence title">
+            <select id="mc-ev-tier"><option value="declared">Declared configuration</option><option value="runtime">Runtime / effective configuration</option><option value="validated">Validated behavior</option></select>
+            <input id="mc-ev-source" placeholder="Source (repo path / URL / tool)">
+            <input id="mc-ev-content" placeholder="What was observed (artifact excerpt)">
+          </div>
+          <div style="margin-top:8px"><button class="mc-btn ghost" id="mc-ev-add">+ Add evidence</button>
+            <span class="muted" id="mc-suggest-msg"></span></div>
+        </div>
+
+        <div class="mc-panel">
+          <div class="mc-sect-h">&#128269; Outputs <span class="muted" id="mc-d-nout"></span></div>
+          <div id="mc-outputs"></div>
+          <div class="mc-sect-h" style="margin-top:12px;font-size:12px">&#10133; Add an output</div>
+          <div class="mc-add-grid">
+            <select id="mc-out-role"></select>
+            <select id="mc-out-cls"></select>
+            <input id="mc-out-title" placeholder="Title" style="grid-column:1/-1">
+            <textarea id="mc-out-detail" placeholder="Detail — what the evidence shows" style="grid-column:1/-1"></textarea>
+            <select id="mc-out-sev"></select>
+            <select id="mc-out-gate"></select>
+          </div>
+          <div style="margin-top:8px"><button class="mc-btn ghost" id="mc-out-add">+ Add output</button>
+            <span class="muted">a Finding needs linked evidence + QA; recon can't file a Finding</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="mc-panel">
+          <div class="mc-sect-h">&#9989; Delivery gate</div>
+          <div id="mc-readiness"></div>
+          <div style="margin-top:10px">
+            <button class="mc-btn go" id="mc-synth">&#128220; Synthesize &amp; deliver (Chief of Staff)</button>
+          </div>
+          <div id="mc-synthesis" style="margin-top:10px"></div>
+        </div>
+        <div class="mc-panel">
+          <div class="mc-sect-h">&#129302; Security staff</div>
+          <div id="mc-roles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/miniciso.js"></script>
+</body>
+</html>

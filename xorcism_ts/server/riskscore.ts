@@ -28,9 +28,15 @@
  * Validity window: a NULL/empty bound is treated as "unbounded"
  * (empty ValidFrom = already started; empty ValidUntil = no expiry). Date
  * comparisons use the current date (ISO 'YYYY-MM-DD').
+ *
+ * The tenant-level EnterpriseRiskScore (enterpriseRiskBreakdown) sums signed drivers:
+ * asset hygiene + risk register + open incidents + compliance debt + overdue patches
+ * − assurance credits − threat modeling ± weighted controls (the CapGRC control-weight
+ * model, controlweight.ts: heavy implemented controls credit, heavy gaps cost).
  */
 import { getDb, resolveUserOrganisationId } from "./db";
 import { levelInfo } from "./riskregister";
+import { weightedControlAssurance } from "./controlweight";
 import { captureVmSnapshot } from "./vmtrends";
 import * as xid from "./xid";
 
@@ -351,12 +357,13 @@ const SEV_WEIGHT = (s: string): number => {
 export interface EnterpriseRiskBreakdown {
   total: number;
   assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number; threatModels: number;
+  controlWeight: number;
   drivers: { key: string; label: string; value: number }[];   // signed contributors (for charts)
 }
 
 /** Full enterprise-risk breakdown for a tenant (the score + its signed contributors). */
 export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRiskBreakdown {
-  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, drivers: [] };
+  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, controlWeight: 0, drivers: [] };
   if (tenantId == null) return empty;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -474,9 +481,18 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
     threatModels = Math.max(-30, -(2 * nApproved + covAssets + covApps));
   } catch { /* no threat models */ }
 
-  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels));
+  // — CONTROL WEIGHT (signed): the CapGRC control-weight model (controlweight.ts). Each weighted
+  //   control contributes weight × implementation-effectiveness as assurance credit (negative) and
+  //   weight × (1 − effectiveness) as a weighted control gap (positive). Deliberately asymmetric —
+  //   a heavy control left unimplemented costs more than the same control implemented earns — and
+  //   clamped to [−40, +60] so it can shift the score without dominating it.
+  let controlWeight = 0;
+  try { controlWeight = weightedControlAssurance(tenantId).term; } catch { /* no weighted controls */ }
+
+  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels + controlWeight));
   return {
     total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits), threatModels: Math.round(threatModels),
+    controlWeight,
     drivers: [
       { key: "assets", label: "Asset hygiene", value: Math.round(assets) },
       { key: "riskRegister", label: "Risk register", value: riskRegister },
@@ -485,6 +501,7 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
       { key: "patch", label: "Overdue patches", value: patch },
       { key: "credits", label: "Assurance credits", value: Math.round(credits) },
       { key: "threatModels", label: "Threat modeling", value: Math.round(threatModels) },
+      { key: "controlWeight", label: "Weighted controls", value: controlWeight },
     ].filter((d) => d.value !== 0),
   };
 }

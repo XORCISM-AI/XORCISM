@@ -1,0 +1,23 @@
+{
+  "assessments": [
+    {
+      "name": "miniCISO — payments API review",
+      "objective": "Assess the payments API before onboarding a new merchant.",
+      "scope": "payments-api repo + staging (api.pay.staging.test)",
+      "operator": "VP Engineering",
+      "evidence": [
+        {"title": "Order endpoint responses", "tier": "validated", "source": "authorized recon", "content": "GET /v2/orders/{id} returns other merchants' orders with no ownership check; reproduced across two API keys."},
+        {"title": "Auth middleware source", "tier": "runtime", "source": "repo: src/auth.py", "content": "JWT signature verified but the 'aud' claim is not checked; tokens are accepted across environments."},
+        {"title": "Terraform for the API", "tier": "declared", "source": "repo: infra/api.tf", "content": "security group ingress 0.0.0.0/0 on 8443; WAF not attached to the staging listener."},
+        {"title": "Dependency manifest", "tier": "declared", "source": "repo: requirements.txt", "content": "requests==2.19.1 (old); no automated dependency scanning configured."}
+      ],
+      "outputs": [
+        {"role": "appsec-assessment", "cls": "finding", "title": "Broken object-level authorization on /v2/orders", "severity": "high", "gate": "go", "qaStatus": "passed", "qaNote": "Reproduced across two merchants; scope and impact confirmed.", "residualRisk": "All merchants' order data is enumerable until ownership checks are enforced.", "detail": "Sequential/opaque order IDs are readable across merchants (BOLA).", "evidence": ["Order endpoint responses"]},
+        {"role": "security-architecture", "cls": "finding", "title": "JWT audience not validated", "severity": "high", "gate": "go", "qaStatus": "pending", "detail": "The 'aud' claim is unchecked, so a token minted for one environment is accepted in another.", "evidence": ["Auth middleware source"]},
+        {"role": "recon-attack-surface", "cls": "observation", "title": "Staging API is internet-reachable without a WAF", "severity": "low", "detail": "0.0.0.0/0 ingress and no WAF on the staging listener. Not a finding on its own.", "evidence": ["Terraform for the API"]},
+        {"role": "compliance-mapper", "cls": "hypothesis", "title": "Outdated dependency may carry known CVEs", "severity": "medium", "gate": "research", "detail": "requests 2.19.1 is old; needs an SCA pass to confirm exploitable CVEs.", "evidence": ["Dependency manifest"]},
+        {"role": "appsec-assessment", "cls": "missing-evidence", "title": "No evidence on rate limiting / anti-automation", "severity": "info", "detail": "Need traffic captures to assess brute-force and enumeration defenses before concluding."}
+      ]
+    }
+  ]
+}

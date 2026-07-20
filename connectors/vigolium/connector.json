@@ -1,0 +1,15 @@
+{
+  "id": "vigolium",
+  "name": "Vigolium — agentic web vulnerability scanner import",
+  "type": "import",
+  "category": "Vulnerability Scanner",
+  "description": "Imports findings from Vigolium (github.com/vigolium/vigolium, AGPL-3.0) — a high-fidelity web vulnerability scanner 'fusing agentic AI with native speed'. Vigolium is a Go engine with 317 scanner modules (SQLi, XSS, SSTI, command injection, IDOR/BOLA, path traversal, SSRF, XXE, misconfig, race conditions and more) covering OWASP Top 10, plus an agentic mode (autopilot / swarm with pluggable LLM providers), OAST/interactsh out-of-band testing for blind vulnerabilities, multi-session authenticated scanning and source-code audit drivers. This connector parses a Vigolium findings export (JSONL — one finding per line, a JSON array, or {findings:[...]}) and maps each finding's target host to an ASSET and each finding to a VULNERABILITY (name + severity + CWE/CVSS + matched URL) via the shared findings path — so Vigolium results feed the exposure-fusion score, attack-path, Unified Exposure queue and the pentest attack-chain (a web service detected by nmap escalates to a Vigolium scan). Offline: pass `file` = a Vigolium export; live: pass `target` with VIGOLIUM_SERVER + VIGOLIUM_API_KEY (a running `vigolium server`); or run with no input for the bundled sample.",
+  "intrusive": true,
+  "permission": "connector:vigolium",
+  "run": "run.py",
+  "mapping": "vigolium",
+  "parameters": [
+    { "name": "target", "type": "url", "required": false, "help": "Target URL for live mode (needs VIGOLIUM_SERVER); or omit and pass a file" },
+    { "name": "file", "type": "file", "required": false, "help": "Offline: a Vigolium findings export (JSONL / JSON array / {findings:[...]})" }
+  ]
+}
