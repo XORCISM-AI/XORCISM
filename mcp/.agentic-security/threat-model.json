@@ -1,0 +1,34 @@
+{
+  "entities": [],
+  "boundaries": [],
+  "assets": [],
+  "threats": [
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-269",
+      "family": "agent-tool-escalation",
+      "severity": "high",
+      "file": "xorcism-mcp.mjs",
+      "line": 50,
+      "vuln": "Agent Tool Privilege Escalation (act-tool \"create_incident\" exposed alongside read-tools)",
+      "finding_id": "agent-tool-escalation:xorcism-mcp.mjs:50:create_incident",
+      "affectsAsset": null,
+      "atEntity": null
+    },
+    {
+      "stride": "T",
+      "strideLabel": "Tampering",
+      "cwe": "CWE-269",
+      "family": "agent-tool-escalation",
+      "severity": "high",
+      "file": "xorcism-mcp.mjs",
+      "line": 53,
+      "vuln": "Agent Tool Privilege Escalation (act-tool \"compliance_posture\" exposed alongside read-tools)",
+      "finding_id": "agent-tool-escalation:xorcism-mcp.mjs:53:compliance_posture",
+      "affectsAsset": null,
+      "atEntity": null
+    }
+  ],
+  "attackTrees": []
+}

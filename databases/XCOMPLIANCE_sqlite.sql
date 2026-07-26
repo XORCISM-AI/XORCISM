@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS SMEMATURITYANSWER ( AnswerID INTEGER PRIMARY KEY, Ass
 CREATE TABLE IF NOT EXISTS MINICISOASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, Objective TEXT, Scope TEXT, Boundaries TEXT, Operator TEXT, Stage TEXT, Status TEXT, Synthesis TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS MINICISOEVIDENCE ( EvidenceID INTEGER PRIMARY KEY, AssessmentID INTEGER, Title TEXT, Tier TEXT, Source TEXT, Content TEXT, CreatedDate TEXT);
 CREATE TABLE IF NOT EXISTS MINICISOOUTPUT ( OutputID INTEGER PRIMARY KEY, AssessmentID INTEGER, Role TEXT, Class TEXT, Title TEXT, Detail TEXT, Severity TEXT, Confidence INTEGER, ResidualRisk TEXT, Gate TEXT, EvidenceRefs TEXT, QaStatus TEXT, QaNote TEXT, Source TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+-- OWASP AISVS verification assessment (/aisvs, server/aisvs.ts): 16 parts, 203 auditable questions, weighted L1/L2/L3 verification.
+CREATE TABLE IF NOT EXISTS AISVSASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, SystemName TEXT, TargetLevel TEXT, Assessor TEXT, Status TEXT, Score REAL, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS AISVSANSWER ( AnswerID INTEGER PRIMARY KEY, AssessmentID INTEGER, Ref TEXT, PartNum INTEGER, Answer TEXT, Evidence TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEINJECT ( InjectID INTEGER PRIMARY KEY, InjectGUID TEXT, AuditID INTEGER, ScenarioID INTEGER, StepOrder INTEGER, InjectTime TEXT, Title TEXT, Description TEXT, InjectType TEXT, ExpectedAction TEXT, ActualResponse TEXT, Status TEXT, CreatedDate TEXT, TenantID INTEGER, Channel TEXT, OffsetMinutes INTEGER, Sender TEXT, Recipients TEXT, Subject TEXT, DeliveredDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEPARTICIPANT ( ParticipantID INTEGER PRIMARY KEY, ParticipantGUID TEXT, AuditID INTEGER, PersonID INTEGER, ParticipantName TEXT, CrisisRole TEXT, Team TEXT, Attended INTEGER, CreatedDate TEXT, TenantID INTEGER, Email TEXT, Phone TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISELOG ( LogID INTEGER PRIMARY KEY, LogGUID TEXT, AuditID INTEGER, InjectID INTEGER, ParticipantID INTEGER, EventType TEXT, Channel TEXT, Message TEXT, LoggedAt TEXT, ByUser TEXT, CreatedDate TEXT, TenantID INTEGER);
@@ -140,6 +143,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_smeanswer_ref ON SMEMATURITYANSWER(Assessme
 CREATE INDEX IF NOT EXISTS ix_mcassess_tenant ON MINICISOASSESSMENT(TenantID);
 CREATE INDEX IF NOT EXISTS ix_mcevidence_assess ON MINICISOEVIDENCE(AssessmentID);
 CREATE INDEX IF NOT EXISTS ix_mcoutput_assess ON MINICISOOUTPUT(AssessmentID);
+CREATE INDEX IF NOT EXISTS ix_aisvsassess_tenant ON AISVSASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_aisvsanswer_assess ON AISVSANSWER(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_aisvsanswer_ref ON AISVSANSWER(AssessmentID, Ref);
 CREATE INDEX IF NOT EXISTS ix_exerciselog_audit ON EXERCISELOG(AuditID);
 CREATE INDEX IF NOT EXISTS ix_auditfindingremediation_finding ON AUDITFINDINGREMEDIATION(AuditFindingID);
 CREATE INDEX IF NOT EXISTS ix_auditfinding_audit ON AUDITFINDING(AuditID);

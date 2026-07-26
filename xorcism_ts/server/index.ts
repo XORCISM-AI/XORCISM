@@ -81,6 +81,7 @@ import craRouter from "./routes/cra";
 import ccRouter from "./routes/cc";
 import smeMaturityRouter from "./routes/smematurity";
 import miniCisoRouter from "./routes/miniciso";
+import aisvsRouter from "./routes/aisvs";
 import controlWeightRouter from "./routes/controlweight";
 import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
@@ -178,6 +179,7 @@ import { ensureEss8Tables, seedEss8Demo } from "./ess8";
 import { ensureCcTables, seedCcDemo } from "./cc";
 import { ensureSmeTables, seedSmeDemo } from "./smematurity";
 import { ensureMcTables, seedMcDemo } from "./miniciso";
+import { ensureAisvsTables, seedAisvsDemo } from "./aisvs";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -212,6 +214,7 @@ import epssRouter from "./routes/epss";
 import huntingRouter from "./routes/hunting";
 import detectionEvidenceRouter from "./routes/detectionevidence";
 import threatFeedsRouter from "./routes/threatfeeds";
+import threatBriefRouter from "./routes/threatbrief";
 import { antibot } from "./antibot";
 import { getJobDb, ensureCveSchedule, ensureBoardReportSchedule } from "./jobs";
 import { startScheduler } from "./scheduler";
@@ -395,6 +398,7 @@ app.use("/api", authzGovRouter); // API Authorization Governance: gateways (PEP)
 app.use("/api", ccRouter); // Common Criteria (ISO/IEC 15408): Security Target / TOE, EAL assurance worklist, EUCC/CRA link
 app.use("/api", smeMaturityRouter); // ENISA SME Cyber Resilience Maturity self-check (CRA): 5 domains × 5 questions, band + roadmap
 app.use("/api", miniCisoRouter); // miniCISO: evidence-driven multi-role security assessment (9 staff, output classes, QA gate, synthesis)
+app.use("/api", aisvsRouter); // OWASP AISVS: AI Security Verification Standard weighted assessment (16 parts, 203 questions, L1/L2/L3)
 app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
@@ -479,6 +483,7 @@ app.use("/api", epssRouter); // FIRST.org EPSS lookup (VULNERABILITY form)
 app.use("/api", huntingRouter); // Threat Hunting domain (HUNT/IOC/XTHREAT + AI hunt assistant)
 app.use("/api", detectionEvidenceRouter); // proof behind a detection (intel/PoC/log/PCAP/prompt/ref + provenance meter)
 app.use("/api", threatFeedsRouter); // curated CTI RSS feeds (THREATFEED) + server-side fetch/parse
+app.use("/api", threatBriefRouter); // Morning Threat Intelligence briefing (threatwake-inspired): KEV+EPSS+ransomware+botnet C2+news
 app.use("/api", connectorsRouter);
 app.use("/api", explorerRouter);
 
@@ -542,6 +547,10 @@ app.get("/dashboard", pageGuard("/dashboard"), (_req: Request, res: Response) =>
 
 app.get("/threat-feeds", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "threat-feeds.html"));
+});
+
+app.get("/threat-brief", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "threat-brief.html"));
 });
 
 app.get("/attack", pageGuard("/"), (_req: Request, res: Response) => {
@@ -648,6 +657,9 @@ app.get("/cra-maturity", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/control-weight", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "control-weight.html"));
+});
+app.get("/aisvs", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "aisvs.html"));
 });
 app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "miniciso.html"));
@@ -1089,6 +1101,8 @@ try { ensureSmeTables(); } catch { /* boot */ } // ENISA SME CRA maturity store 
 try { seedSmeDemo(3); } catch { /* demo only */ } // SME maturity demo (tenant 3): ENISA worked example → INTERMEDIATE
 try { ensureMcTables(); } catch { /* boot */ } // miniCISO evidence-driven assessment store (XCOMPLIANCE.MINICISO*)
 try { seedMcDemo(3); } catch { /* demo only */ } // miniCISO demo (tenant 3): a checkout review with a QA-blocked delivery
+try { ensureAisvsTables(); } catch { /* boot */ } // OWASP AISVS verification store (XCOMPLIANCE.AISVSASSESSMENT/ANSWER)
+try { seedAisvsDemo(3); } catch { /* demo only */ } // AISVS demo (tenant 3): an L2 LLM-assistant verification in progress
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store

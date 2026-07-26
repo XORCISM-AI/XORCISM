@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="tbf.pageTitle">XORCISM — Morning Threat Intelligence</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tb-wrap{max-width:1320px;margin:0 auto;padding:16px}
+  .tb-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .tb-head h1{font-size:21px;margin:0}
+  .tb-when{color:#64748b;font-size:12px;margin-left:auto}
+  .tb-sub{color:#94a3b8;font-size:12.5px;margin-bottom:12px;max-width:900px}
+  .tb-kpis{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tb-kpi{background:#0f1117;border:1px solid #2d3250;border-radius:9px;padding:7px 13px;min-width:96px}
+  .tb-kpi .v{font-size:20px;font-weight:700;line-height:1}
+  .tb-kpi .l{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+  .tb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+  @media(max-width:1080px){.tb-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:720px){.tb-grid{grid-template-columns:1fr}}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:11px;overflow:hidden;display:flex;flex-direction:column}
+  .panel.span2{grid-column:span 2}@media(max-width:720px){.panel.span2{grid-column:span 1}}
+  .panel-h{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #23273f;background:#171a30}
+  .panel-h .t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#e2e8f0}
+  .panel-h .meta{margin-left:auto;font-size:10.5px;color:#64748b}
+  .panel-b{padding:6px 6px;max-height:460px;overflow:auto}
+  .row{padding:7px 8px;border-radius:7px;font-size:12.5px}
+  .row+.row{border-top:1px solid #1c2036}
+  .row a{color:#93c5fd;text-decoration:none}.row a:hover{text-decoration:underline}
+  .cve{font-family:ui-monospace,monospace;font-weight:600;color:#7c83fd}
+  .badge{display:inline-block;font-size:9.5px;font-weight:700;border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:.3px}
+  .b-kev{background:#7f1d1d;color:#fecaca}.b-exploit{background:#7c2d12;color:#fed7aa}
+  .b-ransom{background:#581c87;color:#e9d5ff}.b-epss{background:#0e3a2f;color:#6ee7b7}
+  .sev{font-size:9.5px;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:5px}
+  .sev-CRITICAL{background:#7f1d1d;color:#fecaca}.sev-HIGH{background:#7c2d12;color:#fed7aa}
+  .sev-MEDIUM{background:#78350f;color:#fde68a}.sev-LOW{background:#1e3a5f;color:#bfdbfe}
+  .vp{color:#cbd5e1;font-size:11px}.vn{color:#94a3b8;font-size:11px;margin-top:2px}
+  .ago{color:#64748b;font-size:10.5px;float:right}
+  .metric{color:#a5b4fc;font-size:10.5px;font-family:ui-monospace,monospace}
+  .tally{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px}
+  .chip{background:#1a1e33;border:1px solid #2d3250;border-radius:20px;padding:2px 9px;font-size:11px;color:#cbd5e1}
+  .chip b{color:#f1f5f9}
+  .src{color:#64748b;font-size:10.5px}
+  .flag{font-family:ui-monospace,monospace;color:#818cf8;font-size:11px}
+  .tb-empty{color:#475569;font-size:12px;padding:16px;text-align:center}
+  .tb-loading{color:#64748b;padding:40px;text-align:center}
+  #tb-toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#064e3b;color:#6ee7b7;border-radius:8px;padding:9px 14px;font-size:13px;display:none}
+  #tb-toast.show{display:block}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/exposure" data-i18n="tbf.navExposure">&#127919; Exposure</a>
+  <a href="/threat-feeds" data-i18n="tbf.navFeeds">&#128225; Feeds</a>
+  <span class="spacer"></span>
+  <button id="tb-refresh" class="btn-sm" data-i18n="tbf.refresh">&#8635; Refresh</button>
+  <span class="title" data-i18n="tbf.navTitle">&#9925; Morning Threat Intel</span>
+</div>
+
+<div class="tb-wrap">
+  <div class="tb-head">
+    <h1 data-i18n="tbf.title">&#9925; Morning Threat Intelligence</h1>
+    <span class="tb-when" id="tb-when"></span>
+  </div>
+  <div class="tb-sub" data-i18n="tbf.sub">Your security morning briefing on one screen — newest CISA KEV, EPSS-ranked CVEs, ransomware victims, active botnet C2 and security headlines, refreshed live.</div>
+  <div class="tb-kpis" id="tb-kpis"></div>
+  <div id="tb-body"><div class="tb-loading" data-i18n="tbf.loading">Assembling this morning's threat briefing…</div></div>
+</div>
+<div id="tb-toast"></div>
+
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/threat-brief.js"></script>
+</body>
+</html>

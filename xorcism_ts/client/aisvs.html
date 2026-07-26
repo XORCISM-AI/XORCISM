@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — OWASP AISVS verification</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .av-wrap{padding:14px 16px 48px;max-width:1580px}
+  .av-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .av-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .av-sub{font-size:12.5px;color:#94a3b8;max-width:1120px;line-height:1.55;margin:0 0 14px}
+  .av-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .av-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .av-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:8px 14px;min-width:104px}
+  .av-kpi .v{font-size:20px;font-weight:700;color:#a78bfa}.av-kpi .l{font-size:10.5px;color:#94a3b8}
+  .av-btn{background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 15px;cursor:pointer}
+  .av-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:5px 11px;font-size:11.5px}
+  .av-btn.danger{background:#3b1220;border:1px solid #7f1d1d;color:#fca5a5}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:6px 8px;font-family:inherit}
+  table.av-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.av-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.av-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.av-row:hover{background:#171b30;cursor:pointer}tr.av-row.sel{background:#1e1b34}
+  .av-chip{font-size:10px;padding:2px 8px;border-radius:9px;font-weight:600;white-space:nowrap;display:inline-block}
+  .lv-L1{background:#0e2f22;color:#4ade80;border:1px solid #16a34a}
+  .lv-L2{background:#1e2a4a;color:#7dd3fc;border:1px solid #0284c7}
+  .lv-L3{background:#2a2440;color:#c4b5fd;border:1px solid #6d28d9}
+  .av-w{background:#0f1117;border:1px solid #232843;border-radius:6px;font-size:10px;color:#fbbf24;padding:1px 6px}
+  .av-map{font-size:10px;color:#94a3b8;background:#0f1117;border:1px solid #232843;border-radius:6px;padding:1px 6px;display:inline-block;margin:1px 2px 0 0}
+  .av-ai{color:#f0abfc;border-color:#6d28d9}
+  .muted{color:#64748b;font-size:12px}.av-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.av-form input{min-width:150px}
+  a.av-link{color:#c4b5fd;text-decoration:none}
+  .av-bar{height:8px;border-radius:4px;background:#232843;overflow:hidden;display:inline-block;vertical-align:middle;width:150px}
+  .av-bar span{display:block;height:100%;background:linear-gradient(90deg,#7f1d1d,#f59e0b,#16a34a)}
+  .av-score-big{font-size:40px;font-weight:800;color:#a78bfa;line-height:1}
+  .av-overall{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .av-part{border:1px solid #232843;border-radius:9px;margin-bottom:10px;overflow:hidden}
+  .av-part-h{background:#0f1117;padding:9px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer}
+  .av-part-h .pn{font-weight:600;color:#e2e8f0;font-size:13px}.av-part-h .pv{margin-left:auto;font-weight:700;color:#c4b5fd}
+  .av-ctrl{padding:9px 12px;border-top:1px solid #1c2036}
+  .av-ctrl .cref{color:#64748b;font-weight:600;margin-right:6px;font-size:11px}
+  .av-ctrl .creq{color:#cbd5e1;font-size:12.5px}
+  .av-ctrl .cq{color:#94a3b8;font-size:11.5px;font-style:italic;margin:3px 0}
+  .av-ctrl .cev{font-size:11px;color:#64748b;line-height:1.45;margin-top:3px}
+  .av-ctrl .crow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+  .av-ans-fully{color:#4ade80}.av-ans-largely{color:#86efac}.av-ans-partial{color:#fbbf24}.av-ans-planned{color:#fb923c}.av-ans-not{color:#fca5a5}.av-ans-na{color:#94a3b8}
+  .av-dist{display:flex;gap:4px;align-items:flex-end;height:44px}
+  .av-dist .bar{flex:1;background:#2a2440;border-radius:3px 3px 0 0;min-height:3px;position:relative}
+  .av-dist .bar b{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:10px;color:#c4b5fd}
+  .av-dist .bar i{position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:9px;color:#64748b;font-style:normal}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="/" class="logo" style="text-decoration:none;color:inherit">&#9670; XORCISM</a>
+  <span class="spacer"></span>
+  <a href="/aisvs" style="color:#a78bfa">&#129302; AISVS</a>
+  <a href="/ai-control-library">&#128209; AI Controls</a>
+  <a href="/ai-guardrails">&#128737;&#65039; Guardrails</a>
+  <a href="/compliance-management">&#128203; Compliance</a>
+  <a href="/cra-maturity">&#128202; CRA Maturity</a>
+</div>
+
+<div class="av-wrap">
+  <div class="av-head">
+    <h2>&#129302; OWASP AISVS — AI Security Verification <span class="muted" style="font-size:13px" id="av-ver"></span></h2>
+    <span class="av-chip lv-L2" id="av-cat"></span>
+  </div>
+  <p class="av-sub">The <strong>OWASP AI Security Verification Standard</strong> as a weighted verification audit. Pick a target
+    <strong>assurance level</strong> (L1/L2/L3) to scope the controls, answer each of the 203 auditable questions on the AISVS
+    maturity scale (fully / largely / partial / planned / not / n&#8209;a) with evidence, and read back the <strong>weighted
+    verification score</strong> per part and overall, the gaps and the <strong>EU AI Act</strong> coverage. Controls carry their
+    ISO&nbsp;27001 / NIST&nbsp;CSF&nbsp;2.0 / NIS2 / EU&nbsp;AI&nbsp;Act mappings. An audit instrument and an AI‑security‑management view.</p>
+
+  <div class="av-kpis" id="av-kpis"></div>
+
+  <div class="av-panel">
+    <div style="font-size:13px;color:#e2e8f0;font-weight:600;margin-bottom:8px">&#10133; New verification assessment</div>
+    <div class="av-form">
+      <input id="av-name" placeholder="Assessment name" style="min-width:230px">
+      <input id="av-sys" placeholder="AI system in scope" style="min-width:200px">
+      <select id="av-level"><option value="L1">Target L1 (baseline)</option><option value="L2" selected>Target L2 (standard)</option><option value="L3">Target L3 (advanced)</option></select>
+      <input id="av-assessor" placeholder="Assessor">
+      <button class="av-btn" id="av-add">Create</button>
+      <span class="muted" id="av-msg"></span>
+    </div>
+  </div>
+
+  <div class="av-panel">
+    <div style="font-size:13px;color:#e2e8f0;font-weight:600;margin-bottom:8px">&#128203; Assessments</div>
+    <table class="av-tbl">
+      <thead><tr><th>Assessment</th><th style="width:70px">Target</th><th style="width:170px">Verification</th><th style="width:90px">Progress</th><th style="width:70px">Gaps</th><th style="width:60px"></th></tr></thead>
+      <tbody id="av-body"></tbody>
+    </table>
+  </div>
+
+  <div id="av-detail" style="display:none">
+    <div class="av-panel">
+      <div style="font-size:14px;color:#e2e8f0;font-weight:600;margin-bottom:8px" id="av-d-title"></div>
+      <div class="av-overall">
+        <div style="text-align:center">
+          <div class="av-score-big" id="av-d-score">0%</div>
+          <div class="muted">weighted verification</div>
+        </div>
+        <div>
+          <div class="av-form" style="margin-bottom:6px"><label class="muted">Target level</label>
+            <select id="av-d-level"><option value="L1">L1 — baseline</option><option value="L2">L2 — standard</option><option value="L3">L3 — advanced</option></select>
+            <span class="muted" id="av-d-scope"></span></div>
+          <div class="muted" id="av-d-aiact"></div>
+        </div>
+        <div style="margin-left:auto;text-align:center">
+          <div class="av-dist" id="av-d-dist"></div>
+          <div class="muted" style="margin-top:18px">answer distribution</div>
+        </div>
+      </div>
+      <table class="av-tbl" style="margin-top:12px"><tbody id="av-partscores"></tbody></table>
+    </div>
+    <div id="av-parts"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/aisvs.js"></script>
+</body>
+</html>
