@@ -1,0 +1,18 @@
+{
+  "id": "obstracts",
+  "name": "Obstracts",
+  "type": "import",
+  "category": "CTI",
+  "description": "Obstracts (dogesec) — turns security blogs into structured STIX 2.1 threat intelligence (IoCs, ATT&CK techniques, threat actors, malware, vulnerabilities). Imports each blog post as an INTELEXCHANGE report with AttackTags / ActorTags / MalwareTags / CveTags derived from its extracted STIX objects (ATT&CK ids cross-linked into the matrix). Offline: a STIX bundle ({objects:[…]}) or a posts JSON export. Live: set OBSTRACTS_API_KEY (API-KEY header; omit for an unauthenticated self-hosted instance) and optionally OBSTRACTS_BASE (default https://api.obstracts.com). API: /api/v1/feeds/ → /posts/ → /objects/ ; also exposes a TAXII 2.1 API. https://github.com/muchdogesec/obstracts",
+  "intrusive": false,
+  "permission": "connector:obstracts",
+  "run": "run.py",
+  "mapping": "obstracts",
+  "parameters": [
+    { "name": "file", "type": "file", "required": false, "help": "Offline Obstracts export: a STIX bundle ({objects:[…]}) or a posts JSON ([{…}] / {posts:[…]})." },
+    { "name": "base", "type": "string", "required": false, "help": "Obstracts API base (default https://api.obstracts.com; self-hosted default http://127.0.0.1:8001). Live mode needs OBSTRACTS_API_KEY in the worker env unless the instance is unauthenticated." },
+    { "name": "feed_id", "type": "string", "required": false, "help": "Restrict the pull to a single feed (blog) id. Omit to sweep all feeds." },
+    { "name": "enrich", "type": "string", "required": false, "default": "true", "help": "Fetch each post's extracted STIX objects to derive ATT&CK/actor/malware/CVE tags (true/false). false = fast metadata-only pull." },
+    { "name": "max_items", "type": "int", "required": false, "default": 100, "help": "Maximum blog posts to import." }
+  ]
+}
