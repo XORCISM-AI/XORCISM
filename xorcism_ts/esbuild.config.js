@@ -118,6 +118,7 @@ const entryPoints = [
   "client/ts/cra-maturity.ts",
   "client/ts/miniciso.ts",
   "client/ts/aisvs.ts",
+  "client/ts/nca-ecc.ts",
   "client/ts/control-weight.ts",
   "client/ts/ai-control-library.ts",
   "client/ts/itdr.ts",

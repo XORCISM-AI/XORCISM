@@ -82,6 +82,7 @@ import ccRouter from "./routes/cc";
 import smeMaturityRouter from "./routes/smematurity";
 import miniCisoRouter from "./routes/miniciso";
 import aisvsRouter from "./routes/aisvs";
+import ncaEccRouter from "./routes/ncaEcc";
 import controlWeightRouter from "./routes/controlweight";
 import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
@@ -180,6 +181,7 @@ import { ensureCcTables, seedCcDemo } from "./cc";
 import { ensureSmeTables, seedSmeDemo } from "./smematurity";
 import { ensureMcTables, seedMcDemo } from "./miniciso";
 import { ensureAisvsTables, seedAisvsDemo } from "./aisvs";
+import { ensureNcaEccTables, seedNcaEccDemo } from "./ncaEcc";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -399,6 +401,7 @@ app.use("/api", ccRouter); // Common Criteria (ISO/IEC 15408): Security Target /
 app.use("/api", smeMaturityRouter); // ENISA SME Cyber Resilience Maturity self-check (CRA): 5 domains × 5 questions, band + roadmap
 app.use("/api", miniCisoRouter); // miniCISO: evidence-driven multi-role security assessment (9 staff, output classes, QA gate, synthesis)
 app.use("/api", aisvsRouter); // OWASP AISVS: AI Security Verification Standard weighted assessment (16 parts, 203 questions, L1/L2/L3)
+app.use("/api", ncaEccRouter); // Saudi NCA ECC implementation & evidence cockpit (GECC 2:2024: 108 controls, guidelines + expected deliverables)
 app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
@@ -660,6 +663,10 @@ app.get("/control-weight", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/aisvs", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "aisvs.html"));
+});
+
+app.get("/nca-ecc", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "nca-ecc.html"));
 });
 app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "miniciso.html"));
@@ -1103,6 +1110,8 @@ try { ensureMcTables(); } catch { /* boot */ } // miniCISO evidence-driven asses
 try { seedMcDemo(3); } catch { /* demo only */ } // miniCISO demo (tenant 3): a checkout review with a QA-blocked delivery
 try { ensureAisvsTables(); } catch { /* boot */ } // OWASP AISVS verification store (XCOMPLIANCE.AISVSASSESSMENT/ANSWER)
 try { seedAisvsDemo(3); } catch { /* demo only */ } // AISVS demo (tenant 3): an L2 LLM-assistant verification in progress
+try { ensureNcaEccTables(); } catch { /* boot */ } // Saudi NCA ECC implementation store (XCOMPLIANCE.NCAECCASSESSMENT/CONTROL)
+try { seedNcaEccDemo(3); } catch { /* demo only */ } // NCA ECC demo (tenant 3): a government entity ECC implementation in progress
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store
