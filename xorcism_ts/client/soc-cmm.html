@@ -2,27 +2,40 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>XORCISM — SOC-CMM</title><link rel="stylesheet" href="/css/style.css">
+<title data-i18n="scm.pageTitle">XORCISM — SOC-CMM</title><link rel="stylesheet" href="/css/style.css">
 <style>
-  .mw{max-width:1300px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
-  .sub{color:#94a3b8;font-size:13px;margin-bottom:16px;max-width:1010px}
-  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-  .card{flex:1;min-width:120px;background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px 14px}
-  .card .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:26px;font-weight:700;margin-top:3px}.card .foot{font-size:11px;color:#64748b;margin-top:2px}
-  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px}
-  .dom{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px}
-  .dom .nm{min-width:170px;font-weight:600;color:#e2e8f0}
-  .bar{height:9px;border-radius:5px;background:#1e2133;overflow:hidden;flex:1;min-width:120px}.bar>i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#22c55e,#4ade80)}
-  table.t{width:100%;border-collapse:collapse;font-size:13px}table.t th,table.t td{text-align:left;padding:6px 9px;border-bottom:1px solid #1e2133;vertical-align:middle}
-  table.t th{font-size:11px;color:#94a3b8;text-transform:uppercase}
-  .muted{color:#64748b}select{background:#0f1117;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:3px 6px}
-  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:7px 0;border-bottom:1px solid #1e2133;font-size:13px;display:flex;gap:8px;align-items:center}
+  .mw{max-width:1320px;margin:0 auto;padding:18px}.mw h1{font-size:20px;margin:0 0 2px}
+  .sub{color:#94a3b8;font-size:12.5px;margin-bottom:14px;max-width:1040px}
+  .cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:10px 14px;min-width:120px}
+  .card .lbl{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:24px;font-weight:700;margin-top:2px}.card .foot{font-size:11px;color:#64748b;margin-top:1px}
+  .hdr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#0f1117;border:1px solid #2d3250;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+  .hdr label{font-size:11px;color:#94a3b8;display:flex;flex-direction:column;gap:2px}
+  .hdr input,.hdr select{background:#0b0e1a;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:4px 7px;font-size:12.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px}
+  .panel h3{font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px;color:#cbd5e1}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  .dom{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:12.5px}
+  .dom .nm{min-width:150px;font-weight:600;color:#e2e8f0}
+  .bar{height:8px;border-radius:5px;background:#1e2133;overflow:hidden;flex:1;min-width:90px;position:relative}
+  .bar>i{display:block;height:100%;border-radius:5px}
+  .bar.mat>i{background:linear-gradient(90deg,#22c55e,#4ade80)}.bar.cap>i{background:linear-gradient(90deg,#6366f1,#818cf8)}
+  .domgrp{border:1px solid #23273f;border-radius:9px;margin-bottom:8px;overflow:hidden}
+  .domgrp>.h{display:flex;align-items:center;gap:8px;padding:7px 11px;background:#171a30;cursor:pointer}
+  .domgrp>.h .dn{font-weight:700;font-size:12.5px}.domgrp>.h .dm{margin-left:auto;font-size:11px;color:#94a3b8}
+  table.t{width:100%;border-collapse:collapse;font-size:12.5px}table.t th,table.t td{text-align:left;padding:5px 8px;border-bottom:1px solid #1c2036;vertical-align:middle}
+  table.t th{font-size:10.5px;color:#94a3b8;text-transform:uppercase}
+  .muted{color:#64748b}select.sc{background:#0b0e1a;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:3px 5px}
+  input.note{background:#0b0e1a;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:3px 6px;width:100%}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:6px 0;border-bottom:1px solid #1c2036;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .dchip{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#1e2440;color:#a5b4fc}
+  .gap{font-size:10.5px;border-radius:5px;padding:1px 7px;background:#7c2d12;color:#fed7aa}
+  .capchip{font-size:10.5px;border-radius:5px;padding:1px 7px;background:#312e81;color:#c7d2fe}
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#064e3b;color:#6ee7b7;border-radius:8px;padding:9px 14px;font-size:13px;display:none}#toast.show{display:block}
 </style></head><body>
-<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/soc">&#128225; SOC Ops</a><span class="spacer"></span><span class="title">&#128202; SOC-CMM</span></div>
-<div class="mw"><h1>SOC-CMM maturity assessment</h1>
-<div class="sub">Self-assessment against the <b>SOC-CMM</b> (SOC Capability Maturity Model) across its five domains —
-  <b>Business, People, Process, Technology, Services</b>. Each aspect is scored 0–5 (CMMI: Non-existent → Optimizing)
-  with an importance weight; the worklist is the low-maturity, high-importance gaps to improve first.</div>
-<div id="body"><div class="muted" style="padding:24px;text-align:center">Loading SOC-CMM…</div></div></div>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/soc" data-i18n="scm.navSoc">&#128225; SOC Ops</a><span class="spacer"></span><span class="title" data-i18n="scm.navTitle">&#128202; SOC-CMM</span></div>
+<div class="mw"><h1 data-i18n="scm.title">SOC-CMM capability &amp; maturity assessment</h1>
+<div class="sub" data-i18n="scm.sub">Advanced self-assessment against the <b>SOC-CMM</b> (soc-cmm.com): the official 5 domains / 26 aspects. Every aspect is scored for <b>maturity</b> on a continuous 0–5 scale (Non-existent → Optimizing); <b>Technology</b> and <b>Services</b> are additionally scored for <b>capability</b> (0–3). Domain and overall scores are importance-weighted. Enter results per aspect, set your targets, and read the maturity &amp; capability radars plus the gap worklist.</div>
+<div id="body"><div class="muted" style="padding:24px;text-align:center" data-i18n="scm.loading">Loading SOC-CMM…</div></div></div>
 <div id="toast"></div><script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script><script src="/js/soc-cmm.js"></script></body></html>

@@ -494,7 +494,8 @@ async function initRiskHistory(): Promise<void> {
 
 // Enterprise-risk breakdown — horizontal bar of the signed contributors to the RiskScore.
 async function initRiskBreakdown(): Promise<void> {
-  let d: { total: number; drivers: { key: string; label: string; value: number }[] };
+  let d: { total: number; drivers: { key: string; label: string; value: number }[];
+           maturityDetail?: { index: number | null; sources: { key: string; label: string; pct: number }[] } };
   try { const r = await fetch("/api/dashboard/risk-breakdown"); if (!r.ok) throw new Error(String(r.status)); d = await r.json(); }
   catch { return; }
   if (!d.drivers || !d.drivers.length) { $("risk-breakdown-empty").style.display = ""; return; }
@@ -512,7 +513,15 @@ async function initRiskBreakdown(): Promise<void> {
       plugins: {
         legend: { display: false },
         title: { display: true, text: `${t("dash.riskTotal")}: ${d.total.toLocaleString()}`, color: "#cbd5e1", font: { size: 13 } },
-        tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.parsed.x > 0 ? "+" : ""}${ctx.parsed.x} ${t("dash.riskPoints")}` } },
+        tooltip: { callbacks: {
+          label: (ctx: any) => ` ${ctx.parsed.x > 0 ? "+" : ""}${ctx.parsed.x} ${t("dash.riskPoints")}`,
+          // On the maturity-assurance bar, break down the 0–100 index into its per-model sources.
+          afterBody: (items: any[]) => {
+            const md = d.maturityDetail;
+            if (!md || md.index == null || !items?.length || d.drivers[items[0].dataIndex]?.key !== "maturity") return "";
+            return [`${t("dash.maturityIndex")}: ${md.index}/100`, ...md.sources.map((s) => `  • ${s.label}: ${s.pct}%`)];
+          },
+        } },
       },
       scales: { x: { ticks: { color: "#94a3b8" }, grid: { color: "#1e2133" } }, y: { ticks: { color: "#cbd5e1" }, grid: { display: false } } },
     },

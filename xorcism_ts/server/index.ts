@@ -83,6 +83,8 @@ import smeMaturityRouter from "./routes/smematurity";
 import miniCisoRouter from "./routes/miniciso";
 import aisvsRouter from "./routes/aisvs";
 import ncaEccRouter from "./routes/ncaEcc";
+import cticmmRouter from "./routes/cticmm";
+import informRouter from "./routes/inform";
 import controlWeightRouter from "./routes/controlweight";
 import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
@@ -95,6 +97,7 @@ import { seedAccessGovDemo } from "./accessgov";
 import socRouter from "./routes/soc";
 import { seedSocDefaults } from "./soc";
 import soccmmRouter from "./routes/soccmm";
+import { seedSocCmm } from "./soccmm";
 import certopsRouter from "./routes/certops";
 import governanceRouter from "./routes/governance";
 import aiexchangeRouter from "./routes/aiexchange";
@@ -182,6 +185,8 @@ import { ensureSmeTables, seedSmeDemo } from "./smematurity";
 import { ensureMcTables, seedMcDemo } from "./miniciso";
 import { ensureAisvsTables, seedAisvsDemo } from "./aisvs";
 import { ensureNcaEccTables, seedNcaEccDemo } from "./ncaEcc";
+import { ensureCtiCmmTables, seedCtiCmmDemo } from "./cticmm";
+import { ensureInformTables, seedInformDemo } from "./inform";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -402,6 +407,8 @@ app.use("/api", smeMaturityRouter); // ENISA SME Cyber Resilience Maturity self-
 app.use("/api", miniCisoRouter); // miniCISO: evidence-driven multi-role security assessment (9 staff, output classes, QA gate, synthesis)
 app.use("/api", aisvsRouter); // OWASP AISVS: AI Security Verification Standard weighted assessment (16 parts, 203 questions, L1/L2/L3)
 app.use("/api", ncaEccRouter); // Saudi NCA ECC implementation & evidence cockpit (GECC 2:2024: 108 controls, guidelines + expected deliverables)
+app.use("/api", cticmmRouter); // CTI-CMM: Cyber Threat Intelligence Capability Maturity Model (11 domains, CTI use cases, CTI0-3)
+app.use("/api", informRouter); // MITRE CTID INFORM: Threat-Informed Defense maturity (3 weighted dimensions, 22 components)
 app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
@@ -667,6 +674,14 @@ app.get("/aisvs", pageGuard("/"), (_req: Request, res: Response) => {
 
 app.get("/nca-ecc", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "nca-ecc.html"));
+});
+
+app.get("/cti-cmm", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "cti-cmm.html"));
+});
+
+app.get("/inform", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "inform.html"));
 });
 app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "miniciso.html"));
@@ -1061,6 +1076,7 @@ try { seedAccessGovDemo(3); } catch { /* demo only */ } // Access Governance dem
 ensureNotificationRuleTable(); // per-user event→notification rules (XORCISM.NOTIFICATIONRULE)
 ensureSocTables(); // SOC operations: shifts/on-call, escalation policy+log, IR playbooks (XINCIDENT)
 ensureSocCmmTables(); // SOC-CMM maturity self-assessment (XINCIDENT)
+try { seedSocCmm(3); } catch { /* demo only */ } // SOC-CMM advanced demo (tenant 3): official 26 aspects + dual-axis scores
 ensureCertOpsTables(); // CERT/CSIRT operations: forensic cases + chain of custody (XINCIDENT)
 ensureGovernanceTables(); // Governance: NIST CSF 2.0 Govern (GV) register (XCOMPLIANCE)
 ensurePrivacyTables(); // GDPR/DPO registers: PRIVACYPROCESSING (RoPA) + DSAR + DPIA + PRIVACYBREACH (XCOMPLIANCE)
@@ -1112,6 +1128,10 @@ try { ensureAisvsTables(); } catch { /* boot */ } // OWASP AISVS verification st
 try { seedAisvsDemo(3); } catch { /* demo only */ } // AISVS demo (tenant 3): an L2 LLM-assistant verification in progress
 try { ensureNcaEccTables(); } catch { /* boot */ } // Saudi NCA ECC implementation store (XCOMPLIANCE.NCAECCASSESSMENT/CONTROL)
 try { seedNcaEccDemo(3); } catch { /* demo only */ } // NCA ECC demo (tenant 3): a government entity ECC implementation in progress
+try { ensureCtiCmmTables(); } catch { /* boot */ } // CTI-CMM assessment store (XCOMPLIANCE.CTICMMASSESSMENT/SCORE/DOMAIN)
+try { seedCtiCmmDemo(3); } catch { /* demo only */ } // CTI-CMM demo (tenant 3): an enterprise CTI program assessment in progress
+try { ensureInformTables(); } catch { /* boot */ } // MITRE INFORM assessment store (XCOMPLIANCE.INFORMASSESSMENT/SCORE)
+try { seedInformDemo(3); } catch { /* demo only */ } // INFORM demo (tenant 3): a threat-informed defense assessment in progress
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store

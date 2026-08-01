@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="inform.pageTitle">XORCISM — MITRE INFORM</title><link rel="stylesheet" href="/css/style.css">
+<style>
+  .cm{max-width:1240px;margin:0 auto;padding:16px}.cm h1{font-size:20px;margin:0}
+  .sub{color:#94a3b8;font-size:12.5px;margin:3px 0 12px;max-width:1010px}
+  .cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .card{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:9px 13px;min-width:110px}
+  .card .lbl{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}.card .val{font-size:22px;font-weight:700;margin-top:2px}.card .foot{font-size:11px;color:#64748b}
+  .newf{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:9px 12px;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .newf input{background:#0b0e1a;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12.5px}
+  .btn{background:#3b3f66;color:#e2e8f0;border:1px solid #4b5080;border-radius:7px;padding:5px 11px;font-size:12.5px;cursor:pointer}.btn.ghost{background:transparent}.btn.danger{border-color:#7f1d1d;color:#fecaca}
+  table.list{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px}
+  table.list th{text-align:left;color:#94a3b8;font-weight:600;font-size:11px;padding:5px 8px;border-bottom:1px solid #2d3250}
+  table.list td{padding:6px 8px;border-bottom:1px solid #1c2036}.row{cursor:pointer}.row.sel{background:#171a30}
+  .bar{display:inline-block;width:90px;height:7px;background:#1e2133;border-radius:4px;vertical-align:middle;overflow:hidden}.bar>span{display:block;height:100%}
+  .muted{color:#64748b}
+  #detail{display:none;background:#0f1117;border:1px solid #2d3250;border-radius:11px;padding:13px;margin-top:6px}
+  .dh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}.dh .big{font-size:26px;font-weight:800}
+  .hdr{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .hdr label{font-size:11px;color:#94a3b8;display:flex;flex-direction:column;gap:2px}.hdr input{background:#0b0e1a;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:4px 7px;font-size:12.5px}
+  .grid{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start}@media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:12px}.panel h3{font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px;color:#cbd5e1}
+  .dim{border:1px solid #23273f;border-radius:9px;margin-bottom:8px;overflow:hidden}
+  .dim-h{display:flex;align-items:center;gap:8px;padding:8px 11px;background:#171a30;cursor:pointer}
+  .dim-h .dn{font-weight:700;font-size:12.5px}.dim-h .wt{font-family:ui-monospace,monospace;color:#a5b4fc;font-size:11px}.dim-h .dm{margin-left:auto;font-size:11px;color:#94a3b8}
+  .dimb{padding:6px 11px}
+  .comp{padding:7px 0;border-top:1px solid #1c2036}
+  .comp .cn{font-weight:600;color:#e2e8f0;font-size:12.5px}.comp .cq{font-size:11px;color:#94a3b8;margin:2px 0}
+  .comp select{background:#0b0e1a;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:3px 6px;max-width:100%}
+  .comp .crow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:3px}
+  .comp input.note{background:#0b0e1a;border:1px solid #2d3250;color:#cbd5e1;border-radius:6px;font-size:12px;padding:3px 6px;flex:1;min-width:150px}
+  .pct{font-size:11px;font-weight:700}
+  .sec{font-size:13px;font-weight:700;color:#cbd5e1;margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  .worklist{list-style:none;margin:0;padding:0}.worklist li{padding:6px 0;border-bottom:1px solid #1c2036;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .dchip{font-size:10px;font-weight:700;border-radius:5px;padding:1px 7px;background:#1e2440;color:#a5b4fc;font-family:ui-monospace,monospace}
+  .gap{font-size:10.5px;border-radius:5px;padding:1px 7px;background:#7c2d12;color:#fed7aa}
+  #toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#064e3b;color:#6ee7b7;border-radius:8px;padding:9px 14px;font-size:13px;display:none}#toast.show{display:block}
+  .empty{color:#475569;padding:20px;text-align:center;font-size:12.5px}
+</style></head><body>
+<div class="topbar"><span class="logo">&#9670; XORCISM</span><a href="/" data-i18n="nav.explorer">&#8592; Explorer</a><a href="/cti-cmm" data-i18n="inform.navCticmm">&#129517; CTI-CMM</a><a href="/attack" data-i18n="inform.navAttack">&#127919; ATT&amp;CK</a><span class="spacer"></span><span class="title" data-i18n="inform.navTitle">&#128737;&#65039; INFORM</span></div>
+<div class="cm">
+  <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h1 data-i18n="inform.title">&#128737;&#65039; MITRE INFORM — Threat-Informed Defense maturity</h1><span class="muted" id="ver" style="font-size:12px"></span></div>
+  <div class="sub" data-i18n="inform.sub">Measure your Threat-Informed Defense maturity with MITRE Center for Threat-Informed Defense's INFORM model (ctid.mitre.org/inform): three weighted dimensions — Cyber Threat Intelligence (35%), Defensive Measures (40%), Test &amp; Evaluation (25%) — each decomposed into components scored by the achieved maturity level. Read the weighted overall score, per-dimension scores on the radar, and the gap worklist (components below the top level, by weighted gap).</div>
+  <div class="cards" id="kpis"></div>
+  <div class="newf">
+    <input id="c-name" placeholder="Assessment name" style="min-width:220px">
+    <input id="c-org" placeholder="Organization">
+    <input id="c-assessor" placeholder="Assessor">
+    <button class="btn" id="c-add" data-i18n="inform.create">Create</button><span class="muted" id="c-msg"></span>
+  </div>
+  <table class="list"><thead><tr><th data-i18n="inform.thName">Assessment</th><th data-i18n="inform.thScore">TID score</th><th data-i18n="inform.thProg">Scored</th><th data-i18n="inform.thGaps">Gaps</th><th></th></tr></thead>
+    <tbody id="body"><tr><td colspan="5" class="empty" data-i18n="inform.loading">Loading…</td></tr></tbody></table>
+  <div id="detail"></div>
+</div>
+<div id="toast"></div><script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script><script src="/js/inform.js"></script>
+</body></html>

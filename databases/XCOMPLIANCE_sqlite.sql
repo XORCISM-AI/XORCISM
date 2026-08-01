@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS MINICISOOUTPUT ( OutputID INTEGER PRIMARY KEY, Assess
 -- OWASP AISVS verification assessment (/aisvs, server/aisvs.ts): 16 parts, 203 auditable questions, weighted L1/L2/L3 verification.
 CREATE TABLE IF NOT EXISTS AISVSASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, SystemName TEXT, TargetLevel TEXT, Assessor TEXT, Status TEXT, Score REAL, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS AISVSANSWER ( AnswerID INTEGER PRIMARY KEY, AssessmentID INTEGER, Ref TEXT, PartNum INTEGER, Answer TEXT, Evidence TEXT, UpdatedDate TEXT);
+-- Saudi NCA ECC implementation & evidence cockpit (GECC 2:2024): assessments + per-control status/owner/evidence/produced-deliverables.
+CREATE TABLE IF NOT EXISTS NCAECCASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, EntityName TEXT, Scope TEXT, Assessor TEXT, Status TEXT, Score REAL, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS NCAECCCONTROL ( ControlRowID INTEGER PRIMARY KEY, AssessmentID INTEGER, Ref TEXT, Domain TEXT, Status TEXT, Owner TEXT, EvidenceNote TEXT, DeliverablesDone TEXT, UpdatedDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEINJECT ( InjectID INTEGER PRIMARY KEY, InjectGUID TEXT, AuditID INTEGER, ScenarioID INTEGER, StepOrder INTEGER, InjectTime TEXT, Title TEXT, Description TEXT, InjectType TEXT, ExpectedAction TEXT, ActualResponse TEXT, Status TEXT, CreatedDate TEXT, TenantID INTEGER, Channel TEXT, OffsetMinutes INTEGER, Sender TEXT, Recipients TEXT, Subject TEXT, DeliveredDate TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISEPARTICIPANT ( ParticipantID INTEGER PRIMARY KEY, ParticipantGUID TEXT, AuditID INTEGER, PersonID INTEGER, ParticipantName TEXT, CrisisRole TEXT, Team TEXT, Attended INTEGER, CreatedDate TEXT, TenantID INTEGER, Email TEXT, Phone TEXT);
 CREATE TABLE IF NOT EXISTS EXERCISELOG ( LogID INTEGER PRIMARY KEY, LogGUID TEXT, AuditID INTEGER, InjectID INTEGER, ParticipantID INTEGER, EventType TEXT, Channel TEXT, Message TEXT, LoggedAt TEXT, ByUser TEXT, CreatedDate TEXT, TenantID INTEGER);
@@ -146,6 +149,23 @@ CREATE INDEX IF NOT EXISTS ix_mcoutput_assess ON MINICISOOUTPUT(AssessmentID);
 CREATE INDEX IF NOT EXISTS ix_aisvsassess_tenant ON AISVSASSESSMENT(TenantID);
 CREATE INDEX IF NOT EXISTS ix_aisvsanswer_assess ON AISVSANSWER(AssessmentID);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_aisvsanswer_ref ON AISVSANSWER(AssessmentID, Ref);
+CREATE INDEX IF NOT EXISTS ix_ncaecc_tenant ON NCAECCASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_ncaeccctl_assess ON NCAECCCONTROL(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ncaeccctl_ref ON NCAECCCONTROL(AssessmentID, Ref);
+-- CTI-CMM (Cyber Threat Intelligence Capability Maturity Model, cti-cmm.org): 11 domains → CTI use cases scored CTI0-3, per-domain applicability.
+CREATE TABLE IF NOT EXISTS CTICMMASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, ProgramName TEXT, Assessor TEXT, TargetLevel INTEGER DEFAULT 2, Status TEXT, Score REAL, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS CTICMMSCORE ( ScoreID INTEGER PRIMARY KEY, AssessmentID INTEGER, UseCaseId TEXT, Domain TEXT, Level REAL, Notes TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS CTICMMDOMAIN ( RowID INTEGER PRIMARY KEY, AssessmentID INTEGER, DomainCode TEXT, Applicable INTEGER DEFAULT 1);
+CREATE INDEX IF NOT EXISTS ix_cticmm_tenant ON CTICMMASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_cticmmscore_assess ON CTICMMSCORE(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cticmmscore ON CTICMMSCORE(AssessmentID, UseCaseId);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cticmmdomain ON CTICMMDOMAIN(AssessmentID, DomainCode);
+-- MITRE CTID INFORM (Threat-Informed Defense maturity): 3 weighted dimensions → components scored by achieved level.
+CREATE TABLE IF NOT EXISTS INFORMASSESSMENT ( AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER, Name TEXT, OrgName TEXT, Assessor TEXT, Status TEXT, Score REAL, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS INFORMSCORE ( ScoreID INTEGER PRIMARY KEY, AssessmentID INTEGER, ComponentId TEXT, Dimension TEXT, Level INTEGER, Notes TEXT, UpdatedDate TEXT);
+CREATE INDEX IF NOT EXISTS ix_inform_tenant ON INFORMASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_informscore_assess ON INFORMSCORE(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_informscore ON INFORMSCORE(AssessmentID, ComponentId);
 CREATE INDEX IF NOT EXISTS ix_exerciselog_audit ON EXERCISELOG(AuditID);
 CREATE INDEX IF NOT EXISTS ix_auditfindingremediation_finding ON AUDITFINDINGREMEDIATION(AuditFindingID);
 CREATE INDEX IF NOT EXISTS ix_auditfinding_audit ON AUDITFINDING(AuditID);

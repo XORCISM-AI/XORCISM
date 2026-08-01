@@ -37,6 +37,7 @@
 import { getDb, resolveUserOrganisationId } from "./db";
 import { levelInfo } from "./riskregister";
 import { weightedControlAssurance } from "./controlweight";
+import { maturityAssurance } from "./maturity";
 import { captureVmSnapshot } from "./vmtrends";
 import * as xid from "./xid";
 
@@ -357,13 +358,14 @@ const SEV_WEIGHT = (s: string): number => {
 export interface EnterpriseRiskBreakdown {
   total: number;
   assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number; threatModels: number;
-  controlWeight: number;
+  controlWeight: number; maturity: number;
+  maturityDetail?: { index: number | null; sources: { key: string; label: string; pct: number }[] };  // for the driver tooltip
   drivers: { key: string; label: string; value: number }[];   // signed contributors (for charts)
 }
 
 /** Full enterprise-risk breakdown for a tenant (the score + its signed contributors). */
 export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRiskBreakdown {
-  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, controlWeight: 0, drivers: [] };
+  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, controlWeight: 0, maturity: 0, drivers: [] };
   if (tenantId == null) return empty;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -489,10 +491,17 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
   let controlWeight = 0;
   try { controlWeight = weightedControlAssurance(tenantId).term; } catch { /* no weighted controls */ }
 
-  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels + controlWeight));
+  // — MATURITY (credit, signed ≤ 0): the tenant's security-maturity assessments (SOC-CMM, CTI-CMM,
+  //   MITRE INFORM, NIST CSF 2.0) aggregated into a 0–100 index. Higher demonstrated maturity earns a
+  //   larger risk reduction (0 → −40); no maturity assessment ⇒ 0 (neutral, never a penalty).
+  let maturity = 0;
+  let maturityDetail: EnterpriseRiskBreakdown["maturityDetail"];
+  try { const m = maturityAssurance(tenantId); maturity = m.term; maturityDetail = { index: m.index, sources: m.sources }; } catch { /* not assessed */ }
+
+  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels + controlWeight + maturity));
   return {
     total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits), threatModels: Math.round(threatModels),
-    controlWeight,
+    controlWeight, maturity, maturityDetail,
     drivers: [
       { key: "assets", label: "Asset hygiene", value: Math.round(assets) },
       { key: "riskRegister", label: "Risk register", value: riskRegister },
@@ -502,6 +511,7 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
       { key: "credits", label: "Assurance credits", value: Math.round(credits) },
       { key: "threatModels", label: "Threat modeling", value: Math.round(threatModels) },
       { key: "controlWeight", label: "Weighted controls", value: controlWeight },
+      { key: "maturity", label: "Maturity assurance", value: maturity },
     ].filter((d) => d.value !== 0),
   };
 }
