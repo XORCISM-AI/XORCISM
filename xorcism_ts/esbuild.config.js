@@ -123,6 +123,8 @@ const entryPoints = [
   "client/ts/inform.ts",
   "client/ts/control-weight.ts",
   "client/ts/ai-control-library.ts",
+  "client/ts/ai-governance-crosswalk.ts",
+  "client/ts/ai-risk-loop.ts",
   "client/ts/itdr.ts",
   "client/ts/identity-governance.ts",
   "client/ts/soc.ts",

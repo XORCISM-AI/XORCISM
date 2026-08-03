@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AI Governance Crosswalk</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cw-wrap{max-width:1320px;margin:0 auto;padding:18px}
+  .cw-sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:1000px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 14px;min-width:104px}
+  .kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+  .inst{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .instc{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:9px 13px;min-width:150px}
+  .instc .n{font-size:12px;font-weight:700;color:#c4b5fd}.instc .s{font-size:10px;color:#64748b}
+  .bar{height:8px;border-radius:4px;background:#1e2133;overflow:hidden;width:100%;display:block;margin-top:5px}.bar>i{display:block;height:100%;background:#7c83fd}
+  .tl{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .tlc{font-size:11px;border-radius:6px;padding:5px 9px;background:#13162a;border:1px solid #2d3250;color:#cbd5e1}
+  .tlc.active{border-color:#b45309;background:#3a2a10;color:#fcd34d}.tlc.deferred{color:#93c5fd}
+  .tlc b{color:#e7ebf3}
+  table.cw{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.cw th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:5px 7px;position:sticky;top:0;background:#0f1117}
+  table.cw td{border-bottom:1px solid #1e2133;padding:5px 7px;color:#e2e8f0;vertical-align:top}
+  .dh td{background:#171a2e;color:#c4b5fd;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  .cap{font-weight:600;color:#e7ebf3;min-width:210px}
+  .ref{color:#a5b4fc;font-size:10.5px}.evid{color:#94a3b8;font-size:10.5px}.own{color:#cbd5e1;font-size:10.5px;white-space:nowrap}
+  .lk{display:inline-block;font-size:9.5px;color:#6ee7b7;background:#0e2a1f;border:1px solid #14532d;border-radius:5px;padding:0 4px;cursor:help;white-space:nowrap}
+  .pri{font-size:10px;border-radius:5px;padding:1px 6px;font-weight:700}
+  .pri.P1{background:#7f1d1d;color:#fecaca}.pri.P2{background:#78350f;color:#fed7aa}.pri.P3{background:#1e3a5f;color:#bfdbfe}
+  select.st{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit}
+  select.st.met{border-color:#14532d;color:#6ee7b7}select.st.inprog{border-color:#78350f;color:#fcd34d}select.st.na{color:#64748b}
+  .btn-ai{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:14px}
+  .card2 summary{cursor:pointer;font-size:13px;font-weight:600;color:#e7ebf3}
+  .card2 ol,.card2 ul{margin:8px 0 0;padding-left:18px;font-size:12px;color:#cbd5e1}
+  .card2 li{margin:2px 0}
+  .rmg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:8px}
+  .rmp{border:1px solid #2d3250;border-radius:8px;padding:10px;background:#0f1117}
+  .rmp .ph{font-size:12px;font-weight:700;color:#c4b5fd}.rmp .wd{font-size:10px;color:#64748b;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/ai-control-library" data-i18n="cw.navLib">&#129504; AI Control Library</a>
+  <a href="/frameworks" data-i18n="cw.navFw">&#128218; Frameworks</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="cw.title">&#128279; AI Governance Crosswalk</span>
+</div>
+
+<div class="cw-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px" data-i18n="cw.h1">AI Governance Crosswalk</h1>
+  <div class="cw-sub" data-i18n="cw.sub">One integrated control framework mapping the instruments simultaneously: each row is a governance capability your enterprise needs; the columns show how the EU AI Act (legal obligation), the NIST AI RMF (reasoning), ISO/IEC 42001 (management system) and Singapore's Model AI Governance Frameworks (complementary guidance) each address it — plus the required evidence, owning role and priority. One set of activities. One body of evidence. Multiple instruments satisfied.</div>
+
+  <div id="cw-kpis" class="kpis"></div>
+
+  <div class="sect-h" data-i18n="cw.secInst">Coverage by instrument</div>
+  <div id="cw-inst" class="inst"></div>
+
+  <div class="sect-h" data-i18n="cw.secTimeline">EU AI Act timeline (post Digital Omnibus)</div>
+  <div id="cw-timeline" class="tl"></div>
+
+  <div class="sect-h" style="display:flex;justify-content:space-between;align-items:center">
+    <span data-i18n="cw.secMatrix">Crosswalk matrix — capability × instrument</span>
+    <span style="display:flex;gap:8px">
+      <button class="btn-ai" id="cw-sync" data-i18n="cw.syncBtn">🔗 Sync CONTROLMAPPING</button>
+      <a class="btn-ai" id="cw-export" href="/api/ai-governance-crosswalk?format=md" data-i18n="cw.exportBtn">📄 Export matrix (Markdown)</a>
+    </span>
+  </div>
+  <div style="font-size:11px;color:#64748b;margin:-2px 0 8px" data-i18n="cw.linkedNote">🔗 badges = the imported CONTROL rows each reference resolves to, across the EU AI Act / NIST AI RMF / ISO 42001 / Singapore vocabularies. Sync writes them into CONTROLMAPPING (Singapore-anchored).</div>
+  <div id="cw-matrix" style="overflow-x:auto"></div>
+
+  <details class="card2" style="margin-top:16px"><summary data-i18n="cw.navQ">🧭 AI Governance Navigator — seven gating questions</summary>
+    <ol id="cw-nav"></ol>
+  </details>
+  <details class="card2"><summary data-i18n="cw.roadmap">🗺️ Implementation roadmap (90 days + optimisation)</summary>
+    <div id="cw-roadmap" class="rmg"></div>
+  </details>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/ai-governance-crosswalk.js"></script>
+</body>
+</html>

@@ -38,6 +38,7 @@ import { getDb, resolveUserOrganisationId } from "./db";
 import { levelInfo } from "./riskregister";
 import { weightedControlAssurance } from "./controlweight";
 import { maturityAssurance } from "./maturity";
+import { aiRiskExposure } from "./airiskloop";
 import { captureVmSnapshot } from "./vmtrends";
 import * as xid from "./xid";
 
@@ -358,14 +359,14 @@ const SEV_WEIGHT = (s: string): number => {
 export interface EnterpriseRiskBreakdown {
   total: number;
   assets: number; riskRegister: number; incidents: number; compliance: number; patch: number; credits: number; threatModels: number;
-  controlWeight: number; maturity: number;
+  controlWeight: number; maturity: number; aiRisk: number;
   maturityDetail?: { index: number | null; sources: { key: string; label: string; pct: number }[] };  // for the driver tooltip
   drivers: { key: string; label: string; value: number }[];   // signed contributors (for charts)
 }
 
 /** Full enterprise-risk breakdown for a tenant (the score + its signed contributors). */
 export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRiskBreakdown {
-  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, controlWeight: 0, maturity: 0, drivers: [] };
+  const empty: EnterpriseRiskBreakdown = { total: 0, assets: 0, riskRegister: 0, incidents: 0, compliance: 0, patch: 0, credits: 0, threatModels: 0, controlWeight: 0, maturity: 0, aiRisk: 0, drivers: [] };
   if (tenantId == null) return empty;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -498,10 +499,15 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
   let maturityDetail: EnterpriseRiskBreakdown["maturityDetail"];
   try { const m = maturityAssurance(tenantId); maturity = m.term; maturityDetail = { index: m.index, sources: m.sources }; } catch { /* not assessed */ }
 
-  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels + controlWeight + maturity));
+  // — AI RISK EXPOSURE (signed ≥ 0): unmitigated high/critical residual AI risks + KRI breaches +
+  //   residual accepted without a documented rationale, from the operational AI Risk loop (capped 0→+60).
+  let aiRisk = 0;
+  try { aiRisk = aiRiskExposure(tenantId).term; } catch { /* no AI risks */ }
+
+  const total = Math.max(0, Math.round(assets + riskRegister + incidents + compliance + patch + credits + threatModels + controlWeight + maturity + aiRisk));
   return {
     total, assets: Math.round(assets), riskRegister, incidents, compliance, patch, credits: Math.round(credits), threatModels: Math.round(threatModels),
-    controlWeight, maturity, maturityDetail,
+    controlWeight, maturity, maturityDetail, aiRisk,
     drivers: [
       { key: "assets", label: "Asset hygiene", value: Math.round(assets) },
       { key: "riskRegister", label: "Risk register", value: riskRegister },
@@ -512,6 +518,7 @@ export function enterpriseRiskBreakdown(tenantId: number | null): EnterpriseRisk
       { key: "threatModels", label: "Threat modeling", value: Math.round(threatModels) },
       { key: "controlWeight", label: "Weighted controls", value: controlWeight },
       { key: "maturity", label: "Maturity assurance", value: maturity },
+      { key: "aiRisk", label: "AI risk exposure", value: aiRisk },
     ].filter((d) => d.value !== 0),
   };
 }

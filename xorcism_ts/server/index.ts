@@ -88,6 +88,10 @@ import informRouter from "./routes/inform";
 import controlWeightRouter from "./routes/controlweight";
 import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
+import aiCrosswalkRouter from "./routes/aicrosswalk";
+import { ensureCrosswalkTables } from "./aicrosswalk";
+import aiRiskLoopRouter from "./routes/airiskloop";
+import { ensureAiRiskTables, seedAiRiskDemo } from "./airiskloop";
 import itdrRouter from "./routes/itdr";
 import { seedItdrDemo } from "./itdr";
 import identityGovRouter from "./routes/identity-governance";
@@ -412,6 +416,8 @@ app.use("/api", informRouter); // MITRE CTID INFORM: Threat-Informed Defense mat
 app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
+app.use("/api", aiCrosswalkRouter); // AI Governance Crosswalk: 17-domain capability matrix × EU AI Act / NIST AI RMF / ISO 42001 / Singapore + coverage
+app.use("/api", aiRiskLoopRouter); // Operational AI Risk loop: IDENTIFY→ASSESS→MITIGATE→MONITOR (AIRISK/AIRISKCONTROL/AIRISKKRI/AIRISKLOG) + traceability
 app.use("/api", itdrRouter); // ITDR: identity threat detection (sign-in telemetry + posture) → ATT&CK-mapped detections + response
 app.use("/api", identityGovRouter); // IGA/IDMS: access certification campaigns + lifecycle posture + revocation worklist over IDENTITY
 app.use("/api", accessGovRouter); // Access Governance (Saviynt-style): entitlements + SoD + access requests + JIT over IDENTITY
@@ -688,6 +694,12 @@ app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/cra-compliance", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "cra-compliance.html"));
+});
+app.get("/ai-governance-crosswalk", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-governance-crosswalk.html"));
+});
+app.get("/ai-risk-loop", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "ai-risk-loop.html"));
 });
 app.get("/ai-control-library", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ai-control-library.html"));
@@ -1124,6 +1136,9 @@ try { ensureSmeTables(); } catch { /* boot */ } // ENISA SME CRA maturity store 
 try { seedSmeDemo(3); } catch { /* demo only */ } // SME maturity demo (tenant 3): ENISA worked example → INTERMEDIATE
 try { ensureMcTables(); } catch { /* boot */ } // miniCISO evidence-driven assessment store (XCOMPLIANCE.MINICISO*)
 try { seedMcDemo(3); } catch { /* demo only */ } // miniCISO demo (tenant 3): a checkout review with a QA-blocked delivery
+try { ensureCrosswalkTables(); } catch { /* boot */ } // AI Governance Crosswalk per-tenant status store (XORCISM.AICROSSWALKSTATUS)
+try { ensureAiRiskTables(); } catch { /* boot */ } // Operational AI Risk loop store (XORCISM.AIRISK/AIRISKCONTROL/AIRISKKRI/AIRISKLOG)
+try { seedAiRiskDemo(3); } catch { /* demo only */ } // AI Risk loop demo (tenant 3): one monitored, treated LLM-assistant risk
 try { ensureAisvsTables(); } catch { /* boot */ } // OWASP AISVS verification store (XCOMPLIANCE.AISVSASSESSMENT/ANSWER)
 try { seedAisvsDemo(3); } catch { /* demo only */ } // AISVS demo (tenant 3): an L2 LLM-assistant verification in progress
 try { ensureNcaEccTables(); } catch { /* boot */ } // Saudi NCA ECC implementation store (XCOMPLIANCE.NCAECCASSESSMENT/CONTROL)

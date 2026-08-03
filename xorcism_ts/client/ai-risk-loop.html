@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — AI Risk Loop</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .rl-wrap{max-width:1360px;margin:0 auto;padding:18px}
+  .rl-sub{color:#94a3b8;font-size:13px;margin-bottom:12px;max-width:1000px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:9px 13px;min-width:96px}
+  .kpi .v{font-size:22px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .loop{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;margin-bottom:12px}
+  .lstage{flex:1;min-width:150px;border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 12px;position:relative}
+  .lstage .n{font-size:12px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:.04em}
+  .lstage .c{font-size:22px;font-weight:700}.lstage .d{font-size:10.5px;color:#64748b}
+  .lstage .arrow{position:absolute;right:-11px;top:50%;transform:translateY(-50%);color:#2d3250;font-size:18px;z-index:1}
+  .lstage.loopback{border-color:#14532d}.lstage.loopback .n{color:#6ee7b7}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .chip{font-size:11.5px;border-radius:6px;padding:4px 9px;background:#3a1e1e;border:1px solid #7f1d1d;color:#fecaca}
+  .chip.ok{background:#0e2a1f;border-color:#14532d;color:#6ee7b7}
+  table.rl{width:100%;border-collapse:collapse;font-size:12px}
+  table.rl th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:5px 7px}
+  table.rl td{border-bottom:1px solid #1e2133;padding:5px 7px;color:#e2e8f0;vertical-align:middle}
+  tr.rrow{cursor:pointer}tr.rrow:hover td{background:#171a2e}
+  .bnd{font-size:10px;border-radius:5px;padding:1px 7px;font-weight:700;display:inline-block}
+  .bnd.low{background:#14532d;color:#bbf7d0}.bnd.medium{background:#78350f;color:#fed7aa}.bnd.high{background:#7c2d12;color:#fecaca}.bnd.critical{background:#7f1d1d;color:#fecaca}.bnd\.-{background:#1e2133;color:#64748b}
+  .pill{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2940;color:#c4b5fd;border:1px solid #2d3250}
+  .brk{color:#fca5a5;font-weight:700}
+  select.mini,input.mini{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit}
+  .btn-ai{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn-sm{padding:3px 8px;font-size:11px}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:12px}
+  .fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:#94a3b8}
+  .fld input,.fld select,.fld textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:8px}
+  /* detail panel */
+  #detail{position:fixed;top:0;right:0;width:min(680px,96vw);height:100vh;overflow-y:auto;background:#0d0f1c;border-left:1px solid #2d3250;box-shadow:-8px 0 24px rgba(0,0,0,.4);padding:16px 18px;z-index:50;display:none}
+  #detail h2{font-size:16px;margin:0 0 4px}
+  .trace{display:flex;flex-wrap:wrap;gap:4px;font-size:10.5px;color:#64748b;margin:6px 0 12px}
+  .trace b{color:#a5b4fc}
+  .dsect{border-top:1px solid #1e2133;padding-top:10px;margin-top:10px}
+  .dsect h4{font-size:12px;color:#c4b5fd;text-transform:uppercase;letter-spacing:.03em;margin:0 0 6px}
+  .kv{font-size:11.5px;color:#cbd5e1;margin:2px 0}.kv b{color:#94a3b8;font-weight:600}
+  .close-x{position:absolute;top:12px;right:14px;cursor:pointer;color:#94a3b8;font-size:20px;background:none;border:none}
+  .ctl-item,.kri-item,.log-item{border:1px solid #2d3250;border-radius:7px;padding:7px 9px;margin-bottom:6px;background:#0f1117;font-size:11.5px}
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:49;display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/ai-control-library" data-i18n="rl.navLib">&#129504; AI Control Library</a>
+  <a href="/ai-governance-crosswalk" data-i18n="rl.navCw">&#128279; Crosswalk</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="rl.title">&#128260; AI Risk Loop</span>
+</div>
+
+<div class="rl-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px" data-i18n="rl.h1">Operational AI Risk Management Loop</h1>
+  <div class="rl-sub" data-i18n="rl.sub">AI risk management becomes valuable when it moves from principles into operational decisions. This is the continuous closed loop — IDENTIFY → ASSESS → MITIGATE → MONITOR → back to IDENTIFY — with end-to-end traceability: AI System → Context → Risk → Assessment → Control → Owner → Evidence → Monitoring → Decision. It sits within ISO/IEC 42001, the NIST AI RMF and the EU AI Act rather than replacing them.</div>
+
+  <div id="rl-loop" class="loop"></div>
+  <div id="rl-kpis" class="kpis"></div>
+
+  <div class="sect-h" data-i18n="rl.secFail">Common failure patterns detected</div>
+  <div id="rl-fail" class="chips"></div>
+
+  <div class="sect-h" style="display:flex;justify-content:space-between;align-items:center">
+    <span data-i18n="rl.secRisks">AI risk register — traceability per risk</span>
+    <span style="display:flex;gap:8px">
+      <button class="btn-ai" id="rl-new" data-i18n="rl.newBtn">＋ Identify a risk</button>
+      <button class="btn-ai" id="rl-seed" data-i18n="rl.seedBtn">Seed demo</button>
+      <a class="btn-ai" id="rl-export" href="/api/ai-risk-loop?format=md" data-i18n="rl.exportBtn">📄 Export</a>
+    </span>
+  </div>
+
+  <details class="card2" id="rl-form-wrap"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#e7ebf3" data-i18n="rl.identify">① IDENTIFY — a risk in the context of an AI system</summary>
+    <div class="row" style="margin-top:8px">
+      <div class="fld"><label data-i18n="rl.f.system">AI system</label><select id="f-system"></select></div>
+      <div class="fld"><label data-i18n="rl.f.area">Risk area</label><select id="f-area"></select></div>
+      <div class="fld"><label data-i18n="rl.f.lifecycle">Lifecycle phase</label><select id="f-lifecycle"></select></div>
+      <div class="fld"><label data-i18n="rl.f.owner">Risk owner</label><select id="f-owner"></select></div>
+    </div>
+    <div class="fld" style="margin-bottom:8px"><label data-i18n="rl.f.title">Risk (what can go wrong?)</label><input id="f-title" data-i18n-placeholder="rl.f.titlePh" placeholder="e.g. LLM may produce unsafe or biased answers"></div>
+    <div class="fld" style="margin-bottom:8px"><label data-i18n="rl.f.desc">Description</label><textarea id="f-desc" rows="2"></textarea></div>
+    <div class="row">
+      <div class="fld"><label data-i18n="rl.f.purpose">Intended purpose</label><input id="f-purpose"></div>
+      <div class="fld"><label data-i18n="rl.f.data">Data processed</label><input id="f-data"></div>
+      <div class="fld"><label data-i18n="rl.f.deps">External deps (models/APIs/vendors)</label><input id="f-deps"></div>
+      <div class="fld"><label data-i18n="rl.f.oblig">Obligations (legal/contractual)</label><input id="f-oblig"></div>
+    </div>
+    <button class="btn-ai" id="f-add" data-i18n="rl.addBtn">Identify risk</button>
+  </details>
+
+  <div id="rl-table" style="overflow-x:auto"></div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<div id="detail"></div>
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/ai-risk-loop.js"></script>
+</body>
+</html>
