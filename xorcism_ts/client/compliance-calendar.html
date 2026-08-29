@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Compliance Calendar</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .cc-wrap{max-width:1240px;margin:0 auto;padding:18px}
+  .cc-sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:960px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 14px;min-width:96px}
+  .kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px;display:flex;justify-content:space-between;align-items:center}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  table.cc{width:100%;border-collapse:collapse;font-size:12px}
+  table.cc th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:6px 7px}
+  table.cc td{border-bottom:1px solid #1e2133;padding:6px 7px;color:#e2e8f0;vertical-align:top}
+  .st{font-size:10px;border-radius:5px;padding:1px 7px;font-weight:700}
+  .st.overdue{background:#7f1d1d;color:#fecaca}.st\.due-soon{}
+  .st.due-soon{background:#78350f;color:#fed7aa}.st.scheduled{background:#1e3a5f;color:#bfdbfe}.st.completed{background:#064e3b;color:#6ee7b7}.st.paused{background:#1e2133;color:#94a3b8}
+  .btn-ai{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-sm{padding:3px 8px;font-size:11px}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:8px}
+  .fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:#94a3b8}
+  .x{cursor:pointer;color:#f87171}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/evidence-catalogue" data-i18n="cc.navEv">&#128193; Evidence catalogue</a>
+  <a href="/audit-planning" data-i18n="cc.navAudit">&#128203; Audit planning</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="cc.title">&#128197; Compliance Calendar</span>
+</div>
+
+<div class="cc-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px" data-i18n="cc.h1">Compliance Calendar &amp; Reminders</h1>
+  <div class="cc-sub" data-i18n="cc.sub">Plan and get reminded about recurring audit &amp; compliance activities — internal audits, account security reviews, access recertifications, policy reviews, DR tests, attestations. Each activity has a cadence, a next-due date, a lead time and an assignee; the reminder engine notifies the assignee ahead of the due date and flags overdue items. Completing an activity advances the next occurrence.</div>
+
+  <div id="cc-kpis" class="kpis"></div>
+
+  <details class="card2"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#e7ebf3" data-i18n="cc.addActivity">＋ New planned activity</summary>
+    <div class="grid" style="margin-top:8px">
+      <div class="fld" style="grid-column:span 2"><label data-i18n="cc.f.name">Name</label><input id="a-name" placeholder="Quarterly privileged-account access review"></div>
+      <div class="fld"><label data-i18n="cc.f.category">Category</label><select id="a-cat"></select></div>
+      <div class="fld"><label data-i18n="cc.f.cadence">Cadence</label><select id="a-cadence"></select></div>
+    </div>
+    <div class="grid">
+      <div class="fld"><label data-i18n="cc.f.nextDue">Next due</label><input id="a-due" type="date"></div>
+      <div class="fld"><label data-i18n="cc.f.lead">Remind (days before)</label><input id="a-lead" type="number" value="7" min="0"></div>
+      <div class="fld"><label data-i18n="cc.f.interval">Custom interval (days)</label><input id="a-interval" type="number" min="1" placeholder="only for 'custom'"></div>
+      <div class="fld"><label data-i18n="cc.f.owner">Owner</label><input id="a-owner"></div>
+    </div>
+    <div class="grid">
+      <div class="fld"><label data-i18n="cc.f.assignee">Assignee user ID (reminded)</label><input id="a-assignee" type="number" placeholder="notified in-app"></div>
+      <div class="fld"><label data-i18n="cc.f.framework">Framework</label><input id="a-framework" placeholder="ISO 27001"></div>
+      <div class="fld"><label data-i18n="cc.f.control">Control ref</label><input id="a-control" placeholder="A.5.18"></div>
+    </div>
+    <div class="fld" style="margin-bottom:8px"><label data-i18n="cc.f.desc">Description</label><textarea id="a-desc" rows="2"></textarea></div>
+    <button class="btn-ai" id="a-add" data-i18n="cc.addBtn">Add activity</button>
+  </details>
+
+  <div class="sect-h">
+    <span data-i18n="cc.secList">Planned activities</span>
+    <button class="btn-ai btn-sm" id="cc-remind" data-i18n="cc.runReminders">🔔 Run reminders now</button>
+  </div>
+  <div id="cc-table" style="overflow-x:auto"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/compliance-calendar.js"></script>
+</body>
+</html>

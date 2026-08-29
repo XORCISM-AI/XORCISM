@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Evidence Catalogue</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .ev-wrap{max-width:1260px;margin:0 auto;padding:18px}
+  .ev-sub{color:#94a3b8;font-size:13px;margin-bottom:14px;max-width:960px}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .kpi{border:1px solid #2d3250;border-radius:10px;background:#13162a;padding:10px 14px;min-width:96px}
+  .kpi .v{font-size:24px;font-weight:700}.kpi .l{font-size:11px;color:#94a3b8}
+  .sect-h{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .chip{font-size:12px;border-radius:6px;padding:3px 10px;background:#13162a;border:1px solid #2d3250;color:#cbd5e1;cursor:pointer}
+  .chip.on{background:#1e2940;border-color:#6d28d9;color:#c4b5fd}
+  input,select,textarea{background:#0f1117;border:1px solid #2d3250;color:#e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;font-family:inherit}
+  table.ev{width:100%;border-collapse:collapse;font-size:12px}
+  table.ev th{text-align:left;color:#94a3b8;font-weight:600;border-bottom:1px solid #2d3250;padding:6px 7px}
+  table.ev td{border-bottom:1px solid #1e2133;padding:6px 7px;color:#e2e8f0;vertical-align:top}
+  .fr{font-size:10px;border-radius:5px;padding:1px 7px;font-weight:700}
+  .fr.valid{background:#064e3b;color:#6ee7b7}.fr.expiring{background:#78350f;color:#fed7aa}.fr.expired{background:#7f1d1d;color:#fecaca}.fr.none{background:#1e2133;color:#94a3b8}
+  .tag{font-size:10px;border-radius:5px;padding:1px 6px;background:#1e2133;color:#94a3b8;margin-right:3px}
+  .btn-ai{background:#1e2940;border:1px solid #2d3250;color:#c4b5fd;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-sm{padding:3px 8px;font-size:11px}
+  .card2{border:1px solid #2d3250;border-radius:10px;padding:13px;background:#13162a;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:8px}
+  .fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:#94a3b8}
+  .x{cursor:pointer;color:#f87171}.dl{color:#93c5fd;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">&#9670; XORCISM</span>
+  <a href="/" data-i18n="nav.explorer">&#8592; Explorer</a>
+  <a href="/compliance-calendar" data-i18n="ev.navCal">&#128197; Compliance calendar</a>
+  <a href="/audit-planning" data-i18n="ev.navAudit">&#128203; Audit planning</a>
+  <span class="spacer"></span>
+  <span class="title" data-i18n="ev.title">&#128193; Evidence Catalogue</span>
+</div>
+
+<div class="ev-wrap">
+  <h1 style="font-size:20px;margin:0 0 2px" data-i18n="ev.h1">Evidence Catalogue</h1>
+  <div class="ev-sub" data-i18n="ev.sub">A central library to collect and manage audit &amp; compliance evidence. Capture each artifact once — a file stored content-addressed (SHA-256 dedup) or a URL — with its type, owner, source, validity window and framework/control reference, then reuse it across audits and compliance activities. Freshness is tracked automatically (valid / expiring / expired).</div>
+
+  <div id="ev-kpis" class="kpis"></div>
+
+  <div class="bar">
+    <input id="ev-search" data-i18n-placeholder="ev.search" placeholder="Search name / owner / tag / control…" style="min-width:240px">
+    <span id="ev-facets"></span>
+  </div>
+
+  <details class="card2"><summary style="cursor:pointer;font-size:13px;font-weight:600;color:#e7ebf3" data-i18n="ev.addEvidence">＋ Add evidence</summary>
+    <div class="grid" style="margin-top:8px">
+      <div class="fld"><label data-i18n="ev.f.name">Name</label><input id="f-name"></div>
+      <div class="fld"><label data-i18n="ev.f.type">Type</label><select id="f-type"></select></div>
+      <div class="fld"><label data-i18n="ev.f.owner">Owner</label><input id="f-owner"></div>
+      <div class="fld"><label data-i18n="ev.f.source">Source</label><input id="f-source" placeholder="e.g. Okta, Jira, manual"></div>
+    </div>
+    <div class="grid">
+      <div class="fld"><label data-i18n="ev.f.framework">Framework</label><input id="f-framework" placeholder="ISO 27001"></div>
+      <div class="fld"><label data-i18n="ev.f.control">Control ref</label><input id="f-control" placeholder="A.8.8"></div>
+      <div class="fld"><label data-i18n="ev.f.validFrom">Valid from</label><input id="f-vf" type="date"></div>
+      <div class="fld"><label data-i18n="ev.f.validUntil">Valid until</label><input id="f-vu" type="date"></div>
+    </div>
+    <div class="fld" style="margin-bottom:8px"><label data-i18n="ev.f.tags">Tags (comma)</label><input id="f-tags"></div>
+    <div class="fld" style="margin-bottom:8px"><label data-i18n="ev.f.desc">Description</label><textarea id="f-desc" rows="2"></textarea></div>
+    <div class="grid">
+      <div class="fld"><label data-i18n="ev.f.url">URL (optional)</label><input id="f-url" placeholder="https://…"></div>
+      <div class="fld"><label data-i18n="ev.f.file">Or upload a file</label><input id="f-file" type="file"></div>
+    </div>
+    <button class="btn-ai" id="f-add" data-i18n="ev.addBtn">Add to catalogue</button>
+    <span style="font-size:10.5px;color:#64748b;margin-left:8px" data-i18n="ev.fileNote">Files ≤ 25 MB are stored content-addressed (deduplicated).</span>
+  </details>
+
+  <div class="sect-h" data-i18n="ev.secItems">Evidence items</div>
+  <div id="ev-table" style="overflow-x:auto"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/evidence-catalogue.js"></script>
+</body>
+</html>

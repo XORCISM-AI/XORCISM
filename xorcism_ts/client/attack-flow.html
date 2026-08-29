@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — Attack Flow</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .af-wrap{padding:14px 16px 40px;max-width:1500px}
+  .af-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .af-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .af-sub{font-size:12.5px;color:#94a3b8;max-width:1050px;line-height:1.5;margin:0 0 14px}
+  .af-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 14px}
+  .af-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:7px 13px;min-width:92px}
+  .af-kpi .v{font-size:19px;font-weight:700;color:#38bdf8}.af-kpi .l{font-size:10.5px;color:#94a3b8}
+  .af-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .af-panel h3{margin:0 0 10px;font-size:13.5px;color:#cbd5e1}
+  .af-imp{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .af-imp input{flex:1;min-width:260px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12.5px;padding:8px 10px}
+  .af-imp textarea{width:100%;box-sizing:border-box;min-height:90px;background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:12px;padding:9px;font-family:ui-monospace,Consolas,monospace;resize:vertical;margin-top:8px}
+  .af-btn{background:#0284c7;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:8px 16px;cursor:pointer}
+  .af-btn:disabled{opacity:.5;cursor:default}
+  .af-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:6px 12px;font-size:12px}
+  .af-btn.danger{color:#fca5a5}
+  .af-corpus{font-size:11.5px;color:#94a3b8;margin-top:9px}
+  .af-corpus a{color:#7dd3fc;cursor:pointer;text-decoration:none;margin-right:4px}
+  .af-corpus a:hover{text-decoration:underline}
+  table.af-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.af-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.af-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.af-row{cursor:pointer}tr.af-row:hover{background:#171b30}tr.af-row.sel{background:#10233a}
+  .af-scope{font-size:10px;padding:2px 8px;border-radius:10px;background:#1e293b;color:#93c5fd;border:1px solid #334155;text-transform:capitalize}
+  .af-chip{font-size:10.5px;padding:2px 7px;border-radius:9px;background:#0f1117;border:1px solid #232843;color:#cbd5e1}
+  .af-empty{color:#64748b;text-align:center;padding:16px}
+  .af-detail{display:none}
+  .af-dh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .af-dh b{font-size:15px;color:#e2e8f0}
+  .af-graph{overflow:auto;background:#0d1020;border:1px solid #232843;border-radius:8px;padding:6px}
+  .af-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#94a3b8;margin:8px 2px}
+  .af-legend span{display:inline-flex;align-items:center;gap:5px}
+  .af-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .af-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.af-grid{grid-template-columns:1fr}}
+  .af-cov li{font-size:12px;padding:4px 0;border-bottom:1px solid #1c2036;display:flex;gap:8px;align-items:center}
+  .af-cov .tid{font-family:ui-monospace,monospace;color:#a5b4fc;min-width:82px}
+  .af-cov .nm{flex:1;color:#cbd5e1}
+  .af-cov .un{color:#fbbf24;font-size:10px}
+  .muted{color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="af-wrap">
+  <div class="af-head"><span style="font-size:22px">🕸️</span><h2 data-i18n="afl.title">Attack Flow</h2><span id="af-ver" class="muted" style="font-size:12px"></span></div>
+  <p class="af-sub" data-i18n="afl.sub">Document and visualise how adversaries <b>sequence</b> ATT&amp;CK techniques to reach their goals — MITRE Center for Threat-Informed Defense <b>Attack Flow</b> (STIX 2.1 extension). Import an Attack Flow STIX bundle (paste JSON or an https URL — e.g. a flow from the published corpus), and read it back as an ATT&amp;CK-mapped directed graph with a per-flow technique coverage list.</p>
+
+  <div class="af-kpis" id="af-kpis"></div>
+
+  <div class="af-panel">
+    <h3 data-i18n="afl.import">Import an Attack Flow (STIX 2.1 bundle)</h3>
+    <div class="af-imp">
+      <input id="af-url" placeholder="https://…/SolarWinds.json (Attack Flow STIX bundle URL)">
+      <button class="af-btn" id="af-url-btn" data-i18n="afl.fetch">Fetch &amp; import</button>
+    </div>
+    <textarea id="af-json" placeholder='… or paste a STIX bundle: {"type":"bundle","objects":[{"type":"attack-flow",…}]}'></textarea>
+    <div class="af-imp" style="margin-top:8px"><button class="af-btn ghost" id="af-json-btn" data-i18n="afl.importpaste">Import pasted JSON</button><span class="muted" id="af-imp-status" style="font-size:12px"></span></div>
+    <div class="af-corpus" data-i18n="afl.corpushint">Quick-import from the MITRE corpus:</div>
+    <div class="af-corpus" id="af-corpus"></div>
+  </div>
+
+  <div class="af-panel">
+    <h3 data-i18n="afl.flows">Imported flows</h3>
+    <table class="af-tbl">
+      <thead><tr><th data-i18n="afl.name">Flow</th><th style="width:110px" data-i18n="afl.scope">Scope</th><th style="width:80px" data-i18n="afl.actions">Actions</th><th style="width:120px" data-i18n="afl.techniques">Techniques</th><th style="width:70px"></th></tr></thead>
+      <tbody id="af-body"></tbody>
+    </table>
+  </div>
+
+  <div class="af-panel af-detail" id="af-detail"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/attack-flow.js"></script>
+</body>
+</html>

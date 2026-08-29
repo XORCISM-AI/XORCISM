@@ -437,6 +437,13 @@
         <span class="domain-desc" data-i18n="landing.hunting.d">Chasse aux menaces : hunts, IOCs et techniques ATT&amp;CK, avec un assistant IA local qui propose hypothèses, sources de logs et détections.</span>
       </a>
 
+      <a class="domain-card" href="/attack-flow" style="--accent:#38bdf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="3"/><circle cx="5" cy="18" r="3"/><circle cx="19" cy="12" r="3"/><path d="M8 6h5a3 3 0 0 1 3 3v0M8 18h5a3 3 0 0 0 3-3v0"/></svg></span>
+        <span class="domain-title" data-i18n="landing.attackflow">Attack Flow</span>
+        <span class="domain-sub">MITRE CTID · STIX 2.1 · ATT&amp;CK graph</span>
+        <span class="domain-desc" data-i18n="landing.attackflow.d">MITRE Center for Threat-Informed Defense <b>Attack Flow</b> : documentez et visualisez comment les adversaires <b>enchaînent</b> les techniques ATT&amp;CK pour atteindre leurs objectifs. Importez un bundle STIX 2.1 Attack Flow (collez le JSON ou une URL https — dont les ~40 flux du corpus public : SolarWinds, NotPetya, Conti, Equifax…), et lisez-le sous forme de graphe orienté mappé sur ATT&amp;CK, avec la couverture des techniques par flux. Le format standard pour partager des séquences d'attaque réelles.</span>
+      </a>
+
       <a class="domain-card" href="/report-mapper" style="--accent:#2dd4bf">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
         <span class="domain-title" data-i18n="landing.reportmapper">Report ATT&amp;CK Mapper</span>
@@ -808,6 +815,20 @@
         <span class="domain-desc" data-i18n="landing.aisvs.d">The OWASP AI Security Verification Standard (AISVS 1.01-dev) as a weighted verification audit: 16 parts and 203 auditable questions across 192 official control references — training-data integrity, input validation, model lifecycle, infrastructure & deployment, access control, model supply chain, output safety, memory & vector databases, agentic orchestration, Model Context Protocol (MCP) security, adversarial robustness and monitoring. Pick a target assurance level (L1 baseline / L2 standard / L3 advanced) to scope the controls, answer each on the AISVS maturity scale (fully / largely / partial / planned / not / n-a) with evidence, and read back the weighted verification score per part and overall, the gaps, and the EU AI Act coverage. Each control carries its ISO/IEC 27001, NIST CSF 2.0, NIS2 and EU AI Act mappings. An audit instrument and an AI-security-management view (CC BY-SA 4.0).</span>
       </a>
 
+      <a class="domain-card" href="/tid-cmm" style="--accent:#8b5cf6">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <span class="domain-title" data-i18n="landing.tidcmm">TID-CMM — Threat-Informed Detection</span>
+        <span class="domain-sub">tid-cmm.com · 8 domains · 58 sub-caps · ATT&amp;CK-aligned</span>
+        <span class="domain-desc" data-i18n="landing.tidcmm.d">Le modèle compagnon « détection » de TIR-CMM. TID-CMM (<b>Threat-Informed Detection Capability Maturity Model</b>, tid-cmm.com) mesure si la détection est pilotée par le <b>comportement adverse</b>, si la <b>télémétrie</b> existe pour le voir, et si tout cela a été <b>prouvé</b>. Huit domaines pondérés (TI/TM/DC/DE/AV/AA/IR/GV), 58 sous-capacités notées 0–5 sur des descripteurs par niveau (ou NA si hors périmètre), bandes L0–L5, radar par domaine, liste de lacunes, contraintes inter-domaines et correspondances NIST CSF 2.0 / SOC-CMM. Aligné sur MITRE ATT&CK v19.2. Modèle de réponse compagnon : TIR-CMM.</span>
+      </a>
+
+      <a class="domain-card" href="/tir-cmm" style="--accent:#f97316">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+        <span class="domain-title" data-i18n="landing.tircmm">TIR-CMM — Threat-Informed Response</span>
+        <span class="domain-sub">tir-cmm.com · 8 domains · 58 sub-caps · evidence-capped</span>
+        <span class="domain-desc" data-i18n="landing.tircmm.d">La détection demande si vous <i>verriez</i> une attaque ; le <b>Threat-Informed Response Capability Maturity Model</b> (TIR-CMM, tir-cmm.com) pose la question décisive : pourriez-vous <b>agir</b> — à l'intérieur de la fenêtre de propagation de l'adversaire, avec quelqu'un autorisé à déclencher, au rayon d'impact voulu — et pouvez-vous le <b>prouver</b> ? Huit domaines pondérés, 58 sous-capacités notées 0–5 où chaque score est <b>plafonné par son niveau de preuve</b> (VC0–VC3) et le palier d'évaluation (Pulse/Baseline/Assurance) fixe le plafond. Radar par domaine, liste de lacunes avec actions de remédiation, et correspondance vers NIST CSF 2.0 / 800-61 / ISO / RE&CT / D3FEND / SOC-CMM. Modèle compagnon : TID-CMM (détection) ; modèle opérationnel parent : UTIOM.</span>
+      </a>
+
       <a class="domain-card" href="/inform" style="--accent:#38bdf8">
         <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6z"/><path d="M12 8v5"/><circle cx="12" cy="16" r=".6" fill="currentColor"/></svg></span>
         <span class="domain-title" data-i18n="landing.inform">MITRE INFORM</span>
@@ -883,6 +904,18 @@
         <span class="domain-title" data-i18n="landing.auditplan">Audit Planning</span>
         <span class="domain-sub">Programme · calendrier · lancement</span>
         <span class="domain-desc" data-i18n="landing.auditplan.d">Planifiez et cadencez votre programme d'audit : construisez un plan d'audit (généralement annuel), ajoutez des audits planifiés (type, référentiel, périmètre, auditeur principal, fenêtre planifiée, récurrence), suivez-les sur un calendrier annuel, et lancez un audit planifié en un AUDIT réel au démarrage. La clôture d'un audit récurrent planifie automatiquement l'occurrence suivante.</span>
+      </a>
+      <a class="domain-card" href="/evidence-catalogue" style="--accent:#38bdf8">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M9 13h6M9 16h4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.evcat">Evidence Catalogue</span>
+        <span class="domain-sub" data-i18n="landing.evcat.sub">collect · validity · reuse · CAS</span>
+        <span class="domain-desc" data-i18n="landing.evcat.d">A central library to collect and manage audit &amp; compliance evidence. Capture each artifact once — a file stored content-addressed (SHA-256 dedup) or a URL — with its type, owner, source, validity window and framework/control reference, then reuse it across audits and compliance activities. Freshness is tracked automatically (valid / expiring / expired), and evidence can be linked to audits so an evidence request is answered from the library instead of a fresh screenshot.</span>
+      </a>
+      <a class="domain-card" href="/compliance-calendar" style="--accent:#22d3ee">
+        <span class="domain-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="12" cy="16" r="1"/><path d="M18 14l-1.5 4"/></svg></span>
+        <span class="domain-title" data-i18n="landing.cccal">Compliance Calendar &amp; Reminders</span>
+        <span class="domain-sub" data-i18n="landing.cccal.sub">recurring activities · reminders · overdue</span>
+        <span class="domain-desc" data-i18n="landing.cccal.d">Plan and get reminded about recurring audit &amp; compliance activities beyond formal audits — account security reviews, access recertifications, policy reviews, DR/BCP tests, attestations, control self-assessments. Each activity has a cadence, a next-due date, a lead time and an assignee; the reminder engine notifies the assignee ahead of the due date and flags overdue items, and completing an activity logs the occurrence (with optional evidence) and advances the next due date.</span>
       </a>
 
       <a class="domain-card" href="/reg-calendar" style="--accent:#10b981">

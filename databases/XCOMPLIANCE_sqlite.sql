@@ -255,3 +255,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_aicontrol_ref ON AICONTROL(Ref, TenantID);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_aicontrolsys ON AICONTROLSYSTEM(AiControlID, AISystemID);
 
 COMMIT;
+
+-- TIR-CMM (Threat-Informed Response Capability Maturity Model, tir-cmm.com). See server/tircmm.ts.
+CREATE TABLE IF NOT EXISTS TIRCMMASSESSMENT(
+  AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER,
+  Name TEXT, OrgName TEXT, Assessor TEXT, Tier TEXT, TargetLevel INTEGER DEFAULT 3, Status TEXT,
+  Score REAL, Band TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS TIRCMMSCORE(
+  ScoreID INTEGER PRIMARY KEY, AssessmentID INTEGER, SubCapId TEXT, Domain TEXT,
+  Level REAL, Evidence TEXT, Notes TEXT, UpdatedDate TEXT);
+CREATE INDEX IF NOT EXISTS ix_tircmm_tenant ON TIRCMMASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_tircmmscore_assess ON TIRCMMSCORE(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tircmmscore ON TIRCMMSCORE(AssessmentID, SubCapId);
+
+-- TID-CMM (Threat-Informed Detection Capability Maturity Model, tid-cmm.com). See server/tidcmm.ts.
+CREATE TABLE IF NOT EXISTS TIDCMMASSESSMENT(
+  AssessmentID INTEGER PRIMARY KEY, AssessmentGUID TEXT, TenantID INTEGER,
+  Name TEXT, OrgName TEXT, Assessor TEXT, Tier TEXT, TargetLevel INTEGER DEFAULT 3, Status TEXT,
+  Score REAL, Band TEXT, Notes TEXT, CreatedDate TEXT, UpdatedDate TEXT);
+CREATE TABLE IF NOT EXISTS TIDCMMSCORE(
+  ScoreID INTEGER PRIMARY KEY, AssessmentID INTEGER, SubCapId TEXT, Domain TEXT,
+  Level REAL, NA INTEGER DEFAULT 0, Notes TEXT, UpdatedDate TEXT);
+CREATE INDEX IF NOT EXISTS ix_tidcmm_tenant ON TIDCMMASSESSMENT(TenantID);
+CREATE INDEX IF NOT EXISTS ix_tidcmmscore_assess ON TIDCMMSCORE(AssessmentID);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_tidcmmscore ON TIDCMMSCORE(AssessmentID, SubCapId);

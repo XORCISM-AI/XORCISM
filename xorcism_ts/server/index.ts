@@ -34,6 +34,7 @@ import attackPathRouter from "./routes/attackpath";
 import purpleTeamRouter from "./routes/purpleteam";
 import detectionEngRouter from "./routes/detectioneng";
 import reportMapperRouter from "./routes/reportmapper";
+import attackFlowRouter from "./routes/attackflow";
 import ransomwareRouter from "./routes/ransomware";
 import assuranceRouter from "./routes/assurance";
 import qaaRouter from "./routes/qaa";
@@ -85,11 +86,17 @@ import aisvsRouter from "./routes/aisvs";
 import ncaEccRouter from "./routes/ncaEcc";
 import cticmmRouter from "./routes/cticmm";
 import informRouter from "./routes/inform";
+import tirCmmRouter from "./routes/tircmm";
+import tidCmmRouter from "./routes/tidcmm";
 import controlWeightRouter from "./routes/controlweight";
 import { ensureControlWeightColumns } from "./controlweight";
 import aiControlRouter from "./routes/aicontrol";
 import aiCrosswalkRouter from "./routes/aicrosswalk";
 import { ensureCrosswalkTables } from "./aicrosswalk";
+import evidenceCatalogueRouter from "./routes/evidencecatalogue";
+import { ensureEvidenceCatalogue } from "./evidencecatalogue";
+import complianceActivitiesRouter from "./routes/complianceactivities";
+import { ensureComplianceActivities, runComplianceReminders } from "./complianceactivities";
 import aiRiskLoopRouter from "./routes/airiskloop";
 import { ensureAiRiskTables, seedAiRiskDemo } from "./airiskloop";
 import itdrRouter from "./routes/itdr";
@@ -191,6 +198,9 @@ import { ensureAisvsTables, seedAisvsDemo } from "./aisvs";
 import { ensureNcaEccTables, seedNcaEccDemo } from "./ncaEcc";
 import { ensureCtiCmmTables, seedCtiCmmDemo } from "./cticmm";
 import { ensureInformTables, seedInformDemo } from "./inform";
+import { ensureAttackFlowTables, seedAttackFlowDemo } from "./attackflow";
+import { ensureTirCmmTables, seedTirCmmDemo } from "./tircmm";
+import { ensureTidCmmTables, seedTidCmmDemo } from "./tidcmm";
 import threatDebtRouter from "./routes/threatdebt";
 import { ensureThreatDebtTables, seedThreatDebtDemo } from "./threatdebt";
 import insuranceRouter from "./routes/insurance";
@@ -372,6 +382,7 @@ app.use("/api", attackPathRouter); // attack-path & choke-point graph (reachabil
 app.use("/api", purpleTeamRouter); // purple-team: chain ATT&CK detection coverage (Sigma) + rule generation
 app.use("/api", detectionEngRouter); // detection-engineering: multi-platform detection generator + Cyber Insights
 app.use("/api", reportMapperRouter); // report-mapper: report text → ATT&CK techniques (MITRE TRAM parity)
+app.use("/api", attackFlowRouter); // attack-flow: MITRE CTID Attack Flow (STIX 2.1) → ATT&CK-mapped adversary graphs
 app.use("/api", ransomwareRouter); // ransomware-to-$ scenario simulator (BIA/FAIR impact + D3FEND controls)
 app.use("/api", assuranceRouter); // continuously-proven compliance (control assurance from live telemetry)
 app.use("/api", qaaRouter); // security questionnaire auto-answer (drafts from the knowledge base + local AI)
@@ -413,10 +424,14 @@ app.use("/api", aisvsRouter); // OWASP AISVS: AI Security Verification Standard 
 app.use("/api", ncaEccRouter); // Saudi NCA ECC implementation & evidence cockpit (GECC 2:2024: 108 controls, guidelines + expected deliverables)
 app.use("/api", cticmmRouter); // CTI-CMM: Cyber Threat Intelligence Capability Maturity Model (11 domains, CTI use cases, CTI0-3)
 app.use("/api", informRouter); // MITRE CTID INFORM: Threat-Informed Defense maturity (3 weighted dimensions, 22 components)
+app.use("/api", tirCmmRouter); // TIR-CMM: Threat-Informed Response maturity (8 domains, 58 sub-caps, evidence caps, tiers)
+app.use("/api", tidCmmRouter); // TID-CMM: Threat-Informed Detection maturity (8 domains, 58 sub-caps, per-level descriptors, NA)
 app.use("/api", controlWeightRouter); // Control weight (CapGRC PfC model) + its EnterpriseRiskScore contribution
 app.use("/api", craRouter); // EU Cyber Resilience Act conformity: products with digital elements + Annex I matrix + release gate
 app.use("/api", aiControlRouter); // AI Control Library: reusable AI controls (objective/type/lifecycle/risk-domain/evidence) + coverage
 app.use("/api", aiCrosswalkRouter); // AI Governance Crosswalk: 17-domain capability matrix × EU AI Act / NIST AI RMF / ISO 42001 / Singapore + coverage
+app.use("/api", evidenceCatalogueRouter); // Evidence Catalogue: central audit-evidence library (EVIDENCE + CAS blobs + audit/control links + validity)
+app.use("/api", complianceActivitiesRouter); // Compliance Activity Calendar & Reminders (COMPLIANCEACTIVITY + recurring due dates + reminder engine)
 app.use("/api", aiRiskLoopRouter); // Operational AI Risk loop: IDENTIFY→ASSESS→MITIGATE→MONITOR (AIRISK/AIRISKCONTROL/AIRISKKRI/AIRISKLOG) + traceability
 app.use("/api", itdrRouter); // ITDR: identity threat detection (sign-in telemetry + posture) → ATT&CK-mapped detections + response
 app.use("/api", identityGovRouter); // IGA/IDMS: access certification campaigns + lifecycle posture + revocation worklist over IDENTITY
@@ -689,6 +704,12 @@ app.get("/cti-cmm", pageGuard("/"), (_req: Request, res: Response) => {
 app.get("/inform", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "inform.html"));
 });
+app.get("/tir-cmm", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "tir-cmm.html"));
+});
+app.get("/tid-cmm", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "tid-cmm.html"));
+});
 app.get("/miniciso", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "miniciso.html"));
 });
@@ -697,6 +718,12 @@ app.get("/cra-compliance", pageGuard("/"), (_req: Request, res: Response) => {
 });
 app.get("/ai-governance-crosswalk", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ai-governance-crosswalk.html"));
+});
+app.get("/evidence-catalogue", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "evidence-catalogue.html"));
+});
+app.get("/compliance-calendar", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "compliance-calendar.html"));
 });
 app.get("/ai-risk-loop", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "ai-risk-loop.html"));
@@ -866,6 +893,9 @@ app.get("/detection-engineering", pageGuard("/"), (_req: Request, res: Response)
 });
 app.get("/report-mapper", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "report-mapper.html"));
+});
+app.get("/attack-flow", pageGuard("/"), (_req: Request, res: Response) => {
+  res.sendFile(path.join(CLIENT_DIR, "attack-flow.html"));
 });
 app.get("/purple-team", pageGuard("/"), (_req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIR, "purple-team.html"));
@@ -1137,6 +1167,10 @@ try { seedSmeDemo(3); } catch { /* demo only */ } // SME maturity demo (tenant 3
 try { ensureMcTables(); } catch { /* boot */ } // miniCISO evidence-driven assessment store (XCOMPLIANCE.MINICISO*)
 try { seedMcDemo(3); } catch { /* demo only */ } // miniCISO demo (tenant 3): a checkout review with a QA-blocked delivery
 try { ensureCrosswalkTables(); } catch { /* boot */ } // AI Governance Crosswalk per-tenant status store (XORCISM.AICROSSWALKSTATUS)
+try { ensureEvidenceCatalogue(); } catch { /* boot */ } // Evidence Catalogue: extend EVIDENCE with library columns (XCOMPLIANCE)
+try { ensureComplianceActivities(); } catch { /* boot */ } // Compliance Activity Calendar tables (XCOMPLIANCE.COMPLIANCEACTIVITY/LOG)
+try { runComplianceReminders(); } catch { /* boot */ } // fire due/overdue activity reminders once at boot
+setInterval(() => { try { runComplianceReminders(); } catch { /* */ } }, 6 * 60 * 60 * 1000).unref(); // then every 6h
 try { ensureAiRiskTables(); } catch { /* boot */ } // Operational AI Risk loop store (XORCISM.AIRISK/AIRISKCONTROL/AIRISKKRI/AIRISKLOG)
 try { seedAiRiskDemo(3); } catch { /* demo only */ } // AI Risk loop demo (tenant 3): one monitored, treated LLM-assistant risk
 try { ensureAisvsTables(); } catch { /* boot */ } // OWASP AISVS verification store (XCOMPLIANCE.AISVSASSESSMENT/ANSWER)
@@ -1147,6 +1181,12 @@ try { ensureCtiCmmTables(); } catch { /* boot */ } // CTI-CMM assessment store (
 try { seedCtiCmmDemo(3); } catch { /* demo only */ } // CTI-CMM demo (tenant 3): an enterprise CTI program assessment in progress
 try { ensureInformTables(); } catch { /* boot */ } // MITRE INFORM assessment store (XCOMPLIANCE.INFORMASSESSMENT/SCORE)
 try { seedInformDemo(3); } catch { /* demo only */ } // INFORM demo (tenant 3): a threat-informed defense assessment in progress
+try { ensureAttackFlowTables(); } catch { /* boot */ } // MITRE CTID Attack Flow store (XTHREAT.ATTACKFLOW/NODE/EDGE)
+try { seedAttackFlowDemo(3); } catch { /* demo only */ } // Attack Flow demo (tenant 3): a phishing→ransomware flow graph
+try { ensureTirCmmTables(); } catch { /* boot */ } // TIR-CMM assessment store (XCOMPLIANCE.TIRCMMASSESSMENT/SCORE)
+try { seedTirCmmDemo(3); } catch { /* demo only */ } // TIR-CMM demo (tenant 3): a response-readiness assessment in progress
+try { ensureTidCmmTables(); } catch { /* boot */ } // TID-CMM assessment store (XCOMPLIANCE.TIDCMMASSESSMENT/SCORE)
+try { seedTidCmmDemo(3); } catch { /* demo only */ } // TID-CMM demo (tenant 3): a detection-readiness assessment in progress
 try { ensureEss8Tables(); } catch { /* boot */ } // ASD Essential Eight maturity assessment store (XCOMPLIANCE.ESSENTIALEIGHT)
 try { seedEss8Demo(3); } catch { /* demo only */ } // Essential Eight demo (tenant 3): a mixed-maturity assessment vs target ML3
 ensureLandingAccessTable(); // landing-menu NICE-profile access control store

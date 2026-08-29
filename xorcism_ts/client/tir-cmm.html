@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XORCISM — TIR-CMM</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .tc-wrap{padding:14px 16px 40px;max-width:1500px}
+  .tc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .tc-head h2{margin:0;font-size:19px;color:#e2e8f0}
+  .tc-sub{font-size:12.5px;color:#94a3b8;max-width:1080px;line-height:1.5;margin:0 0 14px}
+  .tc-kpis{display:flex;gap:10px;flex-wrap:wrap;margin:2px 0 14px}
+  .tc-kpi{background:#0f1117;border:1px solid #232843;border-radius:8px;padding:7px 13px;min-width:96px}
+  .tc-kpi .v{font-size:19px;font-weight:700;color:#f97316}.tc-kpi .l{font-size:10.5px;color:#94a3b8}
+  .tc-panel{background:#13162a;border:1px solid #2d3250;border-radius:10px;padding:14px 16px;margin-bottom:16px}
+  .tc-panel h3{margin:0 0 10px;font-size:13.5px;color:#cbd5e1}
+  .tc-create{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .tc-create label{font-size:11px;color:#94a3b8;display:flex;flex-direction:column;gap:3px}
+  .tc-create input,.tc-create select{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:7px 9px}
+  .tc-btn{background:#ea580c;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;cursor:pointer}
+  .tc-btn:disabled{opacity:.5;cursor:default}
+  .tc-btn.ghost{background:#1b2036;border:1px solid #2d3250;color:#cbd5e1;font-weight:500;padding:6px 12px;font-size:12px}
+  .tc-btn.danger{color:#fca5a5}
+  table.tc-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.tc-tbl th{text-align:left;color:#94a3b8;font-size:11px;font-weight:600;padding:6px 8px;border-bottom:1px solid #2d3250}
+  table.tc-tbl td{padding:7px 8px;border-bottom:1px solid #1c2036;vertical-align:top}
+  tr.tc-row{cursor:pointer}tr.tc-row:hover{background:#171b30}tr.tc-row.sel{background:#241505}
+  .tc-band{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+  .tc-tier{font-size:10px;padding:2px 8px;border-radius:10px;background:#1e293b;color:#fdba74;border:1px solid #7c2d12;text-transform:capitalize}
+  .tc-chip{font-size:10.5px;padding:2px 7px;border-radius:9px;background:#0f1117;border:1px solid #232843;color:#cbd5e1}
+  .tc-empty{color:#64748b;text-align:center;padding:16px}
+  .tc-detail{display:none}
+  .tc-dh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .tc-dh b{font-size:15px;color:#e2e8f0}
+  .tc-big{font-size:24px;font-weight:800}
+  .tc-hdr{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin:6px 0 12px}
+  .tc-hdr label{font-size:11px;color:#94a3b8;display:flex;flex-direction:column;gap:3px}
+  .tc-hdr select,.tc-hdr input{background:#0f1117;border:1px solid #2d3250;border-radius:6px;color:#e2e8f0;font-size:13px;padding:6px 8px}
+  .tc-grid{display:grid;grid-template-columns:340px 1fr;gap:16px}
+  @media(max-width:900px){.tc-grid{grid-template-columns:1fr}}
+  .tc-dom{border:1px solid #232843;border-radius:8px;margin-bottom:8px;background:#10131f}
+  .tc-dom.na{opacity:.7}
+  .tc-domh{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer;flex-wrap:wrap}
+  .tc-dn{font-size:13px;color:#e2e8f0;font-weight:600}
+  .tc-code{font-family:ui-monospace,monospace;color:#fdba74;font-size:11px}
+  .tc-dm{margin-left:auto;font-size:11.5px;color:#94a3b8}
+  .tc-domb{padding:2px 12px 12px;border-top:1px solid #1c2036}
+  .tc-q{font-size:11.5px;color:#94a3b8;margin:8px 0 2px}
+  .tc-sub{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #171b2c}
+  .tc-sid{font-family:ui-monospace,monospace;color:#a5b4fc;font-size:10.5px;min-width:44px;padding-top:3px}
+  .tc-sn{flex:1;min-width:180px}
+  .tc-sn .nm{font-size:12.5px;color:#e2e8f0}
+  .tc-sn .anchor{font-size:10.5px;color:#64748b;margin-top:2px;line-height:1.4}
+  .tc-sc{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .tc-sc select{background:#0f1117;border:1px solid #2d3250;border-radius:5px;color:#e2e8f0;font-size:11px;padding:4px 6px}
+  .tc-eff{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600}
+  .tc-eff.cap{background:#3a1d05;color:#fb923c;border:1px solid #9a3412}
+  .tc-eff.ok{background:#08312a;color:#34d399;border:1px solid #065f46}
+  .tc-note{background:#0f1117;border:1px solid #2d3250;border-radius:5px;color:#e2e8f0;font-size:11px;padding:4px 6px;flex:1;min-width:140px}
+  .tc-worklist{list-style:none;padding:0;margin:0}
+  .tc-worklist li{font-size:12px;padding:6px 0;border-bottom:1px solid #1c2036}
+  .tc-gap{font-size:10px;padding:1px 7px;border-radius:8px;background:#3a0a0a;color:#fca5a5;border:1px solid #7f1d1d;font-weight:600}
+  .tc-act{font-size:10.5px;color:#94a3b8;margin-top:2px}
+  .tc-cw{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  .tc-cw th,.tc-cw td{text-align:left;padding:4px 6px;border-bottom:1px solid #1c2036;color:#cbd5e1}
+  .tc-cw th{color:#94a3b8;font-weight:600}
+  .tc-con{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:800px){.tc-con{grid-template-columns:1fr}}
+  .tc-con .c{background:#0f1117;border:1px solid #232843;border-radius:7px;padding:8px 10px}
+  .tc-con .c b{color:#fdba74;font-size:11.5px}.tc-con .c .r{font-size:11px;color:#cbd5e1;margin-top:2px;line-height:1.4}
+  .tc-sec{font-size:12.5px;color:#cbd5e1;font-weight:600;margin:14px 0 6px}
+  .muted{color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="tc-wrap">
+  <div class="tc-head"><span style="font-size:22px">🎯</span><h2 data-i18n="tir.title">TIR-CMM — Threat-Informed Response</h2><span id="tc-ver" class="muted" style="font-size:12px"></span></div>
+  <p class="tc-sub" data-i18n="tir.sub">Detection asks whether you would <i>see</i> an attack. TIR-CMM (<b>Threat-Informed Response Capability Maturity Model</b>, tir-cmm.com) asks the decisive question: could you <b>act</b> on it — inside the adversary's breakout window, with someone permitted to pull the trigger, at the blast radius you intended — and can you <b>prove</b> it? Eight weighted domains, 58 sub-capabilities scored 0–5, where each score is <b>capped by its evidence grade</b> and the assessment tier sets the ceiling.</p>
+
+  <div class="tc-kpis" id="tc-kpis"></div>
+
+  <div class="tc-panel">
+    <h3 data-i18n="tir.new">New assessment</h3>
+    <div class="tc-create">
+      <label data-i18n="tir.name">Name<input id="c-name" placeholder="TIR-CMM 2026" style="min-width:190px"></label>
+      <label data-i18n="tir.org">Organisation<input id="c-org" placeholder="Enterprise SOC"></label>
+      <label data-i18n="tir.assessor">Assessor<input id="c-assessor"></label>
+      <label data-i18n="tir.tier">Tier<select id="c-tier"></select></label>
+      <label data-i18n="tir.target">Target<select id="c-target"><option value="3" selected>L3 threat-informed</option><option value="4">L4 validated</option><option value="5">L5 adaptive</option></select></label>
+      <button class="tc-btn" id="c-add" data-i18n="tir.create">Create</button>
+    </div>
+  </div>
+
+  <div class="tc-panel">
+    <h3 data-i18n="tir.assessments">Assessments</h3>
+    <table class="tc-tbl">
+      <thead><tr><th data-i18n="tir.assessment">Assessment</th><th style="width:100px" data-i18n="tir.tierc">Tier</th><th style="width:130px" data-i18n="tir.band">Band</th><th style="width:80px" data-i18n="tir.scored">Scored</th><th style="width:90px" data-i18n="tir.gaps">Gaps</th><th style="width:70px"></th></tr></thead>
+      <tbody id="tc-body"></tbody>
+    </table>
+  </div>
+
+  <div class="tc-panel tc-detail" id="tc-detail"></div>
+</div>
+
+<div id="toast"></div>
+<script src="/js/i18n.js"></script><script src="/js/session-ui.js"></script>
+<script src="/js/tir-cmm.js"></script>
+</body>
+</html>
